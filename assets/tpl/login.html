@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>{{ .static.WebsiteTitle }} - Login</title>
+    <meta name="description" content="{{ .static.WebsiteTitle }}">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i">
+    <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="/fonts/font-awesome.min.css">
+    <link rel="stylesheet" href="/fonts/fontawesome5-overrides.min.css">
+    <link rel="stylesheet" href="/css/signin.css">
+</head>
+
+<body class="bg-gradient-primary">
+    <div class="container">
+        <form class="form-signin" method="post">
+            <h2 class="form-signin-heading">Please sign in</h2>
+            <label for="inputUser" class="sr-only">Username</label>
+            <input name="username" type="text" id="inputUser" class="form-control" placeholder="user.name" required="" autofocus="">
+            <label for="inputPassword" class="sr-only">Password</label>
+            <input name="password" type="password" id="inputPassword" class="form-control" placeholder="password" required="">
+            <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+
+            {{ if eq .error true }}
+                <hr>
+                <span class="text-danger">{{.message}}</span>
+            {{end}}
+        </form>
+
+        <div class="card shadow-lg o-hidden border-0 my-5">
+            <div class="card-body p-0">
+                <a href="/" class="btn btn-white btn-block text-primary btn-user">Go Home</a>
+            </div>
+        </div>
+    </div>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery.easing.js"></script>
+    <script src="/js/jquery.fancybox.min.js"></script>
+    <script src="/js/custom.js"></script>
+</body>
+
+</html>

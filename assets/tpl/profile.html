@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- http://paintstrap.com/preview_by_id/27826?design=large -->
+<!-- http://www.colourlovers.com/palette/4657935 -->
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>{{ .static.WebsiteTitle }} - Profile</title>
+    <meta name="description" content="{{ .static.WebsiteTitle }}">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i">
+    <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+<body id="page-top">
+    {{template "prt_nav.html" .}}
+    <div class="container user-edit-container">
+        <div class="jumbotron user-edit-jumbotron">
+            <div class="row">
+                <div class="form-row">
+                    <div class="form-group col-md-6 text-center">
+                        <img class="list-image-edit" src="/user/{{$.user.Username}}/user.jpg?cc={{len $.user.Image}}" alt="User Image"/>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputName">Name</label>
+                        <input type="text" name="displayName" class="form-control" id="inputName" placeholder="" value="{{index $.user.Attributes "displayName" }}" readonly>
+                        <label for="inputMail">Email</label>
+                        <input type="email" name="mail" class="form-control" id="inputMail" placeholder="" value="{{index $.user.Attributes "mail" }}" readonly>
+                        <label for="inputUserID">User ID</label>
+                        <input type="text" name="sAMAccountName" class="form-control" id="inputUserID" placeholder="" value="{{index $.user.Attributes "sAMAccountName" }}" readonly>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="inputPhone">Phone Number</label>
+                        <input type="text" name="telephoneNumber" class="form-control" id="inputPhone" value="{{index $.user.Attributes "telephoneNumber" }}" placeholder="" readonly>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="inputMobile">Mobile Number</label>
+                        <input type="text" name="mobile" class="form-control" id="inputMobile" value="{{index $.user.Attributes "mobile" }}" placeholder="" readonly>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="inputEmployeeID">Employee ID</label>
+                        <input type="text" name="employeeID" class="form-control" id="inputEmployeeID" value="{{index $.user.Attributes "employeeID" }}" placeholder="" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="inputTitle">Title</label>
+                        <input type="text" name="title" class="form-control" id="inputTitle" value="{{index $.user.Attributes "title" }}" placeholder="" readonly>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputDepartment">Department</label>
+                        <input type="text" name="department" class="form-control" id="inputDepartment" value="{{index $.user.Attributes "department" }}" placeholder="" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="inputCompany">Company</label>
+                        <input type="text" name="company" class="form-control" id="inputCompany" value="{{index $.user.Attributes "company" }}" placeholder="" readonly>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputManager">Teamleader</label>
+                        <select name="manager" id="inputManager" class="form-control" readonly>
+                            <option value="">No Teamleader</option>
+                            {{range $i, $leader := $.teamLeaders}}
+                                {{if eq $leader.DN (index $.user.Attributes "manager")}}
+                                    <option value="{{$leader.DN}}" selected>{{$leader.Firstname}} {{$leader.Lastname}}</option>
+                                {{end}}
+                                <option value="{{$leader.DN}}">{{$leader.Firstname}} {{$leader.Lastname}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="inputStreet">Street</label>
+                        <input type="text" name="streetAddress" class="form-control" id="inputStreet" value="{{index $.user.Attributes "streetAddress" }}" placeholder="" readonly>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="inputZip">Street</label>
+                        <input type="text" name="postalCode" class="form-control" id="inputZip" value="{{index $.user.Attributes "postalCode" }}" placeholder="" readonly>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="inputCity">City</label>
+                        <input type="text" name="l" class="form-control" id="inputCity" value="{{index $.user.Attributes "l" }}" placeholder="" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="inputState">State/Province</label>
+                        <input type="text" name="st" class="form-control" id="inputState" value="{{index $.user.Attributes "st" }}" placeholder="" readonly>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputCountry">Country</label>
+                        <input type="text" name="co" class="form-control" id="inputCountry" value="{{index $.user.Attributes "co" }}" placeholder="" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <a href="/" class="btn btn-primary">Go Back</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{template "prt_footer.html"}}
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery.easing.js"></script>
+    <script src="/js/custom.js"></script>
+</body>
+
+</html>

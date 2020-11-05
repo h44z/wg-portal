@@ -1,0 +1,176 @@
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+    position: relative;
+    min-height: 100%;
+}
+body {
+    /* Margin bottom by footer height */
+    margin-bottom: 60px;
+}
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* Set the fixed height of the footer here */
+    height: 60px;
+    background-color: #f5f5f5;
+}
+
+
+/* Custom page CSS
+-------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+
+body > .container {
+    padding: 60px 15px 0;
+}
+.container .text-muted {
+    margin: 20px 0;
+}
+
+.footer > .container {
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+code {
+    font-size: 80%;
+}
+
+.nav-spacer {
+    min-width: 100px;
+}
+
+.navbar-brand {
+    padding: 3px 10px;
+}
+
+.scroll-to-top {
+    float: right;
+}
+
+.hiddenRow, .hiddenCell {
+    padding: 0px!important;
+    border-top: 0px!important;
+}
+
+.collapsedRow .col-md-6{
+    display:inline-block;
+}
+
+.collapsedRow {
+    padding: 10px 30px;
+    border-top: 1px solid lightgray;
+}
+
+.leftBorder {
+    border-left: 2px solid black;
+}
+
+#userTable .collapse-indicator {
+    text-decoration: none;
+}
+
+#userTable .collapse-indicator:after {
+    font-weight: 900;
+    font-family: "Font Awesome 5 Free";
+    content: "\f056";
+}
+#userTable .collapse-indicator.collapsed:after {
+    font-weight: 900;
+    font-family: "Font Awesome 5 Free";
+    content: "\f055";
+}
+
+.btn-group .btn {
+    background: #999;
+    color: #000;
+}
+
+.btn-group .btn:hover {
+    background: #444;
+    color: #ddd;
+}
+
+.btn-group .btn.active {
+    background: #000;
+    color: #fff;
+}
+
+.list-image-small {
+    height: 7vh;
+    width: auto;
+    background-size: cover;
+}
+
+.list-image-large {
+    height: 20vh;
+    width: auto;
+    background-size: cover;
+}
+
+.list-image-edit {
+    height: 23vh;
+    width: auto;
+    background-size: cover;
+}
+
+.list-image-cell {
+    width: 140px;
+}
+
+#userTable tr td {
+    vertical-align: middle;
+}
+
+#inputThumbnailPhoto {
+    padding-top: 10px;
+}
+
+.user-edit-jumbotron {
+    border: 2px solid black;
+    padding-top:40px;
+    padding-bottom:40px;
+    margin-bottom: 0px;
+}
+
+#searchclear {
+    position: absolute;
+    right: 5px;
+    top: 0;
+    bottom: 0;
+    height: 18px;
+    margin: auto;
+    font-size: 14px;
+    cursor: pointer;
+    color: #979797;
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: searchfield-cancel-button;
+}
+
+.alert {
+    margin-bottom: 0px;
+}
+
+@media (min-width: 1200px) {
+    .container {
+        width: 1150px;
+    }
+
+    .user-edit-container {
+        width: 1100px;
+    }
+}
+
+@media (min-width: 1600px) {
+    .container {
+        width: 1600px;
+    }
+
+    .user-edit-container {
+        width: 1100px;
+    }
+}

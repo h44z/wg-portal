@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- http://paintstrap.com/preview_by_id/27826?design=large -->
+<!-- http://www.colourlovers.com/palette/4657935 -->
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>{{ .static.WebsiteTitle }} - Admin</title>
+    <meta name="description" content="{{ .static.WebsiteTitle }}">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <!--link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"-->
+    <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+<body id="page-top">
+    {{template "prt_nav.html" .}}
+    <div class="container">
+        <div class="page-header">
+            <h1>WireGuard VPN Administration</h1>
+        </div>
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Interface status for <strong>{{.interface.Name}}</strong></h3>
+            </div>
+            <div class="panel-body">
+                <p>Public Key: <strong>{{.interface.PublicKey}}</strong></p>
+                <p>Listening Port: <strong>{{.interface.ListenPort}}</strong></p>
+                <p>Number of Peers: <strong>{{len .interface.Peers}}</strong></p>
+            </div>
+        </div>
+        <hr>
+        <h2>Current VPN Users</h2>
+        <div class="table-responsive">
+            <table class="table table-hover" id="userTable">
+                <thead>
+                <tr class="d-flex">
+                    <th scope="col" class="list-image-cell"></th><!-- Status and expand -->
+                    <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{.session.GetSortIcon "id"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.session.GetSortIcon "pubKey"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.session.GetSortIcon "mail"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.session.GetSortIcon "ip"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=traffic">Traffic <i class="fa fa-fw {{.session.GetSortIcon "traffic"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=handshake">Last Handshake <i class="fa fa-fw {{.session.GetSortIcon "handshake"}}"></i></a></th>
+                    <th scope="col"></th><!-- Actions -->
+                </tr>
+                </thead>
+                <tbody>
+                {{range $i, $p :=.peers}}
+                    <tr class="d-flex" id="user-pos-{{$i}}">
+                        <th scope="row" class="list-image-cell">
+                            <a href="#{{$p.UID}}" data-toggle="collapse" class="collapse-indicator collapsed"></a>
+                            <!-- online check -->
+                        </th>
+                        <td>{{$p.Identifier}}</td>
+                        <td>{{$p.PublicKey}}</td>
+                        <td>{{$p.Email}}</td>
+                        <td>{{$p.IPsStr}}</td>
+                        <td>{{$p.Peer.ReceiveBytes}} / {{$p.Peer.TransmitBytes}}</td>
+                        <td>{{$p.Peer.LastHandshakeTime}}</td>
+                        <td>
+                            {{if eq $.session.IsAdmin true}}
+                                <a href="/admin/user/edit?pos={{$i}}"><i class="fas fa-cog"></i></a>
+                            {{end}}
+                        </td>
+                    </tr>
+                    <tr class="hiddenRow">
+                        <td colspan="8" class="hiddenCell" style="white-space:nowrap">
+                            <div class="collapse" id="{{$p.UID}}" data-parent="#userTable">
+                                <div class="row collapsedRow">
+                                    <div class="col-md-6 leftBorder">
+                                        <div class="nav btn-group" id="pills-tab{{$p.UID}}" role="tablist">
+                                            <a data-toggle="tab" href="#t1{{$p.UID}}" class="btn active">General</a>
+                                            <a data-toggle="tab" href="#t2{{$p.UID}}" class="btn">Organization</a>
+                                            <a data-toggle="tab" href="#t3{{$p.UID}}" class="btn">Address</a>
+                                            <a data-toggle="tab" href="#t4{{$p.UID}}" class="btn">Telephone</a>
+                                        </div>
+
+                                        <div class="tab-content" id="pills-tabContent{{$p.UID}}">
+                                            <div id="t1{{$p.UID}}" class="tab-pane active">
+                                                <ul>
+                                                    <li>0</li>
+                                                </ul>
+                                            </div>
+                                            <div id="t2{{$p.UID}}" class="tab-pane">
+                                                <ul>
+                                                    <li>1</li>
+                                                </ul>
+                                            </div>
+                                            <div id="t3{{$p.UID}}" class="tab-pane">
+                                                <ul>
+                                                    <li>2</li>
+                                                </ul>
+                                            </div>
+                                            <div id="t4{{$p.UID}}" class="tab-pane">
+                                                <ul>
+                                                    <li>4</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <img class="list-image-large" src="/user/qr.jpg"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+            <p>Currently listed peers: <strong>{{len .peers}}</strong></p>
+        </div>
+    </div>
+    {{template "prt_footer.html"}}
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery.easing.js"></script>
+    <script src="/js/custom.js"></script>
+</body>
+
+</html>

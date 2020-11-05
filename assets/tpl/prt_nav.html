@@ -1,0 +1,57 @@
+<nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/"><img src="/img/PROLICHT_FULL.png" alt="PROLICHT"/></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="nav-spacer"></li>
+                {{with eq $.session.LoggedIn true}}{{with eq $.session.IsAdmin true}}
+                    <form class="navbar-form navbar-right" action="/">
+                        <div class="form-group btn-group">
+                            <input id="inputSearch" name="search" type="search" placeholder="Search..." onsearch="OnSearch(this)" class="form-control" value="{{$.session.Search}}">
+                            <!--span id="searchclear"><i class="fas fa-times"></i></span-->
+                        </div>
+                        <div class="form-group btn-group">
+                            <select name="department" id="inputDepartment" type="search" class="form-control">
+                                <option value="">All departments</option>
+                                {{range $i, $department := $.departments}}
+                                    {{if eq $department $.session.SearchDepartment}}
+                                        <option value="{{$department}}" selected>{{$department}}</option>
+                                    {{else}}
+                                        <option value="{{$department}}">{{$department}}</option>
+                                    {{end}}
+                                {{end}}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-outline-light"><i class="fa fa-search"></i></button>
+                    </form>
+                {{end}}{{end}}
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                {{if eq $.session.LoggedIn true}}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{$.session.Firstname}} {{$.session.Lastname}} <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            {{with eq $.session.LoggedIn true}}{{with eq $.session.IsAdmin true}}
+                            <li><a href="/admin/"><i class="fas fa-file-export"></i> Administration</a></li>
+                            <li role="separator" class="divider"></li>
+                            {{end}}{{end}}
+                            <li><a href="/user/{{$.session.UserName}}/profile"><i class="fas fa-user"></i> Profile</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{{ $.static.LogoutURL }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                {{else}}
+                    <li><a href="{{ $.static.LoginURL }}"><i class="fas fa-sign-in-alt fa-sm fa-fw mr-2 text-gray-400"></i> Login</a></li>
+                {{end}}
+            </ul>
+        </div><!--/.navbar-collapse -->
+    </div>
+</nav>
