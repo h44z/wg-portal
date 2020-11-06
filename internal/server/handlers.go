@@ -43,15 +43,35 @@ func (s *Server) GetAdminIndex(c *gin.Context) {
 		return
 	}
 
+	device := s.users.GetDevice()
+	device.Interface = dev
+
 	users := make([]User, len(peers))
 	for i, peer := range peers {
 		users[i] = s.users.GetOrCreateUserForPeer(peer)
 	}
-	c.HTML(http.StatusOK, "admin_index.html", gin.H{
-		"route":     c.Request.URL.Path,
-		"session":   s.getSessionData(c),
-		"static":    s.getStaticData(),
-		"peers":     users,
-		"interface": dev,
+	c.HTML(http.StatusOK, "admin_index.html", struct {
+		Route   string
+		Session SessionData
+		Static  StaticData
+		Peers   []User
+		Device  Device
+	}{
+		Route:   c.Request.URL.Path,
+		Session: s.getSessionData(c),
+		Static:  s.getStaticData(),
+		Peers:   users,
+		Device:  device,
 	})
+}
+
+func (s *Server) GetUserQRCode(c *gin.Context) {
+	user := s.users.GetUser(c.Param("pkey"))
+	png, err := user.GetQRCode()
+	if err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "QRCode error", err.Error())
+		return
+	}
+	c.Data(http.StatusOK, "image/png", png)
+	return
 }

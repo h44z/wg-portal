@@ -24,6 +24,7 @@ func SetupRoutes(s *Server) {
 	// User routes
 	user := s.server.Group("/user")
 	user.Use(s.RequireAuthentication("")) // empty scope = all logged in users
+	user.GET("/qrcode", s.GetUserQRCode)
 }
 
 func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {

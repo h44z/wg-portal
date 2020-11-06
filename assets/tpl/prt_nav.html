@@ -1,57 +1,38 @@
-<nav class="navbar navbar-default navbar-fixed-top">
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="/"><img src="/img/PROLICHT_FULL.png" alt="PROLICHT"/></a>
-        </div>
-        <div id="navbar" class="navbar-collapse collapse">
-            <ul class="nav navbar-nav">
-                <li class="nav-spacer"></li>
-                {{with eq $.session.LoggedIn true}}{{with eq $.session.IsAdmin true}}
-                    <form class="navbar-form navbar-right" action="/">
-                        <div class="form-group btn-group">
-                            <input id="inputSearch" name="search" type="search" placeholder="Search..." onsearch="OnSearch(this)" class="form-control" value="{{$.session.Search}}">
-                            <!--span id="searchclear"><i class="fas fa-times"></i></span-->
-                        </div>
-                        <div class="form-group btn-group">
-                            <select name="department" id="inputDepartment" type="search" class="form-control">
-                                <option value="">All departments</option>
-                                {{range $i, $department := $.departments}}
-                                    {{if eq $department $.session.SearchDepartment}}
-                                        <option value="{{$department}}" selected>{{$department}}</option>
-                                    {{else}}
-                                        <option value="{{$department}}">{{$department}}</option>
-                                    {{end}}
-                                {{end}}
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-outline-light"><i class="fa fa-search"></i></button>
-                    </form>
-                {{end}}{{end}}
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                {{if eq $.session.LoggedIn true}}
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{$.session.Firstname}} {{$.session.Lastname}} <span class="caret"></span></a>
-                        <ul class="dropdown-menu">
-                            {{with eq $.session.LoggedIn true}}{{with eq $.session.IsAdmin true}}
-                            <li><a href="/admin/"><i class="fas fa-file-export"></i> Administration</a></li>
-                            <li role="separator" class="divider"></li>
-                            {{end}}{{end}}
-                            <li><a href="/user/{{$.session.UserName}}/profile"><i class="fas fa-user"></i> Profile</a></li>
-                            <li role="separator" class="divider"></li>
-                            <li><a href="{{ $.static.LogoutURL }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                        </ul>
-                    </li>
-                {{else}}
-                    <li><a href="{{ $.static.LoginURL }}"><i class="fas fa-sign-in-alt fa-sm fa-fw mr-2 text-gray-400"></i> Login</a></li>
-                {{end}}
-            </ul>
-        </div><!--/.navbar-collapse -->
-    </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#topNavbar" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <a class="navbar-brand" href="/"><img src="/img/PROLICHT_FULL.png" alt="PROLICHT"/></a>
+    <div id="topNavbar" class="navbar-collapse collapse">
+        <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+            <li class="nav-spacer"></li>
+            <form class="form-inline my-2 my-lg-0" action="/search">
+                <input class="form-control mr-sm-2" name="search" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit"><i class="fa fa-search"></i></button>
+            </form>
+
+        </ul>
+        {{if eq $.Session.LoggedIn true}}
+            <div class="nav-item dropdown">
+                <a href="#" class="navbar-text dropdown-toggle" data-toggle="dropdown">{{$.Session.Firstname}} {{$.Session.Lastname}} <span class="caret"></span></a>
+                <div class="dropdown-menu">
+                    {{with eq $.Session.LoggedIn true}}{{with eq $.Session.IsAdmin true}}
+                        <a class="dropdown-item" href="/admin/"><i class="fas fa-file-export"></i> Administration</a>
+                        <div class="dropdown-divider"></div>
+                    {{end}}{{end}}
+                    <a class="dropdown-item" href="/user/{{$.Session.UserName}}/profile"><i class="fas fa-user"></i> Profile</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ $.Static.LogoutURL }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
+            </div>
+        {{else}}
+            <a href="{{ $.Static.LoginURL }}" class="navbar-text"><i class="fas fa-sign-in-alt fa-sm fa-fw mr-2 text-gray-400"></i> Login</a></li>
+        {{end}}
+    </div><!--/.navbar-collapse -->
 </nav>
+{{if not $.Device.IsValid}}
+<div class="container">
+    <div class="alert alert-danger">Warning: WireGuard Interface is not fully configured! Configurations may be incomplete and non functional!</div>
+</div>
+{{end}}

@@ -1,25 +1,31 @@
 package server
 
 import (
+	"bytes"
 	"crypto/md5"
 	"errors"
 	"fmt"
 	"net"
 	"strings"
+	"text/template"
 	"time"
+
+	"github.com/h44z/wg-portal/internal/wireguard"
 
 	"github.com/h44z/wg-portal/internal/common"
 
 	"github.com/h44z/wg-portal/internal/ldap"
 	log "github.com/sirupsen/logrus"
+	"github.com/skip2/go-qrcode"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	Peer wgtypes.Peer               `gorm:"-"`
-	User *ldap.UserCacheHolderEntry `gorm:"-"` // optional, it is still possible to have users without ldap
+	Peer   wgtypes.Peer               `gorm:"-"`
+	User   *ldap.UserCacheHolderEntry `gorm:"-"` // optional, it is still possible to have users without ldap
+	Config string                     `gorm:"-"`
 
 	UID        string // uid for html identification
 	IsOnline   bool   `gorm:"-"`
@@ -42,7 +48,7 @@ type User struct {
 	UpdatedAt     time.Time
 }
 
-func (u *User) GetPeerConfig() wgtypes.PeerConfig {
+func (u User) GetPeerConfig() wgtypes.PeerConfig {
 	publicKey, _ := wgtypes.ParseKey(u.PublicKey)
 	var presharedKey *wgtypes.Key
 	if u.PresharedKey != "" {
@@ -70,7 +76,20 @@ func (u *User) GetPeerConfig() wgtypes.PeerConfig {
 	return cfg
 }
 
+func (u User) GetQRCode() ([]byte, error) {
+	png, err := qrcode.Encode(u.Config, qrcode.Medium, 250)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("failed to create qrcode")
+		return nil, err
+	}
+	return png, nil
+}
+
 type Device struct {
+	Interface *wgtypes.Device `gorm:"-"`
+
 	DeviceName          string `gorm:"primaryKey"`
 	PrivateKey          string
 	PublicKey           string
@@ -92,7 +111,7 @@ type Device struct {
 	UpdatedAt           time.Time
 }
 
-func (d *Device) IsValid() bool {
+func (d Device) IsValid() bool {
 	if len(d.IPs) == 0 {
 		return false
 	}
@@ -150,13 +169,15 @@ func (u *UserManager) GetAllUsers() []User {
 	for i := range users {
 		users[i].AllowedIPs = strings.Split(users[i].AllowedIPsStr, ", ")
 		users[i].IPs = strings.Split(users[i].IPsStr, ", ")
+		tmpCfg, _ := u.GetPeerConfigFile(users[i])
+		users[i].Config = string(tmpCfg)
 	}
 
 	return users
 }
 
-func (u *UserManager) GetAllDevices() []Device {
-	devices := make([]Device, 0)
+func (u *UserManager) GetDevice() Device {
+	devices := make([]Device, 0, 1)
 	u.db.Find(&devices)
 
 	for i := range devices {
@@ -165,7 +186,7 @@ func (u *UserManager) GetAllDevices() []Device {
 		devices[i].DNS = strings.Split(devices[i].DNSStr, ", ")
 	}
 
-	return devices
+	return devices[0]
 }
 
 func (u *UserManager) GetOrCreateUserForPeer(peer wgtypes.Peer) User {
@@ -199,6 +220,20 @@ func (u *UserManager) GetOrCreateUserForPeer(peer wgtypes.Peer) User {
 
 	user.IPs = strings.Split(user.IPsStr, ", ")
 	user.AllowedIPs = strings.Split(user.AllowedIPsStr, ", ")
+	tmpCfg, _ := u.GetPeerConfigFile(user)
+	user.Config = string(tmpCfg)
+
+	return user
+}
+
+func (u *UserManager) GetUser(publicKey string) User {
+	user := User{}
+	u.db.Where("public_key = ?", publicKey).FirstOrInit(&user)
+
+	user.IPs = strings.Split(user.IPsStr, ", ")
+	user.AllowedIPs = strings.Split(user.AllowedIPsStr, ", ")
+	tmpCfg, _ := u.GetPeerConfigFile(user)
+	user.Config = string(tmpCfg)
 
 	return user
 }
@@ -250,18 +285,16 @@ func (u *UserManager) GetAllReservedIps() ([]string, error) {
 		}
 	}
 
-	devices := u.GetAllDevices()
-	for _, device := range devices {
-		for _, cidr := range device.IPs {
-			ip, _, err := net.ParseCIDR(cidr)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"err":  err,
-					"cidr": cidr,
-				}).Error("failed to ip from cidr")
-			} else {
-				reservedIps = append(reservedIps, ip.String())
-			}
+	device := u.GetDevice()
+	for _, cidr := range device.IPs {
+		ip, _, err := net.ParseCIDR(cidr)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err":  err,
+				"cidr": cidr,
+			}).Error("failed to ip from cidr")
+		} else {
+			reservedIps = append(reservedIps, ip.String())
 		}
 	}
 
@@ -319,4 +352,26 @@ func (u *UserManager) GetOrCreateDevice(dev wgtypes.Device) Device {
 	device.DNS = strings.Split(device.DNSStr, ", ")
 
 	return device
+}
+
+func (u *UserManager) GetPeerConfigFile(user User) ([]byte, error) {
+	tpl, err := template.New("client").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.ClientCfgTpl)
+	if err != nil {
+		return nil, err
+	}
+
+	var tplBuff bytes.Buffer
+
+	err = tpl.Execute(&tplBuff, struct {
+		Client User
+		Server Device
+	}{
+		Client: user,
+		Server: u.GetDevice(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return tplBuff.Bytes(), nil
 }

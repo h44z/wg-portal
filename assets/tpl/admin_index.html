@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- http://paintstrap.com/preview_by_id/27826?design=large -->
-<!-- http://www.colourlovers.com/palette/4657935 -->
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>{{ .static.WebsiteTitle }} - Admin</title>
-    <meta name="description" content="{{ .static.WebsiteTitle }}">
+    <title>{{ .Static.WebsiteTitle }} - Admin</title>
+    <meta name="description" content="{{ .Static.WebsiteTitle }}">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <!--link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"-->
     <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
@@ -16,38 +14,88 @@
 <body id="page-top">
     {{template "prt_nav.html" .}}
     <div class="container">
-        <div class="page-header">
-            <h1>WireGuard VPN Administration</h1>
-        </div>
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                <h3 class="panel-title">Interface status for <strong>{{.interface.Name}}</strong></h3>
+        <h1>WireGuard VPN Administration</h1>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <span class="mr-auto">Interface status for <strong>{{.Device.DeviceName}}</strong></span>
+                    <a href="/admin/device/edit"><i class="fas fa-cog"></i></a>
+                </div>
             </div>
-            <div class="panel-body">
-                <p>Public Key: <strong>{{.interface.PublicKey}}</strong></p>
-                <p>Listening Port: <strong>{{.interface.ListenPort}}</strong></p>
-                <p>Number of Peers: <strong>{{len .interface.Peers}}</strong></p>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <table class="table table-sm table-borderless device-status-table">
+                            <tbody>
+                            <tr>
+                                <td>Public Key:</td>
+                                <td>{{.Device.PublicKey}}</td>
+                            </tr>
+                            <tr>
+                                <td>Public Endpoint:</td>
+                                <td>{{.Device.Endpoint}}</td>
+                            </tr>
+                            <tr>
+                                <td>Listening Port:</td>
+                                <td>{{.Device.ListenPort}}</td>
+                            </tr>
+                            <tr>
+                                <td>Enabled Peers:</td>
+                                <td>{{len .Device.Interface.Peers}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-sm-6">
+                        <table class="table table-sm table-borderless device-status-table">
+                            <tbody>
+                            <tr>
+                                <td>IP Address:</td>
+                                <td>{{.Device.IPsStr}}</td>
+                            </tr>
+                            <tr>
+                                <td>Default allowed IP's:</td>
+                                <td>{{.Device.AllowedIPsStr}}</td>
+                            </tr>
+                            <tr>
+                                <td>Default DNS servers:</td>
+                                <td>{{.Device.DNSStr}}</td>
+                            </tr>
+                            <tr>
+                                <td>Default MTU:</td>
+                                <td>{{.Device.Mtu}}</td>
+                            </tr>
+                            <tr>
+                                <td>Default Keepalive Interval:</td>
+                                <td>{{.Device.PersistentKeepalive}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
-        <hr>
+        <div></div>
         <h2>Current VPN Users</h2>
         <div class="table-responsive">
-            <table class="table table-hover" id="userTable">
+            <table class="table table-sm" id="userTable">
                 <thead>
-                <tr class="d-flex">
+                <tr>
                     <th scope="col" class="list-image-cell"></th><!-- Status and expand -->
-                    <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{.session.GetSortIcon "id"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.session.GetSortIcon "pubKey"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.session.GetSortIcon "mail"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.session.GetSortIcon "ip"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=traffic">Traffic <i class="fa fa-fw {{.session.GetSortIcon "traffic"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=handshake">Last Handshake <i class="fa fa-fw {{.session.GetSortIcon "handshake"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{.Session.GetSortIcon "id"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "pubKey"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "mail"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "ip"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=traffic">Traffic <i class="fa fa-fw {{.Session.GetSortIcon "traffic"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=handshake">Last Handshake <i class="fa fa-fw {{.Session.GetSortIcon "handshake"}}"></i></a></th>
                     <th scope="col"></th><!-- Actions -->
                 </tr>
                 </thead>
                 <tbody>
-                {{range $i, $p :=.peers}}
-                    <tr class="d-flex" id="user-pos-{{$i}}">
+                {{range $i, $p :=.Peers}}
+                    <tr id="user-pos-{{$i}}">
                         <th scope="row" class="list-image-cell">
                             <a href="#{{$p.UID}}" data-toggle="collapse" class="collapse-indicator collapsed"></a>
                             <!-- online check -->
@@ -59,7 +107,7 @@
                         <td>{{$p.Peer.ReceiveBytes}} / {{$p.Peer.TransmitBytes}}</td>
                         <td>{{$p.Peer.LastHandshakeTime}}</td>
                         <td>
-                            {{if eq $.session.IsAdmin true}}
+                            {{if eq $.Session.IsAdmin true}}
                                 <a href="/admin/user/edit?pos={{$i}}"><i class="fas fa-cog"></i></a>
                             {{end}}
                         </td>
@@ -69,38 +117,35 @@
                             <div class="collapse" id="{{$p.UID}}" data-parent="#userTable">
                                 <div class="row collapsedRow">
                                     <div class="col-md-6 leftBorder">
-                                        <div class="nav btn-group" id="pills-tab{{$p.UID}}" role="tablist">
-                                            <a data-toggle="tab" href="#t1{{$p.UID}}" class="btn active">General</a>
-                                            <a data-toggle="tab" href="#t2{{$p.UID}}" class="btn">Organization</a>
-                                            <a data-toggle="tab" href="#t3{{$p.UID}}" class="btn">Address</a>
-                                            <a data-toggle="tab" href="#t4{{$p.UID}}" class="btn">Telephone</a>
-                                        </div>
-
-                                        <div class="tab-content" id="pills-tabContent{{$p.UID}}">
-                                            <div id="t1{{$p.UID}}" class="tab-pane active">
+                                        <ul class="nav nav-tabs">
+                                            <li class="nav-item">
+                                                <a class="nav-link active" data-toggle="tab" href="#t1{{$p.UID}}">General</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-toggle="tab" href="#t2{{$p.UID}}">Configuration</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-toggle="tab" href="#t3{{$p.UID}}">Other</a>
+                                            </li>
+                                        </ul>
+                                        <div class="tab-content" id="tabContent{{$p.UID}}">
+                                            <div id="t1{{$p.UID}}" class="tab-pane fade active show">
                                                 <ul>
                                                     <li>0</li>
                                                 </ul>
                                             </div>
-                                            <div id="t2{{$p.UID}}" class="tab-pane">
-                                                <ul>
-                                                    <li>1</li>
-                                                </ul>
+                                            <div id="t2{{$p.UID}}" class="tab-pane fade">
+                                                <pre>{{$p.Config}}</pre>
                                             </div>
-                                            <div id="t3{{$p.UID}}" class="tab-pane">
+                                            <div id="t3{{$p.UID}}" class="tab-pane fade">
                                                 <ul>
                                                     <li>2</li>
-                                                </ul>
-                                            </div>
-                                            <div id="t4{{$p.UID}}" class="tab-pane">
-                                                <ul>
-                                                    <li>4</li>
                                                 </ul>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <img class="list-image-large" src="/user/qr.jpg"/>
+                                        <img class="list-image-large" src="/user/qrcode?pkey={{$p.PublicKey}}"/>
                                     </div>
                                 </div>
                             </div>
@@ -109,12 +154,12 @@
                 {{end}}
                 </tbody>
             </table>
-            <p>Currently listed peers: <strong>{{len .peers}}</strong></p>
+            <p>Currently listed peers: <strong>{{len .Peers}}</strong></p>
         </div>
     </div>
     {{template "prt_footer.html"}}
     <script src="/js/jquery.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/jquery.easing.js"></script>
     <script src="/js/custom.js"></script>
 </body>
