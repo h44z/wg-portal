@@ -38,6 +38,7 @@ type SessionData struct {
 	Search        string
 	AlertData     string
 	AlertType     string
+	FormData      interface{}
 }
 
 type AlertData struct {

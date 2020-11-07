@@ -34,10 +34,12 @@
 
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="uid" value="{{.Peer.UID}}">
+            <input type="hidden" name="privkey" value="{{.Peer.PrivateKey}}">
+            <input type="hidden" name="presharedkey" value="{{.Peer.PresharedKey}}">
             <div class="form-row">
                 <div class="form-group col-md-12">
                     <label for="inputServerPublicKey">Public Key</label>
-                    <input type="text" name="pkey" disabled class="form-control" id="inputServerPublicKey" value="{{.Peer.PublicKey}}">
+                    <input type="text" name="pubkey" readonly class="form-control" id="inputServerPublicKey" value="{{.Peer.PublicKey}}">
                 </div>
             </div>
             <div class="form-row">

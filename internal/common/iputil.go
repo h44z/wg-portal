@@ -1,6 +1,9 @@
 package common
 
-import "net"
+import (
+	"net"
+	"strings"
+)
 
 // BroadcastAddr returns the last address in the given network, or the broadcast address.
 func BroadcastAddr(n *net.IPNet) net.IP {
@@ -34,4 +37,21 @@ func IsIPv6(address string) bool {
 		return false
 	}
 	return ip.To4() == nil
+}
+
+func ParseIPList(lst string) []string {
+	ips := strings.Split(lst, ",")
+	validatedIPs := make([]string, 0, len(ips))
+	for i := range ips {
+		ips[i] = strings.TrimSpace(ips[i])
+		if ips[i] != "" {
+			validatedIPs = append(validatedIPs, ips[i])
+		}
+	}
+
+	return validatedIPs
+}
+
+func IPListToString(lst []string) string {
+	return strings.Join(lst, ", ")
 }

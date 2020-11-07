@@ -1,11 +1,14 @@
 package server
 
 import (
+	"crypto/md5"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
+
+	"github.com/h44z/wg-portal/internal/common"
 
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 
@@ -77,72 +80,22 @@ func (s *Server) GetAdminEditInterface(c *gin.Context) {
 }
 
 func (s *Server) PostAdminEditInterface(c *gin.Context) {
-	device := s.users.GetDevice()
-	var err error
-
-	device.ListenPort, err = strconv.Atoi(c.PostForm("port"))
-	if err != nil {
-		s.setAlert(c, "invalid port: "+err.Error(), "danger")
+	var formDevice Device
+	if err := c.ShouldBind(&formDevice); err != nil {
+		s.setAlert(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
 		return
 	}
-
-	ipField := c.PostForm("ip")
-	ips := strings.Split(ipField, ",")
-	validatedIPs := make([]string, 0, len(ips))
-	for i := range ips {
-		ips[i] = strings.TrimSpace(ips[i])
-		if ips[i] != "" {
-			validatedIPs = append(validatedIPs, ips[i])
-		}
-	}
-	if len(validatedIPs) == 0 {
-		s.setAlert(c, "invalid ip address", "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
-		return
-	}
-	device.IPs = validatedIPs
-
-	device.Endpoint = c.PostForm("endpoint")
-
-	dnsField := c.PostForm("dns")
-	dns := strings.Split(dnsField, ",")
-	validatedDNS := make([]string, 0, len(dns))
-	for i := range dns {
-		dns[i] = strings.TrimSpace(dns[i])
-		if dns[i] != "" {
-			validatedDNS = append(validatedDNS, dns[i])
-		}
-	}
-	device.DNS = validatedDNS
-
-	allowedIPField := c.PostForm("allowedip")
-	allowedIP := strings.Split(allowedIPField, ",")
-	validatedAllowedIP := make([]string, 0, len(allowedIP))
-	for i := range allowedIP {
-		allowedIP[i] = strings.TrimSpace(allowedIP[i])
-		if allowedIP[i] != "" {
-			validatedAllowedIP = append(validatedAllowedIP, allowedIP[i])
-		}
-	}
-	device.AllowedIPs = validatedAllowedIP
-
-	device.Mtu, err = strconv.Atoi(c.PostForm("mtu"))
-	if err != nil {
-		s.setAlert(c, "invalid MTU: "+err.Error(), "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
-		return
-	}
-
-	device.PersistentKeepalive, err = strconv.Atoi(c.PostForm("keepalive"))
-	if err != nil {
-		s.setAlert(c, "invalid PersistentKeepalive: "+err.Error(), "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
-		return
-	}
+	// Clean list input
+	formDevice.IPs = common.ParseIPList(formDevice.IPsStr)
+	formDevice.AllowedIPs = common.ParseIPList(formDevice.AllowedIPsStr)
+	formDevice.DNS = common.ParseIPList(formDevice.DNSStr)
+	formDevice.IPsStr = common.IPListToString(formDevice.IPs)
+	formDevice.AllowedIPsStr = common.IPListToString(formDevice.AllowedIPs)
+	formDevice.DNSStr = common.IPListToString(formDevice.DNS)
 
 	// Update WireGuard device
-	err = s.wg.UpdateDevice(device.DeviceName, device.GetDeviceConfig())
+	err := s.wg.UpdateDevice(formDevice.DeviceName, formDevice.GetDeviceConfig())
 	if err != nil {
 		s.setAlert(c, "failed to update device in WireGuard: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
@@ -150,7 +103,7 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	}
 
 	// Update in database
-	err = s.users.UpdateDevice(device)
+	err = s.users.UpdateDevice(formDevice)
 	if err != nil {
 		s.setAlert(c, "failed to update device in database: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
@@ -183,77 +136,47 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 }
 
 func (s *Server) PostAdminEditPeer(c *gin.Context) {
-	user := s.users.GetUserByKey(c.Query("pkey"))
+	currentUser := s.users.GetUserByKey(c.Query("pkey"))
 	urlEncodedKey := url.QueryEscape(c.Query("pkey"))
-	var err error
 
-	user.Identifier = c.PostForm("identifier")
-	if user.Identifier == "" {
-		s.setAlert(c, "invalid identifier, must not be empty", "danger")
+	var formUser User
+	if err := c.ShouldBind(&formUser); err != nil {
+		s.setAlert(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey)
 		return
 	}
 
-	user.Email = c.PostForm("mail")
-	if user.Email == "" {
-		s.setAlert(c, "invalid email, must not be empty", "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey)
-		return
-	}
+	// Clean list input
+	formUser.IPs = common.ParseIPList(formUser.IPsStr)
+	formUser.AllowedIPs = common.ParseIPList(formUser.AllowedIPsStr)
+	formUser.IPsStr = common.IPListToString(formUser.IPs)
+	formUser.AllowedIPsStr = common.IPListToString(formUser.AllowedIPs)
 
-	ipField := c.PostForm("ip")
-	ips := strings.Split(ipField, ",")
-	validatedIPs := make([]string, 0, len(ips))
-	for i := range ips {
-		ips[i] = strings.TrimSpace(ips[i])
-		if ips[i] != "" {
-			validatedIPs = append(validatedIPs, ips[i])
-		}
-	}
-	if len(validatedIPs) == 0 {
-		s.setAlert(c, "invalid ip address", "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey)
-		return
-	}
-	user.IPs = validatedIPs
-
-	allowedIPField := c.PostForm("allowedip")
-	allowedIP := strings.Split(allowedIPField, ",")
-	validatedAllowedIP := make([]string, 0, len(allowedIP))
-	for i := range allowedIP {
-		allowedIP[i] = strings.TrimSpace(allowedIP[i])
-		if allowedIP[i] != "" {
-			validatedAllowedIP = append(validatedAllowedIP, allowedIP[i])
-		}
-	}
-	user.AllowedIPs = validatedAllowedIP
-
-	user.IgnorePersistentKeepalive = c.PostForm("ignorekeepalive") != ""
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
-	if disabled && user.DeactivatedAt == nil {
-		user.DeactivatedAt = &now
+	if disabled && currentUser.DeactivatedAt == nil {
+		formUser.DeactivatedAt = &now
 	} else if !disabled {
-		user.DeactivatedAt = nil
+		formUser.DeactivatedAt = nil
 	}
 
 	// Update WireGuard device
-	if user.DeactivatedAt == &now {
-		err = s.wg.RemovePeer(user.PublicKey)
+	if formUser.DeactivatedAt == &now {
+		err := s.wg.RemovePeer(formUser.PublicKey)
 		if err != nil {
 			s.setAlert(c, "failed to remove peer in WireGuard: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey)
 			return
 		}
-	} else if user.DeactivatedAt == nil && user.Peer != nil {
-		err = s.wg.UpdatePeer(user.GetPeerConfig())
+	} else if formUser.DeactivatedAt == nil && currentUser.Peer != nil {
+		err := s.wg.UpdatePeer(formUser.GetPeerConfig())
 		if err != nil {
 			s.setAlert(c, "failed to update peer in WireGuard: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey)
 			return
 		}
-	} else if user.DeactivatedAt == nil && user.Peer == nil {
-		err = s.wg.AddPeer(user.GetPeerConfig())
+	} else if formUser.DeactivatedAt == nil && currentUser.Peer == nil {
+		err := s.wg.AddPeer(formUser.GetPeerConfig())
 		if err != nil {
 			s.setAlert(c, "failed to add peer in WireGuard: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey)
@@ -262,7 +185,7 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	}
 
 	// Update in database
-	err = s.users.UpdateUser(user)
+	err := s.users.UpdateUser(formUser)
 	if err != nil {
 		s.setAlert(c, "failed to update user in database: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey)
@@ -278,6 +201,20 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 	user := User{}
 	user.AllowedIPsStr = device.AllowedIPsStr
 	user.IPsStr = "" // TODO: add a valid ip here
+	psk, err := wgtypes.GenerateKey()
+	if err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "Preshared key generation error", err.Error())
+		return
+	}
+	key, err := wgtypes.GeneratePrivateKey()
+	if err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "Private key generation error", err.Error())
+		return
+	}
+	user.PresharedKey = psk.String()
+	user.PrivateKey = key.String()
+	user.PublicKey = key.PublicKey().String()
+	user.UID = fmt.Sprintf("u%x", md5.Sum([]byte(user.PublicKey)))
 
 	c.HTML(http.StatusOK, "admin_edit_client.html", struct {
 		Route   string
@@ -297,68 +234,28 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 }
 
 func (s *Server) PostAdminCreatePeer(c *gin.Context) {
-	user := User{}
-	key, err := wgtypes.GeneratePrivateKey()
-	if err != nil {
-		s.HandleError(c, http.StatusInternalServerError, "Private key generation error", err.Error())
-		return
-	}
-	user.PrivateKey = key.String()
-	user.PublicKey = key.PublicKey().String()
-
-	user.Identifier = c.PostForm("identifier")
-	if user.Identifier == "" {
-		s.setAlert(c, "invalid identifier, must not be empty", "danger")
+	var formUser User
+	if err := c.ShouldBind(&formUser); err != nil {
+		s.setAlert(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/create")
 		return
 	}
 
-	user.Email = c.PostForm("mail")
-	if user.Email == "" {
-		s.setAlert(c, "invalid email, must not be empty", "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/peer/create")
-		return
-	}
+	// Clean list input
+	formUser.IPs = common.ParseIPList(formUser.IPsStr)
+	formUser.AllowedIPs = common.ParseIPList(formUser.AllowedIPsStr)
+	formUser.IPsStr = common.IPListToString(formUser.IPs)
+	formUser.AllowedIPsStr = common.IPListToString(formUser.AllowedIPs)
 
-	ipField := c.PostForm("ip")
-	ips := strings.Split(ipField, ",")
-	validatedIPs := make([]string, 0, len(ips))
-	for i := range ips {
-		ips[i] = strings.TrimSpace(ips[i])
-		if ips[i] != "" {
-			validatedIPs = append(validatedIPs, ips[i])
-		}
-	}
-	if len(validatedIPs) == 0 {
-		s.setAlert(c, "invalid ip address", "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/peer/create")
-		return
-	}
-	user.IPs = validatedIPs
-
-	allowedIPField := c.PostForm("allowedip")
-	allowedIP := strings.Split(allowedIPField, ",")
-	validatedAllowedIP := make([]string, 0, len(allowedIP))
-	for i := range allowedIP {
-		allowedIP[i] = strings.TrimSpace(allowedIP[i])
-		if allowedIP[i] != "" {
-			validatedAllowedIP = append(validatedAllowedIP, allowedIP[i])
-		}
-	}
-	user.AllowedIPs = validatedAllowedIP
-
-	user.IgnorePersistentKeepalive = c.PostForm("ignorekeepalive") != ""
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
-	if disabled && user.DeactivatedAt == nil {
-		user.DeactivatedAt = &now
-	} else if !disabled {
-		user.DeactivatedAt = nil
+	if disabled {
+		formUser.DeactivatedAt = &now
 	}
 
 	// Update WireGuard device
-	if user.DeactivatedAt == nil {
-		err = s.wg.AddPeer(user.GetPeerConfig())
+	if formUser.DeactivatedAt == nil {
+		err := s.wg.AddPeer(formUser.GetPeerConfig())
 		if err != nil {
 			s.setAlert(c, "failed to add peer in WireGuard: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/create")
@@ -367,7 +264,7 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	}
 
 	// Update in database
-	err = s.users.CreateUser(user)
+	err := s.users.CreateUser(formUser)
 	if err != nil {
 		s.setAlert(c, "failed to add user in database: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/create")

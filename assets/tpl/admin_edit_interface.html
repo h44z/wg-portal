@@ -30,11 +30,12 @@
 
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
+            <input type="hidden" name="privkey" value="{{.Device.PrivateKey}}">
             <h3>Server's interface configuration</h3>
             <div class="form-row">
                 <div class="form-group col-md-12">
                     <label for="inputServerPublicKey">Public Key</label>
-                    <input type="text" name="pubkey" disabled class="form-control" id="inputServerPublicKey" value="{{.Device.PublicKey}}">
+                    <input type="text" name="pubkey" readonly class="form-control" id="inputServerPublicKey" value="{{.Device.PublicKey}}">
                 </div>
             </div>
             <div class="form-row">

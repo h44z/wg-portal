@@ -14,7 +14,7 @@
 <body id="page-top">
     {{template "prt_nav.html" .}}
     <div class="container">
-        <h1>WireGuard VPN Administration</h1>
+        <h1 class="mt-2">WireGuard VPN Administration</h1>
 
         <div class="card">
             <div class="card-header">
@@ -77,9 +77,16 @@
 
             </div>
         </div>
-        <div></div>
-        <h2>Current VPN Users</h2>
-        <div class="table-responsive">
+        <div class="mt-4 row">
+            <div class="col-sm-10 col-12">
+                <h2>Current VPN Users</h2>
+            </div>
+            <div class="col-sm-2 col-12">
+                <a href="/admin/peer/create" title="Add a LDAP user" class="btn btn-primary pull-right"><i class="fa fa-fw fa-user-plus"></i></a>
+                <a href="/admin/peer/create" title="Manual add a user" class="btn btn-primary pull-right"><i class="fa fa-fw fa-plus"></i>M</a>
+            </div>
+        </div>
+        <div class="mt-2 table-responsive">
             <table class="table table-sm" id="userTable">
                 <thead>
                 <tr>

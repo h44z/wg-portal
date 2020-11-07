@@ -10,6 +10,10 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gin-gonic/gin/binding"
+
+	"github.com/go-playground/validator/v10"
+
 	"github.com/h44z/wg-portal/internal/wireguard"
 
 	"github.com/h44z/wg-portal/internal/common"
@@ -23,6 +27,42 @@ import (
 )
 
 //
+// CUSTOM VALIDATORS ----------------------------------------------------------------------------
+//
+var cidrList validator.Func = func(fl validator.FieldLevel) bool {
+	cidrListStr := fl.Field().String()
+
+	cidrList := common.ParseIPList(cidrListStr)
+	for i := range cidrList {
+		_, _, err := net.ParseCIDR(cidrList[i])
+		if err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+var ipList validator.Func = func(fl validator.FieldLevel) bool {
+	ipListStr := fl.Field().String()
+
+	ipList := common.ParseIPList(ipListStr)
+	for i := range ipList {
+		ip := net.ParseIP(ipList[i])
+		if ip == nil {
+			return false
+		}
+	}
+	return true
+}
+
+func init() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("cidrlist", cidrList)
+		v.RegisterValidation("iplist", ipList)
+	}
+}
+
+//
 //  USER ----------------------------------------------------------------------------------------
 //
 
@@ -31,19 +71,19 @@ type User struct {
 	LdapUser *ldap.UserCacheHolderEntry `gorm:"-"` // optional, it is still possible to have users without ldap
 	Config   string                     `gorm:"-"`
 
-	UID        string // uid for html identification
+	UID        string `form:"uid" binding:"alphanum"` // uid for html identification
 	IsOnline   bool   `gorm:"-"`
-	Identifier string // Identifier AND Email make a WireGuard peer unique
-	Email      string `gorm:"index"`
+	Identifier string `form:"identifier" binding:"required,lt=64"` // Identifier AND Email make a WireGuard peer unique
+	Email      string `gorm:"index" form:"mail" binding:"required,email"`
 
-	IgnorePersistentKeepalive bool
-	PresharedKey              string
-	AllowedIPsStr             string
-	IPsStr                    string
+	IgnorePersistentKeepalive bool     `form:"ignorekeepalive"`
+	PresharedKey              string   `form:"presharedkey" binding:"omitempty,base64"`
+	AllowedIPsStr             string   `form:"allowedip" binding:"cidrlist"`
+	IPsStr                    string   `form:"ip" binding:"cidrlist"`
 	AllowedIPs                []string `gorm:"-"` // IPs that are used in the client config file
 	IPs                       []string `gorm:"-"` // The IPs of the client
-	PrivateKey                string
-	PublicKey                 string `gorm:"primaryKey"`
+	PrivateKey                string   `form:"privkey" binding:"omitempty,base64"`
+	PublicKey                 string   `gorm:"primaryKey" form:"pubkey" binding:"required,base64"`
 
 	DeactivatedAt *time.Time
 	CreatedBy     string
@@ -128,23 +168,23 @@ func (u User) IsValid() bool {
 type Device struct {
 	Interface *wgtypes.Device `gorm:"-"`
 
-	DeviceName          string `gorm:"primaryKey"`
-	PrivateKey          string
-	PublicKey           string
-	PersistentKeepalive int
-	ListenPort          int
-	Mtu                 int
-	Endpoint            string
-	AllowedIPsStr       string
-	IPsStr              string
+	DeviceName          string   `form:"device" gorm:"primaryKey" binding:"required,alphanum"`
+	PrivateKey          string   `form:"privkey" binding:"base64"`
+	PublicKey           string   `form:"pubkey" binding:"required,base64"`
+	PersistentKeepalive int      `form:"keepalive" binding:"gte=0"`
+	ListenPort          int      `form:"port" binding:"required,gt=0"`
+	Mtu                 int      `form:"mtu" binding:"gte=0,lte=1500"`
+	Endpoint            string   `form:"endpoint" binding:"required,hostname_port"`
+	AllowedIPsStr       string   `form:"allowedip" binding:"cidrlist"`
+	IPsStr              string   `form:"ip" binding:"required,cidrlist"`
 	AllowedIPs          []string `gorm:"-"` // IPs that are used in the client config file
 	IPs                 []string `gorm:"-"` // The IPs of the client
-	DNSStr              string
+	DNSStr              string   `form:"dns" binding:"iplist"`
 	DNS                 []string `gorm:"-"` // The DNS servers of the client
-	PreUp               string
-	PostUp              string
-	PreDown             string
-	PostDown            string
+	PreUp               string   `form:"preup"`
+	PostUp              string   `form:"postup"`
+	PreDown             string   `form:"predown"`
+	PostDown            string   `form:"postdown"`
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }
