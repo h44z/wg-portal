@@ -2,6 +2,7 @@ package wireguard
 
 var (
 	ClientCfgTpl = `[Interface]
+#{{ .Client.Identifier }}
 Address = {{ .Client.IPsStr }}
 PrivateKey = {{ .Client.PrivateKey }}
 {{ if ne (len .Server.DNS) 0 -}}

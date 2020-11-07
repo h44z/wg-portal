@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -273,7 +275,9 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 
 func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 	device := s.users.GetDevice()
-	user := s.users.GetUserByKey(c.Query("pkey"))
+	user := User{}
+	user.AllowedIPsStr = device.AllowedIPsStr
+	user.IPsStr = "" // TODO: add a valid ip here
 
 	c.HTML(http.StatusOK, "admin_edit_client.html", struct {
 		Route   string
@@ -293,13 +297,26 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 }
 
 func (s *Server) PostAdminCreatePeer(c *gin.Context) {
-	device := s.users.GetDevice()
-	var err error
-
-	device.ListenPort, err = strconv.Atoi(c.PostForm("port"))
+	user := User{}
+	key, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
-		s.setAlert(c, "invalid port: "+err.Error(), "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
+		s.HandleError(c, http.StatusInternalServerError, "Private key generation error", err.Error())
+		return
+	}
+	user.PrivateKey = key.String()
+	user.PublicKey = key.PublicKey().String()
+
+	user.Identifier = c.PostForm("identifier")
+	if user.Identifier == "" {
+		s.setAlert(c, "invalid identifier, must not be empty", "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/peer/create")
+		return
+	}
+
+	user.Email = c.PostForm("mail")
+	if user.Email == "" {
+		s.setAlert(c, "invalid email, must not be empty", "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/peer/create")
 		return
 	}
 
@@ -314,23 +331,10 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	}
 	if len(validatedIPs) == 0 {
 		s.setAlert(c, "invalid ip address", "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
+		c.Redirect(http.StatusSeeOther, "/admin/peer/create")
 		return
 	}
-	device.IPs = validatedIPs
-
-	device.Endpoint = c.PostForm("endpoint")
-
-	dnsField := c.PostForm("dns")
-	dns := strings.Split(dnsField, ",")
-	validatedDNS := make([]string, 0, len(dns))
-	for i := range dns {
-		dns[i] = strings.TrimSpace(dns[i])
-		if dns[i] != "" {
-			validatedDNS = append(validatedDNS, dns[i])
-		}
-	}
-	device.DNS = validatedDNS
+	user.IPs = validatedIPs
 
 	allowedIPField := c.PostForm("allowedip")
 	allowedIP := strings.Split(allowedIPField, ",")
@@ -341,40 +345,37 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 			validatedAllowedIP = append(validatedAllowedIP, allowedIP[i])
 		}
 	}
-	device.AllowedIPs = validatedAllowedIP
+	user.AllowedIPs = validatedAllowedIP
 
-	device.Mtu, err = strconv.Atoi(c.PostForm("mtu"))
-	if err != nil {
-		s.setAlert(c, "invalid MTU: "+err.Error(), "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
-		return
-	}
-
-	device.PersistentKeepalive, err = strconv.Atoi(c.PostForm("keepalive"))
-	if err != nil {
-		s.setAlert(c, "invalid PersistentKeepalive: "+err.Error(), "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
-		return
+	user.IgnorePersistentKeepalive = c.PostForm("ignorekeepalive") != ""
+	disabled := c.PostForm("isdisabled") != ""
+	now := time.Now()
+	if disabled && user.DeactivatedAt == nil {
+		user.DeactivatedAt = &now
+	} else if !disabled {
+		user.DeactivatedAt = nil
 	}
 
 	// Update WireGuard device
-	err = s.wg.UpdateDevice(device.DeviceName, device.GetDeviceConfig())
-	if err != nil {
-		s.setAlert(c, "failed to update device in WireGuard: "+err.Error(), "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
-		return
+	if user.DeactivatedAt == nil {
+		err = s.wg.AddPeer(user.GetPeerConfig())
+		if err != nil {
+			s.setAlert(c, "failed to add peer in WireGuard: "+err.Error(), "danger")
+			c.Redirect(http.StatusSeeOther, "/admin/peer/create")
+			return
+		}
 	}
 
 	// Update in database
-	err = s.users.UpdateDevice(device)
+	err = s.users.CreateUser(user)
 	if err != nil {
-		s.setAlert(c, "failed to update device in database: "+err.Error(), "danger")
-		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
+		s.setAlert(c, "failed to add user in database: "+err.Error(), "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/peer/create")
 		return
 	}
 
-	s.setAlert(c, "changes applied successfully", "success")
-	c.Redirect(http.StatusSeeOther, "/admin/device/edit")
+	s.setAlert(c, "client created successfully", "success")
+	c.Redirect(http.StatusSeeOther, "/admin")
 }
 
 func (s *Server) GetUserQRCode(c *gin.Context) {
