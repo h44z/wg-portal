@@ -26,6 +26,7 @@ func SetupRoutes(s *Server) {
 	admin.POST("/peer/edit", s.PostAdminEditPeer)
 	admin.GET("/peer/create", s.GetAdminCreatePeer)
 	admin.POST("/peer/create", s.PostAdminCreatePeer)
+	admin.GET("/peer/createldap", s.GetAdminCreateLdapPeers)
 
 	// User routes
 	user := s.server.Group("/user")

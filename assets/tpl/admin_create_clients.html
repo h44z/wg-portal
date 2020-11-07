@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>{{ .Static.WebsiteTitle }} - Admin</title>
+    <meta name="description" content="{{ .Static.WebsiteTitle }}">
+    <link rel="stylesheet" href="/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <!--link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"-->
+    <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-tokenfield.min.css">
+    <link rel="stylesheet" href="/css/tokenfield-typeahead.min.css">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+<body id="page-top">
+    {{template "prt_nav.html" .}}
+    <div class="container">
+        <h1>Create new clients</h1>
+
+        {{if $.Alerts.HasAlert}}
+            <div class="row">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="alert alert-{{$.Alerts.Type}}" role="alert">
+                            {{$.Alerts.Message}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {{end}}
+
+        <form method="post" enctype="multipart/form-data">
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputEmail">Email Addresses</label>
+                    <input type="text" name="email" class="form-control" id="inputEmail">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputIdentifier">Client Friendly Name (will be added as suffix to the name of the user)</label>
+                    <input type="text" name="identifier" class="form-control" id="inputIdentifier" value="Primary">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create</button>
+            <a href="/admin" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+    {{template "prt_footer.html"}}
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/jquery.easing.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/bootstrap-tokenfield.min.js"></script>
+    <script src="/js/custom.js"></script>
+    <script>$('#inputEmail').on('tokenfield:createdtoken', function (e) {
+            // Über-simplistic e-mail validation
+            var re = /\S+@\S+\.\S+/
+            var valid = re.test(e.attrs.value)
+            if (!valid) {
+                $(e.relatedTarget).addClass('invalid')
+            }
+        }).tokenfield({
+            autocomplete: {
+                source: [{{range $i, $u :=.Users}}{{$u.Mail}},{{end}}],
+                delay: 100
+            },
+            showAutocompleteOnFocus: false
+        })</script>
+</body>
+
+</html>

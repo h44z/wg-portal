@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/h44z/wg-portal/internal/ldap"
+
 	"github.com/h44z/wg-portal/internal/common"
 
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
@@ -273,6 +275,26 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 
 	s.setAlert(c, "client created successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin")
+}
+
+func (s *Server) GetAdminCreateLdapPeers(c *gin.Context) {
+	device := s.users.GetDevice()
+
+	c.HTML(http.StatusOK, "admin_create_clients.html", struct {
+		Route   string
+		Alerts  AlertData
+		Session SessionData
+		Static  StaticData
+		Users   []*ldap.UserCacheHolderEntry
+		Device  Device
+	}{
+		Route:   c.Request.URL.Path,
+		Alerts:  s.getAlertData(c),
+		Session: s.getSessionData(c),
+		Static:  s.getStaticData(),
+		Users:   s.ldapUsers.GetSortedUsers("sn", "asc"),
+		Device:  device,
+	})
 }
 
 func (s *Server) GetUserQRCode(c *gin.Context) {

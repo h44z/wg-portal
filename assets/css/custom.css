@@ -52,3 +52,12 @@
 .disabled-peer {
     color: #d03131;
 }
+
+.tokenfield .token {
+    border-radius: 0px;
+    border: 1px solid #1a1a1a;
+    color: #1a1a1a;
+    background-color: #f7f7f9;
+    margin: -4px 5px 5px 0;
+    height: 22px;
+}
