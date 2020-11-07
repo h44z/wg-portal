@@ -90,12 +90,12 @@ func (s *Server) Setup() error {
 	}
 
 	// Setup user manager
-	s.users = NewUserManager()
-	if s.users == nil {
+	if s.users = NewUserManager(s.wg, s.ldapUsers); s.users == nil {
 		return errors.New("unable to setup user manager")
 	}
-	s.users.InitWithDevice(s.wg.GetDeviceInfo())
-	s.users.InitWithPeers(s.wg.GetPeerList())
+	if err := s.users.InitFromCurrentInterface(); err != nil {
+		return errors.New("unable to initialize user manager")
+	}
 
 	dir := s.getExecutableDirectory()
 	rDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))

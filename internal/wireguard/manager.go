@@ -80,6 +80,19 @@ func (m *Manager) AddPeer(cfg wgtypes.PeerConfig) error {
 	return nil
 }
 
+func (m *Manager) UpdatePeer(cfg wgtypes.PeerConfig) error {
+	m.mux.Lock()
+	defer m.mux.Unlock()
+
+	cfg.UpdateOnly = true
+	err := m.wg.ConfigureDevice(m.Cfg.DeviceName, wgtypes.Config{Peers: []wgtypes.PeerConfig{cfg}})
+	if err != nil {
+		return fmt.Errorf("could not configure WireGuard device: %w", err)
+	}
+
+	return nil
+}
+
 func (m *Manager) RemovePeer(pubKey string) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
@@ -100,4 +113,8 @@ func (m *Manager) RemovePeer(pubKey string) error {
 	}
 
 	return nil
+}
+
+func (m *Manager) UpdateDevice(name string, cfg wgtypes.Config) error {
+	return m.wg.ConfigureDevice(name, cfg)
 }

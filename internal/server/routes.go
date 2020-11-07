@@ -20,6 +20,12 @@ func SetupRoutes(s *Server) {
 	admin := s.server.Group("/admin")
 	admin.Use(s.RequireAuthentication(s.config.AdminLdapGroup))
 	admin.GET("/", s.GetAdminIndex)
+	admin.GET("/device/edit", s.GetAdminEditInterface)
+	admin.POST("/device/edit", s.PostAdminEditInterface)
+	admin.GET("/peer/edit", s.GetAdminEditPeer)
+	admin.POST("/peer/edit", s.PostAdminEditPeer)
+	admin.GET("/peer/create", s.GetAdminCreatePeer)
+	admin.POST("/peer/create", s.PostAdminCreatePeer)
 
 	// User routes
 	user := s.server.Group("/user")

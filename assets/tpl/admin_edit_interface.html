@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>{{ .Static.WebsiteTitle }} - Admin</title>
+    <meta name="description" content="{{ .Static.WebsiteTitle }}">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <!--link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"-->
+    <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+<body id="page-top">
+    {{template "prt_nav.html" .}}
+    <div class="container">
+        <h1>Edit interface <strong>{{.Device.DeviceName}}</strong></h1>
+
+        {{if $.Alerts.HasAlert}}
+            <div class="row">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="alert alert-{{$.Alerts.Type}}" role="alert">
+                            {{$.Alerts.Message}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {{end}}
+
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="device" value="{{.Device.DeviceName}}">
+            <h3>Server's interface configuration</h3>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputServerPublicKey">Public Key</label>
+                    <input type="text" name="pubkey" disabled class="form-control" id="inputServerPublicKey" value="{{.Device.PublicKey}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="inputListenPort">Listen port</label>
+                    <input type="number" name="port" class="form-control" id="inputListenPort" placeholder="51820" value="{{.Device.ListenPort}}">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="inputIPs">Server IP address</label>
+                    <input type="text" name="ip" class="form-control" id="inputIPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}">
+                </div>
+            </div>
+            <h3>Client's global configuration</h3>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputPublicEndpoint">Public Enpoint for Clients</label>
+                    <input type="text" name="endpoint" class="form-control" id="inputPublicEndpoint" placeholder="vpn.company.com:51820" value="{{.Device.Endpoint}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="inputDNS">DNS Servers</label>
+                    <input type="text" name="dns" class="form-control" id="inputDNS" placeholder="1.1.1.1" value="{{.Device.DNSStr}}">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="inputAllowedIP">Default allowed IPs</label>
+                    <input type="text" name="allowedip" class="form-control" id="inputAllowedIP" placeholder="10.6.6.0/24" value="{{.Device.AllowedIPsStr}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="inputMTU">Global MTU</label>
+                    <input type="number" name="mtu" class="form-control" id="inputMTU" placeholder="0" value="{{.Device.Mtu}}">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="inputPersistentKeepalive">Persistent Keepalive</label>
+                    <input type="number" name="keepalive" class="form-control" id="inputPersistentKeepalive" placeholder="16" value="{{.Device.PersistentKeepalive}}">
+                </div>
+            </div>
+            <h3>Interface configuration hooks</h3>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputPreUp">Pre Up</label>
+                    <input type="text" name="preup" class="form-control" id="inputPreUp" value="{{.Device.PreUp}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputPostUp">Post Up</label>
+                    <input type="text" name="postup" class="form-control" id="inputPostUp" value="{{.Device.PostUp}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputPreDown">Pre Down</label>
+                    <input type="text" name="predown" class="form-control" id="inputPreDown" value="{{.Device.PreDown}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputPostDown">Post Down</label>
+                    <input type="text" name="postdown" class="form-control" id="inputPostDown" value="{{.Device.PostDown}}">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="/admin" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+    {{template "prt_footer.html"}}
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/jquery.easing.js"></script>
+    <script src="/js/custom.js"></script>
+</body>
+
+</html>

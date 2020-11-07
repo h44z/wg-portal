@@ -95,7 +95,7 @@
                 </thead>
                 <tbody>
                 {{range $i, $p :=.Peers}}
-                    <tr id="user-pos-{{$i}}">
+                    <tr id="user-pos-{{$i}}" {{if $p.DeactivatedAt}}class="disabled-peer"{{end}}>
                         <th scope="row" class="list-image-cell">
                             <a href="#{{$p.UID}}" data-toggle="collapse" class="collapse-indicator collapsed"></a>
                             <!-- online check -->
@@ -104,11 +104,11 @@
                         <td>{{$p.PublicKey}}</td>
                         <td>{{$p.Email}}</td>
                         <td>{{$p.IPsStr}}</td>
-                        <td>{{$p.Peer.ReceiveBytes}} / {{$p.Peer.TransmitBytes}}</td>
-                        <td>{{$p.Peer.LastHandshakeTime}}</td>
+                        <td>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.ReceiveBytes}} / {{$p.Peer.TransmitBytes}}{{end}}</td>
+                        <td>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.LastHandshakeTime}}{{end}}</td>
                         <td>
                             {{if eq $.Session.IsAdmin true}}
-                                <a href="/admin/user/edit?pos={{$i}}"><i class="fas fa-cog"></i></a>
+                                <a href="/admin/peer/edit?pkey={{$p.PublicKey}}"><i class="fas fa-cog"></i></a>
                             {{end}}
                         </td>
                     </tr>
@@ -119,7 +119,7 @@
                                     <div class="col-md-6 leftBorder">
                                         <ul class="nav nav-tabs">
                                             <li class="nav-item">
-                                                <a class="nav-link active" data-toggle="tab" href="#t1{{$p.UID}}">General</a>
+                                                <a class="nav-link active" data-toggle="tab" href="#t1{{$p.UID}}">Personal</a>
                                             </li>
                                             <li class="nav-item">
                                                 <a class="nav-link" data-toggle="tab" href="#t2{{$p.UID}}">Configuration</a>
@@ -130,9 +130,17 @@
                                         </ul>
                                         <div class="tab-content" id="tabContent{{$p.UID}}">
                                             <div id="t1{{$p.UID}}" class="tab-pane fade active show">
-                                                <ul>
-                                                    <li>0</li>
-                                                </ul>
+                                                {{if not $p.LdapUser}}
+                                                    <p>No LDAP user-information available...</p>
+                                                {{else}}
+                                                    <ul>
+                                                        <li>Firstname: {{$p.LdapUser.Firstname}}</li>
+                                                        <li>Lastname: {{$p.LdapUser.Lastname}}</li>
+                                                        <li>Phone: {{$p.UID}}</li>
+                                                        <li>Mail: {{$p.LdapUser.Mail}}</li>
+                                                        <li>Department: {{$p.UID}}</li>
+                                                    </ul>
+                                                {{end}}
                                             </div>
                                             <div id="t2{{$p.UID}}" class="tab-pane fade">
                                                 <pre>{{$p.Config}}</pre>

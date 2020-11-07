@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>{{ .Static.WebsiteTitle }} - Admin</title>
+    <meta name="description" content="{{ .Static.WebsiteTitle }}">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <!--link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"-->
+    <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+<body id="page-top">
+    {{template "prt_nav.html" .}}
+    <div class="container">
+        {{if eq .Peer.UID ""}}
+            <h1>Create a new client</h1>
+        {{else}}
+            <h1>Edit client <strong>{{.Peer.Identifier}}</strong></h1>
+        {{end}}
+
+        {{if $.Alerts.HasAlert}}
+            <div class="row">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="alert alert-{{$.Alerts.Type}}" role="alert">
+                            {{$.Alerts.Message}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {{end}}
+
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="uid" value="{{.Peer.UID}}">
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputServerPublicKey">Public Key</label>
+                    <input type="text" name="pkey" disabled class="form-control" id="inputServerPublicKey" value="{{.Peer.PublicKey}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputIdentifier">Client Friendly Name</label>
+                    <input type="text" name="identifier" class="form-control" id="inputIdentifier" value="{{.Peer.Identifier}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputEmail">Client Email Address</label>
+                    <input type="email" name="mail" class="form-control" id="inputEmail" value="{{.Peer.Email}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputIP">Client IP Address</label>
+                    <input type="text" name="ip" class="form-control" id="inputIP" value="{{.Peer.IPsStr}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputAllowedIP">Allowed IPs</label>
+                    <input type="text" name="allowedip" class="form-control" id="inputAllowedIP" value="{{.Peer.AllowedIPsStr}}">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <div class="form-check form-check-inline">
+                    <input class="form-check-input" name="isdisabled" type="checkbox" value="true" id="inputDisabled" {{if .Peer.DeactivatedAt}}checked{{end}}>
+                    <label class="form-check-label" for="inputDisabled">
+                        Disabled
+                    </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" name="ignorekeepalive" type="checkbox" value="true" id="inputIgnoreKeepalive" {{if .Peer.IgnorePersistentKeepalive}}checked{{end}}>
+                        <label class="form-check-label" for="inputIgnoreKeepalive">
+                            Ignore persistent keepalive
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="/admin" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+    {{template "prt_footer.html"}}
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/jquery.easing.js"></script>
+    <script src="/js/custom.js"></script>
+</body>
+
+</html>

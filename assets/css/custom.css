@@ -48,3 +48,7 @@
 .navbar {
     padding: 0.5rem 1rem;
 }
+
+.disabled-peer {
+    color: #d03131;
+}

@@ -22,10 +22,14 @@ import (
 	"gorm.io/gorm"
 )
 
+//
+//  USER ----------------------------------------------------------------------------------------
+//
+
 type User struct {
-	Peer   wgtypes.Peer               `gorm:"-"`
-	User   *ldap.UserCacheHolderEntry `gorm:"-"` // optional, it is still possible to have users without ldap
-	Config string                     `gorm:"-"`
+	Peer     *wgtypes.Peer              `gorm:"-"`
+	LdapUser *ldap.UserCacheHolderEntry `gorm:"-"` // optional, it is still possible to have users without ldap
+	Config   string                     `gorm:"-"`
 
 	UID        string // uid for html identification
 	IsOnline   bool   `gorm:"-"`
@@ -46,6 +50,28 @@ type User struct {
 	UpdatedBy     string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+}
+
+func (u User) GetClientConfigFile(device Device) ([]byte, error) {
+	tpl, err := template.New("client").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.ClientCfgTpl)
+	if err != nil {
+		return nil, err
+	}
+
+	var tplBuff bytes.Buffer
+
+	err = tpl.Execute(&tplBuff, struct {
+		Client User
+		Server Device
+	}{
+		Client: u,
+		Server: device,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return tplBuff.Bytes(), nil
 }
 
 func (u User) GetPeerConfig() wgtypes.PeerConfig {
@@ -87,6 +113,18 @@ func (u User) GetQRCode() ([]byte, error) {
 	return png, nil
 }
 
+func (u User) IsValid() bool {
+	if u.PublicKey == "" {
+		return false
+	}
+
+	return true
+}
+
+//
+//  DEVICE --------------------------------------------------------------------------------------
+//
+
 type Device struct {
 	Interface *wgtypes.Device `gorm:"-"`
 
@@ -112,6 +150,9 @@ type Device struct {
 }
 
 func (d Device) IsValid() bool {
+	if d.PublicKey == "" {
+		return false
+	}
 	if len(d.IPs) == 0 {
 		return false
 	}
@@ -122,12 +163,33 @@ func (d Device) IsValid() bool {
 	return true
 }
 
-type UserManager struct {
-	db *gorm.DB
+func (d Device) GetDeviceConfig() wgtypes.Config {
+	var privateKey *wgtypes.Key
+	if d.PrivateKey != "" {
+		pKey, _ := wgtypes.ParseKey(d.PrivateKey)
+		privateKey = &pKey
+	}
+
+	cfg := wgtypes.Config{
+		PrivateKey: privateKey,
+		ListenPort: &d.ListenPort,
+	}
+
+	return cfg
 }
 
-func NewUserManager() *UserManager {
-	um := &UserManager{}
+//
+//  USER-MANAGER --------------------------------------------------------------------------------
+//
+
+type UserManager struct {
+	db        *gorm.DB
+	wg        *wireguard.Manager
+	ldapUsers *ldap.SynchronizedUserCacheHolder
+}
+
+func NewUserManager(wg *wireguard.Manager, ldapUsers *ldap.SynchronizedUserCacheHolder) *UserManager {
+	um := &UserManager{wg: wg, ldapUsers: ldapUsers}
 	var err error
 	um.db, err = gorm.Open(sqlite.Open("wg_portal.db"), &gorm.Config{})
 	if err != nil {
@@ -144,52 +206,32 @@ func NewUserManager() *UserManager {
 	return um
 }
 
-func (u *UserManager) InitWithPeers(peers []wgtypes.Peer, err error) {
+func (u *UserManager) InitFromCurrentInterface() error {
+	peers, err := u.wg.GetPeerList()
 	if err != nil {
 		log.Errorf("failed to init user-manager from peers: %v", err)
-		return
+		return err
 	}
-	for _, peer := range peers {
-		u.GetOrCreateUserForPeer(peer)
-	}
-}
-
-func (u *UserManager) InitWithDevice(dev *wgtypes.Device, err error) {
+	device, err := u.wg.GetDeviceInfo()
 	if err != nil {
 		log.Errorf("failed to init user-manager from device: %v", err)
-		return
-	}
-	u.GetOrCreateDevice(*dev)
-}
-
-func (u *UserManager) GetAllUsers() []User {
-	users := make([]User, 0)
-	u.db.Find(&users)
-
-	for i := range users {
-		users[i].AllowedIPs = strings.Split(users[i].AllowedIPsStr, ", ")
-		users[i].IPs = strings.Split(users[i].IPsStr, ", ")
-		tmpCfg, _ := u.GetPeerConfigFile(users[i])
-		users[i].Config = string(tmpCfg)
+		return err
 	}
 
-	return users
-}
-
-func (u *UserManager) GetDevice() Device {
-	devices := make([]Device, 0, 1)
-	u.db.Find(&devices)
-
-	for i := range devices {
-		devices[i].AllowedIPs = strings.Split(devices[i].AllowedIPsStr, ", ")
-		devices[i].IPs = strings.Split(devices[i].IPsStr, ", ")
-		devices[i].DNS = strings.Split(devices[i].DNSStr, ", ")
+	// Check if entries already exist in database, if not create them
+	for _, peer := range peers {
+		if err := u.validateOrCreateUserForPeer(peer); err != nil {
+			return err
+		}
+	}
+	if err := u.validateOrCreateDevice(*device); err != nil {
+		return err
 	}
 
-	return devices[0]
+	return nil
 }
 
-func (u *UserManager) GetOrCreateUserForPeer(peer wgtypes.Peer) User {
+func (u *UserManager) validateOrCreateUserForPeer(peer wgtypes.Peer) error {
 	user := User{}
 	u.db.Where("public_key = ?", peer.PublicKey.String()).FirstOrInit(&user)
 
@@ -215,25 +257,92 @@ func (u *UserManager) GetOrCreateUserForPeer(peer wgtypes.Peer) User {
 		res := u.db.Create(&user)
 		if res.Error != nil {
 			log.Errorf("failed to create autodetected peer: %v", res.Error)
+			return res.Error
 		}
 	}
 
-	user.IPs = strings.Split(user.IPsStr, ", ")
+	return nil
+}
+
+func (u *UserManager) validateOrCreateDevice(dev wgtypes.Device) error {
+	device := Device{}
+	u.db.Where("device_name = ?", dev.Name).FirstOrInit(&device)
+
+	if device.PublicKey == "" { // device not found, create
+		device.PublicKey = dev.PublicKey.String()
+		device.PrivateKey = dev.PrivateKey.String()
+		device.DeviceName = dev.Name
+		device.ListenPort = dev.ListenPort
+		device.Mtu = 0
+		device.PersistentKeepalive = 16 // Default
+
+		res := u.db.Create(&device)
+		if res.Error != nil {
+			log.Errorf("failed to create autodetected device: %v", res.Error)
+			return res.Error
+		}
+	}
+
+	return nil
+}
+
+func (u *UserManager) populateUserData(user *User) {
 	user.AllowedIPs = strings.Split(user.AllowedIPsStr, ", ")
-	tmpCfg, _ := u.GetPeerConfigFile(user)
+	user.IPs = strings.Split(user.IPsStr, ", ")
+	// Set config file
+	tmpCfg, _ := user.GetClientConfigFile(u.GetDevice())
 	user.Config = string(tmpCfg)
 
+	// set data from WireGuard interface
+	user.Peer, _ = u.wg.GetPeer(user.PublicKey)
+	user.IsOnline = false // todo: calculate online status
+
+	// set ldap data
+	user.LdapUser = u.ldapUsers.GetUserData(u.ldapUsers.GetUserDNByMail(user.Email))
+}
+
+func (u *UserManager) populateDeviceData(device *Device) {
+	device.AllowedIPs = strings.Split(device.AllowedIPsStr, ", ")
+	device.IPs = strings.Split(device.IPsStr, ", ")
+	device.DNS = strings.Split(device.DNSStr, ", ")
+
+	// set data from WireGuard interface
+	device.Interface, _ = u.wg.GetDeviceInfo()
+}
+
+func (u *UserManager) GetAllUsers() []User {
+	users := make([]User, 0)
+	u.db.Find(&users)
+
+	for i := range users {
+		u.populateUserData(&users[i])
+	}
+
+	return users
+}
+
+func (u *UserManager) GetDevice() Device {
+	devices := make([]Device, 0, 1)
+	u.db.Find(&devices)
+
+	for i := range devices {
+		u.populateDeviceData(&devices[i])
+	}
+
+	return devices[0] // use first device for now... more to come?
+}
+
+func (u *UserManager) GetUserByKey(publicKey string) User {
+	user := User{}
+	u.db.Where("public_key = ?", publicKey).FirstOrInit(&user)
+	u.populateUserData(&user)
 	return user
 }
 
-func (u *UserManager) GetUser(publicKey string) User {
+func (u *UserManager) GetUserByMail(mail string) User {
 	user := User{}
-	u.db.Where("public_key = ?", publicKey).FirstOrInit(&user)
-
-	user.IPs = strings.Split(user.IPsStr, ", ")
-	user.AllowedIPs = strings.Split(user.AllowedIPsStr, ", ")
-	tmpCfg, _ := u.GetPeerConfigFile(user)
-	user.Config = string(tmpCfg)
+	u.db.Where("email = ?", mail).FirstOrInit(&user)
+	u.populateUserData(&user)
 
 	return user
 }
@@ -262,6 +371,21 @@ func (u *UserManager) UpdateUser(user User) error {
 	res := u.db.Save(&user)
 	if res.Error != nil {
 		log.Errorf("failed to update user: %v", res.Error)
+		return res.Error
+	}
+
+	return nil
+}
+
+func (u *UserManager) UpdateDevice(device Device) error {
+	device.UpdatedAt = time.Now()
+	device.AllowedIPsStr = strings.Join(device.AllowedIPs, ", ")
+	device.IPsStr = strings.Join(device.IPs, ", ")
+	device.DNSStr = strings.Join(device.DNS, ", ")
+
+	res := u.db.Save(&device)
+	if res.Error != nil {
+		log.Errorf("failed to update device: %v", res.Error)
 		return res.Error
 	}
 
@@ -327,51 +451,4 @@ func (u *UserManager) GetAvailableIp(cidr string, reserved []string) (string, er
 	}
 
 	return "", errors.New("no more available address from cidr")
-}
-
-func (u *UserManager) GetOrCreateDevice(dev wgtypes.Device) Device {
-	device := Device{}
-	u.db.Where("device_name = ?", dev.Name).FirstOrInit(&device)
-
-	if device.PublicKey == "" { // device not found, create
-		device.PublicKey = dev.PublicKey.String()
-		device.PrivateKey = dev.PrivateKey.String()
-		device.DeviceName = dev.Name
-		device.ListenPort = dev.ListenPort
-		device.Mtu = 0
-		device.PersistentKeepalive = 16 // Default
-
-		res := u.db.Create(&device)
-		if res.Error != nil {
-			log.Errorf("failed to create autodetected device: %v", res.Error)
-		}
-	}
-
-	device.IPs = strings.Split(device.IPsStr, ", ")
-	device.AllowedIPs = strings.Split(device.AllowedIPsStr, ", ")
-	device.DNS = strings.Split(device.DNSStr, ", ")
-
-	return device
-}
-
-func (u *UserManager) GetPeerConfigFile(user User) ([]byte, error) {
-	tpl, err := template.New("client").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.ClientCfgTpl)
-	if err != nil {
-		return nil, err
-	}
-
-	var tplBuff bytes.Buffer
-
-	err = tpl.Execute(&tplBuff, struct {
-		Client User
-		Server Device
-	}{
-		Client: user,
-		Server: u.GetDevice(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return tplBuff.Bytes(), nil
 }
