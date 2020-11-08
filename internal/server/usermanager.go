@@ -32,7 +32,7 @@ import (
 var cidrList validator.Func = func(fl validator.FieldLevel) bool {
 	cidrListStr := fl.Field().String()
 
-	cidrList := common.ParseIPList(cidrListStr)
+	cidrList := common.ParseStringList(cidrListStr)
 	for i := range cidrList {
 		_, _, err := net.ParseCIDR(cidrList[i])
 		if err != nil {
@@ -45,7 +45,7 @@ var cidrList validator.Func = func(fl validator.FieldLevel) bool {
 var ipList validator.Func = func(fl validator.FieldLevel) bool {
 	ipListStr := fl.Field().String()
 
-	ipList := common.ParseIPList(ipListStr)
+	ipList := common.ParseStringList(ipListStr)
 	for i := range ipList {
 		ip := net.ParseIP(ipList[i])
 		if ip == nil {

@@ -39,19 +39,19 @@ func IsIPv6(address string) bool {
 	return ip.To4() == nil
 }
 
-func ParseIPList(lst string) []string {
-	ips := strings.Split(lst, ",")
-	validatedIPs := make([]string, 0, len(ips))
-	for i := range ips {
-		ips[i] = strings.TrimSpace(ips[i])
-		if ips[i] != "" {
-			validatedIPs = append(validatedIPs, ips[i])
+func ParseStringList(lst string) []string {
+	tokens := strings.Split(lst, ",")
+	validatedTokens := make([]string, 0, len(tokens))
+	for i := range tokens {
+		tokens[i] = strings.TrimSpace(tokens[i])
+		if tokens[i] != "" {
+			validatedTokens = append(validatedTokens, tokens[i])
 		}
 	}
 
-	return validatedIPs
+	return validatedTokens
 }
 
-func IPListToString(lst []string) string {
+func ListToString(lst []string) string {
 	return strings.Join(lst, ", ")
 }

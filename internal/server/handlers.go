@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/h44z/wg-portal/internal/ldap"
 
@@ -89,12 +92,12 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 		return
 	}
 	// Clean list input
-	formDevice.IPs = common.ParseIPList(formDevice.IPsStr)
-	formDevice.AllowedIPs = common.ParseIPList(formDevice.AllowedIPsStr)
-	formDevice.DNS = common.ParseIPList(formDevice.DNSStr)
-	formDevice.IPsStr = common.IPListToString(formDevice.IPs)
-	formDevice.AllowedIPsStr = common.IPListToString(formDevice.AllowedIPs)
-	formDevice.DNSStr = common.IPListToString(formDevice.DNS)
+	formDevice.IPs = common.ParseStringList(formDevice.IPsStr)
+	formDevice.AllowedIPs = common.ParseStringList(formDevice.AllowedIPsStr)
+	formDevice.DNS = common.ParseStringList(formDevice.DNSStr)
+	formDevice.IPsStr = common.ListToString(formDevice.IPs)
+	formDevice.AllowedIPsStr = common.ListToString(formDevice.AllowedIPs)
+	formDevice.DNSStr = common.ListToString(formDevice.DNS)
 
 	// Update WireGuard device
 	err := s.wg.UpdateDevice(formDevice.DeviceName, formDevice.GetDeviceConfig())
@@ -149,10 +152,10 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	}
 
 	// Clean list input
-	formUser.IPs = common.ParseIPList(formUser.IPsStr)
-	formUser.AllowedIPs = common.ParseIPList(formUser.AllowedIPsStr)
-	formUser.IPsStr = common.IPListToString(formUser.IPs)
-	formUser.AllowedIPsStr = common.IPListToString(formUser.AllowedIPs)
+	formUser.IPs = common.ParseStringList(formUser.IPsStr)
+	formUser.AllowedIPs = common.ParseStringList(formUser.AllowedIPsStr)
+	formUser.IPsStr = common.ListToString(formUser.IPs)
+	formUser.AllowedIPsStr = common.ListToString(formUser.AllowedIPs)
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
@@ -244,10 +247,10 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	}
 
 	// Clean list input
-	formUser.IPs = common.ParseIPList(formUser.IPsStr)
-	formUser.AllowedIPs = common.ParseIPList(formUser.AllowedIPsStr)
-	formUser.IPsStr = common.IPListToString(formUser.IPs)
-	formUser.AllowedIPsStr = common.IPListToString(formUser.AllowedIPs)
+	formUser.IPs = common.ParseStringList(formUser.IPsStr)
+	formUser.AllowedIPs = common.ParseStringList(formUser.AllowedIPsStr)
+	formUser.IPsStr = common.ListToString(formUser.IPs)
+	formUser.AllowedIPsStr = common.ListToString(formUser.AllowedIPs)
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
@@ -265,7 +268,7 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 		}
 	}
 
-	// Update in database
+	// Create in database
 	err := s.users.CreateUser(formUser)
 	if err != nil {
 		s.setAlert(c, "failed to add user in database: "+err.Error(), "danger")
@@ -295,6 +298,73 @@ func (s *Server) GetAdminCreateLdapPeers(c *gin.Context) {
 		Users:   s.ldapUsers.GetSortedUsers("sn", "asc"),
 		Device:  device,
 	})
+}
+
+func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
+	email := c.PostForm("email")
+	identifier := c.PostForm("identifier")
+	if identifier == "" {
+		identifier = "Default"
+	}
+	if email == "" {
+		s.setAlert(c, "missing email address", "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/peer/createldap")
+		return
+	}
+	emails := common.ParseStringList(email)
+	for i := range emails {
+		// TODO: also check email addr for validity?
+		if !strings.ContainsRune(emails[i], '@') || s.ldapUsers.GetUserDNByMail(emails[i]) == "" {
+			s.setAlert(c, "invalid email address: "+emails[i], "danger")
+			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap")
+			return
+		}
+	}
+
+	log.Infof("creating %d ldap peers", len(emails))
+	device := s.users.GetDevice()
+
+	for i := range emails {
+		ldapUser := s.ldapUsers.GetUserData(s.ldapUsers.GetUserDNByMail(emails[i]))
+		user := User{}
+		user.AllowedIPsStr = device.AllowedIPsStr
+		user.IPsStr = "" // TODO: add a valid ip here
+		psk, err := wgtypes.GenerateKey()
+		if err != nil {
+			s.HandleError(c, http.StatusInternalServerError, "Preshared key generation error", err.Error())
+			return
+		}
+		key, err := wgtypes.GeneratePrivateKey()
+		if err != nil {
+			s.HandleError(c, http.StatusInternalServerError, "Private key generation error", err.Error())
+			return
+		}
+		user.PresharedKey = psk.String()
+		user.PrivateKey = key.String()
+		user.PublicKey = key.PublicKey().String()
+		user.UID = fmt.Sprintf("u%x", md5.Sum([]byte(user.PublicKey)))
+		user.Email = emails[i]
+		user.Identifier = fmt.Sprintf("%s %s (%s)", ldapUser.Firstname, ldapUser.Lastname, identifier)
+
+		// Create wireguard interface
+		err = s.wg.AddPeer(user.GetPeerConfig())
+		if err != nil {
+			s.setAlert(c, "failed to add peer in WireGuard: "+err.Error(), "danger")
+			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap")
+			return
+		}
+
+		// Create in database
+		err = s.users.CreateUser(user)
+		if err != nil {
+			s.setAlert(c, "failed to add user in database: "+err.Error(), "danger")
+			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap")
+			return
+		}
+	}
+
+	s.setAlert(c, "client(s) created successfully", "success")
+	c.Redirect(http.StatusSeeOther, "/admin/peer/createldap")
 }
 
 func (s *Server) GetUserQRCode(c *gin.Context) {

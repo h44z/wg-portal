@@ -111,8 +111,13 @@
                         <td>{{$p.PublicKey}}</td>
                         <td>{{$p.Email}}</td>
                         <td>{{$p.IPsStr}}</td>
+                        {{if not $p.Peer}}
+                            <td>? / ?</td>
+                            <td>?</td>
+                        {{else}}
                         <td>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.ReceiveBytes}} / {{$p.Peer.TransmitBytes}}{{end}}</td>
                         <td>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.LastHandshakeTime}}{{end}}</td>
+                        {{end}}
                         <td>
                             {{if eq $.Session.IsAdmin true}}
                                 <a href="/admin/peer/edit?pkey={{$p.PublicKey}}"><i class="fas fa-cog"></i></a>
