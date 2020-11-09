@@ -11,9 +11,9 @@
     <link rel="stylesheet" href="/css/custom.css">
 </head>
 
-<body id="page-top">
+<body id="page-top" class="d-flex flex-column min-vh-100">
     {{template "prt_nav.html" .}}
-    <div class="container">
+    <div class="container mt-5">
         {{if .Peer.IsNew}}
             <h1>Create a new client</h1>
         {{else}}
@@ -69,15 +69,15 @@
 
             <div class="form-row">
                 <div class="form-group col-md-12">
-                    <div class="form-check form-check-inline">
-                    <input class="form-check-input" name="isdisabled" type="checkbox" value="true" id="inputDisabled" {{if .Peer.DeactivatedAt}}checked{{end}}>
-                    <label class="form-check-label" for="inputDisabled">
-                        Disabled
-                    </label>
+                    <div class="custom-control custom-switch">
+                        <input class="custom-control-input" name="isdisabled" type="checkbox" value="true" id="inputDisabled" {{if .Peer.DeactivatedAt}}checked{{end}}>
+                        <label class="custom-control-label" for="inputDisabled">
+                            Disabled
+                        </label>
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" name="ignorekeepalive" type="checkbox" value="true" id="inputIgnoreKeepalive" {{if .Peer.IgnorePersistentKeepalive}}checked{{end}}>
-                        <label class="form-check-label" for="inputIgnoreKeepalive">
+                    <div class="custom-control custom-switch">
+                        <input class="custom-control-input" name="ignorekeepalive" type="checkbox" value="true" id="inputIgnoreKeepalive" {{if .Peer.IgnorePersistentKeepalive}}checked{{end}}>
+                        <label class="custom-control-label" for="inputIgnoreKeepalive">
                             Ignore persistent keepalive
                         </label>
                     </div>

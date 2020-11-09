@@ -16,23 +16,32 @@
 
 <body class="bg-gradient-primary">
     <div class="container">
-        <form class="form-signin" method="post">
-            <h2 class="form-signin-heading">Please sign in</h2>
-            <label for="inputUser" class="sr-only">Username</label>
-            <input name="username" type="text" id="inputUser" class="form-control" placeholder="user.name" required="" autofocus="">
-            <label for="inputPassword" class="sr-only">Password</label>
-            <input name="password" type="password" id="inputPassword" class="form-control" placeholder="password" required="">
-            <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        <div class="card mt-5">
+            <div class="card-header">Please sign in</div>
+            <div class="card-body">
+                <form class="form-signin" method="post">
+                    <div class="form-group">
+                        <label for="inputUsername">Username</label>
+                        <input type="text" name="username" class="form-control" id="inputUsername" aria-describedby="usernameHelp" placeholder="Enter username">
+                        <small id="usernameHelp" class="form-text text-muted">Please enter your LDAP username, not the email address.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputPassword">Password</label>
+                        <input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password">
+                    </div>
+                    <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
 
-            {{ if eq .error true }}
-                <hr>
-                <span class="text-danger">{{.message}}</span>
-            {{end}}
-        </form>
+                    {{ if eq .error true }}
+                        <hr>
+                        <span class="text-danger">{{.message}}</span>
+                    {{end}}
+                </form>
 
-        <div class="card shadow-lg o-hidden border-0 my-5">
-            <div class="card-body p-0">
-                <a href="/" class="btn btn-white btn-block text-primary btn-user">Go Home</a>
+                <div class="card shadow-lg o-hidden border-0 my-5">
+                    <div class="card-body p-0">
+                        <a href="/" class="btn btn-white btn-block text-primary btn-user">Go Home</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

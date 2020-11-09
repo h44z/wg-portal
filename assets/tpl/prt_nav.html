@@ -7,11 +7,12 @@
     <div id="topNavbar" class="navbar-collapse collapse">
         <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
             <li class="nav-spacer"></li>
+            {{with eq $.Session.LoggedIn true}}{{with eq $.Session.IsAdmin true}}
             <form class="form-inline my-2 my-lg-0" action="/search">
                 <input class="form-control mr-sm-2" name="search" type="search" placeholder="Search" aria-label="Search">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit"><i class="fa fa-search"></i></button>
             </form>
-
+            {{end}}{{end}}
         </ul>
         {{if eq $.Session.LoggedIn true}}
             <div class="nav-item dropdown">

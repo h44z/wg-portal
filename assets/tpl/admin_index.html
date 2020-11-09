@@ -11,10 +11,10 @@
     <link rel="stylesheet" href="/css/custom.css">
 </head>
 
-<body id="page-top">
+<body id="page-top" class="d-flex flex-column min-vh-100">
     {{template "prt_nav.html" .}}
-    <div class="container">
-        <h1 class="mt-2">WireGuard VPN Administration</h1>
+    <div class="container mt-5">
+        <h1>WireGuard VPN Administration</h1>
 
         <div class="card">
             <div class="card-header">
@@ -95,7 +95,6 @@
                     <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "pubKey"}}"></i></a></th>
                     <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "mail"}}"></i></a></th>
                     <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "ip"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=traffic">Traffic <i class="fa fa-fw {{.Session.GetSortIcon "traffic"}}"></i></a></th>
                     <th scope="col"><a href="?sort=handshake">Last Handshake <i class="fa fa-fw {{.Session.GetSortIcon "handshake"}}"></i></a></th>
                     <th scope="col"></th><!-- Actions -->
                 </tr>
@@ -112,10 +111,8 @@
                         <td>{{$p.Email}}</td>
                         <td>{{$p.IPsStr}}</td>
                         {{if not $p.Peer}}
-                            <td>? / ?</td>
                             <td>?</td>
                         {{else}}
-                        <td>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.ReceiveBytes}} / {{$p.Peer.TransmitBytes}}{{end}}</td>
                         <td>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.LastHandshakeTime}}{{end}}</td>
                         {{end}}
                         <td>
@@ -125,7 +122,7 @@
                         </td>
                     </tr>
                     <tr class="hiddenRow">
-                        <td colspan="8" class="hiddenCell" style="white-space:nowrap">
+                        <td colspan="7" class="hiddenCell" style="white-space:nowrap">
                             <div class="collapse" id="{{$p.UID}}" data-parent="#userTable">
                                 <div class="row collapsedRow">
                                     <div class="col-md-6 leftBorder">
@@ -142,6 +139,7 @@
                                         </ul>
                                         <div class="tab-content" id="tabContent{{$p.UID}}">
                                             <div id="t1{{$p.UID}}" class="tab-pane fade active show">
+                                                <h4>User details</h4>
                                                 {{if not $p.LdapUser}}
                                                     <p>No LDAP user-information available...</p>
                                                 {{else}}
@@ -152,6 +150,12 @@
                                                         <li>Mail: {{$p.LdapUser.Mail}}</li>
                                                         <li>Department: {{$p.UID}}</li>
                                                     </ul>
+                                                {{end}}
+                                                <h4>Traffic</h4>
+                                                {{if not $p.Peer}}
+                                                    <p>No Traffic data available...</p>
+                                                {{else}}
+                                                    <p>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.ReceiveBytes}} / {{$p.Peer.TransmitBytes}}{{end}}</p>
                                                 {{end}}
                                             </div>
                                             <div id="t2{{$p.UID}}" class="tab-pane fade">

@@ -11,9 +11,9 @@
     <link rel="stylesheet" href="/css/custom.css">
 </head>
 
-<body id="page-top">
+<body id="page-top" class="d-flex flex-column min-vh-100">
     {{template "prt_nav.html" .}}
-    <div class="container">
+    <div class="container mt-5 main-app">
         <h1>Edit interface <strong>{{.Device.DeviceName}}</strong></h1>
 
         {{if $.Alerts.HasAlert}}
