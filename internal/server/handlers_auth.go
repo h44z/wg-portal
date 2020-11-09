@@ -68,7 +68,7 @@ func (s *Server) PostLogin(c *gin.Context) {
 		UserName:      username,
 		Firstname:     userData.Firstname,
 		Lastname:      userData.Lastname,
-		SortedBy:      "sn",
+		SortedBy:      "mail",
 		SortDirection: "asc",
 		Search:        "",
 	}

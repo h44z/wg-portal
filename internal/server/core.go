@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/gob"
 	"errors"
+	"html/template"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -15,7 +16,8 @@ import (
 	"github.com/h44z/wg-portal/internal/ldap"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
 )
 
@@ -59,9 +61,10 @@ type StaticData struct {
 
 type Server struct {
 	// Core components
-	config *common.Config
-	server *gin.Engine
-	users  *UserManager
+	config  *common.Config
+	server  *gin.Engine
+	users   *UserManager
+	mailTpl *template.Template
 
 	// WireGuard stuff
 	wg *wireguard.Manager
@@ -105,6 +108,11 @@ func (s *Server) Setup() error {
 	rDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	log.Infof("Real working directory: %s", rDir)
 	log.Infof("Current working directory: %s", dir)
+	var err error
+	s.mailTpl, err = template.New("email").ParseGlob(filepath.Join(dir, "/assets/tpl/email.html"))
+	if err != nil {
+		return errors.New("unable to pare mail template")
+	}
 
 	// Setup http server
 	s.server = gin.Default()
@@ -112,7 +120,7 @@ func (s *Server) Setup() error {
 	// Setup templates
 	log.Infof("Loading templates from: %s", filepath.Join(dir, "/assets/tpl/*.html"))
 	s.server.LoadHTMLGlob(filepath.Join(dir, "/assets/tpl/*.html"))
-	s.server.Use(sessions.Sessions("authsession", sessions.NewCookieStore([]byte("secret"))))
+	s.server.Use(sessions.Sessions("authsession", memstore.NewStore([]byte("secret")))) // TODO: change key?
 
 	// Serve static files
 	s.server.Static("/css", filepath.Join(dir, "/assets/css"))
@@ -168,7 +176,7 @@ func (s *Server) getSessionData(c *gin.Context) SessionData {
 		sessionData = rawSessionData.(SessionData)
 	} else {
 		sessionData = SessionData{
-			SortedBy:      "sn",
+			SortedBy:      "mail",
 			SortDirection: "asc",
 			Firstname:     "",
 			Lastname:      "",

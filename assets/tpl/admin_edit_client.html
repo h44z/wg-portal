@@ -21,14 +21,8 @@
         {{end}}
 
         {{if $.Alerts.HasAlert}}
-            <div class="row">
-                <div class="form-row">
-                    <div class="col-md-12">
-                        <div class="alert alert-{{$.Alerts.Type}}" role="alert">
-                            {{$.Alerts.Message}}
-                        </div>
-                    </div>
-                </div>
+            <div class="alert alert-{{$.Alerts.Type}}" role="alert">
+                {{$.Alerts.Message}}
             </div>
         {{end}}
 

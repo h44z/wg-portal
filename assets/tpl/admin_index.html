@@ -15,12 +15,18 @@
     {{template "prt_nav.html" .}}
     <div class="container mt-5">
         <h1>WireGuard VPN Administration</h1>
-
+        {{if $.Alerts.HasAlert}}
+            <div class="alert alert-{{$.Alerts.Type}}" role="alert">
+                {{$.Alerts.Message}}
+            </div>
+        {{end}}
         <div class="card">
             <div class="card-header">
                 <div class="d-flex align-items-center">
                     <span class="mr-auto">Interface status for <strong>{{.Device.DeviceName}}</strong></span>
-                    <a href="/admin/device/edit"><i class="fas fa-cog"></i></a>
+                    <a href="/admin/device/download?dev={{.Device.DeviceName}}"><i class="fas fa-download"></i></a>
+                    &nbsp;&nbsp;&nbsp;
+                    <a href="/admin/device/edit?dev={{.Device.DeviceName}}"><i class="fas fa-cog"></i></a>
                 </div>
             </div>
             <div class="card-body">
@@ -43,6 +49,10 @@
                             <tr>
                                 <td>Enabled Peers:</td>
                                 <td>{{len .Device.Interface.Peers}}</td>
+                            </tr>
+                            <tr>
+                                <td>Total Peers:</td>
+                                <td>{{.TotalPeers}}</td>
                             </tr>
                             </tbody>
                         </table>
@@ -79,11 +89,11 @@
         </div>
         <div class="mt-4 row">
             <div class="col-sm-10 col-12">
-                <h2>Current VPN Users</h2>
+                <h2 class="mt-2">Current VPN Users</h2>
             </div>
-            <div class="col-sm-2 col-12">
-                <a href="/admin/peer/createldap" title="Add a LDAP user" class="btn btn-primary pull-right"><i class="fa fa-fw fa-user-plus"></i></a>
-                <a href="/admin/peer/create" title="Manual add a user" class="btn btn-primary pull-right"><i class="fa fa-fw fa-plus"></i>M</a>
+            <div class="col-sm-2 col-12 text-right">
+                <a href="/admin/peer/createldap" title="Add a LDAP user" class="btn btn-primary"><i class="fa fa-fw fa-user-plus"></i></a>
+                <a href="/admin/peer/create" title="Manual add a user" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
             </div>
         </div>
         <div class="mt-2 table-responsive">
@@ -95,7 +105,7 @@
                     <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "pubKey"}}"></i></a></th>
                     <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "mail"}}"></i></a></th>
                     <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "ip"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=handshake">Last Handshake <i class="fa fa-fw {{.Session.GetSortIcon "handshake"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{.Session.GetSortIcon "handshake"}}"></i></a></th>
                     <th scope="col"></th><!-- Actions -->
                 </tr>
                 </thead>
@@ -110,11 +120,7 @@
                         <td>{{$p.PublicKey}}</td>
                         <td>{{$p.Email}}</td>
                         <td>{{$p.IPsStr}}</td>
-                        {{if not $p.Peer}}
-                            <td>?</td>
-                        {{else}}
-                        <td>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.LastHandshakeTime}}{{end}}</td>
-                        {{end}}
+                        <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{{$p.LastHandshakeTime}}">{{$p.LastHandshake}}</span></td>
                         <td>
                             {{if eq $.Session.IsAdmin true}}
                                 <a href="/admin/peer/edit?pkey={{$p.PublicKey}}"><i class="fas fa-cog"></i></a>
@@ -166,8 +172,14 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <img class="list-image-large" src="/user/qrcode?pkey={{$p.PublicKey}}"/>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="float-right mt-5">
+                                        <a href="/admin/peer/download?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Download configuration">Download</a>
+                                        <a href="/admin/peer/email?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Send configuration via Email">Email</a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

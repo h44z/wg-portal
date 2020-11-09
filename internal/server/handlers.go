@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -54,21 +55,60 @@ func (s *Server) HandleError(c *gin.Context, code int, message, details string) 
 }
 
 func (s *Server) GetAdminIndex(c *gin.Context) {
+	currentSession := s.getSessionData(c)
+
+	sort := c.Query("sort")
+	if sort != "" {
+		if currentSession.SortedBy != sort {
+			currentSession.SortedBy = sort
+			currentSession.SortDirection = "asc"
+		} else {
+			if currentSession.SortDirection == "asc" {
+				currentSession.SortDirection = "desc"
+			} else {
+				currentSession.SortDirection = "asc"
+			}
+		}
+
+		if err := s.updateSessionData(c, currentSession); err != nil {
+			s.HandleError(c, http.StatusInternalServerError, "sort error", "failed to save session")
+			return
+		}
+		c.Redirect(http.StatusSeeOther, "/admin")
+		return
+	}
+
+	search, searching := c.GetQuery("search")
+	if searching {
+		currentSession.Search = search
+
+		if err := s.updateSessionData(c, currentSession); err != nil {
+			s.HandleError(c, http.StatusInternalServerError, "search error", "failed to save session")
+			return
+		}
+		c.Redirect(http.StatusSeeOther, "/admin")
+		return
+	}
+
 	device := s.users.GetDevice()
-	users := s.users.GetAllUsers()
+	users := s.users.GetFilteredAndSortedUsers(currentSession.SortedBy, currentSession.SortDirection, currentSession.Search)
 
 	c.HTML(http.StatusOK, "admin_index.html", struct {
-		Route   string
-		Session SessionData
-		Static  StaticData
-		Peers   []User
-		Device  Device
+		Route      string
+		Alerts     AlertData
+		Session    SessionData
+		Static     StaticData
+		Peers      []User
+		TotalPeers int
+		Device     Device
 	}{
-		Route:   c.Request.URL.Path,
-		Session: s.getSessionData(c),
-		Static:  s.getStaticData(),
-		Peers:   users,
-		Device:  device,
+		Route:      c.Request.URL.Path,
+		Alerts:     s.getAlertData(c),
+		Session:    currentSession,
+		Static:     s.getStaticData(),
+		Peers:      users,
+		TotalPeers: len(s.users.GetAllUsers()),
+		Device:     device,
 	})
 }
 
@@ -354,6 +394,85 @@ func (s *Server) GetUserQRCode(c *gin.Context) {
 		return
 	}
 	c.Data(http.StatusOK, "image/png", png)
+	return
+}
+
+func (s *Server) GetUserConfig(c *gin.Context) {
+	user := s.users.GetUserByKey(c.Query("pkey"))
+	cfg, err := user.GetClientConfigFile(s.users.GetDevice())
+	if err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment; filename="+user.GetConfigFileName())
+	c.Data(http.StatusOK, "application/config", cfg)
+	return
+}
+
+func (s *Server) GetUserConfigMail(c *gin.Context) {
+	user := s.users.GetUserByKey(c.Query("pkey"))
+	cfg, err := user.GetClientConfigFile(s.users.GetDevice())
+	if err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
+		return
+	}
+	png, err := user.GetQRCode()
+	if err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "QRCode error", err.Error())
+		return
+	}
+	// Apply mail template
+	var tplBuff bytes.Buffer
+	if err := s.mailTpl.Execute(&tplBuff, struct {
+		Client        User
+		QrcodePngName string
+	}{
+		Client:        user,
+		QrcodePngName: "wireguard-config.png",
+	}); err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "Template error", err.Error())
+		return
+	}
+
+	// Send mail
+	attachments := []common.MailAttachment{
+		{
+			Name:        user.GetConfigFileName(),
+			ContentType: "application/config",
+			Data:        bytes.NewReader(cfg),
+		},
+		{
+			Name:        "wireguard-config.png",
+			ContentType: "image/png",
+			Data:        bytes.NewReader(png),
+		},
+	}
+
+	if err := common.SendEmailWithAttachments(s.config.Email, s.config.Core.MailFrom, "", "WireGuard VPN Configuration",
+		"Your mail client does not support HTML. Please find the configuration attached to this mail.", tplBuff.String(),
+		[]string{user.Email}, attachments); err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "Email error", err.Error())
+		return
+	}
+
+	s.setAlert(c, "mail sent successfully", "success")
+	c.Redirect(http.StatusSeeOther, "/admin")
+}
+
+func (s *Server) GetDeviceConfig(c *gin.Context) {
+	device := s.users.GetDevice()
+	users := s.users.GetActiveUsers()
+	cfg, err := device.GetDeviceConfigFile(users)
+	if err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
+		return
+	}
+
+	filename := strings.ToLower(device.DeviceName) + ".conf"
+
+	c.Header("Content-Disposition", "attachment; filename="+filename)
+	c.Data(http.StatusOK, "application/config", cfg)
 	return
 }
 

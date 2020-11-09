@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"regexp"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -72,11 +74,13 @@ type User struct {
 	LdapUser *ldap.UserCacheHolderEntry `gorm:"-"` // optional, it is still possible to have users without ldap
 	Config   string                     `gorm:"-"`
 
-	UID        string `form:"uid" binding:"alphanum"` // uid for html identification
-	IsOnline   bool   `gorm:"-"`
-	IsNew      bool   `gorm:"-"`
-	Identifier string `form:"identifier" binding:"required,lt=64"` // Identifier AND Email make a WireGuard peer unique
-	Email      string `gorm:"index" form:"mail" binding:"required,email"`
+	UID               string `form:"uid" binding:"alphanum"` // uid for html identification
+	IsOnline          bool   `gorm:"-"`
+	IsNew             bool   `gorm:"-"`
+	Identifier        string `form:"identifier" binding:"required,lt=64"` // Identifier AND Email make a WireGuard peer unique
+	Email             string `gorm:"index" form:"mail" binding:"required,email"`
+	LastHandshake     string `gorm:"-"`
+	LastHandshakeTime string `gorm:"-"`
 
 	IgnorePersistentKeepalive bool     `form:"ignorekeepalive"`
 	PresharedKey              string   `form:"presharedkey" binding:"omitempty,base64"`
@@ -183,6 +187,11 @@ func (u User) ToMap() map[string]string {
 	return out
 }
 
+func (u User) GetConfigFileName() string {
+	reg := regexp.MustCompile("[^a-zA-Z0-9_-]+")
+	return reg.ReplaceAllString(strings.ReplaceAll(u.Identifier, " ", "-"), "") + ".conf"
+}
+
 //
 //  DEVICE --------------------------------------------------------------------------------------
 //
@@ -238,6 +247,28 @@ func (d Device) GetDeviceConfig() wgtypes.Config {
 	}
 
 	return cfg
+}
+
+func (d Device) GetDeviceConfigFile(clients []User) ([]byte, error) {
+	tpl, err := template.New("server").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.DeviceCfgTpl)
+	if err != nil {
+		return nil, err
+	}
+
+	var tplBuff bytes.Buffer
+
+	err = tpl.Execute(&tplBuff, struct {
+		Clients []User
+		Server  Device
+	}{
+		Clients: clients,
+		Server:  d,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return tplBuff.Bytes(), nil
 }
 
 //
@@ -357,6 +388,23 @@ func (u *UserManager) populateUserData(user *User) {
 
 	// set data from WireGuard interface
 	user.Peer, _ = u.wg.GetPeer(user.PublicKey)
+	user.LastHandshake = "never"
+	user.LastHandshakeTime = "Never connected, or user is disabled."
+	if user.Peer != nil {
+		since := time.Since(user.Peer.LastHandshakeTime)
+		sinceSeconds := int(since.Round(time.Second).Seconds())
+		sinceMinutes := int(sinceSeconds / 60)
+		sinceSeconds -= sinceMinutes * 60
+
+		if sinceMinutes > 2*10080 { // 2 weeks
+			user.LastHandshake = "a while ago"
+		} else if sinceMinutes > 10080 { // 1 week
+			user.LastHandshake = "a week ago"
+		} else {
+			user.LastHandshake = fmt.Sprintf("%02dm %02ds", sinceMinutes, sinceSeconds)
+		}
+		user.LastHandshakeTime = user.Peer.LastHandshakeTime.Format(time.UnixDate)
+	}
 	user.IsOnline = false // todo: calculate online status
 
 	// set ldap data
@@ -381,6 +429,70 @@ func (u *UserManager) GetAllUsers() []User {
 	}
 
 	return users
+}
+
+func (u *UserManager) GetActiveUsers() []User {
+	users := make([]User, 0)
+	u.db.Where("deactivated_at IS NULL").Find(&users)
+
+	for i := range users {
+		u.populateUserData(&users[i])
+	}
+
+	return users
+}
+
+func (u *UserManager) GetFilteredAndSortedUsers(sortKey, sortDirection, search string) []User {
+	users := make([]User, 0)
+	u.db.Find(&users)
+
+	filteredUsers := make([]User, 0, len(users))
+	for i := range users {
+		u.populateUserData(&users[i])
+
+		if search == "" ||
+			strings.Contains(users[i].Email, search) ||
+			strings.Contains(users[i].Identifier, search) ||
+			strings.Contains(users[i].PublicKey, search) {
+			filteredUsers = append(filteredUsers, users[i])
+		}
+	}
+
+	sort.Slice(filteredUsers, func(i, j int) bool {
+		var sortValueLeft string
+		var sortValueRight string
+
+		switch sortKey {
+		case "id":
+			sortValueLeft = filteredUsers[i].Identifier
+			sortValueRight = filteredUsers[j].Identifier
+		case "pubKey":
+			sortValueLeft = filteredUsers[i].PublicKey
+			sortValueRight = filteredUsers[j].PublicKey
+		case "mail":
+			sortValueLeft = filteredUsers[i].Email
+			sortValueRight = filteredUsers[j].Email
+		case "ip":
+			sortValueLeft = filteredUsers[i].IPsStr
+			sortValueRight = filteredUsers[j].IPsStr
+		case "handshake":
+			if filteredUsers[i].Peer == nil {
+				return true
+			} else if filteredUsers[j].Peer == nil {
+				return false
+			}
+			sortValueLeft = filteredUsers[i].Peer.LastHandshakeTime.Format(time.RFC3339)
+			sortValueRight = filteredUsers[j].Peer.LastHandshakeTime.Format(time.RFC3339)
+		}
+
+		if sortDirection == "asc" {
+			return sortValueLeft < sortValueRight
+		} else {
+			return sortValueLeft > sortValueRight
+		}
+	})
+
+	return filteredUsers
 }
 
 func (u *UserManager) GetDevice() Device {

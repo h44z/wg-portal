@@ -22,6 +22,7 @@ func SetupRoutes(s *Server) {
 	admin.GET("/", s.GetAdminIndex)
 	admin.GET("/device/edit", s.GetAdminEditInterface)
 	admin.POST("/device/edit", s.PostAdminEditInterface)
+	admin.GET("/device/download", s.GetDeviceConfig)
 	admin.GET("/peer/edit", s.GetAdminEditPeer)
 	admin.POST("/peer/edit", s.PostAdminEditPeer)
 	admin.GET("/peer/create", s.GetAdminCreatePeer)
@@ -29,6 +30,8 @@ func SetupRoutes(s *Server) {
 	admin.GET("/peer/createldap", s.GetAdminCreateLdapPeers)
 	admin.POST("/peer/createldap", s.PostAdminCreateLdapPeers)
 	admin.GET("/peer/delete", s.GetAdminDeletePeer)
+	admin.GET("/peer/download", s.GetUserConfig)
+	admin.GET("/peer/email", s.GetUserConfigMail)
 
 	// User routes
 	user := s.server.Group("/user")

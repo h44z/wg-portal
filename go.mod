@@ -3,12 +3,12 @@ module github.com/h44z/wg-portal
 go 1.14
 
 require (
-	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
-	github.com/gin-gonic/contrib v0.0.0-20201005132743-ca038bbf2944
+	github.com/gin-contrib/sessions v0.0.3
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-ldap/ldap/v3 v3.2.4
 	github.com/go-playground/validator/v10 v10.2.0
 	github.com/gorilla/sessions v1.2.1 // indirect
+	github.com/jordan-wright/email v4.0.1-0.20200917010138-e1c00e156980+incompatible
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
