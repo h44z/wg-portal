@@ -137,7 +137,7 @@
                                                 <a class="nav-link" data-toggle="tab" href="#t2{{$p.UID}}">Configuration</a>
                                             </li>
                                             <li class="nav-item">
-                                                <a class="nav-link" data-toggle="tab" href="#t3{{$p.UID}}">Other</a>
+                                                <a class="nav-link" data-toggle="tab" href="#t3{{$p.UID}}">Danger Zone</a>
                                             </li>
                                         </ul>
                                         <div class="tab-content" id="tabContent{{$p.UID}}">
@@ -158,9 +158,7 @@
                                                 <pre>{{$p.Config}}</pre>
                                             </div>
                                             <div id="t3{{$p.UID}}" class="tab-pane fade">
-                                                <ul>
-                                                    <li>2</li>
-                                                </ul>
+                                                <a href="/admin/peer/delete?pkey={{$p.PublicKey}}" class="btn btn-danger" title="Delete peer">Delete</a>
                                             </div>
                                         </div>
                                     </div>

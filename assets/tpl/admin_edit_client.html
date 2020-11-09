@@ -14,7 +14,7 @@
 <body id="page-top">
     {{template "prt_nav.html" .}}
     <div class="container">
-        {{if eq .Peer.UID ""}}
+        {{if .Peer.IsNew}}
             <h1>Create a new client</h1>
         {{else}}
             <h1>Edit client <strong>{{.Peer.Identifier}}</strong></h1>

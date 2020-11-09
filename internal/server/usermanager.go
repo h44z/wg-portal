@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 	"text/template"
 	"time"
@@ -73,6 +74,7 @@ type User struct {
 
 	UID        string `form:"uid" binding:"alphanum"` // uid for html identification
 	IsOnline   bool   `gorm:"-"`
+	IsNew      bool   `gorm:"-"`
 	Identifier string `form:"identifier" binding:"required,lt=64"` // Identifier AND Email make a WireGuard peer unique
 	Email      string `gorm:"index" form:"mail" binding:"required,email"`
 
@@ -159,6 +161,26 @@ func (u User) IsValid() bool {
 	}
 
 	return true
+}
+
+func (u User) ToMap() map[string]string {
+	out := make(map[string]string)
+
+	v := reflect.ValueOf(u)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	typ := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		// gets us a StructField
+		fi := typ.Field(i)
+		if tagv := fi.Tag.Get("form"); tagv != "" {
+			// set key of map to value in struct field
+			out[tagv] = v.Field(i).String()
+		}
+	}
+	return out
 }
 
 //
@@ -417,6 +439,16 @@ func (u *UserManager) UpdateUser(user User) error {
 	return nil
 }
 
+func (u *UserManager) DeleteUser(user User) error {
+	res := u.db.Delete(&user)
+	if res.Error != nil {
+		log.Errorf("failed to delete user: %v", res.Error)
+		return res.Error
+	}
+
+	return nil
+}
+
 func (u *UserManager) UpdateDevice(device Device) error {
 	device.UpdatedAt = time.Now()
 	device.AllowedIPsStr = strings.Join(device.AllowedIPs, ", ")
@@ -437,36 +469,67 @@ func (u *UserManager) GetAllReservedIps() ([]string, error) {
 	users := u.GetAllUsers()
 	for _, user := range users {
 		for _, cidr := range user.IPs {
+			if cidr == "" {
+				continue
+			}
 			ip, _, err := net.ParseCIDR(cidr)
 			if err != nil {
-				log.WithFields(log.Fields{
-					"err":  err,
-					"cidr": cidr,
-				}).Error("failed to ip from cidr")
-			} else {
-				reservedIps = append(reservedIps, ip.String())
+				return nil, err
 			}
+			reservedIps = append(reservedIps, ip.String())
 		}
 	}
 
 	device := u.GetDevice()
 	for _, cidr := range device.IPs {
+		if cidr == "" {
+			continue
+		}
 		ip, _, err := net.ParseCIDR(cidr)
 		if err != nil {
-			log.WithFields(log.Fields{
-				"err":  err,
-				"cidr": cidr,
-			}).Error("failed to ip from cidr")
-		} else {
-			reservedIps = append(reservedIps, ip.String())
+			return nil, err
 		}
+
+		reservedIps = append(reservedIps, ip.String())
 	}
 
 	return reservedIps, nil
 }
 
+func (u *UserManager) IsIPReserved(cidr string) bool {
+	reserved, err := u.GetAllReservedIps()
+	if err != nil {
+		return true // in case something failed, assume the ip is reserved
+	}
+	ip, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return true
+	}
+
+	// this two addresses are not usable
+	broadcastAddr := common.BroadcastAddr(ipnet).String()
+	networkAddr := ipnet.IP.String()
+	address := ip.String()
+
+	if address == broadcastAddr || address == networkAddr {
+		return true
+	}
+
+	for _, r := range reserved {
+		if address == r {
+			return true
+		}
+	}
+
+	return false
+}
+
 // GetAvailableIp search for an available ip in cidr against a list of reserved ips
-func (u *UserManager) GetAvailableIp(cidr string, reserved []string) (string, error) {
+func (u *UserManager) GetAvailableIp(cidr string) (string, error) {
+	reserved, err := u.GetAllReservedIps()
+	if err != nil {
+		return "", err
+	}
 	ip, ipnet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return "", err
@@ -486,7 +549,11 @@ func (u *UserManager) GetAvailableIp(cidr string, reserved []string) (string, er
 			}
 		}
 		if ok && address != networkAddr && address != broadcastAddr {
-			return address, nil
+			netMask := "/32"
+			if common.IsIPv6(address) {
+				netMask = "/128"
+			}
+			return address + netMask, nil
 		}
 	}
 

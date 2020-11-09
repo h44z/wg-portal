@@ -24,6 +24,9 @@ const CacheRefreshDuration = 5 * time.Minute
 
 func init() {
 	gob.Register(SessionData{})
+	gob.Register(User{})
+	gob.Register(Device{})
+	gob.Register(LdapCreateForm{})
 }
 
 type SessionData struct {
