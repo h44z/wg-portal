@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"syscall"
 	"time"
 
 	"github.com/h44z/wg-portal/internal/common"
@@ -123,7 +125,7 @@ func (s *Server) CreateUser(user User) error {
 		return err
 	}
 
-	return nil
+	return s.WriteWireGuardConfigFile()
 }
 
 func (s *Server) UpdateUser(user User, updateTime time.Time) error {
@@ -148,7 +150,7 @@ func (s *Server) UpdateUser(user User, updateTime time.Time) error {
 		return err
 	}
 
-	return nil
+	return s.WriteWireGuardConfigFile()
 }
 
 func (s *Server) DeleteUser(user User) error {
@@ -162,7 +164,7 @@ func (s *Server) DeleteUser(user User) error {
 		return err
 	}
 
-	return nil
+	return s.WriteWireGuardConfigFile()
 }
 
 func (s *Server) RestoreWireGuardInterface() error {
@@ -176,5 +178,24 @@ func (s *Server) RestoreWireGuardInterface() error {
 		}
 	}
 
+	return nil
+}
+
+func (s *Server) WriteWireGuardConfigFile() error {
+	if s.config.WG.WireGuardConfig == "" {
+		return nil // writing disabled
+	}
+	if err := syscall.Access(s.config.WG.WireGuardConfig, syscall.O_RDWR); err != nil {
+		return err
+	}
+
+	device := s.users.GetDevice()
+	cfg, err := device.GetDeviceConfigFile(s.users.GetActiveUsers())
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(s.config.WG.WireGuardConfig, cfg, 0644); err != nil {
+		return err
+	}
 	return nil
 }
