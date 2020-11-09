@@ -336,6 +336,16 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/admin/peer/createldap")
 }
 
+func (s *Server) GetAdminDeletePeer(c *gin.Context) {
+	currentUser := s.users.GetUserByKey(c.Query("pkey"))
+	if err := s.DeleteUser(currentUser); err != nil {
+		s.HandleError(c, http.StatusInternalServerError, "Deletion error", err.Error())
+		return
+	}
+	s.setAlert(c, "user deleted successfully", "success")
+	c.Redirect(http.StatusSeeOther, "/admin")
+}
+
 func (s *Server) GetUserQRCode(c *gin.Context) {
 	user := s.users.GetUserByKey(c.Query("pkey"))
 	png, err := user.GetQRCode()
