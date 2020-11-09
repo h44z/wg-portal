@@ -164,3 +164,17 @@ func (s *Server) DeleteUser(user User) error {
 
 	return nil
 }
+
+func (s *Server) RestoreWireGuardInterface() error {
+	activeUsers := s.users.GetActiveUsers()
+
+	for i := range activeUsers {
+		if activeUsers[i].Peer == nil {
+			if err := s.wg.AddPeer(activeUsers[i].GetPeerConfig()); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}

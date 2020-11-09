@@ -104,6 +104,9 @@ func (s *Server) Setup() error {
 	if err := s.users.InitFromCurrentInterface(); err != nil {
 		return errors.New("unable to initialize user manager")
 	}
+	if err := s.RestoreWireGuardInterface(); err != nil {
+		return errors.New("unable to restore wirguard state")
+	}
 
 	dir := s.getExecutableDirectory()
 	rDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
