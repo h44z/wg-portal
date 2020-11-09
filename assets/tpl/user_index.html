@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>{{ .Static.WebsiteTitle }} - Profile</title>
+    <meta name="description" content="{{ .Static.WebsiteTitle }}">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <!--link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"-->
+    <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+<body id="page-top" class="d-flex flex-column min-vh-100">
+    {{template "prt_nav.html" .}}
+    <div class="container mt-5">
+        <h1>WireGuard VPN User-Portal</h1>
+
+        <h2 class="mt-4">Your VPN Profiles</h2>
+        <div class="mt-2 table-responsive">
+            <table class="table table-sm" id="userTable">
+                <thead>
+                <tr>
+                    <th scope="col" class="list-image-cell"></th><!-- Status and expand -->
+                    <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{.Session.GetSortIcon "id"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "pubKey"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "mail"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "ip"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{.Session.GetSortIcon "handshake"}}"></i></a></th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range $i, $p :=.Peers}}
+                    <tr id="user-pos-{{$i}}" {{if $p.DeactivatedAt}}class="disabled-peer"{{end}}>
+                        <th scope="row" class="list-image-cell">
+                            <a href="#{{$p.UID}}" data-toggle="collapse" class="collapse-indicator collapsed"></a>
+                            <!-- online check -->
+                        </th>
+                        <td>{{$p.Identifier}}</td>
+                        <td>{{$p.PublicKey}}</td>
+                        <td>{{$p.Email}}</td>
+                        <td>{{$p.IPsStr}}</td>
+                        <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{{$p.LastHandshakeTime}}">{{$p.LastHandshake}}</span></td>
+                    </tr>
+                    <tr class="hiddenRow">
+                        <td colspan="6" class="hiddenCell" style="white-space:nowrap">
+                            <div class="collapse" id="{{$p.UID}}" data-parent="#userTable">
+                                <div class="row collapsedRow">
+                                    <div class="col-md-6 leftBorder">
+                                        <ul class="nav nav-tabs">
+                                            <li class="nav-item">
+                                                <a class="nav-link active" data-toggle="tab" href="#t1{{$p.UID}}">Personal</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-toggle="tab" href="#t2{{$p.UID}}">Configuration</a>
+                                            </li>
+                                        </ul>
+                                        <div class="tab-content" id="tabContent{{$p.UID}}">
+                                            <div id="t1{{$p.UID}}" class="tab-pane fade active show">
+                                                <h4>User details</h4>
+                                                {{if not $p.LdapUser}}
+                                                    <p>No LDAP user-information available...</p>
+                                                {{else}}
+                                                    <ul>
+                                                        <li>Firstname: {{$p.LdapUser.Firstname}}</li>
+                                                        <li>Lastname: {{$p.LdapUser.Lastname}}</li>
+                                                        <li>Phone: {{$p.UID}}</li>
+                                                        <li>Mail: {{$p.LdapUser.Mail}}</li>
+                                                        <li>Department: {{$p.UID}}</li>
+                                                    </ul>
+                                                {{end}}
+                                                <h4>Traffic</h4>
+                                                {{if not $p.Peer}}
+                                                    <p>No Traffic data available...</p>
+                                                {{else}}
+                                                    <p>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.ReceiveBytes}} / {{$p.Peer.TransmitBytes}}{{end}}</p>
+                                                {{end}}
+                                            </div>
+                                            <div id="t2{{$p.UID}}" class="tab-pane fade">
+                                                <pre>{{$p.Config}}</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <img class="list-image-large" src="/user/qrcode?pkey={{$p.PublicKey}}"/>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="float-right mt-5">
+                                        <a href="/user/download?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Download configuration">Download</a>
+                                        <a href="/user/email?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Send configuration via Email">Email</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+            <p>Currently listed peers: <strong>{{len .Peers}}</strong></p>
+        </div>
+    </div>
+    {{template "prt_footer.html"}}
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/jquery.easing.js"></script>
+    <script src="/js/custom.js"></script>
+</body>
+
+</html>

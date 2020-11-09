@@ -37,6 +37,9 @@ func SetupRoutes(s *Server) {
 	user := s.server.Group("/user")
 	user.Use(s.RequireAuthentication("")) // empty scope = all logged in users
 	user.GET("/qrcode", s.GetUserQRCode)
+	user.GET("/profile", s.GetUserIndex)
+	user.GET("/download", s.GetUserConfig)
+	user.GET("/email", s.GetUserConfigMail)
 }
 
 func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {
@@ -50,7 +53,7 @@ func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {
 			return
 		}
 
-		if scope != "" && !s.ldapUsers.IsInGroup(session.UserName, s.config.AdminLdapGroup) && // admins always have access
+		if scope != "" && !session.IsAdmin && // admins always have access
 			!s.ldapUsers.IsInGroup(session.UserName, scope) {
 			// Abort the request with the appropriate error code
 			c.Abort()

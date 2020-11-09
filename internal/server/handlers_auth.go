@@ -48,29 +48,51 @@ func (s *Server) PostLogin(c *gin.Context) {
 		return
 	}
 
+	adminAuthenticated := false
+	if s.config.Core.AdminUser != "" && username == s.config.Core.AdminUser && password == s.config.Core.AdminPassword {
+		adminAuthenticated = true
+	}
+
 	// Check if user is in cache, avoid unnecessary ldap requests
-	if !s.ldapUsers.UserExists(username) {
+	if !adminAuthenticated && !s.ldapUsers.UserExists(username) {
 		c.Redirect(http.StatusSeeOther, s.config.AuthRoutePrefix+"/login?err=authfail")
 	}
 
 	// Check if username and password match
-	if !s.ldapAuth.CheckLogin(username, password) {
+	if !adminAuthenticated && !s.ldapAuth.CheckLogin(username, password) {
 		c.Redirect(http.StatusSeeOther, s.config.AuthRoutePrefix+"/login?err=authfail")
 		return
 	}
 
-	dn := s.ldapUsers.GetUserDN(username)
-	userData := s.ldapUsers.GetUserData(dn)
-	sessionData := SessionData{
-		LoggedIn:      true,
-		IsAdmin:       s.ldapUsers.IsInGroup(username, s.config.AdminLdapGroup),
-		UID:           userData.GetUID(),
-		UserName:      username,
-		Firstname:     userData.Firstname,
-		Lastname:      userData.Lastname,
-		SortedBy:      "mail",
-		SortDirection: "asc",
-		Search:        "",
+	var sessionData SessionData
+	if adminAuthenticated {
+		sessionData = SessionData{
+			LoggedIn:      true,
+			IsAdmin:       true,
+			Email:         "autodetected@example.com",
+			UID:           "adminuid",
+			UserName:      username,
+			Firstname:     "System",
+			Lastname:      "Administrator",
+			SortedBy:      "mail",
+			SortDirection: "asc",
+			Search:        "",
+		}
+	} else {
+		dn := s.ldapUsers.GetUserDN(username)
+		userData := s.ldapUsers.GetUserData(dn)
+		sessionData = SessionData{
+			LoggedIn:      true,
+			IsAdmin:       s.ldapUsers.IsInGroup(username, s.config.AdminLdapGroup),
+			UID:           userData.GetUID(),
+			UserName:      username,
+			Email:         userData.Mail,
+			Firstname:     userData.Firstname,
+			Lastname:      userData.Lastname,
+			SortedBy:      "mail",
+			SortDirection: "asc",
+			Search:        "",
+		}
 	}
 
 	if err := s.updateSessionData(c, sessionData); err != nil {

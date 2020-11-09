@@ -51,7 +51,15 @@ func (s *Server) CreateUserByEmail(email, identifierSuffix string, disabled bool
 	device := s.users.GetDevice()
 	user := User{}
 	user.AllowedIPsStr = device.AllowedIPsStr
-	user.IPsStr = "" // TODO: add a valid ip here
+	user.IPs = make([]string, len(device.IPs))
+	for i := range device.IPs {
+		freeIP, err := s.users.GetAvailableIp(device.IPs[i])
+		if err != nil {
+			return err
+		}
+		user.IPs[i] = freeIP
+	}
+	user.IPsStr = common.ListToString(user.IPs)
 	psk, err := wgtypes.GenerateKey()
 	if err != nil {
 		return err
@@ -78,7 +86,16 @@ func (s *Server) CreateUser(user User) error {
 
 	device := s.users.GetDevice()
 	user.AllowedIPsStr = device.AllowedIPsStr
-	user.IPsStr = ""           // TODO: add a valid ip here
+	if len(user.IPs) == 0 {
+		for i := range device.IPs {
+			freeIP, err := s.users.GetAvailableIp(device.IPs[i])
+			if err != nil {
+				return err
+			}
+			user.IPs[i] = freeIP
+		}
+		user.IPsStr = common.ListToString(user.IPs)
+	}
 	if user.PrivateKey == "" { // if private key is empty create a new one
 		psk, err := wgtypes.GenerateKey()
 		if err != nil {
@@ -94,7 +111,7 @@ func (s *Server) CreateUser(user User) error {
 	}
 	user.UID = fmt.Sprintf("u%x", md5.Sum([]byte(user.PublicKey)))
 
-	// Create wireguard interface
+	// Create WireGuard interface
 	if user.DeactivatedAt == nil {
 		if err := s.wg.AddPeer(user.GetPeerConfig()); err != nil {
 			return err

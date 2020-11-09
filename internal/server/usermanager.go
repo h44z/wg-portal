@@ -477,9 +477,9 @@ func (u *UserManager) GetFilteredAndSortedUsers(sortKey, sortDirection, search s
 			sortValueRight = filteredUsers[j].IPsStr
 		case "handshake":
 			if filteredUsers[i].Peer == nil {
-				return true
-			} else if filteredUsers[j].Peer == nil {
 				return false
+			} else if filteredUsers[j].Peer == nil {
+				return true
 			}
 			sortValueLeft = filteredUsers[i].Peer.LastHandshakeTime.Format(time.RFC3339)
 			sortValueRight = filteredUsers[j].Peer.LastHandshakeTime.Format(time.RFC3339)
@@ -493,6 +493,51 @@ func (u *UserManager) GetFilteredAndSortedUsers(sortKey, sortDirection, search s
 	})
 
 	return filteredUsers
+}
+
+func (u *UserManager) GetSortedUsersForEmail(sortKey, sortDirection, email string) []User {
+	users := make([]User, 0)
+	u.db.Where("email = ?", email).Find(&users)
+
+	for i := range users {
+		u.populateUserData(&users[i])
+	}
+
+	sort.Slice(users, func(i, j int) bool {
+		var sortValueLeft string
+		var sortValueRight string
+
+		switch sortKey {
+		case "id":
+			sortValueLeft = users[i].Identifier
+			sortValueRight = users[j].Identifier
+		case "pubKey":
+			sortValueLeft = users[i].PublicKey
+			sortValueRight = users[j].PublicKey
+		case "mail":
+			sortValueLeft = users[i].Email
+			sortValueRight = users[j].Email
+		case "ip":
+			sortValueLeft = users[i].IPsStr
+			sortValueRight = users[j].IPsStr
+		case "handshake":
+			if users[i].Peer == nil {
+				return true
+			} else if users[j].Peer == nil {
+				return false
+			}
+			sortValueLeft = users[i].Peer.LastHandshakeTime.Format(time.RFC3339)
+			sortValueRight = users[j].Peer.LastHandshakeTime.Format(time.RFC3339)
+		}
+
+		if sortDirection == "asc" {
+			return sortValueLeft < sortValueRight
+		} else {
+			return sortValueLeft > sortValueRight
+		}
+	})
+
+	return users
 }
 
 func (u *UserManager) GetDevice() Device {
@@ -513,12 +558,14 @@ func (u *UserManager) GetUserByKey(publicKey string) User {
 	return user
 }
 
-func (u *UserManager) GetUserByMail(mail string) User {
-	user := User{}
-	u.db.Where("email = ?", mail).FirstOrInit(&user)
-	u.populateUserData(&user)
+func (u *UserManager) GetUsersByMail(mail string) []User {
+	var users []User
+	u.db.Where("email = ?", mail).Find(&users)
+	for i := range users {
+		u.populateUserData(&users[i])
+	}
 
-	return user
+	return users
 }
 
 func (u *UserManager) CreateUser(user User) error {

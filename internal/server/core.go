@@ -38,6 +38,7 @@ type SessionData struct {
 	UserName      string
 	Firstname     string
 	Lastname      string
+	Email         string
 	SortedBy      string
 	SortDirection string
 	Search        string
@@ -109,7 +110,7 @@ func (s *Server) Setup() error {
 	log.Infof("Real working directory: %s", rDir)
 	log.Infof("Current working directory: %s", dir)
 	var err error
-	s.mailTpl, err = template.New("email").ParseGlob(filepath.Join(dir, "/assets/tpl/email.html"))
+	s.mailTpl, err = template.New("email.html").ParseFiles(filepath.Join(dir, "/assets/tpl/email.html"))
 	if err != nil {
 		return errors.New("unable to pare mail template")
 	}
@@ -178,6 +179,7 @@ func (s *Server) getSessionData(c *gin.Context) SessionData {
 		sessionData = SessionData{
 			SortedBy:      "mail",
 			SortDirection: "asc",
+			Email:         "",
 			Firstname:     "",
 			Lastname:      "",
 			IsAdmin:       false,

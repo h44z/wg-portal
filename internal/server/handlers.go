@@ -43,14 +43,14 @@ func (s *Server) HandleError(c *gin.Context, code int, message, details string) 
 	//c.JSON(code, gin.H{"error": message, "details": details})
 
 	c.HTML(code, "error.html", gin.H{
-		"data": gin.H{
+		"Data": gin.H{
 			"Code":    strconv.Itoa(code),
 			"Message": message,
 			"Details": details,
 		},
-		"route":   c.Request.URL.Path,
-		"session": s.getSessionData(c),
-		"static":  s.getStaticData(),
+		"Route":   c.Request.URL.Path,
+		"Session": s.getSessionData(c),
+		"Static":  s.getStaticData(),
 	})
 }
 
@@ -108,6 +108,52 @@ func (s *Server) GetAdminIndex(c *gin.Context) {
 		Static:     s.getStaticData(),
 		Peers:      users,
 		TotalPeers: len(s.users.GetAllUsers()),
+		Device:     device,
+	})
+}
+
+func (s *Server) GetUserIndex(c *gin.Context) {
+	currentSession := s.getSessionData(c)
+
+	sort := c.Query("sort")
+	if sort != "" {
+		if currentSession.SortedBy != sort {
+			currentSession.SortedBy = sort
+			currentSession.SortDirection = "asc"
+		} else {
+			if currentSession.SortDirection == "asc" {
+				currentSession.SortDirection = "desc"
+			} else {
+				currentSession.SortDirection = "asc"
+			}
+		}
+
+		if err := s.updateSessionData(c, currentSession); err != nil {
+			s.HandleError(c, http.StatusInternalServerError, "sort error", "failed to save session")
+			return
+		}
+		c.Redirect(http.StatusSeeOther, "/admin")
+		return
+	}
+
+	device := s.users.GetDevice()
+	users := s.users.GetSortedUsersForEmail(currentSession.SortedBy, currentSession.SortDirection, currentSession.Email)
+
+	c.HTML(http.StatusOK, "user_index.html", struct {
+		Route      string
+		Alerts     AlertData
+		Session    SessionData
+		Static     StaticData
+		Peers      []User
+		TotalPeers int
+		Device     Device
+	}{
+		Route:      c.Request.URL.Path,
+		Alerts:     s.getAlertData(c),
+		Session:    currentSession,
+		Static:     s.getStaticData(),
+		Peers:      users,
+		TotalPeers: len(users),
 		Device:     device,
 	})
 }
@@ -388,6 +434,12 @@ func (s *Server) GetAdminDeletePeer(c *gin.Context) {
 
 func (s *Server) GetUserQRCode(c *gin.Context) {
 	user := s.users.GetUserByKey(c.Query("pkey"))
+	currentSession := s.getSessionData(c)
+	if !currentSession.IsAdmin && user.Email != currentSession.Email {
+		s.HandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
+		return
+	}
+
 	png, err := user.GetQRCode()
 	if err != nil {
 		s.HandleError(c, http.StatusInternalServerError, "QRCode error", err.Error())
@@ -399,6 +451,12 @@ func (s *Server) GetUserQRCode(c *gin.Context) {
 
 func (s *Server) GetUserConfig(c *gin.Context) {
 	user := s.users.GetUserByKey(c.Query("pkey"))
+	currentSession := s.getSessionData(c)
+	if !currentSession.IsAdmin && user.Email != currentSession.Email {
+		s.HandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
+		return
+	}
+
 	cfg, err := user.GetClientConfigFile(s.users.GetDevice())
 	if err != nil {
 		s.HandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
@@ -412,6 +470,12 @@ func (s *Server) GetUserConfig(c *gin.Context) {
 
 func (s *Server) GetUserConfigMail(c *gin.Context) {
 	user := s.users.GetUserByKey(c.Query("pkey"))
+	currentSession := s.getSessionData(c)
+	if !currentSession.IsAdmin && user.Email != currentSession.Email {
+		s.HandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
+		return
+	}
+
 	cfg, err := user.GetClientConfigFile(s.users.GetDevice())
 	if err != nil {
 		s.HandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
@@ -427,9 +491,11 @@ func (s *Server) GetUserConfigMail(c *gin.Context) {
 	if err := s.mailTpl.Execute(&tplBuff, struct {
 		Client        User
 		QrcodePngName string
+		PortalUrl     string
 	}{
 		Client:        user,
 		QrcodePngName: "wireguard-config.png",
+		PortalUrl:     s.config.Core.ExternalUrl,
 	}); err != nil {
 		s.HandleError(c, http.StatusInternalServerError, "Template error", err.Error())
 		return
