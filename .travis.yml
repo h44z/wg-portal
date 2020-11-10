@@ -13,7 +13,7 @@ before_install:
 
 
 script:
-  - make docker-image
+  - make docker-build
 
 
 # only execute the following instructions in
