@@ -15,7 +15,7 @@ ADD . /build/
 WORKDIR /build
 
 # Build the Go app
-RUN make build
+RUN go clean -modcache; go mod tidy; make build
 
 ######-
 # Here starts the main image
