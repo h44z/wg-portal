@@ -13,6 +13,18 @@
     $(function () {
         $('[data-toggle="tooltip"]').tooltip()
     });
+
+    $(".online-status").each(function(){
+        const onlineStatusID = "#" + $(this).attr('id');
+        $.get( "/user/status?pkey=" + encodeURIComponent($(this).attr('data-pkey')), function( data ) {
+            console.log(onlineStatusID + " " + data)
+            if(data === true) {
+                $(onlineStatusID).html('<i class="fas fa-link text-success"></i>');
+            } else {
+                $(onlineStatusID).html('<i class="fas fa-unlink"></i>');
+            }
+        });
+    });
 })(jQuery); // End of use strict
 
 

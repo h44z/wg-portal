@@ -19,22 +19,39 @@
             <h1>Edit client <strong>{{.Peer.Identifier}}</strong></h1>
         {{end}}
 
-        {{if $.Alerts.HasAlert}}
-            <div class="alert alert-{{$.Alerts.Type}}" role="alert">
-                {{$.Alerts.Message}}
-            </div>
-        {{end}}
+        {{template "prt_flashes.html" .}}
 
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="uid" value="{{.Peer.UID}}">
-            <input type="hidden" name="privkey" value="{{.Peer.PrivateKey}}">
-            <input type="hidden" name="presharedkey" value="{{.Peer.PresharedKey}}">
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="inputServerPublicKey">Public Key</label>
-                    <input type="text" name="pubkey" readonly class="form-control" id="inputServerPublicKey" value="{{.Peer.PublicKey}}">
+            {{if .EditableKeys}}
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <label for="inputServerPrivateKey">Private Key</label>
+                        <input type="text" name="privkey" class="form-control" id="inputServerPrivateKey" value="{{.Peer.PrivateKey}}">
+                    </div>
                 </div>
-            </div>
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <label for="inputServerPublicKey">Public Key</label>
+                        <input type="text" name="pubkey" class="form-control" id="inputServerPublicKey" value="{{.Peer.PublicKey}}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <label for="inputServerPresharedKey">Preshared Key</label>
+                        <input type="text" name="presharedkey" class="form-control" id="inputServerPresharedKey" value="{{.Peer.PresharedKey}}">
+                    </div>
+                </div>
+            {{else}}
+                <input type="hidden" name="privkey" value="{{.Peer.PrivateKey}}">
+                <input type="hidden" name="presharedkey" value="{{.Peer.PresharedKey}}">
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <label for="inputServerPublicKey">Public Key</label>
+                        <input type="text" name="pubkey" readonly class="form-control" id="inputServerPublicKey" value="{{.Peer.PublicKey}}">
+                    </div>
+                </div>
+            {{end}}
             <div class="form-row">
                 <div class="form-group col-md-12">
                     <label for="inputIdentifier">Client Friendly Name</label>

@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/h44z/wg-portal/internal/common"
 	"github.com/h44z/wg-portal/internal/ldap"
 	log "github.com/sirupsen/logrus"
+	"github.com/tatsushid/go-fastping"
 )
 
 type LdapCreateForm struct {
@@ -29,19 +31,21 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "admin_edit_client.html", struct {
-		Route   string
-		Alerts  AlertData
-		Session SessionData
-		Static  StaticData
-		Peer    User
-		Device  Device
+		Route        string
+		Alerts       []FlashData
+		Session      SessionData
+		Static       StaticData
+		Peer         User
+		Device       Device
+		EditableKeys bool
 	}{
-		Route:   c.Request.URL.Path,
-		Alerts:  s.getAlertData(c),
-		Session: currentSession,
-		Static:  s.getStaticData(),
-		Peer:    currentSession.FormData.(User),
-		Device:  device,
+		Route:        c.Request.URL.Path,
+		Alerts:       s.getFlashes(c),
+		Session:      currentSession,
+		Static:       s.getStaticData(),
+		Peer:         currentSession.FormData.(User),
+		Device:       device,
+		EditableKeys: s.config.Core.EditableKeys,
 	})
 }
 
@@ -56,7 +60,7 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	}
 	if err := c.ShouldBind(&formUser); err != nil {
 		_ = s.updateFormInSession(c, formUser)
-		s.setAlert(c, "failed to bind form data: "+err.Error(), "danger")
+		s.setFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey+"&formerr=bind")
 		return
 	}
@@ -78,12 +82,12 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	// Update in database
 	if err := s.UpdateUser(formUser, now); err != nil {
 		_ = s.updateFormInSession(c, formUser)
-		s.setAlert(c, "failed to update user: "+err.Error(), "danger")
+		s.setFlashMessage(c, "failed to update user: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey+"&formerr=update")
 		return
 	}
 
-	s.setAlert(c, "changes applied successfully", "success")
+	s.setFlashMessage(c, "changes applied successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey)
 }
 
@@ -96,19 +100,21 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 		return
 	}
 	c.HTML(http.StatusOK, "admin_edit_client.html", struct {
-		Route   string
-		Alerts  AlertData
-		Session SessionData
-		Static  StaticData
-		Peer    User
-		Device  Device
+		Route        string
+		Alerts       []FlashData
+		Session      SessionData
+		Static       StaticData
+		Peer         User
+		Device       Device
+		EditableKeys bool
 	}{
-		Route:   c.Request.URL.Path,
-		Alerts:  s.getAlertData(c),
-		Session: currentSession,
-		Static:  s.getStaticData(),
-		Peer:    currentSession.FormData.(User),
-		Device:  device,
+		Route:        c.Request.URL.Path,
+		Alerts:       s.getFlashes(c),
+		Session:      currentSession,
+		Static:       s.getStaticData(),
+		Peer:         currentSession.FormData.(User),
+		Device:       device,
+		EditableKeys: s.config.Core.EditableKeys,
 	})
 }
 
@@ -120,7 +126,7 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	}
 	if err := c.ShouldBind(&formUser); err != nil {
 		_ = s.updateFormInSession(c, formUser)
-		s.setAlert(c, "failed to bind form data: "+err.Error(), "danger")
+		s.setFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/create?formerr=bind")
 		return
 	}
@@ -139,12 +145,12 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 
 	if err := s.CreateUser(formUser); err != nil {
 		_ = s.updateFormInSession(c, formUser)
-		s.setAlert(c, "failed to add user: "+err.Error(), "danger")
+		s.setFlashMessage(c, "failed to add user: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/create?formerr=create")
 		return
 	}
 
-	s.setAlert(c, "client created successfully", "success")
+	s.setFlashMessage(c, "client created successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin")
 }
 
@@ -157,7 +163,7 @@ func (s *Server) GetAdminCreateLdapPeers(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "admin_create_clients.html", struct {
 		Route    string
-		Alerts   AlertData
+		Alerts   []FlashData
 		Session  SessionData
 		Static   StaticData
 		Users    []*ldap.UserCacheHolderEntry
@@ -165,7 +171,7 @@ func (s *Server) GetAdminCreateLdapPeers(c *gin.Context) {
 		Device   Device
 	}{
 		Route:    c.Request.URL.Path,
-		Alerts:   s.getAlertData(c),
+		Alerts:   s.getFlashes(c),
 		Session:  currentSession,
 		Static:   s.getStaticData(),
 		Users:    s.ldapUsers.GetSortedUsers("sn", "asc"),
@@ -182,7 +188,7 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 	}
 	if err := c.ShouldBind(&formData); err != nil {
 		_ = s.updateFormInSession(c, formData)
-		s.setAlert(c, "failed to bind form data: "+err.Error(), "danger")
+		s.setFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=bind")
 		return
 	}
@@ -192,7 +198,7 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 		// TODO: also check email addr for validity?
 		if !strings.ContainsRune(emails[i], '@') || s.ldapUsers.GetUserDNByMail(emails[i]) == "" {
 			_ = s.updateFormInSession(c, formData)
-			s.setAlert(c, "invalid email address: "+emails[i], "danger")
+			s.setFlashMessage(c, "invalid email address: "+emails[i], "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=mail")
 			return
 		}
@@ -203,13 +209,13 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 	for i := range emails {
 		if err := s.CreateUserByEmail(emails[i], formData.Identifier, false); err != nil {
 			_ = s.updateFormInSession(c, formData)
-			s.setAlert(c, "failed to add user: "+err.Error(), "danger")
+			s.setFlashMessage(c, "failed to add user: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=create")
 			return
 		}
 	}
 
-	s.setAlert(c, "client(s) created successfully", "success")
+	s.setFlashMessage(c, "client(s) created successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin/peer/createldap")
 }
 
@@ -219,7 +225,7 @@ func (s *Server) GetAdminDeletePeer(c *gin.Context) {
 		s.GetHandleError(c, http.StatusInternalServerError, "Deletion error", err.Error())
 		return
 	}
-	s.setAlert(c, "user deleted successfully", "success")
+	s.setFlashMessage(c, "user deleted successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin")
 }
 
@@ -313,6 +319,55 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 		return
 	}
 
-	s.setAlert(c, "mail sent successfully", "success")
+	s.setFlashMessage(c, "mail sent successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin")
+}
+
+func (s *Server) GetPeerStatus(c *gin.Context) {
+	user := s.users.GetUserByKey(c.Query("pkey"))
+	currentSession := s.getSessionData(c)
+	if !currentSession.IsAdmin && user.Email != currentSession.Email {
+		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
+		return
+	}
+
+	if user.Peer == nil { // no peer means disabled
+		c.JSON(http.StatusOK, false)
+		return
+	}
+
+	isOnline := false
+	ping := make(chan bool)
+	defer close(ping)
+	for _, cidr := range user.IPs {
+		ip, _, _ := net.ParseCIDR(cidr)
+		var ra *net.IPAddr
+		if common.IsIPv6(ip.String()) {
+			ra, _ = net.ResolveIPAddr("ip6:ipv6-icmp", ip.String())
+		} else {
+
+			ra, _ = net.ResolveIPAddr("ip4:icmp", ip.String())
+		}
+
+		p := fastping.NewPinger()
+		p.AddIPAddr(ra)
+		p.OnRecv = func(addr *net.IPAddr, rtt time.Duration) {
+			ping <- true
+			p.Stop()
+		}
+		p.OnIdle = func() {
+			ping <- false
+			p.Stop()
+		}
+		p.MaxRTT = 500 * time.Millisecond
+		p.RunLoop()
+
+		if <-ping {
+			isOnline = true
+			break
+		}
+	}
+
+	c.JSON(http.StatusOK, isOnline)
+	return
 }

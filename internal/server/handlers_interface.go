@@ -20,14 +20,14 @@ func (s *Server) GetAdminEditInterface(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "admin_edit_interface.html", struct {
 		Route   string
-		Alerts  AlertData
+		Alerts  []FlashData
 		Session SessionData
 		Static  StaticData
 		Peers   []User
 		Device  Device
 	}{
 		Route:   c.Request.URL.Path,
-		Alerts:  s.getAlertData(c),
+		Alerts:  s.getFlashes(c),
 		Session: currentSession,
 		Static:  s.getStaticData(),
 		Peers:   users,
@@ -43,7 +43,7 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	}
 	if err := c.ShouldBind(&formDevice); err != nil {
 		_ = s.updateFormInSession(c, formDevice)
-		s.setAlert(c, "failed to bind form data: "+err.Error(), "danger")
+		s.setFlashMessage(c, err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=bind")
 		return
 	}
@@ -59,7 +59,7 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	err := s.wg.UpdateDevice(formDevice.DeviceName, formDevice.GetDeviceConfig())
 	if err != nil {
 		_ = s.updateFormInSession(c, formDevice)
-		s.setAlert(c, "failed to update device in WireGuard: "+err.Error(), "danger")
+		s.setFlashMessage(c, "Failed to update device in WireGuard: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=wg")
 		return
 	}
@@ -68,12 +68,13 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	err = s.users.UpdateDevice(formDevice)
 	if err != nil {
 		_ = s.updateFormInSession(c, formDevice)
-		s.setAlert(c, "failed to update device in database: "+err.Error(), "danger")
+		s.setFlashMessage(c, "Failed to update device in database: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=update")
 		return
 	}
 
-	s.setAlert(c, "changes applied successfully", "success")
+	s.setFlashMessage(c, "Changes applied successfully!", "success")
+	s.setFlashMessage(c, "WireGuard must be restarted to apply ip changes.", "warning")
 	c.Redirect(http.StatusSeeOther, "/admin/device/edit")
 }
 
@@ -90,5 +91,23 @@ func (s *Server) GetInterfaceConfig(c *gin.Context) {
 
 	c.Header("Content-Disposition", "attachment; filename="+filename)
 	c.Data(http.StatusOK, "application/config", cfg)
+	return
+}
+
+func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
+	device := s.users.GetDevice()
+	users := s.users.GetAllUsers()
+
+	for _, user := range users {
+		user.AllowedIPs = device.AllowedIPs
+		user.AllowedIPsStr = device.AllowedIPsStr
+		if err := s.users.UpdateUser(user); err != nil {
+			s.setFlashMessage(c, err.Error(), "danger")
+			c.Redirect(http.StatusSeeOther, "/admin/device/edit")
+		}
+	}
+
+	s.setFlashMessage(c, "Allowed ip's updated for all clients.", "success")
+	c.Redirect(http.StatusSeeOther, "/admin/device/edit")
 	return
 }

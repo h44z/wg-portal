@@ -23,13 +23,13 @@ func (s *Server) GetHandleError(c *gin.Context, code int, message, details strin
 func (s *Server) GetIndex(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", struct {
 		Route   string
-		Alerts  AlertData
+		Alerts  []FlashData
 		Session SessionData
 		Static  StaticData
 		Device  Device
 	}{
 		Route:   c.Request.URL.Path,
-		Alerts:  s.getAlertData(c),
+		Alerts:  s.getFlashes(c),
 		Session: s.getSessionData(c),
 		Static:  s.getStaticData(),
 		Device:  s.users.GetDevice(),
@@ -77,7 +77,7 @@ func (s *Server) GetAdminIndex(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "admin_index.html", struct {
 		Route        string
-		Alerts       AlertData
+		Alerts       []FlashData
 		Session      SessionData
 		Static       StaticData
 		Peers        []User
@@ -86,7 +86,7 @@ func (s *Server) GetAdminIndex(c *gin.Context) {
 		LdapDisabled bool
 	}{
 		Route:        c.Request.URL.Path,
-		Alerts:       s.getAlertData(c),
+		Alerts:       s.getFlashes(c),
 		Session:      currentSession,
 		Static:       s.getStaticData(),
 		Peers:        users,
@@ -125,7 +125,7 @@ func (s *Server) GetUserIndex(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "user_index.html", struct {
 		Route      string
-		Alerts     AlertData
+		Alerts     []FlashData
 		Session    SessionData
 		Static     StaticData
 		Peers      []User
@@ -133,7 +133,7 @@ func (s *Server) GetUserIndex(c *gin.Context) {
 		Device     Device
 	}{
 		Route:      c.Request.URL.Path,
-		Alerts:     s.getAlertData(c),
+		Alerts:     s.getFlashes(c),
 		Session:    currentSession,
 		Static:     s.getStaticData(),
 		Peers:      users,

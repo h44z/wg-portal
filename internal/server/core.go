@@ -5,6 +5,7 @@ import (
 	"errors"
 	"html/template"
 	"math/rand"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -26,6 +27,7 @@ const CacheRefreshDuration = 5 * time.Minute
 
 func init() {
 	gob.Register(SessionData{})
+	gob.Register(FlashData{})
 	gob.Register(User{})
 	gob.Register(Device{})
 	gob.Register(LdapCreateForm{})
@@ -47,7 +49,7 @@ type SessionData struct {
 	FormData      interface{}
 }
 
-type AlertData struct {
+type FlashData struct {
 	HasAlert bool
 	Message  string
 	Type     string
@@ -126,6 +128,10 @@ func (s *Server) Setup() error {
 
 	// Setup http server
 	s.server = gin.Default()
+	s.server.SetFuncMap(template.FuncMap{
+		"formatBytes": common.ByteCountSI,
+		"urlEncode":   url.QueryEscape,
+	})
 
 	// Setup templates
 	log.Infof("Loading templates from: %s", filepath.Join(dir, "/assets/tpl/*.html"))
@@ -205,17 +211,19 @@ func (s *Server) getSessionData(c *gin.Context) SessionData {
 	return sessionData
 }
 
-func (s *Server) getAlertData(c *gin.Context) AlertData {
-	currentSession := s.getSessionData(c)
-	alertData := AlertData{
-		HasAlert: currentSession.AlertData != "",
-		Message:  currentSession.AlertData,
-		Type:     currentSession.AlertType,
+func (s *Server) getFlashes(c *gin.Context) []FlashData {
+	session := sessions.Default(c)
+	flashes := session.Flashes()
+	if err := session.Save(); err != nil {
+		log.Errorf("Failed to store session after setting flash: %v", err)
 	}
-	// Reset alerts
-	_ = s.setAlert(c, "", "")
 
-	return alertData
+	flashData := make([]FlashData, len(flashes))
+	for i := range flashes {
+		flashData[i] = flashes[i].(FlashData)
+	}
+
+	return flashData
 }
 
 func (s *Server) updateSessionData(c *gin.Context, data SessionData) error {
@@ -248,13 +256,15 @@ func (s *Server) getStaticData() StaticData {
 	}
 }
 
-func (s *Server) setAlert(c *gin.Context, message, typ string) SessionData {
-	currentSession := s.getSessionData(c)
-	currentSession.AlertData = message
-	currentSession.AlertType = typ
-	_ = s.updateSessionData(c, currentSession)
-
-	return currentSession
+func (s *Server) setFlashMessage(c *gin.Context, message, typ string) {
+	session := sessions.Default(c)
+	session.AddFlash(FlashData{
+		Message: message,
+		Type:    typ,
+	})
+	if err := session.Save(); err != nil {
+		log.Errorf("Failed to store session after setting flash: %v", err)
+	}
 }
 
 func (s SessionData) GetSortIcon(field string) string {

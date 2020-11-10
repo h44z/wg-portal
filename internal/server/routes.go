@@ -23,6 +23,7 @@ func SetupRoutes(s *Server) {
 	admin.GET("/device/edit", s.GetAdminEditInterface)
 	admin.POST("/device/edit", s.PostAdminEditInterface)
 	admin.GET("/device/download", s.GetInterfaceConfig)
+	admin.GET("/device/applyglobals", s.GetApplyGlobalConfig)
 	admin.GET("/peer/edit", s.GetAdminEditPeer)
 	admin.POST("/peer/edit", s.PostAdminEditPeer)
 	admin.GET("/peer/create", s.GetAdminCreatePeer)
@@ -40,6 +41,7 @@ func SetupRoutes(s *Server) {
 	user.GET("/profile", s.GetUserIndex)
 	user.GET("/download", s.GetPeerConfig)
 	user.GET("/email", s.GetPeerConfigMail)
+	user.GET("/status", s.GetPeerStatus)
 }
 
 func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {

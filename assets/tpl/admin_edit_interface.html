@@ -14,12 +14,7 @@
     {{template "prt_nav.html" .}}
     <div class="container mt-5 main-app">
         <h1>Edit interface <strong>{{.Device.DeviceName}}</strong></h1>
-
-        {{if $.Alerts.HasAlert}}
-            <div class="alert alert-{{$.Alerts.Type}}" role="alert">
-                {{$.Alerts.Message}}
-            </div>
-        {{end}}
+        {{template "prt_flashes.html" .}}
 
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
@@ -96,6 +91,7 @@
 
             <button type="submit" class="btn btn-primary">Save</button>
             <a href="/admin" class="btn btn-secondary">Cancel</a>
+            <a href="/admin/applyglobals" class="btn btn-dark float-right">Apply Allowed IP's to clients</a>
         </form>
     </div>
     {{template "prt_footer.html" .}}

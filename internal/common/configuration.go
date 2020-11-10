@@ -62,6 +62,7 @@ type Config struct {
 		AdminUser        string `yaml:"adminUser" envconfig:"ADMIN_USER"` // optional, non LDAP admin user
 		AdminPassword    string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
 		DatabasePath     string `yaml:"database" envconfig:"DATABASE_PATH"`
+		EditableKeys     bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
 	} `yaml:"core"`
 	Email          MailConfig       `yaml:"email"`
 	LDAP           ldap.Config      `yaml:"ldap"`

@@ -14,11 +14,7 @@
     {{template "prt_nav.html" .}}
     <div class="container mt-5">
         <h1>WireGuard VPN Administration</h1>
-        {{if $.Alerts.HasAlert}}
-            <div class="alert alert-{{$.Alerts.Type}}" role="alert">
-                {{$.Alerts.Message}}
-            </div>
-        {{end}}
+        {{template "prt_flashes.html" .}}
         <div class="card">
             <div class="card-header">
                 <div class="d-flex align-items-center">
@@ -116,6 +112,7 @@
                         <th scope="row" class="list-image-cell">
                             <a href="#{{$p.UID}}" data-toggle="collapse" class="collapse-indicator collapsed"></a>
                             <!-- online check -->
+                            <span class="online-status" id="online-{{$p.UID}}" data-pkey="{{$p.PublicKey}}"><i class="fas fa-unlink"></i></span>
                         </th>
                         <td>{{$p.Identifier}}</td>
                         <td>{{$p.PublicKey}}</td>
@@ -162,7 +159,7 @@
                                                 {{if not $p.Peer}}
                                                     <p>No Traffic data available...</p>
                                                 {{else}}
-                                                    <p>{{if $p.DeactivatedAt}}-{{else}}{{$p.Peer.ReceiveBytes}} / {{$p.Peer.TransmitBytes}}{{end}}</p>
+                                                    <p>{{if $p.DeactivatedAt}}-{{else}}<i class="fas fa-long-arrow-alt-down"></i></i> {{formatBytes $p.Peer.ReceiveBytes}} / <i class="fas fa-long-arrow-alt-up"></i> {{formatBytes $p.Peer.TransmitBytes}}{{end}}</p>
                                                 {{end}}
                                             </div>
                                             <div id="t2{{$p.UID}}" class="tab-pane fade">

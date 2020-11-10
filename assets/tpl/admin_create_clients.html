@@ -18,12 +18,7 @@
     <div class="container mt-5">
         <h1>Create new clients</h1>
         <h2>Enter valid LDAP user email addresses to quickly create new accounts.</h2>
-        {{if $.Alerts.HasAlert}}
-            <div class="alert alert-{{$.Alerts.Type}}" role="alert">
-                {{$.Alerts.Message}}
-            </div>
-        {{end}}
-
+        {{template "prt_flashes.html" .}}
         <form method="post" enctype="multipart/form-data">
             <div class="form-row">
                 <div class="form-group col-md-12">
