@@ -13,7 +13,6 @@ before_install:
 
 
 script:
-  - make test
   - make docker-image
 
 
