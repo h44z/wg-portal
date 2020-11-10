@@ -61,6 +61,7 @@ type Config struct {
 		MailFrom         string `yaml:"mailfrom" envconfig:"MAIL_FROM"`
 		AdminUser        string `yaml:"adminUser" envconfig:"ADMIN_USER"` // optional, non LDAP admin user
 		AdminPassword    string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
+		DatabasePath     string `yaml:"database" envconfig:"DATABASE_PATH"`
 	} `yaml:"core"`
 	Email          MailConfig       `yaml:"email"`
 	LDAP           ldap.Config      `yaml:"ldap"`
@@ -79,12 +80,14 @@ func NewConfig() *Config {
 	cfg.Core.MailFrom = "WireGuard VPN <noreply@company.com>"
 	cfg.Core.AdminUser = "" // non-ldap admin access is disabled by default
 	cfg.Core.AdminPassword = ""
+	cfg.Core.DatabasePath = "data/wg_portal.db"
 	cfg.LDAP.URL = "ldap://srv-ad01.company.local:389"
 	cfg.LDAP.BaseDN = "DC=COMPANY,DC=LOCAL"
 	cfg.LDAP.StartTLS = true
 	cfg.LDAP.BindUser = "company\\\\ldap_wireguard"
 	cfg.LDAP.BindPass = "SuperSecret"
 	cfg.WG.DeviceName = "wg0"
+	cfg.WG.WireGuardConfig = "/etc/wireguard/wg0.conf"
 	cfg.AdminLdapGroup = "CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL"
 	cfg.Email.Host = "127.0.0.1"
 	cfg.Email.Port = 25

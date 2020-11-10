@@ -27,6 +27,7 @@
 *.iws
 out/
 dist/
+data/
 ssh.key
 .testCoverage.txt
 wg_portal.db

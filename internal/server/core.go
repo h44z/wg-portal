@@ -79,6 +79,11 @@ type Server struct {
 }
 
 func (s *Server) Setup() error {
+	dir := s.getExecutableDirectory()
+	rDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	log.Infof("Real working directory: %s", rDir)
+	log.Infof("Current working directory: %s", dir)
+
 	// Init rand
 	rand.Seed(time.Now().UnixNano())
 
@@ -102,7 +107,7 @@ func (s *Server) Setup() error {
 	}
 
 	// Setup user manager
-	if s.users = NewUserManager(s.wg, s.ldapUsers); s.users == nil {
+	if s.users = NewUserManager(filepath.Join(dir, s.config.Core.DatabasePath), s.wg, s.ldapUsers); s.users == nil {
 		return errors.New("unable to setup user manager")
 	}
 	if err := s.users.InitFromCurrentInterface(); err != nil {
@@ -112,10 +117,7 @@ func (s *Server) Setup() error {
 		return errors.New("unable to restore wirguard state")
 	}
 
-	dir := s.getExecutableDirectory()
-	rDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	log.Infof("Real working directory: %s", rDir)
-	log.Infof("Current working directory: %s", dir)
+	// Setup mail template
 	var err error
 	s.mailTpl, err = template.New("email.html").ParseFiles(filepath.Join(dir, "/assets/tpl/email.html"))
 	if err != nil {

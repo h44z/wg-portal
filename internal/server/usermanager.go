@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
@@ -281,12 +283,19 @@ type UserManager struct {
 	ldapUsers *ldap.SynchronizedUserCacheHolder
 }
 
-func NewUserManager(wg *wireguard.Manager, ldapUsers *ldap.SynchronizedUserCacheHolder) *UserManager {
+func NewUserManager(dbPath string, wg *wireguard.Manager, ldapUsers *ldap.SynchronizedUserCacheHolder) *UserManager {
+
 	um := &UserManager{wg: wg, ldapUsers: ldapUsers}
 	var err error
-	um.db, err = gorm.Open(sqlite.Open("wg_portal.db"), &gorm.Config{})
+	if _, err = os.Stat(filepath.Dir(dbPath)); os.IsNotExist(err) {
+		if err = os.MkdirAll(filepath.Dir(dbPath), 0700); err != nil {
+			log.Errorf("failed to create database directory (%s): %v", filepath.Dir(dbPath), err)
+			return nil
+		}
+	}
+	um.db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
-		log.Errorf("failed to open sqlite database: %v", err)
+		log.Errorf("failed to open sqlite database (%s): %v", dbPath, err)
 		return nil
 	}
 
