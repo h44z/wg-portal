@@ -10,3 +10,8 @@ services:
     volumes:
       - /etc/wireguard:/etc/wireguard
       - ./data:/app/data
+    ports:
+      - '8123:8123'
+    environment:
+      - EXTERNAL_URL=http://localhost:8123
+      - ADMIN_PASS=a
