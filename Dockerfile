@@ -14,6 +14,9 @@ ADD . /build/
 # Set the Current Working Directory inside the container
 WORKDIR /build
 
+# Workaround for failing travis-ci builds
+RUN rm -rf ~/go; rm -rf go.sum
+
 # Build the Go app
 RUN go clean -modcache; go mod tidy; make build
 
