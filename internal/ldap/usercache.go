@@ -18,9 +18,6 @@ var Fields = []string{"givenName", "sn", "mail", "department", "memberOf", "sAMA
 	"st", "postalCode", "co", "facsimileTelephoneNumber", "pager", "thumbnailPhoto", "otherMobile",
 	"extensionAttribute2", "distinguishedName", "userAccountControl"}
 
-var ModifiableFields = []string{"department", "telephoneNumber", "mobile", "displayName", "title", "company",
-	"manager", "streetAddress", "employeeID", "l", "st", "postalCode", "co", "thumbnailPhoto"}
-
 // --------------------------------------------------------------------------------------------------------------------
 // Cache Data Store
 // --------------------------------------------------------------------------------------------------------------------
@@ -28,7 +25,6 @@ var ModifiableFields = []string{"department", "telephoneNumber", "mobile", "disp
 type UserCacheHolder interface {
 	Clear()
 	SetAllUsers(users []RawLdapData)
-	SetUser(data RawLdapData)
 	GetUser(dn string) *RawLdapData
 	GetUsers() []*RawLdapData
 }
@@ -95,14 +91,6 @@ func (h *SynchronizedUserCacheHolder) SetAllUsers(users []RawLdapData) {
 	}
 }
 
-func (h *SynchronizedUserCacheHolder) SetUser(user RawLdapData) {
-	h.mux.Lock()
-	defer h.mux.Unlock()
-
-	h.users[user.DN] = &UserCacheHolderEntry{RawLdapData: user}
-	h.users[user.DN].CalcFieldsFromAttributes()
-}
-
 func (h *SynchronizedUserCacheHolder) GetUser(dn string) *RawLdapData {
 	h.mux.RLock()
 	defer h.mux.RUnlock()
@@ -150,30 +138,6 @@ func (h *SynchronizedUserCacheHolder) GetSortedUsers(sortKey string, sortDirecti
 
 	return sortedUsers
 
-}
-
-func (h *SynchronizedUserCacheHolder) GetFilteredUsers(sortKey string, sortDirection string, search, searchDepartment string) []*UserCacheHolderEntry {
-	sortedUsers := h.GetSortedUsers(sortKey, sortDirection)
-	if search == "" && searchDepartment == "" {
-		return sortedUsers // skip filtering
-	}
-
-	filteredUsers := make([]*UserCacheHolderEntry, 0, len(sortedUsers))
-	for _, user := range sortedUsers {
-		if searchDepartment != "" && user.Attributes["department"] != searchDepartment {
-			continue
-		}
-		if strings.Contains(user.Attributes["sn"], search) ||
-			strings.Contains(user.Attributes["givenName"], search) ||
-			strings.Contains(user.Mail, search) ||
-			strings.Contains(user.Attributes["department"], search) ||
-			strings.Contains(user.Attributes["telephoneNumber"], search) ||
-			strings.Contains(user.Attributes["mobile"], search) {
-			filteredUsers = append(filteredUsers, user)
-		}
-	}
-
-	return filteredUsers
 }
 
 func (h *SynchronizedUserCacheHolder) IsInGroup(username, gid string) bool {
@@ -229,45 +193,6 @@ func (h *SynchronizedUserCacheHolder) GetUserDNByMail(mail string) string {
 	}
 
 	return userDN
-}
-
-func (h *SynchronizedUserCacheHolder) GetTeamLeaders() []*UserCacheHolderEntry {
-
-	sortedUsers := h.GetSortedUsers("sn", "asc")
-	teamLeaders := make([]*UserCacheHolderEntry, 0, len(sortedUsers))
-	for _, user := range sortedUsers {
-		if user.Attributes["extensionAttribute2"] != "Teamleiter" {
-			continue
-		}
-
-		teamLeaders = append(teamLeaders, user)
-	}
-
-	return teamLeaders
-}
-
-func (h *SynchronizedUserCacheHolder) GetDepartments() []string {
-	h.mux.RLock()
-	defer h.mux.RUnlock()
-
-	departmentSet := make(map[string]struct{})
-	for _, user := range h.users {
-		if user.Attributes["department"] == "" {
-			continue
-		}
-		departmentSet[user.Attributes["department"]] = struct{}{}
-	}
-
-	departments := make([]string, len(departmentSet))
-	i := 0
-	for department := range departmentSet {
-		departments[i] = department
-		i++
-	}
-
-	sort.Strings(departments)
-
-	return departments
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -395,61 +320,6 @@ func (u *UserCache) Update(filter bool) error {
 	u.LastError = nil
 
 	log.Debug("Ldap cache updated...")
-
-	return nil
-}
-
-func (u *UserCache) ModifyUserData(dn string, newData RawLdapData, fields []string) error {
-	if fields == nil {
-		fields = ModifiableFields // default
-	}
-
-	existingUserData := u.userData.GetUser(dn)
-	if existingUserData == nil {
-		return fmt.Errorf("user with dn %s not found", dn)
-	}
-
-	modify := ldap.NewModifyRequest(dn, nil)
-
-	for _, ldapAttribute := range fields {
-		if existingUserData.Attributes[ldapAttribute] == newData.Attributes[ldapAttribute] {
-			continue // do not update unchanged fields
-		}
-
-		if len(existingUserData.RawAttributes[ldapAttribute]) == 0 && newData.Attributes[ldapAttribute] != "" {
-			modify.Add(ldapAttribute, []string{newData.Attributes[ldapAttribute]})
-			newData.RawAttributes[ldapAttribute] = [][]byte{
-				[]byte(newData.Attributes[ldapAttribute]),
-			}
-		}
-		if len(existingUserData.RawAttributes[ldapAttribute]) != 0 && newData.Attributes[ldapAttribute] != "" {
-			modify.Replace(ldapAttribute, []string{newData.Attributes[ldapAttribute]})
-			newData.RawAttributes[ldapAttribute][0] = []byte(newData.Attributes[ldapAttribute])
-		}
-		if len(existingUserData.RawAttributes[ldapAttribute]) != 0 && newData.Attributes[ldapAttribute] == "" {
-			modify.Delete(ldapAttribute, []string{})
-			newData.RawAttributes[ldapAttribute] = [][]byte{} // clear list
-		}
-	}
-
-	if len(modify.Changes) == 0 {
-		return nil
-	}
-
-	client, err := u.open()
-	if err != nil {
-		u.LastError = err
-		return err
-	}
-	defer u.close(client)
-
-	err = client.Modify(modify)
-	if err != nil {
-		return err
-	}
-
-	// Once written to ldap, update the local cache
-	u.userData.SetUser(newData)
 
 	return nil
 }

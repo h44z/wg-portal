@@ -26,6 +26,7 @@
 .idea/
 *.iws
 out/
+dist/
 ssh.key
 .testCoverage.txt
 wg_portal.db

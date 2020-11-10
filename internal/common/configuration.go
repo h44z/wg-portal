@@ -55,31 +55,39 @@ func loadConfigEnv(cfg interface{}) error {
 type Config struct {
 	Core struct {
 		ListeningAddress string `yaml:"listeningAddress" envconfig:"LISTENING_ADDRESS"`
+		ExternalUrl      string `yaml:"externalUrl" envconfig:"EXTERNAL_URL"`
 		Title            string `yaml:"title" envconfig:"WEBSITE_TITLE"`
+		CompanyName      string `yaml:"company" envconfig:"COMPANY_NAME"`
+		MailFrom         string `yaml:"mailfrom" envconfig:"MAIL_FROM"`
+		AdminUser        string `yaml:"adminUser" envconfig:"ADMIN_USER"` // optional, non LDAP admin user
+		AdminPassword    string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
 	} `yaml:"core"`
-
-	LDAP               ldap.Config      `yaml:"ldap"`
-	WG                 wireguard.Config `yaml:"wg"`
-	AdminLdapGroup     string           `yaml:"adminLdapGroup" envconfig:"ADMIN_LDAP_GROUP"`
-	LogoutRedirectPath string           `yaml:"logoutRedirectPath" envconfig:"LOGOUT_REDIRECT_PATH"`
-	AuthRoutePrefix    string           `yaml:"authRoutePrefix" envconfig:"AUTH_ROUTE_PREFIX"`
+	Email          MailConfig       `yaml:"email"`
+	LDAP           ldap.Config      `yaml:"ldap"`
+	WG             wireguard.Config `yaml:"wg"`
+	AdminLdapGroup string           `yaml:"adminLdapGroup" envconfig:"ADMIN_LDAP_GROUP"`
 }
 
 func NewConfig() *Config {
 	cfg := &Config{}
 
 	// Default config
-	cfg.Core.ListeningAddress = ":8080"
+	cfg.Core.ListeningAddress = ":8123"
 	cfg.Core.Title = "WireGuard VPN"
+	cfg.Core.CompanyName = "WireGuard Portal"
+	cfg.Core.ExternalUrl = "http://localhost:8123"
+	cfg.Core.MailFrom = "WireGuard VPN <noreply@company.com>"
+	cfg.Core.AdminUser = "" // non-ldap admin access is disabled by default
+	cfg.Core.AdminPassword = ""
 	cfg.LDAP.URL = "ldap://srv-ad01.company.local:389"
 	cfg.LDAP.BaseDN = "DC=COMPANY,DC=LOCAL"
 	cfg.LDAP.StartTLS = true
-	cfg.LDAP.BindUser = "company\\ldap_wireguard"
+	cfg.LDAP.BindUser = "company\\\\ldap_wireguard"
 	cfg.LDAP.BindPass = "SuperSecret"
 	cfg.WG.DeviceName = "wg0"
 	cfg.AdminLdapGroup = "CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL"
-	cfg.LogoutRedirectPath = "/"
-	cfg.AuthRoutePrefix = "/auth"
+	cfg.Email.Host = "127.0.0.1"
+	cfg.Email.Port = 25
 
 	// Load config from file and environment
 	cfgFile, ok := os.LookupEnv("CONFIG_FILE")

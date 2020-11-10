@@ -3,7 +3,7 @@
         <span class="navbar-toggler-icon"></span>
     </button>
 
-    <a class="navbar-brand" href="/"><img src="/img/PROLICHT_FULL.png" alt="PROLICHT"/></a>
+    <a class="navbar-brand" href="/"><img src="{{$.Static.WebsiteLogo}}" alt="{{$.Static.CompanyName}}"/></a>
     <div id="topNavbar" class="navbar-collapse collapse">
         <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
             <li class="nav-spacer"></li>
@@ -24,11 +24,11 @@
                     {{end}}{{end}}
                     <a class="dropdown-item" href="/user/profile"><i class="fas fa-user"></i> Profile</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ $.Static.LogoutURL }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    <a class="dropdown-item" href="/auth/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
         {{else}}
-            <a href="{{ $.Static.LoginURL }}" class="navbar-text"><i class="fas fa-sign-in-alt fa-sm fa-fw mr-2 text-gray-400"></i> Login</a></li>
+            <a href="/auth/login" class="navbar-text"><i class="fas fa-sign-in-alt fa-sm fa-fw mr-2 text-gray-400"></i> Login</a></li>
         {{end}}
     </div><!--/.navbar-collapse -->
 </nav>

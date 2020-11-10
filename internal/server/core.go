@@ -56,8 +56,9 @@ type AlertData struct {
 type StaticData struct {
 	WebsiteTitle string
 	WebsiteLogo  string
-	LoginURL     string
-	LogoutURL    string
+	CompanyName  string
+	Year         int
+	LdapDisabled bool
 }
 
 type Server struct {
@@ -71,6 +72,7 @@ type Server struct {
 	wg *wireguard.Manager
 
 	// LDAP stuff
+	ldapDisabled     bool
 	ldapAuth         ldap.Authentication
 	ldapUsers        *ldap.SynchronizedUserCacheHolder
 	ldapCacheUpdater *ldap.UserCache
@@ -88,7 +90,9 @@ func (s *Server) Setup() error {
 	s.ldapUsers.Init()
 	s.ldapCacheUpdater = ldap.NewUserCache(s.config.LDAP, s.ldapUsers)
 	if s.ldapCacheUpdater.LastError != nil {
-		return s.ldapCacheUpdater.LastError
+		log.Warnf("LDAP error: %v", s.ldapCacheUpdater.LastError)
+		log.Warnf("LDAP features disabled!")
+		s.ldapDisabled = true
 	}
 
 	// Setup WireGuard stuff
@@ -141,15 +145,17 @@ func (s *Server) Setup() error {
 
 func (s *Server) Run() {
 	// Start ldap group watcher
-	go func(s *Server) {
-		for {
-			time.Sleep(CacheRefreshDuration)
-			if err := s.ldapCacheUpdater.Update(true); err != nil {
-				log.Warnf("Failed to update ldap group cache: %v", err)
+	if !s.ldapDisabled {
+		go func(s *Server) {
+			for {
+				time.Sleep(CacheRefreshDuration)
+				if err := s.ldapCacheUpdater.Update(true); err != nil {
+					log.Warnf("Failed to update ldap group cache: %v", err)
+				}
+				log.Debugf("Refreshed LDAP permissions!")
 			}
-			log.Debugf("Refreshed LDAP permissions!")
-		}
-	}(s)
+		}(s)
+	}
 
 	// Run web service
 	err := s.server.Run(s.config.Core.ListeningAddress)
@@ -233,8 +239,10 @@ func (s *Server) destroySessionData(c *gin.Context) error {
 func (s *Server) getStaticData() StaticData {
 	return StaticData{
 		WebsiteTitle: s.config.Core.Title,
-		LoginURL:     s.config.AuthRoutePrefix + "/login",
-		LogoutURL:    s.config.AuthRoutePrefix + "/logout",
+		WebsiteLogo:  "/img/header-logo.png",
+		CompanyName:  s.config.Core.CompanyName,
+		LdapDisabled: s.ldapDisabled,
+		Year:         time.Now().Year(),
 	}
 }
 

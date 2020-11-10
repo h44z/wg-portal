@@ -6,7 +6,6 @@
     <title>{{ .Static.WebsiteTitle }} - Admin</title>
     <meta name="description" content="{{ .Static.WebsiteTitle }}">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <!--link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"-->
     <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
     <link rel="stylesheet" href="/css/custom.css">
 </head>
@@ -92,7 +91,9 @@
                 <h2 class="mt-2">Current VPN Users</h2>
             </div>
             <div class="col-sm-2 col-12 text-right">
+                {{if not .Static.LdapDisabled}}
                 <a href="/admin/peer/createldap" title="Add a LDAP user" class="btn btn-primary"><i class="fa fa-fw fa-user-plus"></i></a>
+                {{end}}
                 <a href="/admin/peer/create" title="Manual add a user" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
             </div>
         </div>
@@ -191,7 +192,7 @@
             <p>Currently listed peers: <strong>{{len .Peers}}</strong></p>
         </div>
     </div>
-    {{template "prt_footer.html"}}
+    {{template "prt_footer.html" .}}
     <script src="/js/jquery.min.js"></script>
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/jquery.easing.js"></script>

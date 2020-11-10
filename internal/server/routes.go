@@ -22,7 +22,7 @@ func SetupRoutes(s *Server) {
 	admin.GET("/", s.GetAdminIndex)
 	admin.GET("/device/edit", s.GetAdminEditInterface)
 	admin.POST("/device/edit", s.PostAdminEditInterface)
-	admin.GET("/device/download", s.GetDeviceConfig)
+	admin.GET("/device/download", s.GetInterfaceConfig)
 	admin.GET("/peer/edit", s.GetAdminEditPeer)
 	admin.POST("/peer/edit", s.PostAdminEditPeer)
 	admin.GET("/peer/create", s.GetAdminCreatePeer)
@@ -30,16 +30,16 @@ func SetupRoutes(s *Server) {
 	admin.GET("/peer/createldap", s.GetAdminCreateLdapPeers)
 	admin.POST("/peer/createldap", s.PostAdminCreateLdapPeers)
 	admin.GET("/peer/delete", s.GetAdminDeletePeer)
-	admin.GET("/peer/download", s.GetUserConfig)
-	admin.GET("/peer/email", s.GetUserConfigMail)
+	admin.GET("/peer/download", s.GetPeerConfig)
+	admin.GET("/peer/email", s.GetPeerConfigMail)
 
 	// User routes
 	user := s.server.Group("/user")
 	user.Use(s.RequireAuthentication("")) // empty scope = all logged in users
-	user.GET("/qrcode", s.GetUserQRCode)
+	user.GET("/qrcode", s.GetPeerQRCode)
 	user.GET("/profile", s.GetUserIndex)
-	user.GET("/download", s.GetUserConfig)
-	user.GET("/email", s.GetUserConfigMail)
+	user.GET("/download", s.GetPeerConfig)
+	user.GET("/email", s.GetPeerConfigMail)
 }
 
 func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {
@@ -49,7 +49,7 @@ func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {
 		if !session.LoggedIn {
 			// Abort the request with the appropriate error code
 			c.Abort()
-			c.Redirect(http.StatusSeeOther, s.config.AuthRoutePrefix+"/login?err=loginreq")
+			c.Redirect(http.StatusSeeOther, "/auth/login?err=loginreq")
 			return
 		}
 
@@ -57,7 +57,7 @@ func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {
 			!s.ldapUsers.IsInGroup(session.UserName, scope) {
 			// Abort the request with the appropriate error code
 			c.Abort()
-			s.HandleError(c, http.StatusUnauthorized, "unauthorized", "not enough permissions")
+			s.GetHandleError(c, http.StatusUnauthorized, "unauthorized", "not enough permissions")
 			return
 		}
 

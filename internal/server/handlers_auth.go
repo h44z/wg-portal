@@ -44,7 +44,7 @@ func (s *Server) PostLogin(c *gin.Context) {
 
 	// Validate form input
 	if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {
-		c.Redirect(http.StatusSeeOther, s.config.AuthRoutePrefix+"/login?err=missingdata")
+		c.Redirect(http.StatusSeeOther, "/auth/login?err=missingdata")
 		return
 	}
 
@@ -55,12 +55,12 @@ func (s *Server) PostLogin(c *gin.Context) {
 
 	// Check if user is in cache, avoid unnecessary ldap requests
 	if !adminAuthenticated && !s.ldapUsers.UserExists(username) {
-		c.Redirect(http.StatusSeeOther, s.config.AuthRoutePrefix+"/login?err=authfail")
+		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
 	}
 
 	// Check if username and password match
 	if !adminAuthenticated && !s.ldapAuth.CheckLogin(username, password) {
-		c.Redirect(http.StatusSeeOther, s.config.AuthRoutePrefix+"/login?err=authfail")
+		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
 		return
 	}
 
@@ -96,7 +96,7 @@ func (s *Server) PostLogin(c *gin.Context) {
 	}
 
 	if err := s.updateSessionData(c, sessionData); err != nil {
-		s.HandleError(c, http.StatusInternalServerError, "login error", "failed to save session")
+		s.GetHandleError(c, http.StatusInternalServerError, "login error", "failed to save session")
 		return
 	}
 	c.Redirect(http.StatusSeeOther, "/")
@@ -106,13 +106,13 @@ func (s *Server) GetLogout(c *gin.Context) {
 	currentSession := s.getSessionData(c)
 
 	if !currentSession.LoggedIn { // Not logged in
-		c.Redirect(http.StatusSeeOther, s.config.LogoutRedirectPath)
+		c.Redirect(http.StatusSeeOther, "/")
 		return
 	}
 
 	if err := s.destroySessionData(c); err != nil {
-		s.HandleError(c, http.StatusInternalServerError, "logout error", "failed to destroy session")
+		s.GetHandleError(c, http.StatusInternalServerError, "logout error", "failed to destroy session")
 		return
 	}
-	c.Redirect(http.StatusSeeOther, s.config.LogoutRedirectPath)
+	c.Redirect(http.StatusSeeOther, "/")
 }

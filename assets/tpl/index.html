@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- https://bootswatch.com/lux/ -->
+<!-- Theme: https://bootswatch.com/lux/ -->
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>{{ .Static.WebsiteTitle }}</title>
     <meta name="description" content="{{ .Static.WebsiteTitle }}">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <!--link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"-->
     <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
     <link rel="stylesheet" href="/css/custom.css">
 </head>
@@ -26,7 +25,7 @@
         <h3>Client Software</h3>
         <p>Installation instructions for client software can be found on the official WireGuard website: <a href="https://www.wireguard.com/install/" title="WireGuard" target="_blank">https://www.wireguard.com/</a> </p>
     </div>
-    {{template "prt_footer.html"}}
+    {{template "prt_footer.html" .}}
     <script src="/js/jquery.min.js"></script>
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/jquery.easing.js"></script>
