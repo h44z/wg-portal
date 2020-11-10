@@ -31,3 +31,4 @@ data/
 ssh.key
 .testCoverage.txt
 wg_portal.db
+go.sum
