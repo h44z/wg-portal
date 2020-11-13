@@ -37,7 +37,7 @@ RUN apt-get update && apt-get upgrade -y && \
         chmod +rx /usr/local/bin/goss && \
         goss --version
 
-COPY --from=builder /build/dist/wg-portal /app/
+COPY --from=builder /build/dist/wg-portal /app/wgportal
 COPY --from=builder /build/dist/assets /app/assets
 COPY --from=builder /build/scripts /app/
 
@@ -45,7 +45,7 @@ COPY --from=builder /build/scripts /app/
 WORKDIR /app
 
 # Command to run the executable
-CMD [ "/app/wg-portal" ]
+CMD [ "/app/wgportal" ]
 
 HEALTHCHECK --interval=1m --timeout=10s \
     CMD /app/docker-healthcheck.sh
