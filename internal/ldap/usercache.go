@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -214,7 +215,7 @@ func NewUserCache(config Config, store UserCacheHolder) *UserCache {
 	}
 
 	log.Infof("Filling user cache...")
-	err := uc.Update(true)
+	err := uc.Update(true, true)
 	log.Infof("User cache filled!")
 	uc.LastError = err
 
@@ -250,7 +251,7 @@ func (u UserCache) close(conn *ldap.Conn) {
 }
 
 // Update updates the user cache in background, minimal locking will happen
-func (u *UserCache) Update(filter bool) error {
+func (u *UserCache) Update(filter, withDisabledUsers bool) error {
 	log.Debugf("Updating ldap cache...")
 	client, err := u.open()
 	if err != nil {
@@ -290,8 +291,8 @@ func (u *UserCache) Update(filter bool) error {
 				continue // prefilter...
 			}
 
-			if userAccountControl == "" || userAccountControl == "514" {
-				continue // 514 means account is disabled
+			if !withDisabledUsers && userAccountControl != "" && IsLdapUserDisabled(userAccountControl) {
+				continue
 			}
 
 			if entry.DN != dn {
@@ -322,4 +323,16 @@ func (u *UserCache) Update(filter bool) error {
 	log.Debug("Ldap cache updated...")
 
 	return nil
+}
+
+func IsLdapUserDisabled(userAccountControl string) bool {
+	uacInt, err := strconv.Atoi(userAccountControl)
+	if err != nil {
+		return true
+	}
+	if int32(uacInt)&0x2 != 0 {
+		return true // bit 2 set means account is disabled
+	}
+
+	return false
 }

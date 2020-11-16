@@ -150,16 +150,17 @@
                                                     <ul>
                                                         <li>Firstname: {{$p.LdapUser.Firstname}}</li>
                                                         <li>Lastname: {{$p.LdapUser.Lastname}}</li>
-                                                        <li>Phone: {{$p.UID}}</li>
+                                                        <li>Phone: {{index $p.LdapUser.RawLdapData.Attributes "telephoneNumber"}}</li>
                                                         <li>Mail: {{$p.LdapUser.Mail}}</li>
-                                                        <li>Department: {{$p.UID}}</li>
+                                                        <li>Department: {{index $p.LdapUser.RawLdapData.Attributes "department"}}</li>
                                                     </ul>
                                                 {{end}}
-                                                <h4>Traffic</h4>
+                                                <h4>Connection / Traffic</h4>
                                                 {{if not $p.Peer}}
                                                     <p>No Traffic data available...</p>
                                                 {{else}}
-                                                    <p>{{if $p.DeactivatedAt}}-{{else}}<i class="fas fa-long-arrow-alt-down"></i></i> {{formatBytes $p.Peer.ReceiveBytes}} / <i class="fas fa-long-arrow-alt-up"></i> {{formatBytes $p.Peer.TransmitBytes}}{{end}}</p>
+                                                    <p>{{if $p.DeactivatedAt}}-{{else}}<i class="fas network-wired" title="Last Endpoint"></i> {{formatBytes $p.Peer.Endpoint}}{{end}}</p>
+                                                    <p>{{if $p.DeactivatedAt}}-{{else}}<i class="fas fa-long-arrow-alt-down"></i> {{formatBytes $p.Peer.ReceiveBytes}} / <i class="fas fa-long-arrow-alt-up"></i> {{formatBytes $p.Peer.TransmitBytes}}{{end}}</p>
                                                 {{end}}
                                             </div>
                                             <div id="t2{{$p.UID}}" class="tab-pane fade">

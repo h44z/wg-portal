@@ -157,10 +157,22 @@ func (s *Server) Run() {
 		go func(s *Server) {
 			for {
 				time.Sleep(CacheRefreshDuration)
-				if err := s.ldapCacheUpdater.Update(true); err != nil {
+				if err := s.ldapCacheUpdater.Update(true, true); err != nil {
 					log.Warnf("Failed to update ldap group cache: %v", err)
 				}
 				log.Debugf("Refreshed LDAP permissions!")
+			}
+		}(s)
+	}
+
+	if !s.ldapDisabled && s.config.Core.SyncLdapStatus {
+		go func(s *Server) {
+			for {
+				time.Sleep(CacheRefreshDuration)
+				if err := s.SyncLdapAttributesWithWireGuard(); err != nil {
+					log.Warnf("Failed to synchronize ldap attributes: %v", err)
+				}
+				log.Debugf("Synced LDAP attributes!")
 			}
 		}(s)
 	}

@@ -10,7 +10,8 @@ DNS = {{ .Server.DNSStr }}
 {{- end}}
 {{- if ne .Server.Mtu 0 -}}
 MTU = {{.Server.Mtu}}
-{{- end -}}
+{{- end}}
+
 [Peer]
 PublicKey = {{ .Server.PublicKey }}
 {{- if .Client.PresharedKey -}}

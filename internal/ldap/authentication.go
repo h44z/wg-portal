@@ -63,7 +63,7 @@ func (a Authentication) CheckCustomLogin(userIdentifier, username, password stri
 		a.Cfg.BaseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
 		fmt.Sprintf("(&(objectClass=organizationalPerson)(%s=%s))", userIdentifier, username),
-		[]string{"dn"},
+		[]string{"dn", "userAccountControl"},
 		nil,
 	)
 
@@ -77,6 +77,12 @@ func (a Authentication) CheckCustomLogin(userIdentifier, username, password stri
 	}
 
 	userDN := sr.Entries[0].DN
+
+	// Check if user is disabled, if so deny login
+	uac := sr.Entries[0].GetAttributeValue("userAccountControl")
+	if uac != "" && IsLdapUserDisabled(uac) {
+		return false
+	}
 
 	// Bind as the user to verify their password
 	err = client.Bind(userDN, password)

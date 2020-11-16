@@ -54,15 +54,17 @@ func loadConfigEnv(cfg interface{}) error {
 
 type Config struct {
 	Core struct {
-		ListeningAddress string `yaml:"listeningAddress" envconfig:"LISTENING_ADDRESS"`
-		ExternalUrl      string `yaml:"externalUrl" envconfig:"EXTERNAL_URL"`
-		Title            string `yaml:"title" envconfig:"WEBSITE_TITLE"`
-		CompanyName      string `yaml:"company" envconfig:"COMPANY_NAME"`
-		MailFrom         string `yaml:"mailfrom" envconfig:"MAIL_FROM"`
-		AdminUser        string `yaml:"adminUser" envconfig:"ADMIN_USER"` // optional, non LDAP admin user
-		AdminPassword    string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
-		DatabasePath     string `yaml:"database" envconfig:"DATABASE_PATH"`
-		EditableKeys     bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
+		ListeningAddress       string `yaml:"listeningAddress" envconfig:"LISTENING_ADDRESS"`
+		ExternalUrl            string `yaml:"externalUrl" envconfig:"EXTERNAL_URL"`
+		Title                  string `yaml:"title" envconfig:"WEBSITE_TITLE"`
+		CompanyName            string `yaml:"company" envconfig:"COMPANY_NAME"`
+		MailFrom               string `yaml:"mailfrom" envconfig:"MAIL_FROM"`
+		AdminUser              string `yaml:"adminUser" envconfig:"ADMIN_USER"` // optional, non LDAP admin user
+		AdminPassword          string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
+		DatabasePath           string `yaml:"database" envconfig:"DATABASE_PATH"`
+		EditableKeys           bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
+		CreateInterfaceOnLogin bool   `yaml:"createOnLogin" envconfig:"CREATE_INTERFACE_ON_LOGIN"`
+		SyncLdapStatus         bool   `yaml:"syncLdapStatus" envconfig:"SYNC_LDAP_STATUS"` // disable account if disabled in ldap
 	} `yaml:"core"`
 	Email          MailConfig       `yaml:"email"`
 	LDAP           ldap.Config      `yaml:"ldap"`

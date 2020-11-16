@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -92,6 +94,21 @@ func (s *Server) PostLogin(c *gin.Context) {
 			SortedBy:      "mail",
 			SortDirection: "asc",
 			Search:        "",
+		}
+	}
+
+	// Check if user already has a peer setup, if not create one
+	if s.config.Core.CreateInterfaceOnLogin && !adminAuthenticated {
+		users := s.users.GetUsersByMail(sessionData.Email)
+
+		if len(users) == 0 { // Create vpn peer
+			err := s.CreateUser(User{
+				Identifier: sessionData.Firstname + " " + sessionData.Lastname + " (Default)",
+				Email:      sessionData.Email,
+				CreatedBy:  sessionData.Email,
+				UpdatedBy:  sessionData.Email,
+			})
+			log.Errorf("Failed to automatically create vpn peer for %s: %v", sessionData.Email, err)
 		}
 	}
 
