@@ -159,7 +159,7 @@
                                                 {{if not $p.Peer}}
                                                     <p>No Traffic data available...</p>
                                                 {{else}}
-                                                    <p>{{if $p.DeactivatedAt}}-{{else}}<i class="fas network-wired" title="Last Endpoint"></i> {{formatBytes $p.Peer.Endpoint}}{{end}}</p>
+                                                    <p>{{if $p.DeactivatedAt}}-{{else}}<i class="fas network-wired" title="Last Endpoint"></i> {{$p.Peer.Endpoint}}{{end}}</p>
                                                     <p>{{if $p.DeactivatedAt}}-{{else}}<i class="fas fa-long-arrow-alt-down"></i> {{formatBytes $p.Peer.ReceiveBytes}} / <i class="fas fa-long-arrow-alt-up"></i> {{formatBytes $p.Peer.TransmitBytes}}{{end}}</p>
                                                 {{end}}
                                             </div>
