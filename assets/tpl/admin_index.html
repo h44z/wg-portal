@@ -19,9 +19,9 @@
             <div class="card-header">
                 <div class="d-flex align-items-center">
                     <span class="mr-auto">Interface status for <strong>{{.Device.DeviceName}}</strong></span>
-                    <a href="/admin/device/download?dev={{.Device.DeviceName}}"><i class="fas fa-download"></i></a>
+                    <a href="/admin/device/download?dev={{.Device.DeviceName}}" title="Download interface configuration"><i class="fas fa-download"></i></a>
                     &nbsp;&nbsp;&nbsp;
-                    <a href="/admin/device/edit?dev={{.Device.DeviceName}}"><i class="fas fa-cog"></i></a>
+                    <a href="/admin/device/edit?dev={{.Device.DeviceName}}" title="Edit interface settings"><i class="fas fa-cog"></i></a>
                 </div>
             </div>
             <div class="card-body">
@@ -88,9 +88,9 @@
             </div>
             <div class="col-sm-2 col-12 text-right">
                 {{if not .Static.LdapDisabled}}
-                <a href="/admin/peer/createldap" title="Add a LDAP user" class="btn btn-primary"><i class="fa fa-fw fa-user-plus"></i></a>
+                <a href="/admin/peer/createldap" title="Add LDAP users" class="btn btn-primary"><i class="fa fa-fw fa-user-plus"></i></a>
                 {{end}}
-                <a href="/admin/peer/create" title="Manual add a user" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
+                <a href="/admin/peer/create" title="Manually add a user" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
             </div>
         </div>
         <div class="mt-2 table-responsive">
@@ -112,7 +112,7 @@
                         <th scope="row" class="list-image-cell">
                             <a href="#{{$p.UID}}" data-toggle="collapse" class="collapse-indicator collapsed"></a>
                             <!-- online check -->
-                            <span class="online-status" id="online-{{$p.UID}}" data-pkey="{{$p.PublicKey}}"><i class="fas fa-unlink"></i></span>
+                            <span title="Online status" class="online-status" id="online-{{$p.UID}}" data-pkey="{{$p.PublicKey}}"><i class="fas fa-unlink"></i></span>
                         </th>
                         <td>{{$p.Identifier}}</td>
                         <td>{{$p.PublicKey}}</td>
@@ -121,7 +121,7 @@
                         <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{{$p.LastHandshakeTime}}">{{$p.LastHandshake}}</span></td>
                         <td>
                             {{if eq $.Session.IsAdmin true}}
-                                <a href="/admin/peer/edit?pkey={{$p.PublicKey}}"><i class="fas fa-cog"></i></a>
+                                <a href="/admin/peer/edit?pkey={{$p.PublicKey}}" title="Edit peer"><i class="fas fa-cog"></i></a>
                             {{end}}
                         </td>
                     </tr>
@@ -159,8 +159,8 @@
                                                 {{if not $p.Peer}}
                                                     <p>No Traffic data available...</p>
                                                 {{else}}
-                                                    <p>{{if $p.DeactivatedAt}}-{{else}}<i class="fas network-wired" title="Last Endpoint"></i> {{$p.Peer.Endpoint}}{{end}}</p>
-                                                    <p>{{if $p.DeactivatedAt}}-{{else}}<i class="fas fa-long-arrow-alt-down"></i> {{formatBytes $p.Peer.ReceiveBytes}} / <i class="fas fa-long-arrow-alt-up"></i> {{formatBytes $p.Peer.TransmitBytes}}{{end}}</p>
+                                                    <p class="ml-4">{{if $p.DeactivatedAt}}-{{else}}<i class="fas fa-network-wired" title="Last Endpoint"></i> {{$p.Peer.Endpoint}}{{end}}</p>
+                                                    <p class="ml-4">{{if $p.DeactivatedAt}}-{{else}}<i class="fas fa-long-arrow-alt-down" title="Download"></i> {{formatBytes $p.Peer.ReceiveBytes}} / <i class="fas fa-long-arrow-alt-up" title="Upload"></i> {{formatBytes $p.Peer.TransmitBytes}}{{end}}</p>
                                                 {{end}}
                                             </div>
                                             <div id="t2{{$p.UID}}" class="tab-pane fade">
