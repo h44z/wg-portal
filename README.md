@@ -74,6 +74,9 @@ For a standalone application, use the Makefile provided in the repository to bui
 
 ```
 make
+
+# To build for arm architecture as well use:
+make build-cross-plat
 ```
 
 The compiled binary and all necessary assets will be located in the dist folder.

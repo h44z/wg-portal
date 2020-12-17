@@ -10,7 +10,12 @@ IMAGE=h44z/wg-portal
 
 all: dep build
 
-build: dep $(addprefix $(BUILDDIR)/,$(BINARIES))
+build: dep $(addsuffix -amd64,$(addprefix $(BUILDDIR)/,$(BINARIES)))
+	cp -r assets $(BUILDDIR)
+	cp scripts/wg-portal.service $(BUILDDIR)
+	cp scripts/wg-portal.env $(BUILDDIR)
+
+build-cross-plat: dep build $(addsuffix -arm,$(addprefix $(BUILDDIR)/,$(BINARIES))) $(addsuffix -arm64,$(addprefix $(BUILDDIR)/,$(BINARIES)))
 	cp -r assets $(BUILDDIR)
 	cp scripts/wg-portal.service $(BUILDDIR)
 	cp scripts/wg-portal.env $(BUILDDIR)
@@ -45,8 +50,13 @@ docker-build:
 docker-push:
 	docker push $(IMAGE)
 
-# For arch install: arm-linux-gnueabihf-gcc and aarch64-linux-gnu-gcc to crosscompile for arm
-$(BUILDDIR)/%: cmd/%/main.go dep phony
-	GOOS=linux GOARCH=amd64 $(GOCMD) build -o $@-amd64 $<
-	CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc GOOS=linux GOARCH=arm64 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@-arm64 $<
-	CGO_ENABLED=1 CC=arm-linux-gnueabihf-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@-arm $<
+$(BUILDDIR)/%-amd64: cmd/%/main.go dep phony
+	GOOS=linux GOARCH=amd64 $(GOCMD) build -o $@ $<
+
+# On arch-linux install aarch64-linux-gnu-gcc to crosscompile for arm64
+$(BUILDDIR)/%-arm64: cmd/%/main.go dep phony
+	CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc GOOS=linux GOARCH=arm64 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@ $<
+
+# On arch-linux install arm-linux-gnueabihf-gcc to crosscompile for arm
+$(BUILDDIR)/%-arm: cmd/%/main.go dep phony
+	CGO_ENABLED=1 CC=arm-linux-gnueabihf-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@ $<

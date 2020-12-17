@@ -13,7 +13,7 @@ To compile the final binary, use the Makefile provided in the repository.
 As WireGuard Portal is written in Go, **golang >= 1.14** must be installed prior to building.
 
 ```
-make
+make build-cross-plat
 ```
 
 The compiled binary and all necessary assets will be located in the dist folder.
