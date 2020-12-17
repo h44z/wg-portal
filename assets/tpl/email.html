@@ -100,7 +100,7 @@
                                                         <th class="column-top" width="280" style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;">
                                                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                                                 <tr>
-                                                                    {{if not .Client.LdapUser}}
+                                                                    {{if .Client.LdapUser}}
                                                                     <td class="h4 pb20" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello {{.Client.LdapUser.Firstname}} {{.Client.LdapUser.Lastname}}</td>
                                                                     {{else}}
                                                                     <td class="h4 pb20" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello</td>

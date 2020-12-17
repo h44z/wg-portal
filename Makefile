@@ -8,10 +8,12 @@ IMAGE=h44z/wg-portal
 
 .PHONY: all test clean phony
 
-all: dep test build
+all: dep build
 
 build: dep $(addprefix $(BUILDDIR)/,$(BINARIES))
 	cp -r assets $(BUILDDIR)
+	cp scripts/wg-portal.service $(BUILDDIR)
+	cp scripts/wg-portal.env $(BUILDDIR)
 
 dep:
 	$(GOCMD) mod download
@@ -43,5 +45,8 @@ docker-build:
 docker-push:
 	docker push $(IMAGE)
 
+# For arch install: arm-linux-gnueabihf-gcc and aarch64-linux-gnu-gcc to crosscompile for arm
 $(BUILDDIR)/%: cmd/%/main.go dep phony
-	$(GOCMD) build -o $@ $<
+	GOOS=linux GOARCH=amd64 $(GOCMD) build -o $@-amd64 $<
+	CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc GOOS=linux GOARCH=arm64 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@-arm64 $<
+	CGO_ENABLED=1 CC=arm-linux-gnueabihf-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@-arm $<

@@ -1,0 +1,19 @@
+[Unit]
+Description=WireGuard Portal
+ConditionPathExists=/opt/wg-portal/wg-portal-amd64
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+Restart=on-failure
+RestartSec=10
+
+WorkingDirectory=/opt/wg-portal
+ExecStart=/opt/wg-portal/wg-portal-amd64
+EnvironmentFile=/opt/wg-portal/wg-portal.env
+
+[Install]
+WantedBy=multi-user.target

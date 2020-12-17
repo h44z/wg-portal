@@ -34,7 +34,7 @@ will only be available in combination with LDAP.
 ### Docker
 The easiest way to run WireGuard Portal is using the provided docker image.
 
-Docker compose snippet, used for demo server
+Docker compose snippet with sample values:
 ```
 version: '3.6'
 services:
@@ -77,6 +77,7 @@ make
 ```
 
 The compiled binary and all necessary assets will be located in the dist folder.
+A detailed description for using this software with a raspberry pi can be found in the [README-RASPBERRYPI.md](README-RASPBERRYPI.md).
 
 ## What is out of scope
 

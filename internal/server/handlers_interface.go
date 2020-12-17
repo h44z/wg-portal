@@ -73,6 +73,15 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 		return
 	}
 
+	// Update WireGuard config file
+	err = s.WriteWireGuardConfigFile()
+	if err != nil {
+		_ = s.updateFormInSession(c, formDevice)
+		s.setFlashMessage(c, "Failed to update wireguard config-file: "+err.Error(), "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=update")
+		return
+	}
+
 	s.setFlashMessage(c, "Changes applied successfully!", "success")
 	s.setFlashMessage(c, "WireGuard must be restarted to apply ip changes.", "warning")
 	c.Redirect(http.StatusSeeOther, "/admin/device/edit")
