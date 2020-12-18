@@ -18,27 +18,42 @@
 
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
-            <input type="hidden" name="privkey" value="{{.Device.PrivateKey}}">
             <h3>Server's interface configuration</h3>
+            {{if .EditableKeys}}
+            <div class="form-row">
+                <div class="form-group required col-md-12">
+                    <label for="inputServerPrivateKey">Private Key</label>
+                    <input type="text" name="privkey" class="form-control" id="inputServerPrivateKey" value="{{.Device.PrivateKey}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group required col-md-12">
+                    <label for="inputServerPublicKey">Public Key</label>
+                    <input type="text" name="pubkey" class="form-control" id="inputServerPublicKey" value="{{.Device.PublicKey}}">
+                </div>
+            </div>
+            {{else}}
+            <input type="hidden" name="privkey" value="{{.Device.PrivateKey}}">
             <div class="form-row">
                 <div class="form-group col-md-12">
                     <label for="inputServerPublicKey">Public Key</label>
                     <input type="text" name="pubkey" readonly class="form-control" id="inputServerPublicKey" value="{{.Device.PublicKey}}">
                 </div>
             </div>
+            {{end}}
             <div class="form-row">
-                <div class="form-group col-md-6">
+                <div class="form-group required col-md-6">
                     <label for="inputListenPort">Listen port</label>
                     <input type="number" name="port" class="form-control" id="inputListenPort" placeholder="51820" value="{{.Device.ListenPort}}">
                 </div>
-                <div class="form-group col-md-6">
+                <div class="form-group required col-md-6">
                     <label for="inputIPs">Server IP address</label>
                     <input type="text" name="ip" class="form-control" id="inputIPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}">
                 </div>
             </div>
             <h3>Client's global configuration</h3>
             <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group required col-md-12">
                     <label for="inputPublicEndpoint">Public Enpoint for Clients</label>
                     <input type="text" name="endpoint" class="form-control" id="inputPublicEndpoint" placeholder="vpn.company.com:51820" value="{{.Device.Endpoint}}">
                 </div>

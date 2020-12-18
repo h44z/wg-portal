@@ -19,19 +19,21 @@ func (s *Server) GetAdminEditInterface(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "admin_edit_interface.html", struct {
-		Route   string
-		Alerts  []FlashData
-		Session SessionData
-		Static  StaticData
-		Peers   []User
-		Device  Device
+		Route        string
+		Alerts       []FlashData
+		Session      SessionData
+		Static       StaticData
+		Peers        []User
+		Device       Device
+		EditableKeys bool
 	}{
-		Route:   c.Request.URL.Path,
-		Alerts:  s.getFlashes(c),
-		Session: currentSession,
-		Static:  s.getStaticData(),
-		Peers:   users,
-		Device:  currentSession.FormData.(Device),
+		Route:        c.Request.URL.Path,
+		Alerts:       s.getFlashes(c),
+		Session:      currentSession,
+		Static:       s.getStaticData(),
+		Peers:        users,
+		Device:       currentSession.FormData.(Device),
+		EditableKeys: s.config.Core.EditableKeys,
 	})
 }
 

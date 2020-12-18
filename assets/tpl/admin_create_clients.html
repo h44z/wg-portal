@@ -21,13 +21,13 @@
         {{template "prt_flashes.html" .}}
         <form method="post" enctype="multipart/form-data">
             <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group required col-md-12">
                     <label for="inputEmail">Email Addresses</label>
                     <input type="text" name="email" class="form-control" id="inputEmail" value="{{.FormData.Emails}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group required col-md-12">
                     <label for="inputIdentifier">Client Friendly Name (will be added as suffix to the name of the user)</label>
                     <input type="text" name="identifier" class="form-control" id="inputIdentifier" value="{{.FormData.Identifier}}">
                 </div>

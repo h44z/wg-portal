@@ -31,7 +31,7 @@
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group col-md-12">
+                    <div class="form-group required col-md-12">
                         <label for="inputServerPublicKey">Public Key</label>
                         <input type="text" name="pubkey" class="form-control" id="inputServerPublicKey" value="{{.Peer.PublicKey}}">
                     </div>
@@ -53,25 +53,25 @@
                 </div>
             {{end}}
             <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group required col-md-12">
                     <label for="inputIdentifier">Client Friendly Name</label>
                     <input type="text" name="identifier" class="form-control" id="inputIdentifier" value="{{.Peer.Identifier}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group required col-md-12">
                     <label for="inputEmail">Client Email Address</label>
                     <input type="email" name="mail" class="form-control" id="inputEmail" value="{{.Peer.Email}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group required col-md-12">
                     <label for="inputIP">Client IP Address</label>
                     <input type="text" name="ip" class="form-control" id="inputIP" value="{{.Peer.IPsStr}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group required col-md-12">
                     <label for="inputAllowedIP">Allowed IPs</label>
                     <input type="text" name="allowedip" class="form-control" id="inputAllowedIP" value="{{.Peer.AllowedIPsStr}}">
                 </div>

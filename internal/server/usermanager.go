@@ -202,7 +202,7 @@ type Device struct {
 	Interface *wgtypes.Device `gorm:"-"`
 
 	DeviceName          string   `form:"device" gorm:"primaryKey" binding:"required,alphanum"`
-	PrivateKey          string   `form:"privkey" binding:"base64"`
+	PrivateKey          string   `form:"privkey" binding:"required,base64"`
 	PublicKey           string   `form:"pubkey" binding:"required,base64"`
 	PersistentKeepalive int      `form:"keepalive" binding:"gte=0"`
 	ListenPort          int      `form:"port" binding:"required,gt=0"`
