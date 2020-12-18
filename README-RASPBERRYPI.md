@@ -31,6 +31,8 @@ The compiled binary and all necessary assets will be located in the dist folder.
      - ExecStart
      - EnvironmentFile
    - Update environment variables in the `wg-portal.env` file to fit your needs
+ - Make sure that the binary application file is executable
+   - `sudo chmod +x /opt/wg-portal/wg-portal-*`
  - Link the system service file to the correct folder:
    - `sudo ln -s /opt/wg-portal/wg-portal.service /etc/systemd/system/wg-portal.service`
  - Reload the systemctl daemon:
