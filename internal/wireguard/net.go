@@ -7,6 +7,8 @@ import (
 	"github.com/milosgajdos/tenus"
 )
 
+const WireGuardDefaultMTU = 1420
+
 func (m *Manager) GetIPAddress() ([]string, error) {
 	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
 	if err != nil {
@@ -107,7 +109,7 @@ func (m *Manager) SetMTU(mtu int) error {
 	}
 
 	if mtu == 0 {
-		mtu = 1420 // WireGuard default MTU
+		mtu = WireGuardDefaultMTU
 	}
 
 	if err := wgInterface.SetLinkMTU(mtu); err != nil {

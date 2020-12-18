@@ -390,6 +390,9 @@ func (u *UserManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []s
 		device.Mtu = 0
 		device.PersistentKeepalive = 16 // Default
 		device.IPsStr = strings.Join(ipAddresses, ", ")
+		if mtu == wireguard.WireGuardDefaultMTU {
+			mtu = 0
+		}
 		device.Mtu = mtu
 
 		res := u.db.Create(&device)
