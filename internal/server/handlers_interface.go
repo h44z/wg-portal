@@ -82,8 +82,24 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 		return
 	}
 
+	// Update interface IP address
+	if s.config.WG.ManageIPAddresses {
+		if err := s.wg.SetIPAddress(formDevice.IPs); err != nil {
+			_ = s.updateFormInSession(c, formDevice)
+			s.setFlashMessage(c, "Failed to update ip address: "+err.Error(), "danger")
+			c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=update")
+		}
+		if err := s.wg.SetMTU(formDevice.Mtu); err != nil {
+			_ = s.updateFormInSession(c, formDevice)
+			s.setFlashMessage(c, "Failed to update MTU: "+err.Error(), "danger")
+			c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=update")
+		}
+	}
+
 	s.setFlashMessage(c, "Changes applied successfully!", "success")
-	s.setFlashMessage(c, "WireGuard must be restarted to apply ip changes.", "warning")
+	if !s.config.WG.ManageIPAddresses {
+		s.setFlashMessage(c, "WireGuard must be restarted to apply ip changes.", "warning")
+	}
 	c.Redirect(http.StatusSeeOther, "/admin/device/edit")
 }
 

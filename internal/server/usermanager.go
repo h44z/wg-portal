@@ -319,6 +319,18 @@ func (u *UserManager) InitFromCurrentInterface() error {
 		log.Errorf("failed to init user-manager from device: %v", err)
 		return err
 	}
+	var ipAddresses []string
+	var mtu int
+	if u.wg.Cfg.ManageIPAddresses {
+		if ipAddresses, err = u.wg.GetIPAddress(); err != nil {
+			log.Errorf("failed to init user-manager from device: %v", err)
+			return err
+		}
+		if mtu, err = u.wg.GetMTU(); err != nil {
+			log.Errorf("failed to init user-manager from device: %v", err)
+			return err
+		}
+	}
 
 	// Check if entries already exist in database, if not create them
 	for _, peer := range peers {
@@ -326,7 +338,7 @@ func (u *UserManager) InitFromCurrentInterface() error {
 			return err
 		}
 	}
-	if err := u.validateOrCreateDevice(*device); err != nil {
+	if err := u.validateOrCreateDevice(*device, ipAddresses, mtu); err != nil {
 		return err
 	}
 
@@ -366,7 +378,7 @@ func (u *UserManager) validateOrCreateUserForPeer(peer wgtypes.Peer) error {
 	return nil
 }
 
-func (u *UserManager) validateOrCreateDevice(dev wgtypes.Device) error {
+func (u *UserManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []string, mtu int) error {
 	device := Device{}
 	u.db.Where("device_name = ?", dev.Name).FirstOrInit(&device)
 
@@ -377,6 +389,8 @@ func (u *UserManager) validateOrCreateDevice(dev wgtypes.Device) error {
 		device.ListenPort = dev.ListenPort
 		device.Mtu = 0
 		device.PersistentKeepalive = 16 // Default
+		device.IPsStr = strings.Join(ipAddresses, ", ")
+		device.Mtu = mtu
 
 		res := u.db.Create(&device)
 		if res.Error != nil {

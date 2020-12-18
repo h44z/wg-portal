@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"runtime"
 
 	"github.com/h44z/wg-portal/internal/wireguard"
 
@@ -91,6 +92,7 @@ func NewConfig() *Config {
 	cfg.LDAP.BindPass = "SuperSecret"
 	cfg.WG.DeviceName = "wg0"
 	cfg.WG.WireGuardConfig = "/etc/wireguard/wg0.conf"
+	cfg.WG.ManageIPAddresses = true
 	cfg.AdminLdapGroup = "CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL"
 	cfg.Email.Host = "127.0.0.1"
 	cfg.Email.Port = 25
@@ -107,6 +109,11 @@ func NewConfig() *Config {
 	err = loadConfigEnv(cfg)
 	if err != nil {
 		log.Warnf("unable to load environment config: %v", err)
+	}
+
+	if cfg.WG.ManageIPAddresses && runtime.GOOS != "linux" {
+		log.Warnf("Managing IP addresses only works on linux! Feature disabled.")
+		cfg.WG.ManageIPAddresses = false
 	}
 
 	return cfg

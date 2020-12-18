@@ -85,7 +85,7 @@ A detailed description for using this software with a raspberry pi can be found 
 ## What is out of scope
 
  * Generation or application of any `iptables` or `nftables` rules
- * Setting up or changing IP-addresses of the WireGuard interface
+ * Setting up or changing IP-addresses of the WireGuard interface on operating systems other than linux
  
 ## Application stack
 
