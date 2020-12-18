@@ -37,7 +37,7 @@ RUN apt-get update && apt-get upgrade -y && \
         chmod +rx /usr/local/bin/goss && \
         goss --version
 
-COPY --from=builder /build/dist/wg-portal /app/wgportal
+COPY --from=builder /build/dist/wg-portal-amd64 /app/wgportal
 COPY --from=builder /build/dist/assets /app/assets
 COPY --from=builder /build/scripts /app/
 
