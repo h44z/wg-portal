@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"html/template"
+	"io/ioutil"
 	"math/rand"
 	"net/url"
 	"os"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/h44z/wg-portal/internal/ldap"
 	log "github.com/sirupsen/logrus"
+	ginlogrus "github.com/toorop/gin-logrus"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/memstore"
@@ -127,7 +129,10 @@ func (s *Server) Setup() error {
 	}
 
 	// Setup http server
-	s.server = gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	gin.DefaultWriter = ioutil.Discard
+	s.server = gin.New()
+	s.server.Use(ginlogrus.Logger(log.StandardLogger()), gin.Recovery())
 	s.server.SetFuncMap(template.FuncMap{
 		"formatBytes": common.ByteCountSI,
 		"urlEncode":   url.QueryEscape,
