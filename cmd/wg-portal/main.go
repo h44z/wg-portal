@@ -63,6 +63,7 @@ func setupLogger(logger *logrus.Logger) error {
 	} else {
 		f := new(logrus.JSONFormatter)
 		f.TimestampFormat = "2006-01-02 15:04:05"
+		formatter = f
 	}
 
 	logger.SetFormatter(formatter)
