@@ -7,7 +7,7 @@ import (
 	"github.com/milosgajdos/tenus"
 )
 
-const WireGuardDefaultMTU = 1420
+const DefaultMTU = 1420
 
 func (m *Manager) GetIPAddress() ([]string, error) {
 	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
@@ -38,7 +38,7 @@ func (m *Manager) GetIPAddress() ([]string, error) {
 			ip = v.IP
 			mask = ip.DefaultMask()
 		}
-		if ip == nil {
+		if ip == nil || mask == nil {
 			continue // something is wrong?
 		}
 
@@ -72,7 +72,7 @@ func (m *Manager) SetIPAddress(cidrs []string) error {
 		}
 	}
 
-	// Next set new IP adrresses
+	// Next set new IP addresses
 	for _, cidr := range cidrs {
 		wgIp, wgIpNet, err := net.ParseCIDR(cidr)
 		if err != nil {
@@ -109,7 +109,7 @@ func (m *Manager) SetMTU(mtu int) error {
 	}
 
 	if mtu == 0 {
-		mtu = WireGuardDefaultMTU
+		mtu = DefaultMTU
 	}
 
 	if err := wgInterface.SetLinkMTU(mtu); err != nil {

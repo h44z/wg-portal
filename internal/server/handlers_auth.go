@@ -4,9 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func (s *Server) GetLogin(c *gin.Context) {
@@ -108,7 +107,7 @@ func (s *Server) PostLogin(c *gin.Context) {
 				CreatedBy:  sessionData.Email,
 				UpdatedBy:  sessionData.Email,
 			})
-			log.Errorf("Failed to automatically create vpn peer for %s: %v", sessionData.Email, err)
+			logrus.Errorf("Failed to automatically create vpn peer for %s: %v", sessionData.Email, err)
 		}
 	}
 

@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/common"
 	"github.com/h44z/wg-portal/internal/ldap"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/tatsushid/go-fastping"
 )
 
@@ -204,7 +204,7 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 		}
 	}
 
-	log.Infof("creating %d ldap peers", len(emails))
+	logrus.Infof("creating %d ldap peers", len(emails))
 
 	for i := range emails {
 		if err := s.CreateUserByEmail(emails[i], formData.Identifier, false); err != nil {

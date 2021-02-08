@@ -16,15 +16,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin/binding"
-
 	"github.com/go-playground/validator/v10"
-
-	"github.com/h44z/wg-portal/internal/wireguard"
-
 	"github.com/h44z/wg-portal/internal/common"
-
 	"github.com/h44z/wg-portal/internal/ldap"
-	log "github.com/sirupsen/logrus"
+	"github.com/h44z/wg-portal/internal/wireguard"
+	"github.com/sirupsen/logrus"
 	"github.com/skip2/go-qrcode"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"gorm.io/driver/sqlite"
@@ -62,8 +58,8 @@ var ipList validator.Func = func(fl validator.FieldLevel) bool {
 
 func init() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("cidrlist", cidrList)
-		v.RegisterValidation("iplist", ipList)
+		_ = v.RegisterValidation("cidrlist", cidrList)
+		_ = v.RegisterValidation("iplist", ipList)
 	}
 }
 
@@ -153,7 +149,7 @@ func (u User) GetPeerConfig() wgtypes.PeerConfig {
 func (u User) GetQRCode() ([]byte, error) {
 	png, err := qrcode.Encode(u.Config, qrcode.Medium, 250)
 	if err != nil {
-		log.WithFields(log.Fields{
+		logrus.WithFields(logrus.Fields{
 			"err": err,
 		}).Error("failed to create qrcode")
 		return nil, err
@@ -289,19 +285,19 @@ func NewUserManager(dbPath string, wg *wireguard.Manager, ldapUsers *ldap.Synchr
 	var err error
 	if _, err = os.Stat(filepath.Dir(dbPath)); os.IsNotExist(err) {
 		if err = os.MkdirAll(filepath.Dir(dbPath), 0700); err != nil {
-			log.Errorf("failed to create database directory (%s): %v", filepath.Dir(dbPath), err)
+			logrus.Errorf("failed to create database directory (%s): %v", filepath.Dir(dbPath), err)
 			return nil
 		}
 	}
 	um.db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
-		log.Errorf("failed to open sqlite database (%s): %v", dbPath, err)
+		logrus.Errorf("failed to open sqlite database (%s): %v", dbPath, err)
 		return nil
 	}
 
 	err = um.db.AutoMigrate(&User{}, &Device{})
 	if err != nil {
-		log.Errorf("failed to migrate sqlite database: %v", err)
+		logrus.Errorf("failed to migrate sqlite database: %v", err)
 		return nil
 	}
 
@@ -311,23 +307,23 @@ func NewUserManager(dbPath string, wg *wireguard.Manager, ldapUsers *ldap.Synchr
 func (u *UserManager) InitFromCurrentInterface() error {
 	peers, err := u.wg.GetPeerList()
 	if err != nil {
-		log.Errorf("failed to init user-manager from peers: %v", err)
+		logrus.Errorf("failed to init user-manager from peers: %v", err)
 		return err
 	}
 	device, err := u.wg.GetDeviceInfo()
 	if err != nil {
-		log.Errorf("failed to init user-manager from device: %v", err)
+		logrus.Errorf("failed to init user-manager from device: %v", err)
 		return err
 	}
 	var ipAddresses []string
 	var mtu int
 	if u.wg.Cfg.ManageIPAddresses {
 		if ipAddresses, err = u.wg.GetIPAddress(); err != nil {
-			log.Errorf("failed to init user-manager from device: %v", err)
+			logrus.Errorf("failed to init user-manager from device: %v", err)
 			return err
 		}
 		if mtu, err = u.wg.GetMTU(); err != nil {
-			log.Errorf("failed to init user-manager from device: %v", err)
+			logrus.Errorf("failed to init user-manager from device: %v", err)
 			return err
 		}
 	}
@@ -370,7 +366,7 @@ func (u *UserManager) validateOrCreateUserForPeer(peer wgtypes.Peer) error {
 
 		res := u.db.Create(&user)
 		if res.Error != nil {
-			log.Errorf("failed to create autodetected peer: %v", res.Error)
+			logrus.Errorf("failed to create autodetected peer: %v", res.Error)
 			return res.Error
 		}
 	}
@@ -390,14 +386,14 @@ func (u *UserManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []s
 		device.Mtu = 0
 		device.PersistentKeepalive = 16 // Default
 		device.IPsStr = strings.Join(ipAddresses, ", ")
-		if mtu == wireguard.WireGuardDefaultMTU {
+		if mtu == wireguard.DefaultMTU {
 			mtu = 0
 		}
 		device.Mtu = mtu
 
 		res := u.db.Create(&device)
 		if res.Error != nil {
-			log.Errorf("failed to create autodetected device: %v", res.Error)
+			logrus.Errorf("failed to create autodetected device: %v", res.Error)
 			return res.Error
 		}
 	}
@@ -603,7 +599,7 @@ func (u *UserManager) CreateUser(user User) error {
 
 	res := u.db.Create(&user)
 	if res.Error != nil {
-		log.Errorf("failed to create user: %v", res.Error)
+		logrus.Errorf("failed to create user: %v", res.Error)
 		return res.Error
 	}
 
@@ -617,7 +613,7 @@ func (u *UserManager) UpdateUser(user User) error {
 
 	res := u.db.Save(&user)
 	if res.Error != nil {
-		log.Errorf("failed to update user: %v", res.Error)
+		logrus.Errorf("failed to update user: %v", res.Error)
 		return res.Error
 	}
 
@@ -627,7 +623,7 @@ func (u *UserManager) UpdateUser(user User) error {
 func (u *UserManager) DeleteUser(user User) error {
 	res := u.db.Delete(&user)
 	if res.Error != nil {
-		log.Errorf("failed to delete user: %v", res.Error)
+		logrus.Errorf("failed to delete user: %v", res.Error)
 		return res.Error
 	}
 
@@ -642,7 +638,7 @@ func (u *UserManager) UpdateDevice(device Device) error {
 
 	res := u.db.Save(&device)
 	if res.Error != nil {
-		log.Errorf("failed to update device: %v", res.Error)
+		logrus.Errorf("failed to update device: %v", res.Error)
 		return res.Error
 	}
 

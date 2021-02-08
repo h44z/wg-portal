@@ -11,17 +11,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/h44z/wg-portal/internal/wireguard"
-
-	"github.com/h44z/wg-portal/internal/common"
-
-	"github.com/h44z/wg-portal/internal/ldap"
-	log "github.com/sirupsen/logrus"
-	ginlogrus "github.com/toorop/gin-logrus"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
+	"github.com/h44z/wg-portal/internal/common"
+	"github.com/h44z/wg-portal/internal/ldap"
+	"github.com/h44z/wg-portal/internal/wireguard"
+	"github.com/sirupsen/logrus"
+	ginlogrus "github.com/toorop/gin-logrus"
 )
 
 const SessionIdentifier = "wgPortalSession"
@@ -85,8 +82,8 @@ type Server struct {
 func (s *Server) Setup() error {
 	dir := s.getExecutableDirectory()
 	rDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	log.Infof("Real working directory: %s", rDir)
-	log.Infof("Current working directory: %s", dir)
+	logrus.Infof("Real working directory: %s", rDir)
+	logrus.Infof("Current working directory: %s", dir)
 
 	// Init rand
 	rand.Seed(time.Now().UnixNano())
@@ -99,8 +96,8 @@ func (s *Server) Setup() error {
 	s.ldapUsers.Init()
 	s.ldapCacheUpdater = ldap.NewUserCache(s.config.LDAP, s.ldapUsers)
 	if s.ldapCacheUpdater.LastError != nil {
-		log.Warnf("LDAP error: %v", s.ldapCacheUpdater.LastError)
-		log.Warnf("LDAP features disabled!")
+		logrus.Warnf("LDAP error: %v", s.ldapCacheUpdater.LastError)
+		logrus.Warnf("LDAP features disabled!")
 		s.ldapDisabled = true
 	}
 
@@ -118,7 +115,7 @@ func (s *Server) Setup() error {
 		return errors.New("unable to initialize user manager")
 	}
 	if err := s.RestoreWireGuardInterface(); err != nil {
-		return errors.New("unable to restore wirguard state")
+		return errors.New("unable to restore WireGuard state")
 	}
 
 	// Setup mail template
@@ -132,14 +129,14 @@ func (s *Server) Setup() error {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = ioutil.Discard
 	s.server = gin.New()
-	s.server.Use(ginlogrus.Logger(log.StandardLogger()), gin.Recovery())
+	s.server.Use(ginlogrus.Logger(logrus.StandardLogger()), gin.Recovery())
 	s.server.SetFuncMap(template.FuncMap{
 		"formatBytes": common.ByteCountSI,
 		"urlEncode":   url.QueryEscape,
 	})
 
 	// Setup templates
-	log.Infof("Loading templates from: %s", filepath.Join(dir, "/assets/tpl/*.html"))
+	logrus.Infof("Loading templates from: %s", filepath.Join(dir, "/assets/tpl/*.html"))
 	s.server.LoadHTMLGlob(filepath.Join(dir, "/assets/tpl/*.html"))
 	s.server.Use(sessions.Sessions("authsession", memstore.NewStore([]byte("secret")))) // TODO: change key?
 
@@ -152,7 +149,7 @@ func (s *Server) Setup() error {
 	// Setup all routes
 	SetupRoutes(s)
 
-	log.Infof("Setup of service completed!")
+	logrus.Infof("Setup of service completed!")
 	return nil
 }
 
@@ -163,9 +160,9 @@ func (s *Server) Run() {
 			for {
 				time.Sleep(CacheRefreshDuration)
 				if err := s.ldapCacheUpdater.Update(true, true); err != nil {
-					log.Warnf("Failed to update ldap group cache: %v", err)
+					logrus.Warnf("Failed to update ldap group cache: %v", err)
 				}
-				log.Debugf("Refreshed LDAP permissions!")
+				logrus.Debugf("Refreshed LDAP permissions!")
 			}
 		}(s)
 	}
@@ -175,9 +172,9 @@ func (s *Server) Run() {
 			for {
 				time.Sleep(CacheRefreshDuration)
 				if err := s.SyncLdapAttributesWithWireGuard(); err != nil {
-					log.Warnf("Failed to synchronize ldap attributes: %v", err)
+					logrus.Warnf("Failed to synchronize ldap attributes: %v", err)
 				}
-				log.Debugf("Synced LDAP attributes!")
+				logrus.Debugf("Synced LDAP attributes!")
 			}
 		}(s)
 	}
@@ -185,14 +182,14 @@ func (s *Server) Run() {
 	// Run web service
 	err := s.server.Run(s.config.Core.ListeningAddress)
 	if err != nil {
-		log.Errorf("Failed to listen and serve on %s: %v", s.config.Core.ListeningAddress, err)
+		logrus.Errorf("Failed to listen and serve on %s: %v", s.config.Core.ListeningAddress, err)
 	}
 }
 
 func (s *Server) getExecutableDirectory() string {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
-		log.Errorf("Failed to get executable directory: %v", err)
+		logrus.Errorf("Failed to get executable directory: %v", err)
 	}
 
 	if _, err := os.Stat(filepath.Join(dir, "assets")); os.IsNotExist(err) {
@@ -221,7 +218,7 @@ func (s *Server) getSessionData(c *gin.Context) SessionData {
 		}
 		session.Set(SessionIdentifier, sessionData)
 		if err := session.Save(); err != nil {
-			log.Errorf("Failed to store session: %v", err)
+			logrus.Errorf("Failed to store session: %v", err)
 		}
 	}
 
@@ -232,7 +229,7 @@ func (s *Server) getFlashes(c *gin.Context) []FlashData {
 	session := sessions.Default(c)
 	flashes := session.Flashes()
 	if err := session.Save(); err != nil {
-		log.Errorf("Failed to store session after setting flash: %v", err)
+		logrus.Errorf("Failed to store session after setting flash: %v", err)
 	}
 
 	flashData := make([]FlashData, len(flashes))
@@ -247,7 +244,7 @@ func (s *Server) updateSessionData(c *gin.Context, data SessionData) error {
 	session := sessions.Default(c)
 	session.Set(SessionIdentifier, data)
 	if err := session.Save(); err != nil {
-		log.Errorf("Failed to store session: %v", err)
+		logrus.Errorf("Failed to store session: %v", err)
 		return err
 	}
 	return nil
@@ -257,7 +254,7 @@ func (s *Server) destroySessionData(c *gin.Context) error {
 	session := sessions.Default(c)
 	session.Delete(SessionIdentifier)
 	if err := session.Save(); err != nil {
-		log.Errorf("Failed to destroy session: %v", err)
+		logrus.Errorf("Failed to destroy session: %v", err)
 		return err
 	}
 	return nil
@@ -280,7 +277,7 @@ func (s *Server) setFlashMessage(c *gin.Context, message, typ string) {
 		Type:    typ,
 	})
 	if err := session.Save(); err != nil {
-		log.Errorf("Failed to store session after setting flash: %v", err)
+		logrus.Errorf("Failed to store session after setting flash: %v", err)
 	}
 }
 

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/go-ldap/ldap/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var Fields = []string{"givenName", "sn", "mail", "department", "memberOf", "sAMAccountName", "telephoneNumber",
@@ -214,9 +214,9 @@ func NewUserCache(config Config, store UserCacheHolder) *UserCache {
 		userData:  store,
 	}
 
-	log.Infof("Filling user cache...")
+	logrus.Infof("Filling user cache...")
 	err := uc.Update(true, true)
-	log.Infof("User cache filled!")
+	logrus.Infof("User cache filled!")
 	uc.LastError = err
 
 	return uc
@@ -252,7 +252,7 @@ func (u UserCache) close(conn *ldap.Conn) {
 
 // Update updates the user cache in background, minimal locking will happen
 func (u *UserCache) Update(filter, withDisabledUsers bool) error {
-	log.Debugf("Updating ldap cache...")
+	logrus.Debugf("Updating ldap cache...")
 	client, err := u.open()
 	if err != nil {
 		u.LastError = err
@@ -296,7 +296,7 @@ func (u *UserCache) Update(filter, withDisabledUsers bool) error {
 			}
 
 			if entry.DN != dn {
-				log.Errorf("LDAP inconsistent: '%s' != '%s'", entry.DN, dn)
+				logrus.Errorf("LDAP inconsistent: '%s' != '%s'", entry.DN, dn)
 				continue
 			}
 		}
@@ -320,7 +320,7 @@ func (u *UserCache) Update(filter, withDisabledUsers bool) error {
 	u.UpdatedAt = time.Now()
 	u.LastError = nil
 
-	log.Debug("Ldap cache updated...")
+	logrus.Debug("Ldap cache updated...")
 
 	return nil
 }

@@ -5,6 +5,7 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/h44z/wg-portal)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/h44z/wg-portal)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/h44z/wg-portal)
+[![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/h44z/wg-portal/)
 
 A simple web base configuration portal for [WireGuard](https://wireguard.com). 
 The portal uses the WireGuard [wgctrl](https://github.com/WireGuard/wgctrl-go) library to manage the VPN 

@@ -79,7 +79,7 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	err = s.WriteWireGuardConfigFile()
 	if err != nil {
 		_ = s.updateFormInSession(c, formDevice)
-		s.setFlashMessage(c, "Failed to update wireguard config-file: "+err.Error(), "danger")
+		s.setFlashMessage(c, "Failed to update WireGuard config-file: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=update")
 		return
 	}
@@ -134,7 +134,7 @@ func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
 		}
 	}
 
-	s.setFlashMessage(c, "Allowed ip's updated for all clients.", "success")
+	s.setFlashMessage(c, "Allowed IP's updated for all clients.", "success")
 	c.Redirect(http.StatusSeeOther, "/admin/device/edit")
 	return
 }

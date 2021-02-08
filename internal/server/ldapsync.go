@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/h44z/wg-portal/internal/ldap"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // SyncLdapAttributesWithWireGuard starts to synchronize the "disabled" attribute from ldap.
@@ -26,7 +26,7 @@ func (s *Server) SyncLdapAttributesWithWireGuard() error {
 			now := time.Now()
 			user.DeactivatedAt = &now
 			if err := s.UpdateUser(user, now); err != nil {
-				log.Errorf("Failed to disable user %s: %v", user.Email, err)
+				logrus.Errorf("Failed to disable user %s: %v", user.Email, err)
 			}
 		}
 	}

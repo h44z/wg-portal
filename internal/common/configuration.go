@@ -6,11 +6,10 @@ import (
 	"reflect"
 	"runtime"
 
-	"github.com/h44z/wg-portal/internal/wireguard"
-
 	"github.com/h44z/wg-portal/internal/ldap"
+	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/kelseyhightower/envconfig"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -104,15 +103,15 @@ func NewConfig() *Config {
 	}
 	err := loadConfigFile(cfg, cfgFile)
 	if err != nil {
-		log.Warnf("unable to load config.yml file: %v, using default configuration...", err)
+		logrus.Warnf("unable to load config.yml file: %v, using default configuration...", err)
 	}
 	err = loadConfigEnv(cfg)
 	if err != nil {
-		log.Warnf("unable to load environment config: %v", err)
+		logrus.Warnf("unable to load environment config: %v", err)
 	}
 
 	if cfg.WG.ManageIPAddresses && runtime.GOOS != "linux" {
-		log.Warnf("Managing IP addresses only works on linux! Feature disabled.")
+		logrus.Warnf("Managing IP addresses only works on linux! Feature disabled.")
 		cfg.WG.ManageIPAddresses = false
 	}
 

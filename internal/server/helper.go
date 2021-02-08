@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/h44z/wg-portal/internal/common"
-
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
