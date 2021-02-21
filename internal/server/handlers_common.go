@@ -80,7 +80,7 @@ func (s *Server) GetAdminIndex(c *gin.Context) {
 		Alerts       []FlashData
 		Session      SessionData
 		Static       StaticData
-		Peers        []User
+		Peers        []Peer
 		TotalPeers   int
 		Device       Device
 		LdapDisabled bool
@@ -128,7 +128,7 @@ func (s *Server) GetUserIndex(c *gin.Context) {
 		Alerts     []FlashData
 		Session    SessionData
 		Static     StaticData
-		Peers      []User
+		Peers      []Peer
 		TotalPeers int
 		Device     Device
 	}{

@@ -23,7 +23,7 @@ func (s *Server) GetAdminEditInterface(c *gin.Context) {
 		Alerts       []FlashData
 		Session      SessionData
 		Static       StaticData
-		Peers        []User
+		Peers        []Peer
 		Device       Device
 		EditableKeys bool
 	}{
@@ -58,7 +58,7 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	formDevice.DNSStr = common.ListToString(formDevice.DNS)
 
 	// Update WireGuard device
-	err := s.wg.UpdateDevice(formDevice.DeviceName, formDevice.GetDeviceConfig())
+	err := s.wg.UpdateDevice(formDevice.DeviceName, formDevice.GetConfig())
 	if err != nil {
 		_ = s.updateFormInSession(c, formDevice)
 		s.setFlashMessage(c, "Failed to update device in WireGuard: "+err.Error(), "danger")
@@ -108,7 +108,7 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 func (s *Server) GetInterfaceConfig(c *gin.Context) {
 	device := s.users.GetDevice()
 	users := s.users.GetActiveUsers()
-	cfg, err := device.GetDeviceConfigFile(users)
+	cfg, err := device.GetConfigFile(users)
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return

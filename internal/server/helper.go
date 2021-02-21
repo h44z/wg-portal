@@ -12,55 +12,55 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
-func (s *Server) PrepareNewUser() (User, error) {
+func (s *Server) PrepareNewUser() (Peer, error) {
 	device := s.users.GetDevice()
 
-	user := User{}
-	user.IsNew = true
-	user.AllowedIPsStr = device.AllowedIPsStr
-	user.IPs = make([]string, len(device.IPs))
+	peer := Peer{}
+	peer.IsNew = true
+	peer.AllowedIPsStr = device.AllowedIPsStr
+	peer.IPs = make([]string, len(device.IPs))
 	for i := range device.IPs {
 		freeIP, err := s.users.GetAvailableIp(device.IPs[i])
 		if err != nil {
-			return User{}, err
+			return Peer{}, err
 		}
-		user.IPs[i] = freeIP
+		peer.IPs[i] = freeIP
 	}
-	user.IPsStr = common.ListToString(user.IPs)
+	peer.IPsStr = common.ListToString(peer.IPs)
 	psk, err := wgtypes.GenerateKey()
 	if err != nil {
-		return User{}, err
+		return Peer{}, err
 	}
 	key, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
-		return User{}, err
+		return Peer{}, err
 	}
-	user.PresharedKey = psk.String()
-	user.PrivateKey = key.String()
-	user.PublicKey = key.PublicKey().String()
-	user.UID = fmt.Sprintf("u%x", md5.Sum([]byte(user.PublicKey)))
+	peer.PresharedKey = psk.String()
+	peer.PrivateKey = key.String()
+	peer.PublicKey = key.PublicKey().String()
+	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 
-	return user, nil
+	return peer, nil
 }
 
 func (s *Server) CreateUserByEmail(email, identifierSuffix string, disabled bool) error {
 	ldapUser := s.ldapUsers.GetUserData(s.ldapUsers.GetUserDNByMail(email))
 	if ldapUser.DN == "" {
-		return errors.New("no user with email " + email + " found")
+		return errors.New("no peer with email " + email + " found")
 	}
 
 	device := s.users.GetDevice()
-	user := User{}
-	user.AllowedIPsStr = device.AllowedIPsStr
-	user.IPs = make([]string, len(device.IPs))
+	peer := Peer{}
+	peer.AllowedIPsStr = device.AllowedIPsStr
+	peer.IPs = make([]string, len(device.IPs))
 	for i := range device.IPs {
 		freeIP, err := s.users.GetAvailableIp(device.IPs[i])
 		if err != nil {
 			return err
 		}
-		user.IPs[i] = freeIP
+		peer.IPs[i] = freeIP
 	}
-	user.IPsStr = common.ListToString(user.IPs)
+	peer.IPsStr = common.ListToString(peer.IPs)
 	psk, err := wgtypes.GenerateKey()
 	if err != nil {
 		return err
@@ -69,21 +69,21 @@ func (s *Server) CreateUserByEmail(email, identifierSuffix string, disabled bool
 	if err != nil {
 		return err
 	}
-	user.PresharedKey = psk.String()
-	user.PrivateKey = key.String()
-	user.PublicKey = key.PublicKey().String()
-	user.UID = fmt.Sprintf("u%x", md5.Sum([]byte(user.PublicKey)))
-	user.Email = email
-	user.Identifier = fmt.Sprintf("%s %s (%s)", ldapUser.Firstname, ldapUser.Lastname, identifierSuffix)
+	peer.PresharedKey = psk.String()
+	peer.PrivateKey = key.String()
+	peer.PublicKey = key.PublicKey().String()
+	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
+	peer.Email = email
+	peer.Identifier = fmt.Sprintf("%s %s (%s)", ldapUser.Firstname, ldapUser.Lastname, identifierSuffix)
 	now := time.Now()
 	if disabled {
-		user.DeactivatedAt = &now
+		peer.DeactivatedAt = &now
 	}
 
-	return s.CreateUser(user)
+	return s.CreateUser(peer)
 }
 
-func (s *Server) CreateUser(user User) error {
+func (s *Server) CreateUser(user Peer) error {
 
 	device := s.users.GetDevice()
 	user.AllowedIPsStr = device.AllowedIPsStr
@@ -114,7 +114,7 @@ func (s *Server) CreateUser(user User) error {
 
 	// Create WireGuard interface
 	if user.DeactivatedAt == nil {
-		if err := s.wg.AddPeer(user.GetPeerConfig()); err != nil {
+		if err := s.wg.AddPeer(user.GetConfig()); err != nil {
 			return err
 		}
 	}
@@ -127,7 +127,7 @@ func (s *Server) CreateUser(user User) error {
 	return s.WriteWireGuardConfigFile()
 }
 
-func (s *Server) UpdateUser(user User, updateTime time.Time) error {
+func (s *Server) UpdateUser(user Peer, updateTime time.Time) error {
 	currentUser := s.users.GetUserByKey(user.PublicKey)
 
 	// Update WireGuard device
@@ -136,9 +136,9 @@ func (s *Server) UpdateUser(user User, updateTime time.Time) error {
 	case user.DeactivatedAt == &updateTime:
 		err = s.wg.RemovePeer(user.PublicKey)
 	case user.DeactivatedAt == nil && currentUser.Peer != nil:
-		err = s.wg.UpdatePeer(user.GetPeerConfig())
+		err = s.wg.UpdatePeer(user.GetConfig())
 	case user.DeactivatedAt == nil && currentUser.Peer == nil:
-		err = s.wg.AddPeer(user.GetPeerConfig())
+		err = s.wg.AddPeer(user.GetConfig())
 	}
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (s *Server) UpdateUser(user User, updateTime time.Time) error {
 	return s.WriteWireGuardConfigFile()
 }
 
-func (s *Server) DeleteUser(user User) error {
+func (s *Server) DeleteUser(user Peer) error {
 	// Delete WireGuard peer
 	if err := s.wg.RemovePeer(user.PublicKey); err != nil {
 		return err
@@ -171,7 +171,7 @@ func (s *Server) RestoreWireGuardInterface() error {
 
 	for i := range activeUsers {
 		if activeUsers[i].Peer == nil {
-			if err := s.wg.AddPeer(activeUsers[i].GetPeerConfig()); err != nil {
+			if err := s.wg.AddPeer(activeUsers[i].GetConfig()); err != nil {
 				return err
 			}
 		}
@@ -189,7 +189,7 @@ func (s *Server) WriteWireGuardConfigFile() error {
 	}
 
 	device := s.users.GetDevice()
-	cfg, err := device.GetDeviceConfigFile(s.users.GetActiveUsers())
+	cfg, err := device.GetConfigFile(s.users.GetActiveUsers())
 	if err != nil {
 		return err
 	}

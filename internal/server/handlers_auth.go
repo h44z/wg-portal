@@ -101,7 +101,7 @@ func (s *Server) PostLogin(c *gin.Context) {
 		users := s.users.GetUsersByMail(sessionData.Email)
 
 		if len(users) == 0 { // Create vpn peer
-			err := s.CreateUser(User{
+			err := s.CreateUser(Peer{
 				Identifier: sessionData.Firstname + " " + sessionData.Lastname + " (Default)",
 				Email:      sessionData.Email,
 				CreatedBy:  sessionData.Email,

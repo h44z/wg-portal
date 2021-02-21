@@ -35,7 +35,7 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 		Alerts       []FlashData
 		Session      SessionData
 		Static       StaticData
-		Peer         User
+		Peer         Peer
 		Device       Device
 		EditableKeys bool
 	}{
@@ -43,7 +43,7 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 		Alerts:       s.getFlashes(c),
 		Session:      currentSession,
 		Static:       s.getStaticData(),
-		Peer:         currentSession.FormData.(User),
+		Peer:         currentSession.FormData.(Peer),
 		Device:       device,
 		EditableKeys: s.config.Core.EditableKeys,
 	})
@@ -54,34 +54,34 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	urlEncodedKey := url.QueryEscape(c.Query("pkey"))
 
 	currentSession := s.getSessionData(c)
-	var formUser User
+	var formPeer Peer
 	if currentSession.FormData != nil {
-		formUser = currentSession.FormData.(User)
+		formPeer = currentSession.FormData.(Peer)
 	}
-	if err := c.ShouldBind(&formUser); err != nil {
-		_ = s.updateFormInSession(c, formUser)
+	if err := c.ShouldBind(&formPeer); err != nil {
+		_ = s.updateFormInSession(c, formPeer)
 		s.setFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey+"&formerr=bind")
 		return
 	}
 
 	// Clean list input
-	formUser.IPs = common.ParseStringList(formUser.IPsStr)
-	formUser.AllowedIPs = common.ParseStringList(formUser.AllowedIPsStr)
-	formUser.IPsStr = common.ListToString(formUser.IPs)
-	formUser.AllowedIPsStr = common.ListToString(formUser.AllowedIPs)
+	formPeer.IPs = common.ParseStringList(formPeer.IPsStr)
+	formPeer.AllowedIPs = common.ParseStringList(formPeer.AllowedIPsStr)
+	formPeer.IPsStr = common.ListToString(formPeer.IPs)
+	formPeer.AllowedIPsStr = common.ListToString(formPeer.AllowedIPs)
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
 	if disabled && currentUser.DeactivatedAt == nil {
-		formUser.DeactivatedAt = &now
+		formPeer.DeactivatedAt = &now
 	} else if !disabled {
-		formUser.DeactivatedAt = nil
+		formPeer.DeactivatedAt = nil
 	}
 
 	// Update in database
-	if err := s.UpdateUser(formUser, now); err != nil {
-		_ = s.updateFormInSession(c, formUser)
+	if err := s.UpdateUser(formPeer, now); err != nil {
+		_ = s.updateFormInSession(c, formPeer)
 		s.setFlashMessage(c, "failed to update user: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey+"&formerr=update")
 		return
@@ -104,7 +104,7 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 		Alerts       []FlashData
 		Session      SessionData
 		Static       StaticData
-		Peer         User
+		Peer         Peer
 		Device       Device
 		EditableKeys bool
 	}{
@@ -112,7 +112,7 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 		Alerts:       s.getFlashes(c),
 		Session:      currentSession,
 		Static:       s.getStaticData(),
-		Peer:         currentSession.FormData.(User),
+		Peer:         currentSession.FormData.(Peer),
 		Device:       device,
 		EditableKeys: s.config.Core.EditableKeys,
 	})
@@ -120,31 +120,31 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 
 func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	currentSession := s.getSessionData(c)
-	var formUser User
+	var formPeer Peer
 	if currentSession.FormData != nil {
-		formUser = currentSession.FormData.(User)
+		formPeer = currentSession.FormData.(Peer)
 	}
-	if err := c.ShouldBind(&formUser); err != nil {
-		_ = s.updateFormInSession(c, formUser)
+	if err := c.ShouldBind(&formPeer); err != nil {
+		_ = s.updateFormInSession(c, formPeer)
 		s.setFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/create?formerr=bind")
 		return
 	}
 
 	// Clean list input
-	formUser.IPs = common.ParseStringList(formUser.IPsStr)
-	formUser.AllowedIPs = common.ParseStringList(formUser.AllowedIPsStr)
-	formUser.IPsStr = common.ListToString(formUser.IPs)
-	formUser.AllowedIPsStr = common.ListToString(formUser.AllowedIPs)
+	formPeer.IPs = common.ParseStringList(formPeer.IPsStr)
+	formPeer.AllowedIPs = common.ParseStringList(formPeer.AllowedIPsStr)
+	formPeer.IPsStr = common.ListToString(formPeer.IPs)
+	formPeer.AllowedIPsStr = common.ListToString(formPeer.AllowedIPs)
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
 	if disabled {
-		formUser.DeactivatedAt = &now
+		formPeer.DeactivatedAt = &now
 	}
 
-	if err := s.CreateUser(formUser); err != nil {
-		_ = s.updateFormInSession(c, formUser)
+	if err := s.CreateUser(formPeer); err != nil {
+		_ = s.updateFormInSession(c, formPeer)
 		s.setFlashMessage(c, "failed to add user: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/create?formerr=create")
 		return
@@ -254,7 +254,7 @@ func (s *Server) GetPeerConfig(c *gin.Context) {
 		return
 	}
 
-	cfg, err := user.GetClientConfigFile(s.users.GetDevice())
+	cfg, err := user.GetConfigFile(s.users.GetDevice())
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
@@ -273,7 +273,7 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 		return
 	}
 
-	cfg, err := user.GetClientConfigFile(s.users.GetDevice())
+	cfg, err := user.GetConfigFile(s.users.GetDevice())
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
@@ -286,7 +286,7 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 	// Apply mail template
 	var tplBuff bytes.Buffer
 	if err := s.mailTpl.Execute(&tplBuff, struct {
-		Client        User
+		Client        Peer
 		QrcodePngName string
 		PortalUrl     string
 	}{

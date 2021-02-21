@@ -64,10 +64,10 @@ func init() {
 }
 
 //
-//  USER ----------------------------------------------------------------------------------------
+//  PEER ----------------------------------------------------------------------------------------
 //
 
-type User struct {
+type Peer struct {
 	Peer     *wgtypes.Peer              `gorm:"-"`
 	LdapUser *ldap.UserCacheHolderEntry `gorm:"-"` // optional, it is still possible to have users without ldap
 	Config   string                     `gorm:"-"`
@@ -96,33 +96,11 @@ type User struct {
 	UpdatedAt     time.Time
 }
 
-func (u User) GetClientConfigFile(device Device) ([]byte, error) {
-	tpl, err := template.New("client").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.ClientCfgTpl)
-	if err != nil {
-		return nil, err
-	}
-
-	var tplBuff bytes.Buffer
-
-	err = tpl.Execute(&tplBuff, struct {
-		Client User
-		Server Device
-	}{
-		Client: u,
-		Server: device,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return tplBuff.Bytes(), nil
-}
-
-func (u User) GetPeerConfig() wgtypes.PeerConfig {
-	publicKey, _ := wgtypes.ParseKey(u.PublicKey)
+func (p Peer) GetConfig() wgtypes.PeerConfig {
+	publicKey, _ := wgtypes.ParseKey(p.PublicKey)
 	var presharedKey *wgtypes.Key
-	if u.PresharedKey != "" {
-		presharedKeyTmp, _ := wgtypes.ParseKey(u.PresharedKey)
+	if p.PresharedKey != "" {
+		presharedKeyTmp, _ := wgtypes.ParseKey(p.PresharedKey)
 		presharedKey = &presharedKeyTmp
 	}
 
@@ -134,9 +112,9 @@ func (u User) GetPeerConfig() wgtypes.PeerConfig {
 		Endpoint:                    nil,
 		PersistentKeepaliveInterval: nil,
 		ReplaceAllowedIPs:           true,
-		AllowedIPs:                  make([]net.IPNet, len(u.IPs)),
+		AllowedIPs:                  make([]net.IPNet, len(p.IPs)),
 	}
-	for i, ip := range u.IPs {
+	for i, ip := range p.IPs {
 		_, ipNet, err := net.ParseCIDR(ip)
 		if err == nil {
 			cfg.AllowedIPs[i] = *ipNet
@@ -146,8 +124,30 @@ func (u User) GetPeerConfig() wgtypes.PeerConfig {
 	return cfg
 }
 
-func (u User) GetQRCode() ([]byte, error) {
-	png, err := qrcode.Encode(u.Config, qrcode.Medium, 250)
+func (p Peer) GetConfigFile(device Device) ([]byte, error) {
+	tpl, err := template.New("client").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.ClientCfgTpl)
+	if err != nil {
+		return nil, err
+	}
+
+	var tplBuff bytes.Buffer
+
+	err = tpl.Execute(&tplBuff, struct {
+		Client Peer
+		Server Device
+	}{
+		Client: p,
+		Server: device,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return tplBuff.Bytes(), nil
+}
+
+func (p Peer) GetQRCode() ([]byte, error) {
+	png, err := qrcode.Encode(p.Config, qrcode.Medium, 250)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"err": err,
@@ -157,18 +157,18 @@ func (u User) GetQRCode() ([]byte, error) {
 	return png, nil
 }
 
-func (u User) IsValid() bool {
-	if u.PublicKey == "" {
+func (p Peer) IsValid() bool {
+	if p.PublicKey == "" {
 		return false
 	}
 
 	return true
 }
 
-func (u User) ToMap() map[string]string {
+func (p Peer) ToMap() map[string]string {
 	out := make(map[string]string)
 
-	v := reflect.ValueOf(u)
+	v := reflect.ValueOf(p)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
@@ -185,9 +185,9 @@ func (u User) ToMap() map[string]string {
 	return out
 }
 
-func (u User) GetConfigFileName() string {
+func (p Peer) GetConfigFileName() string {
 	reg := regexp.MustCompile("[^a-zA-Z0-9_-]+")
-	return reg.ReplaceAllString(strings.ReplaceAll(u.Identifier, " ", "-"), "") + ".conf"
+	return reg.ReplaceAllString(strings.ReplaceAll(p.Identifier, " ", "-"), "") + ".conf"
 }
 
 //
@@ -232,7 +232,7 @@ func (d Device) IsValid() bool {
 	return true
 }
 
-func (d Device) GetDeviceConfig() wgtypes.Config {
+func (d Device) GetConfig() wgtypes.Config {
 	var privateKey *wgtypes.Key
 	if d.PrivateKey != "" {
 		pKey, _ := wgtypes.ParseKey(d.PrivateKey)
@@ -247,7 +247,7 @@ func (d Device) GetDeviceConfig() wgtypes.Config {
 	return cfg
 }
 
-func (d Device) GetDeviceConfigFile(clients []User) ([]byte, error) {
+func (d Device) GetConfigFile(clients []Peer) ([]byte, error) {
 	tpl, err := template.New("server").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.DeviceCfgTpl)
 	if err != nil {
 		return nil, err
@@ -256,7 +256,7 @@ func (d Device) GetDeviceConfigFile(clients []User) ([]byte, error) {
 	var tplBuff bytes.Buffer
 
 	err = tpl.Execute(&tplBuff, struct {
-		Clients []User
+		Clients []Peer
 		Server  Device
 	}{
 		Clients: clients,
@@ -295,7 +295,7 @@ func NewUserManager(dbPath string, wg *wireguard.Manager, ldapUsers *ldap.Synchr
 		return nil
 	}
 
-	err = um.db.AutoMigrate(&User{}, &Device{})
+	err = um.db.AutoMigrate(&Peer{}, &Device{})
 	if err != nil {
 		logrus.Errorf("failed to migrate sqlite database: %v", err)
 		return nil
@@ -341,32 +341,32 @@ func (u *UserManager) InitFromCurrentInterface() error {
 	return nil
 }
 
-func (u *UserManager) validateOrCreateUserForPeer(peer wgtypes.Peer) error {
-	user := User{}
-	u.db.Where("public_key = ?", peer.PublicKey.String()).FirstOrInit(&user)
+func (u *UserManager) validateOrCreateUserForPeer(wgPeer wgtypes.Peer) error {
+	peer := Peer{}
+	u.db.Where("public_key = ?", wgPeer.PublicKey.String()).FirstOrInit(&peer)
 
-	if user.PublicKey == "" { // user not found, create
-		user.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey.String())))
-		user.PublicKey = peer.PublicKey.String()
-		user.PrivateKey = "" // UNKNOWN
-		if peer.PresharedKey != (wgtypes.Key{}) {
-			user.PresharedKey = peer.PresharedKey.String()
+	if peer.PublicKey == "" { // peer not found, create
+		peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(wgPeer.PublicKey.String())))
+		peer.PublicKey = wgPeer.PublicKey.String()
+		peer.PrivateKey = "" // UNKNOWN
+		if wgPeer.PresharedKey != (wgtypes.Key{}) {
+			peer.PresharedKey = wgPeer.PresharedKey.String()
 		}
-		user.Email = "autodetected@example.com"
-		user.Identifier = "Autodetected (" + user.PublicKey[0:8] + ")"
-		user.UpdatedAt = time.Now()
-		user.CreatedAt = time.Now()
-		user.AllowedIPs = make([]string, 0) // UNKNOWN
-		user.IPs = make([]string, len(peer.AllowedIPs))
-		for i, ip := range peer.AllowedIPs {
-			user.IPs[i] = ip.String()
+		peer.Email = "autodetected@example.com"
+		peer.Identifier = "Autodetected (" + peer.PublicKey[0:8] + ")"
+		peer.UpdatedAt = time.Now()
+		peer.CreatedAt = time.Now()
+		peer.AllowedIPs = make([]string, 0) // UNKNOWN
+		peer.IPs = make([]string, len(wgPeer.AllowedIPs))
+		for i, ip := range wgPeer.AllowedIPs {
+			peer.IPs[i] = ip.String()
 		}
-		user.AllowedIPsStr = strings.Join(user.AllowedIPs, ", ")
-		user.IPsStr = strings.Join(user.IPs, ", ")
+		peer.AllowedIPsStr = strings.Join(peer.AllowedIPs, ", ")
+		peer.IPsStr = strings.Join(peer.IPs, ", ")
 
-		res := u.db.Create(&user)
+		res := u.db.Create(&peer)
 		if res.Error != nil {
-			logrus.Errorf("failed to create autodetected peer: %v", res.Error)
+			logrus.Errorf("failed to create autodetected wgPeer: %v", res.Error)
 			return res.Error
 		}
 	}
@@ -401,11 +401,11 @@ func (u *UserManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []s
 	return nil
 }
 
-func (u *UserManager) populateUserData(user *User) {
+func (u *UserManager) populateUserData(user *Peer) {
 	user.AllowedIPs = strings.Split(user.AllowedIPsStr, ", ")
 	user.IPs = strings.Split(user.IPsStr, ", ")
 	// Set config file
-	tmpCfg, _ := user.GetClientConfigFile(u.GetDevice())
+	tmpCfg, _ := user.GetConfigFile(u.GetDevice())
 	user.Config = string(tmpCfg)
 
 	// set data from WireGuard interface
@@ -442,69 +442,69 @@ func (u *UserManager) populateDeviceData(device *Device) {
 	device.Interface, _ = u.wg.GetDeviceInfo()
 }
 
-func (u *UserManager) GetAllUsers() []User {
-	users := make([]User, 0)
-	u.db.Find(&users)
+func (u *UserManager) GetAllUsers() []Peer {
+	peers := make([]Peer, 0)
+	u.db.Find(&peers)
 
-	for i := range users {
-		u.populateUserData(&users[i])
+	for i := range peers {
+		u.populateUserData(&peers[i])
 	}
 
-	return users
+	return peers
 }
 
-func (u *UserManager) GetActiveUsers() []User {
-	users := make([]User, 0)
-	u.db.Where("deactivated_at IS NULL").Find(&users)
+func (u *UserManager) GetActiveUsers() []Peer {
+	peers := make([]Peer, 0)
+	u.db.Where("deactivated_at IS NULL").Find(&peers)
 
-	for i := range users {
-		u.populateUserData(&users[i])
+	for i := range peers {
+		u.populateUserData(&peers[i])
 	}
 
-	return users
+	return peers
 }
 
-func (u *UserManager) GetFilteredAndSortedUsers(sortKey, sortDirection, search string) []User {
-	users := make([]User, 0)
-	u.db.Find(&users)
+func (u *UserManager) GetFilteredAndSortedUsers(sortKey, sortDirection, search string) []Peer {
+	peers := make([]Peer, 0)
+	u.db.Find(&peers)
 
-	filteredUsers := make([]User, 0, len(users))
-	for i := range users {
-		u.populateUserData(&users[i])
+	filteredPeers := make([]Peer, 0, len(peers))
+	for i := range peers {
+		u.populateUserData(&peers[i])
 
 		if search == "" ||
-			strings.Contains(users[i].Email, search) ||
-			strings.Contains(users[i].Identifier, search) ||
-			strings.Contains(users[i].PublicKey, search) {
-			filteredUsers = append(filteredUsers, users[i])
+			strings.Contains(peers[i].Email, search) ||
+			strings.Contains(peers[i].Identifier, search) ||
+			strings.Contains(peers[i].PublicKey, search) {
+			filteredPeers = append(filteredPeers, peers[i])
 		}
 	}
 
-	sort.Slice(filteredUsers, func(i, j int) bool {
+	sort.Slice(filteredPeers, func(i, j int) bool {
 		var sortValueLeft string
 		var sortValueRight string
 
 		switch sortKey {
 		case "id":
-			sortValueLeft = filteredUsers[i].Identifier
-			sortValueRight = filteredUsers[j].Identifier
+			sortValueLeft = filteredPeers[i].Identifier
+			sortValueRight = filteredPeers[j].Identifier
 		case "pubKey":
-			sortValueLeft = filteredUsers[i].PublicKey
-			sortValueRight = filteredUsers[j].PublicKey
+			sortValueLeft = filteredPeers[i].PublicKey
+			sortValueRight = filteredPeers[j].PublicKey
 		case "mail":
-			sortValueLeft = filteredUsers[i].Email
-			sortValueRight = filteredUsers[j].Email
+			sortValueLeft = filteredPeers[i].Email
+			sortValueRight = filteredPeers[j].Email
 		case "ip":
-			sortValueLeft = filteredUsers[i].IPsStr
-			sortValueRight = filteredUsers[j].IPsStr
+			sortValueLeft = filteredPeers[i].IPsStr
+			sortValueRight = filteredPeers[j].IPsStr
 		case "handshake":
-			if filteredUsers[i].Peer == nil {
+			if filteredPeers[i].Peer == nil {
 				return false
-			} else if filteredUsers[j].Peer == nil {
+			} else if filteredPeers[j].Peer == nil {
 				return true
 			}
-			sortValueLeft = filteredUsers[i].Peer.LastHandshakeTime.Format(time.RFC3339)
-			sortValueRight = filteredUsers[j].Peer.LastHandshakeTime.Format(time.RFC3339)
+			sortValueLeft = filteredPeers[i].Peer.LastHandshakeTime.Format(time.RFC3339)
+			sortValueRight = filteredPeers[j].Peer.LastHandshakeTime.Format(time.RFC3339)
 		}
 
 		if sortDirection == "asc" {
@@ -514,42 +514,42 @@ func (u *UserManager) GetFilteredAndSortedUsers(sortKey, sortDirection, search s
 		}
 	})
 
-	return filteredUsers
+	return filteredPeers
 }
 
-func (u *UserManager) GetSortedUsersForEmail(sortKey, sortDirection, email string) []User {
-	users := make([]User, 0)
-	u.db.Where("email = ?", email).Find(&users)
+func (u *UserManager) GetSortedUsersForEmail(sortKey, sortDirection, email string) []Peer {
+	peers := make([]Peer, 0)
+	u.db.Where("email = ?", email).Find(&peers)
 
-	for i := range users {
-		u.populateUserData(&users[i])
+	for i := range peers {
+		u.populateUserData(&peers[i])
 	}
 
-	sort.Slice(users, func(i, j int) bool {
+	sort.Slice(peers, func(i, j int) bool {
 		var sortValueLeft string
 		var sortValueRight string
 
 		switch sortKey {
 		case "id":
-			sortValueLeft = users[i].Identifier
-			sortValueRight = users[j].Identifier
+			sortValueLeft = peers[i].Identifier
+			sortValueRight = peers[j].Identifier
 		case "pubKey":
-			sortValueLeft = users[i].PublicKey
-			sortValueRight = users[j].PublicKey
+			sortValueLeft = peers[i].PublicKey
+			sortValueRight = peers[j].PublicKey
 		case "mail":
-			sortValueLeft = users[i].Email
-			sortValueRight = users[j].Email
+			sortValueLeft = peers[i].Email
+			sortValueRight = peers[j].Email
 		case "ip":
-			sortValueLeft = users[i].IPsStr
-			sortValueRight = users[j].IPsStr
+			sortValueLeft = peers[i].IPsStr
+			sortValueRight = peers[j].IPsStr
 		case "handshake":
-			if users[i].Peer == nil {
+			if peers[i].Peer == nil {
 				return true
-			} else if users[j].Peer == nil {
+			} else if peers[j].Peer == nil {
 				return false
 			}
-			sortValueLeft = users[i].Peer.LastHandshakeTime.Format(time.RFC3339)
-			sortValueRight = users[j].Peer.LastHandshakeTime.Format(time.RFC3339)
+			sortValueLeft = peers[i].Peer.LastHandshakeTime.Format(time.RFC3339)
+			sortValueRight = peers[j].Peer.LastHandshakeTime.Format(time.RFC3339)
 		}
 
 		if sortDirection == "asc" {
@@ -559,7 +559,7 @@ func (u *UserManager) GetSortedUsersForEmail(sortKey, sortDirection, email strin
 		}
 	})
 
-	return users
+	return peers
 }
 
 func (u *UserManager) GetDevice() Device {
@@ -573,57 +573,57 @@ func (u *UserManager) GetDevice() Device {
 	return devices[0] // use first device for now... more to come?
 }
 
-func (u *UserManager) GetUserByKey(publicKey string) User {
-	user := User{}
-	u.db.Where("public_key = ?", publicKey).FirstOrInit(&user)
-	u.populateUserData(&user)
-	return user
+func (u *UserManager) GetUserByKey(publicKey string) Peer {
+	peer := Peer{}
+	u.db.Where("public_key = ?", publicKey).FirstOrInit(&peer)
+	u.populateUserData(&peer)
+	return peer
 }
 
-func (u *UserManager) GetUsersByMail(mail string) []User {
-	var users []User
-	u.db.Where("email = ?", mail).Find(&users)
-	for i := range users {
-		u.populateUserData(&users[i])
+func (u *UserManager) GetUsersByMail(mail string) []Peer {
+	var peers []Peer
+	u.db.Where("email = ?", mail).Find(&peers)
+	for i := range peers {
+		u.populateUserData(&peers[i])
 	}
 
-	return users
+	return peers
 }
 
-func (u *UserManager) CreateUser(user User) error {
-	user.UID = fmt.Sprintf("u%x", md5.Sum([]byte(user.PublicKey)))
-	user.UpdatedAt = time.Now()
-	user.CreatedAt = time.Now()
-	user.AllowedIPsStr = strings.Join(user.AllowedIPs, ", ")
-	user.IPsStr = strings.Join(user.IPs, ", ")
+func (u *UserManager) CreateUser(peer Peer) error {
+	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
+	peer.UpdatedAt = time.Now()
+	peer.CreatedAt = time.Now()
+	peer.AllowedIPsStr = strings.Join(peer.AllowedIPs, ", ")
+	peer.IPsStr = strings.Join(peer.IPs, ", ")
 
-	res := u.db.Create(&user)
+	res := u.db.Create(&peer)
 	if res.Error != nil {
-		logrus.Errorf("failed to create user: %v", res.Error)
+		logrus.Errorf("failed to create peer: %v", res.Error)
 		return res.Error
 	}
 
 	return nil
 }
 
-func (u *UserManager) UpdateUser(user User) error {
-	user.UpdatedAt = time.Now()
-	user.AllowedIPsStr = strings.Join(user.AllowedIPs, ", ")
-	user.IPsStr = strings.Join(user.IPs, ", ")
+func (u *UserManager) UpdateUser(peer Peer) error {
+	peer.UpdatedAt = time.Now()
+	peer.AllowedIPsStr = strings.Join(peer.AllowedIPs, ", ")
+	peer.IPsStr = strings.Join(peer.IPs, ", ")
 
-	res := u.db.Save(&user)
+	res := u.db.Save(&peer)
 	if res.Error != nil {
-		logrus.Errorf("failed to update user: %v", res.Error)
+		logrus.Errorf("failed to update peer: %v", res.Error)
 		return res.Error
 	}
 
 	return nil
 }
 
-func (u *UserManager) DeleteUser(user User) error {
-	res := u.db.Delete(&user)
+func (u *UserManager) DeleteUser(peer Peer) error {
+	res := u.db.Delete(&peer)
 	if res.Error != nil {
-		logrus.Errorf("failed to delete user: %v", res.Error)
+		logrus.Errorf("failed to delete peer: %v", res.Error)
 		return res.Error
 	}
 
