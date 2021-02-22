@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/h44z/wg-portal/internal/server"
 	"github.com/sirupsen/logrus"
@@ -11,16 +15,38 @@ import (
 func main() {
 	_ = setupLogger(logrus.StandardLogger())
 
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
 	logrus.Infof("Starting WireGuard Portal Server...")
 
+	// Context for clean shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	service := server.Server{}
-	if err := service.Setup(); err != nil {
+	if err := service.Setup(ctx); err != nil {
 		logrus.Fatalf("Setup failed: %v", err)
 	}
 
-	service.Run()
+	// Attach signal handlers to context
+	go func() {
+		osCall := <-c
+		logrus.Tracef("received system call: %v", osCall)
+		cancel() // cancel the context
+	}()
+
+	// Start main process in background
+	go service.Run()
+
+	<-ctx.Done() // Wait until the context gets canceled
+
+	// Give goroutines some time to stop gracefully
+	logrus.Info("Stopping WireGuard Portal Server...")
+	time.Sleep(2 * time.Second)
 
 	logrus.Infof("Stopped WireGuard Portal Server...")
+	logrus.Exit(0)
 }
 
 func setupLogger(logger *logrus.Logger) error {

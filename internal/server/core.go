@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/gob"
 	"errors"
 	"html/template"
@@ -64,6 +65,7 @@ type StaticData struct {
 
 type Server struct {
 	// Core components
+	ctx     context.Context
 	config  *common.Config
 	server  *gin.Engine
 	users   *UserManager
@@ -79,7 +81,7 @@ type Server struct {
 	ldapCacheUpdater *ldap.UserCache
 }
 
-func (s *Server) Setup() error {
+func (s *Server) Setup(ctx context.Context) error {
 	dir := s.getExecutableDirectory()
 	rDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	logrus.Infof("Real working directory: %s", rDir)
