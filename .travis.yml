@@ -20,8 +20,10 @@ script:
   - go get -t -v ./...
   - diff -u <(echo -n) <(gofmt -d .)
   - go vet $(go list ./... | grep -v /vendor/)
-  - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
   - make build
+  # Switch over GCC to cross compilation (breaks 386, hence why do it here only)
+  - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+  - sudo ln -s /usr/include/asm-generic /usr/include/asm
   - make build-cross-plat
 
 deploy:
@@ -31,9 +33,9 @@ deploy:
     # *encrypted* GitHub key, as the output of the Travis CI CLI tool
     secure: TODO...
   file:
-    - dist/wg-portal_linux_amd64
-    - dist/wg-portal_linux_arm64
-    - dist/wg-portal_linux_arm
+    - dist/wg-portal-amd64
+    - dist/wg-portal-arm64
+    - dist/wg-portal-arm
     - dist/wg-portal.env
     - dist/wg-portal.service
   on:
