@@ -12,13 +12,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var Version string = "unknown (local build)"
+
 func main() {
 	_ = setupLogger(logrus.StandardLogger())
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	logrus.Infof("Starting WireGuard Portal Server...")
+	logrus.Infof("Starting WireGuard Portal Server [%s]...", Version)
 
 	// Context for clean shutdown
 	ctx, cancel := context.WithCancel(context.Background())

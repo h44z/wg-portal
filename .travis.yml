@@ -1,4 +1,33 @@
 language: go
-
+sudo: false
 go:
-  - 1.15.x
+  - tip # Latest go version
+
+before_install:
+  # gox simplifies building for multiple architectures
+  - go get github.com/mitchellh/gox
+
+install:
+  - # skip
+
+script:
+  - go get -t -v ./...
+  - diff -u <(echo -n) <(gofmt -d .)
+  - go vet $(go list ./... | grep -v /vendor/)
+  - gox -cgo -os="linux" -arch="amd64 arm arm64" -output="dist/{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Version=`git rev-parse --short HEAD`" -verbose ./...
+
+deploy:
+  provider: releases
+  skip_cleanup: true # Important, otherwise the build output would be purged.
+  api_key:
+    # *encrypted* GitHub key, as the output of the Travis CI CLI tool
+    secure: TODO...
+  file:
+    - dist/wg-portal_linux_amd64
+    - dist/wg-portal_linux_arm64
+    - dist/wg-portal_linux_arm
+    - dist/wg-portal.env
+    - dist/wg-portal.service
+  on:
+    repo: h44z/wg-portal
+    tags: true # The deployment happens only if the commit has a tag.

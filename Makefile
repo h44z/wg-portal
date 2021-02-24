@@ -10,15 +10,14 @@ IMAGE=h44z/wg-portal
 
 all: dep build
 
-build: dep $(addsuffix -amd64,$(addprefix $(BUILDDIR)/,$(BINARIES)))
+build: dep
+	mkdir -p $(BUILDDIR)
 	cp scripts/wg-portal.service $(BUILDDIR)
 	cp scripts/wg-portal.env $(BUILDDIR)
-
-build-cross-plat: dep build $(addsuffix -arm,$(addprefix $(BUILDDIR)/,$(BINARIES))) $(addsuffix -arm64,$(addprefix $(BUILDDIR)/,$(BINARIES)))
-	cp scripts/wg-portal.service $(BUILDDIR)
-	cp scripts/wg-portal.env $(BUILDDIR)
+	gox -cgo -os="linux" -arch="amd64 arm arm64" -output="dist/{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Version=`git rev-parse --short HEAD`" -verbose ./...
 
 dep:
+	$(GOCMD) get github.com/mitchellh/gox
 	$(GOCMD) mod download
 
 validate: dep
