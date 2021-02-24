@@ -14,10 +14,10 @@ build: dep
 	mkdir -p $(BUILDDIR)
 	cp scripts/wg-portal.service $(BUILDDIR)
 	cp scripts/wg-portal.env $(BUILDDIR)
-	gox -cgo -os="linux" -arch="amd64 arm arm64" -output="dist/{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Version=`git rev-parse --short HEAD`" -verbose ./...
+	GOX_linux_arm_LDFLAGS="-linkmode external -extldflags -static" GOX_linux_arm_CC=arm-linux-gnueabihf-gcc GOX_linux_arm64_LDFLAGS="-linkmode external -extldflags -static" GOX_linux_arm64_CC=aarch64-linux-gnu-gcc gox -rebuild -parallel=1 -verbose -cgo -os="linux" -arch="amd64 arm arm64" -output="dist/{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Version=`git rev-parse --short HEAD`" -verbose ./...
 
 dep:
-	$(GOCMD) get github.com/mitchellh/gox
+	$(GOCMD) get github.com/necrose99/gox
 	$(GOCMD) mod download
 
 validate: dep
