@@ -10,7 +10,7 @@ use the following instructions:
 ### Building
 This section describes how to build the WireGuard Portal code.
 To compile the final binary, use the Makefile provided in the repository.
-As WireGuard Portal is written in Go, **golang >= 1.14** must be installed prior to building.
+As WireGuard Portal is written in Go, **golang >= 1.16** must be installed prior to building.
 
 ```
 make build-cross-plat

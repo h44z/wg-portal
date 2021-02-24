@@ -40,6 +40,16 @@ pre{background:#f7f7f9}iframe{overflow:hidden;border:none}@media (min-width: 768
 /* --------------------------------------------------
  End collapsable table*/
 
+.jumbotron-home {
+    padding: 1rem 1rem;
+}
+
+@media (min-width: 576px) {
+    .jumbotron-home {
+        padding: 2rem 2rem;
+    }
+}
+
 @media (min-width: 1440px) {
     .container, .container-lg, .container-md, .container-sm, .container-xl {
         max-width: 1400px;

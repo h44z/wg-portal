@@ -4,11 +4,20 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	wg_portal "github.com/h44z/wg-portal"
 )
 
 func SetupRoutes(s *Server) {
 	// Startpage
 	s.server.GET("/", s.GetIndex)
+	s.server.GET("/favicon.ico", func(c *gin.Context) {
+		file, _ := wg_portal.Statics.ReadFile("assets/img/favicon.ico")
+		c.Data(
+			http.StatusOK,
+			"image/x-icon",
+			file,
+		)
+	})
 
 	// Auth routes
 	auth := s.server.Group("/auth")
@@ -18,7 +27,7 @@ func SetupRoutes(s *Server) {
 
 	// Admin routes
 	admin := s.server.Group("/admin")
-	admin.Use(s.RequireAuthentication(s.config.AdminLdapGroup))
+	admin.Use(s.RequireAuthentication("admin"))
 	admin.GET("/", s.GetAdminIndex)
 	admin.GET("/device/edit", s.GetAdminEditInterface)
 	admin.POST("/device/edit", s.PostAdminEditInterface)
@@ -34,6 +43,12 @@ func SetupRoutes(s *Server) {
 	admin.GET("/peer/download", s.GetPeerConfig)
 	admin.GET("/peer/email", s.GetPeerConfigMail)
 
+	admin.GET("/users/", s.GetAdminUsersIndex)
+	admin.GET("/users/create", s.GetAdminUsersCreate)
+	admin.POST("/users/create", s.PostAdminUsersCreate)
+	admin.GET("/users/edit", s.GetAdminUsersEdit)
+	admin.POST("/users/edit", s.PostAdminUsersEdit)
+
 	// User routes
 	user := s.server.Group("/user")
 	user.Use(s.RequireAuthentication("")) // empty scope = all logged in users
@@ -46,7 +61,7 @@ func SetupRoutes(s *Server) {
 
 func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := s.getSessionData(c)
+		session := GetSessionData(c)
 
 		if !session.LoggedIn {
 			// Abort the request with the appropriate error code
@@ -55,8 +70,15 @@ func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {
 			return
 		}
 
-		if scope != "" && !session.IsAdmin && // admins always have access
-			!s.ldapUsers.IsInGroup(session.UserName, scope) {
+		if scope == "admin" && !session.IsAdmin {
+			// Abort the request with the appropriate error code
+			c.Abort()
+			s.GetHandleError(c, http.StatusUnauthorized, "unauthorized", "not enough permissions")
+			return
+		}
+
+		// default case if some randome scope was set...
+		if scope != "" && !session.IsAdmin {
 			// Abort the request with the appropriate error code
 			c.Abort()
 			s.GetHandleError(c, http.StatusUnauthorized, "unauthorized", "not enough permissions")

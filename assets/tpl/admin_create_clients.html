@@ -53,7 +53,7 @@
             }
         }).tokenfield({
             autocomplete: {
-                source: [{{range $i, $u :=.Users}}{{$u.Mail}},{{end}}],
+                source: [{{range $i, $u :=.Users}}{{$u.Email}},{{end}}],
                 delay: 100
             },
             showAutocompleteOnFocus: false

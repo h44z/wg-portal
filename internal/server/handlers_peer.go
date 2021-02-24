@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/common"
-	"github.com/h44z/wg-portal/internal/ldap"
+	"github.com/h44z/wg-portal/internal/users"
 	"github.com/sirupsen/logrus"
 	"github.com/tatsushid/go-fastping"
 )
@@ -21,10 +21,10 @@ type LdapCreateForm struct {
 }
 
 func (s *Server) GetAdminEditPeer(c *gin.Context) {
-	device := s.users.GetDevice()
-	user := s.users.GetUserByKey(c.Query("pkey"))
+	device := s.peers.GetDevice()
+	peer := s.peers.GetPeerByKey(c.Query("pkey"))
 
-	currentSession, err := s.setFormInSession(c, user)
+	currentSession, err := s.setFormInSession(c, peer)
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "Session error", err.Error())
 		return
@@ -40,7 +40,7 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 		EditableKeys bool
 	}{
 		Route:        c.Request.URL.Path,
-		Alerts:       s.getFlashes(c),
+		Alerts:       GetFlashes(c),
 		Session:      currentSession,
 		Static:       s.getStaticData(),
 		Peer:         currentSession.FormData.(Peer),
@@ -50,17 +50,17 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 }
 
 func (s *Server) PostAdminEditPeer(c *gin.Context) {
-	currentUser := s.users.GetUserByKey(c.Query("pkey"))
+	currentPeer := s.peers.GetPeerByKey(c.Query("pkey"))
 	urlEncodedKey := url.QueryEscape(c.Query("pkey"))
 
-	currentSession := s.getSessionData(c)
+	currentSession := GetSessionData(c)
 	var formPeer Peer
 	if currentSession.FormData != nil {
 		formPeer = currentSession.FormData.(Peer)
 	}
 	if err := c.ShouldBind(&formPeer); err != nil {
 		_ = s.updateFormInSession(c, formPeer)
-		s.setFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
+		SetFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey+"&formerr=bind")
 		return
 	}
@@ -73,28 +73,28 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
-	if disabled && currentUser.DeactivatedAt == nil {
+	if disabled && currentPeer.DeactivatedAt == nil {
 		formPeer.DeactivatedAt = &now
 	} else if !disabled {
 		formPeer.DeactivatedAt = nil
 	}
 
 	// Update in database
-	if err := s.UpdateUser(formPeer, now); err != nil {
+	if err := s.UpdatePeer(formPeer, now); err != nil {
 		_ = s.updateFormInSession(c, formPeer)
-		s.setFlashMessage(c, "failed to update user: "+err.Error(), "danger")
+		SetFlashMessage(c, "failed to update user: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey+"&formerr=update")
 		return
 	}
 
-	s.setFlashMessage(c, "changes applied successfully", "success")
+	SetFlashMessage(c, "changes applied successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin/peer/edit?pkey="+urlEncodedKey)
 }
 
 func (s *Server) GetAdminCreatePeer(c *gin.Context) {
-	device := s.users.GetDevice()
+	device := s.peers.GetDevice()
 
-	currentSession, err := s.setNewUserFormInSession(c)
+	currentSession, err := s.setNewPeerFormInSession(c)
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "Session error", err.Error())
 		return
@@ -109,7 +109,7 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 		EditableKeys bool
 	}{
 		Route:        c.Request.URL.Path,
-		Alerts:       s.getFlashes(c),
+		Alerts:       GetFlashes(c),
 		Session:      currentSession,
 		Static:       s.getStaticData(),
 		Peer:         currentSession.FormData.(Peer),
@@ -119,14 +119,14 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 }
 
 func (s *Server) PostAdminCreatePeer(c *gin.Context) {
-	currentSession := s.getSessionData(c)
+	currentSession := GetSessionData(c)
 	var formPeer Peer
 	if currentSession.FormData != nil {
 		formPeer = currentSession.FormData.(Peer)
 	}
 	if err := c.ShouldBind(&formPeer); err != nil {
 		_ = s.updateFormInSession(c, formPeer)
-		s.setFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
+		SetFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/create?formerr=bind")
 		return
 	}
@@ -143,14 +143,14 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 		formPeer.DeactivatedAt = &now
 	}
 
-	if err := s.CreateUser(formPeer); err != nil {
+	if err := s.CreatePeer(formPeer); err != nil {
 		_ = s.updateFormInSession(c, formPeer)
-		s.setFlashMessage(c, "failed to add user: "+err.Error(), "danger")
+		SetFlashMessage(c, "failed to add user: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/create?formerr=create")
 		return
 	}
 
-	s.setFlashMessage(c, "client created successfully", "success")
+	SetFlashMessage(c, "client created successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin")
 }
 
@@ -166,29 +166,29 @@ func (s *Server) GetAdminCreateLdapPeers(c *gin.Context) {
 		Alerts   []FlashData
 		Session  SessionData
 		Static   StaticData
-		Users    []*ldap.UserCacheHolderEntry
+		Users    []users.User
 		FormData LdapCreateForm
 		Device   Device
 	}{
 		Route:    c.Request.URL.Path,
-		Alerts:   s.getFlashes(c),
+		Alerts:   GetFlashes(c),
 		Session:  currentSession,
 		Static:   s.getStaticData(),
-		Users:    s.ldapUsers.GetSortedUsers("sn", "asc"),
+		Users:    s.users.GetFilteredAndSortedUsers("lastname", "asc", ""),
 		FormData: currentSession.FormData.(LdapCreateForm),
-		Device:   s.users.GetDevice(),
+		Device:   s.peers.GetDevice(),
 	})
 }
 
 func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
-	currentSession := s.getSessionData(c)
+	currentSession := GetSessionData(c)
 	var formData LdapCreateForm
 	if currentSession.FormData != nil {
 		formData = currentSession.FormData.(LdapCreateForm)
 	}
 	if err := c.ShouldBind(&formData); err != nil {
 		_ = s.updateFormInSession(c, formData)
-		s.setFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
+		SetFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=bind")
 		return
 	}
@@ -196,9 +196,9 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 	emails := common.ParseStringList(formData.Emails)
 	for i := range emails {
 		// TODO: also check email addr for validity?
-		if !strings.ContainsRune(emails[i], '@') || s.ldapUsers.GetUserDNByMail(emails[i]) == "" {
+		if !strings.ContainsRune(emails[i], '@') || s.users.GetUser(emails[i]) == nil {
 			_ = s.updateFormInSession(c, formData)
-			s.setFlashMessage(c, "invalid email address: "+emails[i], "danger")
+			SetFlashMessage(c, "invalid email address: "+emails[i], "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=mail")
 			return
 		}
@@ -207,31 +207,31 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 	logrus.Infof("creating %d ldap peers", len(emails))
 
 	for i := range emails {
-		if err := s.CreateUserByEmail(emails[i], formData.Identifier, false); err != nil {
+		if err := s.CreatePeerByEmail(emails[i], formData.Identifier, false); err != nil {
 			_ = s.updateFormInSession(c, formData)
-			s.setFlashMessage(c, "failed to add user: "+err.Error(), "danger")
+			SetFlashMessage(c, "failed to add user: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=create")
 			return
 		}
 	}
 
-	s.setFlashMessage(c, "client(s) created successfully", "success")
+	SetFlashMessage(c, "client(s) created successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin/peer/createldap")
 }
 
 func (s *Server) GetAdminDeletePeer(c *gin.Context) {
-	currentUser := s.users.GetUserByKey(c.Query("pkey"))
-	if err := s.DeleteUser(currentUser); err != nil {
+	currentUser := s.peers.GetPeerByKey(c.Query("pkey"))
+	if err := s.DeletePeer(currentUser); err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "Deletion error", err.Error())
 		return
 	}
-	s.setFlashMessage(c, "user deleted successfully", "success")
+	SetFlashMessage(c, "user deleted successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin")
 }
 
 func (s *Server) GetPeerQRCode(c *gin.Context) {
-	user := s.users.GetUserByKey(c.Query("pkey"))
-	currentSession := s.getSessionData(c)
+	user := s.peers.GetPeerByKey(c.Query("pkey"))
+	currentSession := GetSessionData(c)
 	if !currentSession.IsAdmin && user.Email != currentSession.Email {
 		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
 		return
@@ -247,14 +247,14 @@ func (s *Server) GetPeerQRCode(c *gin.Context) {
 }
 
 func (s *Server) GetPeerConfig(c *gin.Context) {
-	user := s.users.GetUserByKey(c.Query("pkey"))
-	currentSession := s.getSessionData(c)
+	user := s.peers.GetPeerByKey(c.Query("pkey"))
+	currentSession := GetSessionData(c)
 	if !currentSession.IsAdmin && user.Email != currentSession.Email {
 		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
 		return
 	}
 
-	cfg, err := user.GetConfigFile(s.users.GetDevice())
+	cfg, err := user.GetConfigFile(s.peers.GetDevice())
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
@@ -266,14 +266,14 @@ func (s *Server) GetPeerConfig(c *gin.Context) {
 }
 
 func (s *Server) GetPeerConfigMail(c *gin.Context) {
-	user := s.users.GetUserByKey(c.Query("pkey"))
-	currentSession := s.getSessionData(c)
+	user := s.peers.GetPeerByKey(c.Query("pkey"))
+	currentSession := GetSessionData(c)
 	if !currentSession.IsAdmin && user.Email != currentSession.Email {
 		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
 		return
 	}
 
-	cfg, err := user.GetConfigFile(s.users.GetDevice())
+	cfg, err := user.GetConfigFile(s.peers.GetDevice())
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
@@ -319,13 +319,13 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 		return
 	}
 
-	s.setFlashMessage(c, "mail sent successfully", "success")
+	SetFlashMessage(c, "mail sent successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin")
 }
 
 func (s *Server) GetPeerStatus(c *gin.Context) {
-	user := s.users.GetUserByKey(c.Query("pkey"))
-	currentSession := s.getSessionData(c)
+	user := s.peers.GetPeerByKey(c.Query("pkey"))
+	currentSession := GetSessionData(c)
 	if !currentSession.IsAdmin && user.Email != currentSession.Email {
 		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
 		return

@@ -4,7 +4,7 @@
 ######-
 # Start from the latest golang base image as builder image (only used to compile the code)
 ######-
-FROM golang:1.15 as builder
+FROM golang:1.16 as builder
 
 RUN mkdir /build
 
@@ -29,7 +29,7 @@ FROM debian:buster
 ENV TZ=Europe/Vienna
 
 # GOSS for container health checks
-ENV GOSS_VERSION v0.3.14
+ENV GOSS_VERSION v0.3.16
 RUN apt-get update && apt-get upgrade -y && \
         apt-get install --no-install-recommends -y moreutils ca-certificates curl && \
         rm -rf /var/cache/apt /var/lib/apt/lists/*; \

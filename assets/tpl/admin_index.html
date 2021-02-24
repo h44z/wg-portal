@@ -84,13 +84,11 @@
         </div>
         <div class="mt-4 row">
             <div class="col-sm-10 col-12">
-                <h2 class="mt-2">Current VPN Users</h2>
+                <h2 class="mt-2">Current VPN Peers</h2>
             </div>
             <div class="col-sm-2 col-12 text-right">
-                {{if not .Static.LdapDisabled}}
-                <a href="/admin/peer/createldap" title="Add LDAP users" class="btn btn-primary"><i class="fa fa-fw fa-user-plus"></i></a>
-                {{end}}
-                <a href="/admin/peer/create" title="Manually add a user" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
+                <a href="/admin/peer/createldap" title="Add multiple peers" class="btn btn-primary"><i class="fa fa-fw fa-user-plus"></i></a>
+                <a href="/admin/peer/create" title="Manually add a peer" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
             </div>
         </div>
         <div class="mt-2 table-responsive">
@@ -98,11 +96,11 @@
                 <thead>
                 <tr>
                     <th scope="col" class="list-image-cell"></th><!-- Status and expand -->
-                    <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{.Session.GetSortIcon "id"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "pubKey"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "mail"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "ip"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{.Session.GetSortIcon "handshake"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{.Session.GetSortIcon "peers" "id"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "peers" "pubKey"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "peers" "mail"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "peers" "ip"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{.Session.GetSortIcon "peers" "handshake"}}"></i></a></th>
                     <th scope="col"></th><!-- Actions -->
                 </tr>
                 </thead>
@@ -144,15 +142,14 @@
                                         <div class="tab-content" id="tabContent{{$p.UID}}">
                                             <div id="t1{{$p.UID}}" class="tab-pane fade active show">
                                                 <h4>User details</h4>
-                                                {{if not $p.LdapUser}}
-                                                    <p>No LDAP user-information available...</p>
+                                                {{if not $p.User}}
+                                                    <p>No user information available...</p>
                                                 {{else}}
                                                     <ul>
-                                                        <li>Firstname: {{$p.LdapUser.Firstname}}</li>
-                                                        <li>Lastname: {{$p.LdapUser.Lastname}}</li>
-                                                        <li>Phone: {{index $p.LdapUser.RawLdapData.Attributes "telephoneNumber"}}</li>
-                                                        <li>Mail: {{$p.LdapUser.Mail}}</li>
-                                                        <li>Department: {{index $p.LdapUser.RawLdapData.Attributes "department"}}</li>
+                                                        <li>Firstname: {{$p.User.Firstname}}</li>
+                                                        <li>Lastname: {{$p.User.Lastname}}</li>
+                                                        <li>Phone: {{$p.User.Phone}}</li>
+                                                        <li>Mail: {{$p.User.Email}}</li>
                                                     </ul>
                                                 {{end}}
                                                 <h4>Connection / Traffic</h4>

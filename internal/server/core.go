@@ -3,10 +3,11 @@ package server
 import (
 	"context"
 	"encoding/gob"
-	"errors"
 	"html/template"
+	"io/fs"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -15,15 +16,18 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
+	wg_portal "github.com/h44z/wg-portal"
+	ldapprovider "github.com/h44z/wg-portal/internal/authentication/providers/ldap"
+	passwordprovider "github.com/h44z/wg-portal/internal/authentication/providers/password"
 	"github.com/h44z/wg-portal/internal/common"
-	"github.com/h44z/wg-portal/internal/ldap"
+	"github.com/h44z/wg-portal/internal/users"
 	"github.com/h44z/wg-portal/internal/wireguard"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
 )
 
 const SessionIdentifier = "wgPortalSession"
-const CacheRefreshDuration = 5 * time.Minute
 
 func init() {
 	gob.Register(SessionData{})
@@ -31,22 +35,23 @@ func init() {
 	gob.Register(Peer{})
 	gob.Register(Device{})
 	gob.Register(LdapCreateForm{})
+	gob.Register(users.User{})
 }
 
 type SessionData struct {
-	LoggedIn      bool
-	IsAdmin       bool
-	UID           string
-	UserName      string
-	Firstname     string
-	Lastname      string
-	Email         string
-	SortedBy      string
-	SortDirection string
-	Search        string
-	AlertData     string
-	AlertType     string
-	FormData      interface{}
+	LoggedIn  bool
+	IsAdmin   bool
+	Firstname string
+	Lastname  string
+	Email     string
+
+	SortedBy      map[string]string
+	SortDirection map[string]string
+	Search        map[string]string
+
+	AlertData string
+	AlertType string
+	FormData  interface{}
 }
 
 type FlashData struct {
@@ -60,28 +65,23 @@ type StaticData struct {
 	WebsiteLogo  string
 	CompanyName  string
 	Year         int
-	LdapDisabled bool
 }
 
 type Server struct {
-	// Core components
 	ctx     context.Context
 	config  *common.Config
 	server  *gin.Engine
-	users   *UserManager
 	mailTpl *template.Template
+	auth    *AuthManager
 
-	// WireGuard stuff
-	wg *wireguard.Manager
-
-	// LDAP stuff
-	ldapDisabled     bool
-	ldapAuth         ldap.Authentication
-	ldapUsers        *ldap.SynchronizedUserCacheHolder
-	ldapCacheUpdater *ldap.UserCache
+	users *users.Manager
+	wg    *wireguard.Manager
+	peers *PeerManager
 }
 
 func (s *Server) Setup(ctx context.Context) error {
+	var err error
+
 	dir := s.getExecutableDirectory()
 	rDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	logrus.Infof("Real working directory: %s", rDir)
@@ -91,44 +91,10 @@ func (s *Server) Setup(ctx context.Context) error {
 	rand.Seed(time.Now().UnixNano())
 
 	s.config = common.NewConfig()
-
-	// Setup LDAP stuff
-	s.ldapAuth = ldap.NewAuthentication(s.config.LDAP)
-	s.ldapUsers = &ldap.SynchronizedUserCacheHolder{}
-	s.ldapUsers.Init()
-	s.ldapCacheUpdater = ldap.NewUserCache(s.config.LDAP, s.ldapUsers)
-	if s.ldapCacheUpdater.LastError != nil {
-		logrus.Warnf("LDAP error: %v", s.ldapCacheUpdater.LastError)
-		logrus.Warnf("LDAP features disabled!")
-		s.ldapDisabled = true
-	}
-
-	// Setup WireGuard stuff
-	s.wg = &wireguard.Manager{Cfg: &s.config.WG}
-	if err := s.wg.Init(); err != nil {
-		return err
-	}
-
-	// Setup user manager
-	if s.users = NewUserManager(filepath.Join(dir, s.config.Core.DatabasePath), s.wg, s.ldapUsers); s.users == nil {
-		return errors.New("unable to setup user manager")
-	}
-	if err := s.users.InitFromCurrentInterface(); err != nil {
-		return errors.New("unable to initialize user manager")
-	}
-	if err := s.RestoreWireGuardInterface(); err != nil {
-		return errors.New("unable to restore WireGuard state")
-	}
-
-	// Setup mail template
-	var err error
-	s.mailTpl, err = template.New("email.html").ParseFiles(filepath.Join(dir, "/assets/tpl/email.html"))
-	if err != nil {
-		return errors.New("unable to pare mail template")
-	}
+	s.ctx = ctx
 
 	// Setup http server
-	gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.DebugMode)
 	gin.DefaultWriter = ioutil.Discard
 	s.server = gin.New()
 	s.server.Use(ginlogrus.Logger(logrus.StandardLogger()), gin.Recovery())
@@ -138,54 +104,98 @@ func (s *Server) Setup(ctx context.Context) error {
 	})
 
 	// Setup templates
-	logrus.Infof("Loading templates from: %s", filepath.Join(dir, "/assets/tpl/*.html"))
-	s.server.LoadHTMLGlob(filepath.Join(dir, "/assets/tpl/*.html"))
+	templates := template.Must(template.New("").Funcs(s.server.FuncMap).ParseFS(wg_portal.Templates, "assets/tpl/*.html"))
+	s.server.SetHTMLTemplate(templates)
 	s.server.Use(sessions.Sessions("authsession", memstore.NewStore([]byte("secret")))) // TODO: change key?
 
 	// Serve static files
-	s.server.Static("/css", filepath.Join(dir, "/assets/css"))
-	s.server.Static("/js", filepath.Join(dir, "/assets/js"))
-	s.server.Static("/img", filepath.Join(dir, "/assets/img"))
-	s.server.Static("/fonts", filepath.Join(dir, "/assets/fonts"))
+	s.server.StaticFS("/css", http.FS(fsMust(fs.Sub(wg_portal.Statics, "assets/css"))))
+	s.server.StaticFS("/js", http.FS(fsMust(fs.Sub(wg_portal.Statics, "assets/js"))))
+	s.server.StaticFS("/img", http.FS(fsMust(fs.Sub(wg_portal.Statics, "assets/img"))))
+	s.server.StaticFS("/fonts", http.FS(fsMust(fs.Sub(wg_portal.Statics, "assets/fonts"))))
 
 	// Setup all routes
 	SetupRoutes(s)
+
+	// Setup user database (also needed for database authentication)
+	s.users, err = users.NewManager(&s.config.Database)
+	if err != nil {
+		return errors.WithMessage(err, "user-manager initialization failed")
+	}
+
+	// Setup auth manager
+	s.auth = NewAuthManager(s)
+	pwProvider, err := passwordprovider.New(&s.config.Database)
+	if err != nil {
+		return errors.WithMessage(err, "password provider initialization failed")
+	}
+	if err = pwProvider.InitializeAdmin(s.config.Core.AdminUser, s.config.Core.AdminPassword); err != nil {
+		return errors.WithMessage(err, "admin initialization failed")
+	}
+	s.auth.RegisterProvider(pwProvider)
+
+	if s.config.Core.LdapEnabled {
+		ldapProvider, err := ldapprovider.New(&s.config.LDAP)
+		if err != nil {
+			s.config.Core.LdapEnabled = false
+			logrus.Warnf("failed to setup LDAP connection, LDAP features disabled")
+		}
+		s.auth.RegisterProviderWithoutError(ldapProvider, err)
+	}
+
+	// Setup WireGuard stuff
+	s.wg = &wireguard.Manager{Cfg: &s.config.WG}
+	if err = s.wg.Init(); err != nil {
+		return errors.WithMessage(err, "unable to initialize WireGuard manager")
+	}
+
+	// Setup peer manager
+	if s.peers, err = NewPeerManager(s.config, s.wg, s.users); err != nil {
+		return errors.WithMessage(err, "unable to setup peer manager")
+	}
+	if err = s.peers.InitFromCurrentInterface(); err != nil {
+		return errors.WithMessage(err, "unable to initialize peer manager")
+	}
+	if err = s.RestoreWireGuardInterface(); err != nil {
+		return errors.WithMessage(err, "unable to restore WireGuard state")
+	}
+
+	// Setup mail template
+	s.mailTpl, err = template.New("email.html").ParseFS(wg_portal.Templates, "assets/tpl/email.html")
+	if err != nil {
+		return errors.Wrap(err, "unable to pare mail template")
+	}
 
 	logrus.Infof("Setup of service completed!")
 	return nil
 }
 
 func (s *Server) Run() {
-	// Start ldap group watcher
-	if !s.ldapDisabled {
-		go func(s *Server) {
-			for {
-				time.Sleep(CacheRefreshDuration)
-				if err := s.ldapCacheUpdater.Update(true, true); err != nil {
-					logrus.Warnf("Failed to update ldap group cache: %v", err)
-				}
-				logrus.Debugf("Refreshed LDAP permissions!")
-			}
-		}(s)
-	}
-
-	if !s.ldapDisabled && s.config.Core.SyncLdapStatus {
-		go func(s *Server) {
-			for {
-				time.Sleep(CacheRefreshDuration)
-				if err := s.SyncLdapAttributesWithWireGuard(); err != nil {
-					logrus.Warnf("Failed to synchronize ldap attributes: %v", err)
-				}
-				logrus.Debugf("Synced LDAP attributes!")
-			}
-		}(s)
+	// Start ldap sync
+	if s.config.Core.LdapEnabled {
+		go s.SyncLdapWithUserDatabase()
 	}
 
 	// Run web service
-	err := s.server.Run(s.config.Core.ListeningAddress)
-	if err != nil {
-		logrus.Errorf("Failed to listen and serve on %s: %v", s.config.Core.ListeningAddress, err)
+	srv := &http.Server{
+		Addr:    s.config.Core.ListeningAddress,
+		Handler: s.server,
 	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			logrus.Debugf("web service on %s exited: %v", s.config.Core.ListeningAddress, err)
+		}
+	}()
+
+	<-s.ctx.Done()
+
+	logrus.Debug("web service shutting down...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_ = srv.Shutdown(shutdownCtx)
+
 }
 
 func (s *Server) getExecutableDirectory() string {
@@ -201,7 +211,16 @@ func (s *Server) getExecutableDirectory() string {
 	return dir
 }
 
-func (s *Server) getSessionData(c *gin.Context) SessionData {
+func (s *Server) getStaticData() StaticData {
+	return StaticData{
+		WebsiteTitle: s.config.Core.Title,
+		WebsiteLogo:  "/img/header-logo.png",
+		CompanyName:  s.config.Core.CompanyName,
+		Year:         time.Now().Year(),
+	}
+}
+
+func GetSessionData(c *gin.Context) SessionData {
 	session := sessions.Default(c)
 	rawSessionData := session.Get(SessionIdentifier)
 
@@ -210,8 +229,9 @@ func (s *Server) getSessionData(c *gin.Context) SessionData {
 		sessionData = rawSessionData.(SessionData)
 	} else {
 		sessionData = SessionData{
-			SortedBy:      "mail",
-			SortDirection: "asc",
+			Search:        map[string]string{"peers": "", "userpeers": "", "users": ""},
+			SortedBy:      map[string]string{"peers": "mail", "userpeers": "mail", "users": "email"},
+			SortDirection: map[string]string{"peers": "asc", "userpeers": "asc", "users": "asc"},
 			Email:         "",
 			Firstname:     "",
 			Lastname:      "",
@@ -227,7 +247,7 @@ func (s *Server) getSessionData(c *gin.Context) SessionData {
 	return sessionData
 }
 
-func (s *Server) getFlashes(c *gin.Context) []FlashData {
+func GetFlashes(c *gin.Context) []FlashData {
 	session := sessions.Default(c)
 	flashes := session.Flashes()
 	if err := session.Save(); err != nil {
@@ -242,7 +262,7 @@ func (s *Server) getFlashes(c *gin.Context) []FlashData {
 	return flashData
 }
 
-func (s *Server) updateSessionData(c *gin.Context, data SessionData) error {
+func UpdateSessionData(c *gin.Context, data SessionData) error {
 	session := sessions.Default(c)
 	session.Set(SessionIdentifier, data)
 	if err := session.Save(); err != nil {
@@ -252,7 +272,7 @@ func (s *Server) updateSessionData(c *gin.Context, data SessionData) error {
 	return nil
 }
 
-func (s *Server) destroySessionData(c *gin.Context) error {
+func DestroySessionData(c *gin.Context) error {
 	session := sessions.Default(c)
 	session.Delete(SessionIdentifier)
 	if err := session.Save(); err != nil {
@@ -262,17 +282,7 @@ func (s *Server) destroySessionData(c *gin.Context) error {
 	return nil
 }
 
-func (s *Server) getStaticData() StaticData {
-	return StaticData{
-		WebsiteTitle: s.config.Core.Title,
-		WebsiteLogo:  "/img/header-logo.png",
-		CompanyName:  s.config.Core.CompanyName,
-		LdapDisabled: s.ldapDisabled,
-		Year:         time.Now().Year(),
-	}
-}
-
-func (s *Server) setFlashMessage(c *gin.Context, message, typ string) {
+func SetFlashMessage(c *gin.Context, message, typ string) {
 	session := sessions.Default(c)
 	session.AddFlash(FlashData{
 		Message: message,
@@ -283,13 +293,20 @@ func (s *Server) setFlashMessage(c *gin.Context, message, typ string) {
 	}
 }
 
-func (s SessionData) GetSortIcon(field string) string {
-	if s.SortedBy != field {
+func (s SessionData) GetSortIcon(table, field string) string {
+	if s.SortedBy[table] != field {
 		return "fa-sort"
 	}
-	if s.SortDirection == "asc" {
+	if s.SortDirection[table] == "asc" {
 		return "fa-sort-alpha-down"
 	} else {
 		return "fa-sort-alpha-up"
 	}
+}
+
+func fsMust(f fs.FS, err error) fs.FS {
+	if err != nil {
+		panic(err)
+	}
+	return f
 }

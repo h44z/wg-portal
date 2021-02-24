@@ -5,11 +5,14 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/h44z/wg-portal/internal/authentication"
+	"github.com/h44z/wg-portal/internal/users"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 func (s *Server) GetLogin(c *gin.Context) {
-	currentSession := s.getSessionData(c)
+	currentSession := GetSessionData(c)
 	if currentSession.LoggedIn {
 		c.Redirect(http.StatusSeeOther, "/") // already logged in
 	}
@@ -33,7 +36,7 @@ func (s *Server) GetLogin(c *gin.Context) {
 }
 
 func (s *Server) PostLogin(c *gin.Context) {
-	currentSession := s.getSessionData(c)
+	currentSession := GetSessionData(c)
 	if currentSession.LoggedIn {
 		// already logged in
 		c.Redirect(http.StatusSeeOther, "/")
@@ -49,59 +52,84 @@ func (s *Server) PostLogin(c *gin.Context) {
 		return
 	}
 
-	adminAuthenticated := false
-	if s.config.Core.AdminUser != "" && username == s.config.Core.AdminUser && password == s.config.Core.AdminPassword {
-		adminAuthenticated = true
+	// Check user database for an matching entry
+	var loginProvider authentication.AuthProvider
+	email := ""
+	user := s.users.GetUser(username) // retrieve active candidate user from db
+	if user != nil {                  // existing user
+		loginProvider = s.auth.GetProvider(string(user.Source))
+		if loginProvider == nil {
+			s.GetHandleError(c, http.StatusInternalServerError, "login error", "login provider unavailable")
+			return
+		}
+		authEmail, err := loginProvider.Login(&authentication.AuthContext{
+			Username: username,
+			Password: password,
+		})
+		if err == nil {
+			email = authEmail
+		}
+	} else { // possible new user
+		// Check all available auth backends
+		for _, provider := range s.auth.GetProvidersForType(authentication.AuthProviderTypePassword) {
+			// try to log in to the given provider
+			authEmail, err := provider.Login(&authentication.AuthContext{
+				Username: username,
+				Password: password,
+			})
+			if err != nil {
+				continue
+			}
+
+			email = authEmail
+			loginProvider = provider
+
+			// create new user in the database (or reactivate him)
+			if user, err = s.users.GetOrCreateUserUnscoped(email); err != nil {
+				s.GetHandleError(c, http.StatusInternalServerError, "login error", "failed to create new user")
+				return
+			}
+			userData, err := loginProvider.GetUserModel(&authentication.AuthContext{
+				Username: email,
+			})
+			if err != nil {
+				s.GetHandleError(c, http.StatusInternalServerError, "login error", err.Error())
+				return
+			}
+			user.Firstname = userData.Firstname
+			user.Lastname = userData.Lastname
+			user.Email = userData.Email
+			user.Phone = userData.Phone
+			user.IsAdmin = userData.IsAdmin
+			user.Source = users.UserSource(loginProvider.GetName())
+			user.DeletedAt = gorm.DeletedAt{} // reset deleted flag
+			if err = s.users.UpdateUser(user); err != nil {
+				s.GetHandleError(c, http.StatusInternalServerError, "login error", "failed to update user data")
+				return
+			}
+			break
+		}
 	}
 
-	// Check if user is in cache, avoid unnecessary ldap requests
-	if !adminAuthenticated && !s.ldapUsers.UserExists(username) {
-		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
-	}
-
-	// Check if username and password match
-	if !adminAuthenticated && !s.ldapAuth.CheckLogin(username, password) {
+	// Check if user is authenticated
+	if email == "" || loginProvider == nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
 		return
 	}
 
-	var sessionData SessionData
-	if adminAuthenticated {
-		sessionData = SessionData{
-			LoggedIn:      true,
-			IsAdmin:       true,
-			Email:         "autodetected@example.com",
-			UID:           "adminuid",
-			UserName:      username,
-			Firstname:     "System",
-			Lastname:      "Administrator",
-			SortedBy:      "mail",
-			SortDirection: "asc",
-			Search:        "",
-		}
-	} else {
-		dn := s.ldapUsers.GetUserDN(username)
-		userData := s.ldapUsers.GetUserData(dn)
-		sessionData = SessionData{
-			LoggedIn:      true,
-			IsAdmin:       s.ldapUsers.IsInGroup(username, s.config.AdminLdapGroup),
-			UID:           userData.GetUID(),
-			UserName:      username,
-			Email:         userData.Mail,
-			Firstname:     userData.Firstname,
-			Lastname:      userData.Lastname,
-			SortedBy:      "mail",
-			SortDirection: "asc",
-			Search:        "",
-		}
-	}
+	// Set authenticated session
+	sessionData := GetSessionData(c)
+	sessionData.LoggedIn = true
+	sessionData.IsAdmin = user.IsAdmin
+	sessionData.Email = user.Email
+	sessionData.Firstname = user.Firstname
+	sessionData.Lastname = user.Lastname
 
 	// Check if user already has a peer setup, if not create one
-	if s.config.Core.CreateInterfaceOnLogin && !adminAuthenticated {
-		users := s.users.GetUsersByMail(sessionData.Email)
-
-		if len(users) == 0 { // Create vpn peer
-			err := s.CreateUser(Peer{
+	if s.config.Core.CreateDefaultPeer {
+		peers := s.peers.GetPeersByMail(sessionData.Email)
+		if len(peers) == 0 { // Create vpn peer
+			err := s.CreatePeer(Peer{
 				Identifier: sessionData.Firstname + " " + sessionData.Lastname + " (Default)",
 				Email:      sessionData.Email,
 				CreatedBy:  sessionData.Email,
@@ -111,7 +139,7 @@ func (s *Server) PostLogin(c *gin.Context) {
 		}
 	}
 
-	if err := s.updateSessionData(c, sessionData); err != nil {
+	if err := UpdateSessionData(c, sessionData); err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "login error", "failed to save session")
 		return
 	}
@@ -119,14 +147,14 @@ func (s *Server) PostLogin(c *gin.Context) {
 }
 
 func (s *Server) GetLogout(c *gin.Context) {
-	currentSession := s.getSessionData(c)
+	currentSession := GetSessionData(c)
 
 	if !currentSession.LoggedIn { // Not logged in
 		c.Redirect(http.StatusSeeOther, "/")
 		return
 	}
 
-	if err := s.destroySessionData(c); err != nil {
+	if err := DestroySessionData(c); err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "logout error", "failed to destroy session")
 		return
 	}

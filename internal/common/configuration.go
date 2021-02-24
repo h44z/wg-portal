@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/h44z/wg-portal/internal/ldap"
+	"github.com/h44z/wg-portal/internal/users"
 	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
@@ -54,22 +55,21 @@ func loadConfigEnv(cfg interface{}) error {
 
 type Config struct {
 	Core struct {
-		ListeningAddress       string `yaml:"listeningAddress" envconfig:"LISTENING_ADDRESS"`
-		ExternalUrl            string `yaml:"externalUrl" envconfig:"EXTERNAL_URL"`
-		Title                  string `yaml:"title" envconfig:"WEBSITE_TITLE"`
-		CompanyName            string `yaml:"company" envconfig:"COMPANY_NAME"`
-		MailFrom               string `yaml:"mailfrom" envconfig:"MAIL_FROM"`
-		AdminUser              string `yaml:"adminUser" envconfig:"ADMIN_USER"` // optional, non LDAP admin user
-		AdminPassword          string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
-		DatabasePath           string `yaml:"database" envconfig:"DATABASE_PATH"`
-		EditableKeys           bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
-		CreateInterfaceOnLogin bool   `yaml:"createOnLogin" envconfig:"CREATE_INTERFACE_ON_LOGIN"`
-		SyncLdapStatus         bool   `yaml:"syncLdapStatus" envconfig:"SYNC_LDAP_STATUS"` // disable account if disabled in ldap
+		ListeningAddress  string `yaml:"listeningAddress" envconfig:"LISTENING_ADDRESS"`
+		ExternalUrl       string `yaml:"externalUrl" envconfig:"EXTERNAL_URL"`
+		Title             string `yaml:"title" envconfig:"WEBSITE_TITLE"`
+		CompanyName       string `yaml:"company" envconfig:"COMPANY_NAME"`
+		MailFrom          string `yaml:"mailFrom" envconfig:"MAIL_FROM"`
+		AdminUser         string `yaml:"adminUser" envconfig:"ADMIN_USER"`
+		AdminPassword     string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
+		EditableKeys      bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
+		CreateDefaultPeer bool   `yaml:"createDefaultPeer" envconfig:"CREATE_DEFAULT_PEER"`
+		LdapEnabled       bool   `yaml:"ldapEnabled" envconfig:"LDAP_ENABLED"`
 	} `yaml:"core"`
-	Email          MailConfig       `yaml:"email"`
-	LDAP           ldap.Config      `yaml:"ldap"`
-	WG             wireguard.Config `yaml:"wg"`
-	AdminLdapGroup string           `yaml:"adminLdapGroup" envconfig:"ADMIN_LDAP_GROUP"`
+	Database users.Config     `yaml:"database"`
+	Email    MailConfig       `yaml:"email"`
+	LDAP     ldap.Config      `yaml:"ldap"`
+	WG       wireguard.Config `yaml:"wg"`
 }
 
 func NewConfig() *Config {
@@ -81,18 +81,31 @@ func NewConfig() *Config {
 	cfg.Core.CompanyName = "WireGuard Portal"
 	cfg.Core.ExternalUrl = "http://localhost:8123"
 	cfg.Core.MailFrom = "WireGuard VPN <noreply@company.com>"
-	cfg.Core.AdminUser = "" // non-ldap admin access is disabled by default
-	cfg.Core.AdminPassword = ""
-	cfg.Core.DatabasePath = "data/wg_portal.db"
+	cfg.Core.AdminUser = "admin@wgportal.local"
+	cfg.Core.AdminPassword = "wgportal"
+	cfg.Core.LdapEnabled = false
+
+	cfg.Database.Typ = "sqlite"
+	cfg.Database.Database = "data/wg_portal.db"
+
 	cfg.LDAP.URL = "ldap://srv-ad01.company.local:389"
 	cfg.LDAP.BaseDN = "DC=COMPANY,DC=LOCAL"
 	cfg.LDAP.StartTLS = true
 	cfg.LDAP.BindUser = "company\\\\ldap_wireguard"
 	cfg.LDAP.BindPass = "SuperSecret"
+	cfg.LDAP.Type = "AD"
+	cfg.LDAP.UserClass = "organizationalPerson"
+	cfg.LDAP.EmailAttribute = "mail"
+	cfg.LDAP.FirstNameAttribute = "givenName"
+	cfg.LDAP.LastNameAttribute = "sn"
+	cfg.LDAP.PhoneAttribute = "telephoneNumber"
+	cfg.LDAP.GroupMemberAttribute = "memberOf"
+	cfg.LDAP.DisabledAttribute = "userAccountControl"
+	cfg.LDAP.AdminLdapGroup = "CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL"
+
 	cfg.WG.DeviceName = "wg0"
 	cfg.WG.WireGuardConfig = "/etc/wireguard/wg0.conf"
 	cfg.WG.ManageIPAddresses = true
-	cfg.AdminLdapGroup = "CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL"
 	cfg.Email.Host = "127.0.0.1"
 	cfg.Email.Port = 25
 

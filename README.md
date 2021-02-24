@@ -7,14 +7,13 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/h44z/wg-portal)
 [![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/h44z/wg-portal/)
 
-A simple web base configuration portal for [WireGuard](https://wireguard.com). 
+A simple, web based configuration portal for [WireGuard](https://wireguard.com). 
 The portal uses the WireGuard [wgctrl](https://github.com/WireGuard/wgctrl-go) library to manage the VPN 
 interface. This allows for seamless activation or deactivation of new users, without disturbing existing VPN 
 connections.
 
-The configuration portal is designed to use LDAP (Active Directory) as a user source for authentication and profile data.
-It still can be used without LDAP by using a predefined administrator account. Some features like mass creation of accounts 
-will only be available in combination with LDAP.
+The configuration portal currently supports using SQLite, MySQL as a user source for authentication and profile data.
+It also supports LDAP (Active Directory or OpenLDAP) as authentication provider.
 
 ## Features
  * Self-hosted and web based
@@ -24,18 +23,19 @@ will only be available in combination with LDAP.
  * Enable / Disable clients seamlessly
  * Generation of `wgX.conf` after any modification
  * IPv6 ready
- * User authentication (LDAP and/or predefined admin account)
+ * User authentication (SQLite/MySQL and LDAP)
  * Dockerized
  * Responsive template
+ * One single binary
  
 ![Screenshot](screenshot.png)
 
 ## Setup
 
 ### Docker
-The easiest way to run WireGuard Portal is using the provided docker image.
+The easiest way to run WireGuard Portal is to use the Docker image provided.
 
-Docker compose snippet with sample values:
+Docker Compose snippet with some sample configuration values:
 ```
 version: '3.6'
 services:
@@ -56,19 +56,20 @@ services:
       - WEBSITE_TITLE=WireGuard VPN
       - COMPANY_NAME=Your Company Name
       - MAIL_FROM=WireGuard VPN <noreply+wireguard@company.com>
-      - ADMIN_USER=admin  # optional admin user
+      - ADMIN_USER=admin@domain.com
       - ADMIN_PASS=supersecret
-      - ADMIN_LDAP_GROUP=CN=WireGuardAdmins,OU=Users,DC=COMPANY,DC=LOCAL
       - EMAIL_HOST=10.10.10.10
       - EMAIL_PORT=25
+      - LDAP_ENABLED=true
       - LDAP_URL=ldap://srv-ad01.company.local:389
       - LDAP_BASEDN=DC=COMPANY,DC=LOCAL
       - LDAP_USER=ldap_wireguard@company.local
       - LDAP_PASSWORD=supersecretldappassword
+      - LDAP_ADMIN_GROUP=CN=WireGuardAdmins,OU=Users,DC=COMPANY,DC=LOCAL
 ```
 Please note that mapping ```/etc/wireguard``` to ```/etc/wireguard``` inside the docker, will erase your host's current configuration.
 If needed, please make sure to backup your files from ```/etc/wireguard```.
-For a full list of configuration options take a look at the source file [internal/common/configuration.go](internal/common/configuration.go).
+For a full list of configuration options take a look at the source file [internal/common/configuration.go](internal/common/configuration.go#L57).
 
 ### Standalone
 For a standalone application, use the Makefile provided in the repository to build the application.
@@ -80,7 +81,7 @@ make
 make build-cross-plat
 ```
 
-The compiled binary and all necessary assets will be located in the dist folder.
+The compiled binary will be located in the dist folder.
 A detailed description for using this software with a raspberry pi can be found in the [README-RASPBERRYPI.md](README-RASPBERRYPI.md).
 
 ## What is out of scope

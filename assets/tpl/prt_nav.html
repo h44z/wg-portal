@@ -7,19 +7,28 @@
     <div id="topNavbar" class="navbar-collapse collapse">
         <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
             <li class="nav-spacer"></li>
-            {{with eq $.Session.LoggedIn true}}{{with eq $.Session.IsAdmin true}}{{with eq $.Route "/admin/"}}
+            {{with eq $.Session.LoggedIn true}}{{with eq $.Session.IsAdmin true}}
+            {{with eq $.Route "/admin/"}}
             <form class="form-inline my-2 my-lg-0" method="get">
-                <input class="form-control mr-sm-2" name="search" type="search" placeholder="Search" aria-label="Search" value="{{$.Session.Search}}">
+                <input class="form-control mr-sm-2" name="search" type="search" placeholder="Search" aria-label="Search" value="{{index $.Session.Search "peers"}}">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit"><i class="fa fa-search"></i></button>
             </form>
-            {{end}}{{end}}{{end}}
+            {{end}}
+            {{with eq $.Route "/admin/users/"}}
+            <form class="form-inline my-2 my-lg-0" method="get">
+                <input class="form-control mr-sm-2" name="search" type="search" placeholder="Search" aria-label="Search" value="{{index $.Session.Search "users"}}">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit"><i class="fa fa-search"></i></button>
+            </form>
+            {{end}}
+            {{end}}{{end}}
         </ul>
         {{if eq $.Session.LoggedIn true}}
             <div class="nav-item dropdown">
                 <a href="#" class="navbar-text dropdown-toggle" data-toggle="dropdown">{{$.Session.Firstname}} {{$.Session.Lastname}} <span class="caret"></span></a>
                 <div class="dropdown-menu">
                     {{with eq $.Session.LoggedIn true}}{{with eq $.Session.IsAdmin true}}
-                        <a class="dropdown-item" href="/admin/"><i class="fas fa-file-export"></i> Administration</a>
+                        <a class="dropdown-item" href="/admin/"><i class="fas fa-cogs"></i> Administration</a>
+                        <a class="dropdown-item" href="/admin/users/"><i class="fas fa-users-cog"></i> User Management</a>
                         <div class="dropdown-divider"></div>
                     {{end}}{{end}}
                     <a class="dropdown-item" href="/user/profile"><i class="fas fa-user"></i> Profile</a>

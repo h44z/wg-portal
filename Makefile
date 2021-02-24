@@ -11,12 +11,10 @@ IMAGE=h44z/wg-portal
 all: dep build
 
 build: dep $(addsuffix -amd64,$(addprefix $(BUILDDIR)/,$(BINARIES)))
-	cp -r assets $(BUILDDIR)
 	cp scripts/wg-portal.service $(BUILDDIR)
 	cp scripts/wg-portal.env $(BUILDDIR)
 
 build-cross-plat: dep build $(addsuffix -arm,$(addprefix $(BUILDDIR)/,$(BINARIES))) $(addsuffix -arm64,$(addprefix $(BUILDDIR)/,$(BINARIES)))
-	cp -r assets $(BUILDDIR)
 	cp scripts/wg-portal.service $(BUILDDIR)
 	cp scripts/wg-portal.env $(BUILDDIR)
 
