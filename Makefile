@@ -10,14 +10,15 @@ IMAGE=h44z/wg-portal
 
 all: dep build
 
-build: dep
-	mkdir -p $(BUILDDIR)
+build: dep $(addsuffix -amd64,$(addprefix $(BUILDDIR)/,$(BINARIES)))
 	cp scripts/wg-portal.service $(BUILDDIR)
 	cp scripts/wg-portal.env $(BUILDDIR)
-	GOX_linux_arm_LDFLAGS="-linkmode external -extldflags -static" GOX_linux_arm_CC=arm-linux-gnueabihf-gcc GOX_linux_arm64_LDFLAGS="-linkmode external -extldflags -static" GOX_linux_arm64_CC=aarch64-linux-gnu-gcc gox -rebuild -parallel=1 -verbose -cgo -os="linux" -arch="amd64 arm arm64" -output="dist/{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Version=`git rev-parse --short HEAD`" -verbose ./...
+
+build-cross-plat: dep build $(addsuffix -arm,$(addprefix $(BUILDDIR)/,$(BINARIES))) $(addsuffix -arm64,$(addprefix $(BUILDDIR)/,$(BINARIES)))
+	cp scripts/wg-portal.service $(BUILDDIR)
+	cp scripts/wg-portal.env $(BUILDDIR)
 
 dep:
-	$(GOCMD) get github.com/necrose99/gox
 	$(GOCMD) mod download
 
 validate: dep
@@ -56,4 +57,4 @@ $(BUILDDIR)/%-arm64: cmd/%/main.go dep phony
 
 # On arch-linux install arm-linux-gnueabihf-gcc to crosscompile for arm
 $(BUILDDIR)/%-arm: cmd/%/main.go dep phony
-	CGO_ENABLED=1 CC=arm-linux-gnueabihf-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@ $<
+	CGO_ENABLED=1 CC=arm-linux-gnueabi-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@ $<

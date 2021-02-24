@@ -4,7 +4,6 @@ sudo: required
 go:
   - 1.16.x # Latest go version
 env:
-  - azure-linux
   - GO111MODULE=on
 addons:
   apt:
@@ -12,8 +11,7 @@ addons:
       - gcc-multilib
 
 before_install:
-  # gox simplifies building for multiple architectures
-  - go get github.com/necrose99/gox
+  - # skip
 
 install:
   - # skip
@@ -23,7 +21,8 @@ script:
   - diff -u <(echo -n) <(gofmt -d .)
   - go vet $(go list ./... | grep -v /vendor/)
   - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
-  - GOX_linux_arm_LDFLAGS="-linkmode external -extldflags -static" GOX_linux_arm_CC=arm-linux-gnueabi-gcc GOX_linux_arm64_LDFLAGS="-linkmode external -extldflags -static" GOX_linux_arm64_CC=aarch64-linux-gnu-gcc gox -rebuild -parallel=1 -verbose -cgo -os="linux" -arch="amd64 arm arm64" -output="dist/{{.Dir}}_{{.OS}}_{{.Arch}}" -ldflags "-X main.Version=`git rev-parse --short HEAD`" -verbose ./...
+  - make build
+  - make build-cross-plat
 
 deploy:
   provider: releases
