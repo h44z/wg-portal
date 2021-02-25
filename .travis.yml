@@ -31,7 +31,7 @@ deploy:
   skip_cleanup: true # Important, otherwise the build output would be purged.
   api_key:
     # *encrypted* GitHub key, as the output of the Travis CI CLI tool
-    secure: TODO...
+    secure: "uZ7Vg7mEP7aUyaf/Uq5UZt6r3Ig/iOWcf7DZMhAWilOayeqdfW8kp2VzKFgTM6PJJm5Zv+OYV4dniO11QDjIX5sJfS10ApaxvPjw/a4NkqKykfrKZABWRmuvSv/PSjzl7jnWgnPqydBmHCfowsxI6X9j1uivgXZDMYg9BKOnDJtVoakUWJ47GKWr7ZegvF5DwB3EaPwDUmJIAJRiMqO+I2QmuVmLvvzkuhSQ/yuCjel/O7kudJuioJOvsxSHH5Mjh7HZoYayAFikVIGCXJStzMCeLwa+lUHUXoofoDT8SHMmcw2Oil1OpeC1PhvtT6VFLzYl9aphl472F9zP0TlBzR5VJ3+r5dwFVhf0MHp0LflIIg8RGjZg/H60yUUPbGYW7gN3wjdH1l7i66HcqFVs39GgzPCpxNuz8bhhUJOtR6K9FujYpp8AkFCwB327LwGzBLWP3wLGkmhj3ca3FBGJLZhzRdK6gpdp9KgY+33wJ/5R7zsUGtEGTjzsGB1GmBBb887qt0mh/cfm/mdh5HPWvZCif2WTyWd2W8gUiN4oTPhRdE/FRFUqoR1WEZeQrjgj3tThywrXIpRVdigN74UMsnlThSHxPZdJHPLftei2A3b+yfYgxt43sp22MqyuB6K7mT5ximQLWldN2Ibf7kKb5RO9/WX5P8LUj1KXtY3dh2o="
   file:
     - dist/wg-portal-amd64
     - dist/wg-portal-arm64
