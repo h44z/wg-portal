@@ -86,7 +86,7 @@ func (provider Provider) Login(ctx *authentication.AuthContext) (string, error) 
 	}
 
 	if len(sr.Entries) != 1 {
-		return "", errors.Wrapf(err, "invalid amount of ldap entries (%d)", len(sr.Entries))
+		return "", errors.Errorf("invalid amount of ldap entries (%d)", len(sr.Entries))
 	}
 
 	userDN := sr.Entries[0].DN
@@ -97,11 +97,11 @@ func (provider Provider) Login(ctx *authentication.AuthContext) (string, error) 
 		switch provider.config.Type {
 		case ldapconfig.TypeActiveDirectory:
 			if ldapconfig.IsActiveDirectoryUserDisabled(uac) {
-				return "", errors.Wrapf(err, "user is disabled")
+				return "", errors.New("user is disabled")
 			}
 		case ldapconfig.TypeOpenLDAP:
 			if ldapconfig.IsOpenLdapUserDisabled(uac) {
-				return "", errors.Wrapf(err, "user is disabled")
+				return "", errors.New("user is disabled")
 			}
 		}
 	}

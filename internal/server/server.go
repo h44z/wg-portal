@@ -97,7 +97,10 @@ func (s *Server) Setup(ctx context.Context) error {
 	gin.SetMode(gin.DebugMode)
 	gin.DefaultWriter = ioutil.Discard
 	s.server = gin.New()
-	s.server.Use(ginlogrus.Logger(logrus.StandardLogger()), gin.Recovery())
+	if logrus.GetLevel() == logrus.TraceLevel {
+		s.server.Use(ginlogrus.Logger(logrus.StandardLogger()))
+	}
+	s.server.Use(gin.Recovery())
 	s.server.SetFuncMap(template.FuncMap{
 		"formatBytes": common.ByteCountSI,
 		"urlEncode":   url.QueryEscape,
