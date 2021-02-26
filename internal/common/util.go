@@ -40,6 +40,8 @@ func IsIPv6(address string) bool {
 	return ip.To4() == nil
 }
 
+// ParseStringList converts a comma separated string into a list of strings.
+// It also trims spaces from each element of the list.
 func ParseStringList(lst string) []string {
 	tokens := strings.Split(lst, ",")
 	validatedTokens := make([]string, 0, len(tokens))
@@ -53,6 +55,7 @@ func ParseStringList(lst string) []string {
 	return validatedTokens
 }
 
+// ListToString converts a list of strings into a comma separated string.
 func ListToString(lst []string) string {
 	return strings.Join(lst, ", ")
 }

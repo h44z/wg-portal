@@ -3,14 +3,13 @@ package server
 import (
 	"sort"
 
-	"github.com/h44z/wg-portal/internal/authentication"
-
 	"github.com/gin-gonic/gin"
+	"github.com/h44z/wg-portal/internal/authentication"
 	"github.com/h44z/wg-portal/internal/users"
 	"github.com/sirupsen/logrus"
 )
 
-// Auth auth struct
+// AuthManager keeps track of available authentication providers.
 type AuthManager struct {
 	Server      *Server
 	Group       *gin.RouterGroup // basic group for all providers (/auth)
@@ -38,7 +37,7 @@ func (auth *AuthManager) RegisterProviderWithoutError(provider authentication.Au
 	auth.RegisterProvider(provider)
 }
 
-// GetProvider get provider with name
+// GetProvider get provider by name
 func (auth *AuthManager) GetProvider(name string) authentication.AuthProvider {
 	for _, provider := range auth.providers {
 		if provider.GetName() == name {
@@ -48,15 +47,23 @@ func (auth *AuthManager) GetProvider(name string) authentication.AuthProvider {
 	return nil
 }
 
-// GetProviders return registered providers
+// GetProviders return registered providers.
+// Returned providers are ordered by provider priority.
 func (auth *AuthManager) GetProviders() (providers []authentication.AuthProvider) {
 	for _, provider := range auth.providers {
 		providers = append(providers, provider)
 	}
+
+	// order by priority
+	sort.SliceStable(providers, func(i, j int) bool {
+		return providers[i].GetPriority() < providers[j].GetPriority()
+	})
+
 	return
 }
 
-// GetProviders return registered providers
+// GetProvidersForType return registered providers for the given type.
+// Returned providers are ordered by provider priority.
 func (auth *AuthManager) GetProvidersForType(typ authentication.AuthProviderType) (providers []authentication.AuthProvider) {
 	for _, provider := range auth.providers {
 		if provider.GetType() == typ {

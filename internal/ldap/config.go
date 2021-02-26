@@ -23,5 +23,5 @@ type Config struct {
 	GroupMemberAttribute string `yaml:"attrGroups" envconfig:"LDAP_ATTR_GROUPS"`
 	DisabledAttribute    string `yaml:"attrDisabled" envconfig:"LDAP_ATTR_DISABLED"`
 
-	AdminLdapGroup string `yaml:"adminGroup" envconfig:"LDAP_ADMIN_GROUP"`
+	AdminLdapGroup string `yaml:"adminGroup" envconfig:"LDAP_ADMIN_GROUP"` // Members of this group receive admin rights in WG-Portal
 }

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/pkg/errors"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -145,7 +147,7 @@ func (s *Server) updateFormInSession(c *gin.Context, formData interface{}) error
 	currentSession.FormData = formData
 
 	if err := UpdateSessionData(c, currentSession); err != nil {
-		return err
+		return errors.WithMessage(err, "failed to update form in session")
 	}
 
 	return nil
@@ -158,13 +160,13 @@ func (s *Server) setNewPeerFormInSession(c *gin.Context) (SessionData, error) {
 	if currentSession.FormData == nil || c.Query("formerr") == "" {
 		user, err := s.PrepareNewPeer()
 		if err != nil {
-			return currentSession, err
+			return currentSession, errors.WithMessage(err, "failed to prepare new peer")
 		}
 		currentSession.FormData = user
 	}
 
 	if err := UpdateSessionData(c, currentSession); err != nil {
-		return currentSession, err
+		return currentSession, errors.WithMessage(err, "failed to update peer form in session")
 	}
 
 	return currentSession, nil
@@ -179,7 +181,7 @@ func (s *Server) setFormInSession(c *gin.Context, formData interface{}) (Session
 	}
 
 	if err := UpdateSessionData(c, currentSession); err != nil {
-		return currentSession, err
+		return currentSession, errors.WithMessage(err, "failed to set form in session")
 	}
 
 	return currentSession, nil

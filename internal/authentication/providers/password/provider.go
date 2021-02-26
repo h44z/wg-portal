@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Provider provide login with password method
+// Provider implements a password login method for a database backend.
 type Provider struct {
 	db *gorm.DB
 }

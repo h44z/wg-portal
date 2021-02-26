@@ -1,7 +1,6 @@
 package common
 
 import (
-	"errors"
 	"os"
 	"reflect"
 	"runtime"
@@ -10,13 +9,14 @@ import (
 	"github.com/h44z/wg-portal/internal/users"
 	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
 var ErrInvalidSpecification = errors.New("specification must be a struct pointer")
 
-// LoadConfigFile parses yaml files. It uses to yaml annotation to store the data in a struct.
+// loadConfigFile parses yaml files. It uses yaml annotation to store the data in a struct.
 func loadConfigFile(cfg interface{}, filename string) error {
 	s := reflect.ValueOf(cfg)
 
@@ -30,24 +30,24 @@ func loadConfigFile(cfg interface{}, filename string) error {
 
 	f, err := os.Open(filename)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to open config file %s", filename)
 	}
 	defer f.Close()
 
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(cfg)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to decode config file %s", filename)
 	}
 
 	return nil
 }
 
-// LoadConfigEnv processes envconfig annotations and loads environment variables to the given configuration struct.
+// loadConfigEnv processes envconfig annotations and loads environment variables to the given configuration struct.
 func loadConfigEnv(cfg interface{}) error {
 	err := envconfig.Process("", cfg)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to process environment config")
 	}
 
 	return nil
@@ -124,7 +124,7 @@ func NewConfig() *Config {
 	}
 
 	if cfg.WG.ManageIPAddresses && runtime.GOOS != "linux" {
-		logrus.Warnf("Managing IP addresses only works on linux! Feature disabled.")
+		logrus.Warnf("managing IP addresses only works on linux, feature disabled...")
 		cfg.WG.ManageIPAddresses = false
 	}
 

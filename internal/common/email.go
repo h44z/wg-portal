@@ -26,7 +26,7 @@ type MailAttachment struct {
 	Embedded    bool
 }
 
-// SendEmailWithAttachments sends a mail with attachments.
+// SendEmailWithAttachments sends a mail with optional attachments.
 func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body string, htmlBody string, receivers []string, attachments []MailAttachment) error {
 	e := email.NewEmail()
 

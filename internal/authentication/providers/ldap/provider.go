@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Provider provide login with password method
+// Provider implements a password login method for an LDAP backend.
 type Provider struct {
 	config *ldapconfig.Config
 }

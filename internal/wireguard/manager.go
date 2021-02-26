@@ -1,8 +1,9 @@
 package wireguard
 
 import (
-	"fmt"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
@@ -18,7 +19,7 @@ func (m *Manager) Init() error {
 	var err error
 	m.wg, err = wgctrl.New()
 	if err != nil {
-		return fmt.Errorf("could not create WireGuard client: %w", err)
+		return errors.Wrap(err, "could not create WireGuard client")
 	}
 
 	return nil
@@ -27,7 +28,7 @@ func (m *Manager) Init() error {
 func (m *Manager) GetDeviceInfo() (*wgtypes.Device, error) {
 	dev, err := m.wg.Device(m.Cfg.DeviceName)
 	if err != nil {
-		return nil, fmt.Errorf("could not get WireGuard device: %w", err)
+		return nil, errors.Wrap(err, "could not get WireGuard device")
 	}
 
 	return dev, nil
@@ -39,7 +40,7 @@ func (m *Manager) GetPeerList() ([]wgtypes.Peer, error) {
 
 	dev, err := m.wg.Device(m.Cfg.DeviceName)
 	if err != nil {
-		return nil, fmt.Errorf("could not get WireGuard device: %w", err)
+		return nil, errors.Wrap(err, "could not get WireGuard device")
 	}
 
 	return dev.Peers, nil
@@ -51,12 +52,12 @@ func (m *Manager) GetPeer(pubKey string) (*wgtypes.Peer, error) {
 
 	publicKey, err := wgtypes.ParseKey(pubKey)
 	if err != nil {
-		return nil, fmt.Errorf("invalid public key: %w", err)
+		return nil, errors.Wrap(err, "invalid public key")
 	}
 
 	peers, err := m.GetPeerList()
 	if err != nil {
-		return nil, fmt.Errorf("could not get WireGuard peers: %w", err)
+		return nil, errors.Wrap(err, "could not get WireGuard peers")
 	}
 
 	for _, peer := range peers {
@@ -65,7 +66,7 @@ func (m *Manager) GetPeer(pubKey string) (*wgtypes.Peer, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("could not find WireGuard peer: %s", pubKey)
+	return nil, errors.Errorf("could not find WireGuard peer: %s", pubKey)
 }
 
 func (m *Manager) AddPeer(cfg wgtypes.PeerConfig) error {
@@ -74,7 +75,7 @@ func (m *Manager) AddPeer(cfg wgtypes.PeerConfig) error {
 
 	err := m.wg.ConfigureDevice(m.Cfg.DeviceName, wgtypes.Config{Peers: []wgtypes.PeerConfig{cfg}})
 	if err != nil {
-		return fmt.Errorf("could not configure WireGuard device: %w", err)
+		return errors.Wrap(err, "could not configure WireGuard device")
 	}
 
 	return nil
@@ -87,7 +88,7 @@ func (m *Manager) UpdatePeer(cfg wgtypes.PeerConfig) error {
 	cfg.UpdateOnly = true
 	err := m.wg.ConfigureDevice(m.Cfg.DeviceName, wgtypes.Config{Peers: []wgtypes.PeerConfig{cfg}})
 	if err != nil {
-		return fmt.Errorf("could not configure WireGuard device: %w", err)
+		return errors.Wrap(err, "could not configure WireGuard device")
 	}
 
 	return nil
@@ -99,7 +100,7 @@ func (m *Manager) RemovePeer(pubKey string) error {
 
 	publicKey, err := wgtypes.ParseKey(pubKey)
 	if err != nil {
-		return fmt.Errorf("invalid public key: %w", err)
+		return errors.Wrap(err, "invalid public key")
 	}
 
 	peer := wgtypes.PeerConfig{
@@ -109,7 +110,7 @@ func (m *Manager) RemovePeer(pubKey string) error {
 
 	err = m.wg.ConfigureDevice(m.Cfg.DeviceName, wgtypes.Config{Peers: []wgtypes.PeerConfig{peer}})
 	if err != nil {
-		return fmt.Errorf("could not configure WireGuard device: %w", err)
+		return errors.Wrap(err, "could not configure WireGuard device")
 	}
 
 	return nil

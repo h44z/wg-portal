@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/users"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -141,31 +140,7 @@ func (s *Server) PostAdminUsersEdit(c *gin.Context) {
 	}
 	formUser.IsAdmin = c.PostForm("isadmin") == "true"
 
-	// Update peers
-	if disabled != currentUser.DeletedAt.Valid {
-		if disabled {
-			// disable all peers for the given user
-			for _, peer := range s.peers.GetPeersByMail(currentUser.Email) {
-				now := time.Now()
-				peer.DeactivatedAt = &now
-				if err := s.UpdatePeer(peer, now); err != nil {
-					logrus.Errorf("failed to update deactivated peer %s: %v", peer.PublicKey, err)
-				}
-			}
-		} else {
-			// enable all peers for the given user
-			for _, peer := range s.peers.GetPeersByMail(currentUser.Email) {
-				now := time.Now()
-				peer.DeactivatedAt = nil
-				if err := s.UpdatePeer(peer, now); err != nil {
-					logrus.Errorf("failed to update activated peer %s: %v", peer.PublicKey, err)
-				}
-			}
-		}
-	}
-
-	// Update in database
-	if err := s.users.UpdateUser(&formUser); err != nil {
+	if err := s.UpdateUser(formUser); err != nil {
 		_ = s.updateFormInSession(c, formUser)
 		SetFlashMessage(c, "failed to update user: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/users/edit?pkey="+urlEncodedKey+"&formerr=update")
@@ -242,26 +217,12 @@ func (s *Server) PostAdminUsersCreate(c *gin.Context) {
 	}
 	formUser.IsAdmin = c.PostForm("isadmin") == "true"
 	formUser.Source = users.UserSourceDatabase
-	if err := s.users.CreateUser(&formUser); err != nil {
-		formUser.CreatedAt = time.Time{} // reset created time
+
+	if err := s.CreateUser(formUser); err != nil {
 		_ = s.updateFormInSession(c, formUser)
 		SetFlashMessage(c, "failed to add user: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/users/create?formerr=create")
 		return
-	}
-
-	// Check if user already has a peer setup, if not create one
-	if s.config.Core.CreateDefaultPeer {
-		peers := s.peers.GetPeersByMail(formUser.Email)
-		if len(peers) == 0 { // Create vpn peer
-			err := s.CreatePeer(Peer{
-				Identifier: formUser.Firstname + " " + formUser.Lastname + " (Default)",
-				Email:      formUser.Email,
-				CreatedBy:  formUser.Email,
-				UpdatedBy:  formUser.Email,
-			})
-			logrus.Errorf("Failed to automatically create vpn peer for %s: %v", formUser.Email, err)
-		}
 	}
 
 	SetFlashMessage(c, "user created successfully", "success")

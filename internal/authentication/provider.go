@@ -4,10 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AuthContext contains all information that the AuthProvider needs to perform the authentication.
 type AuthContext struct {
-	Provider AuthProvider
 	Username string // email or username
-	Password string // optional for OIDC
+	Password string
 	Callback string // callback for OIDC
 }
 
@@ -18,6 +18,7 @@ const (
 	AuthProviderTypeOauth    AuthProviderType = "oauth"
 )
 
+// AuthProvider is a interface that can be implemented by different authentication providers like LDAP, OAUTH, ...
 type AuthProvider interface {
 	GetName() string
 	GetType() AuthProviderType

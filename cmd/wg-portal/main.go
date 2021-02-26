@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var Version string = "unknown (local build)"
+var Version = "unknown (local build)"
 
 func main() {
 	_ = setupLogger(logrus.StandardLogger())
@@ -20,7 +20,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	logrus.Infof("Starting WireGuard Portal Server [%s]...", Version)
+	logrus.Infof("starting WireGuard Portal Server [%s]...", Version)
 
 	// Context for clean shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -28,7 +28,7 @@ func main() {
 
 	service := server.Server{}
 	if err := service.Setup(ctx); err != nil {
-		logrus.Fatalf("Setup failed: %v", err)
+		logrus.Fatalf("setup failed: %v", err)
 	}
 
 	// Attach signal handlers to context
@@ -44,10 +44,10 @@ func main() {
 	<-ctx.Done() // Wait until the context gets canceled
 
 	// Give goroutines some time to stop gracefully
-	logrus.Info("Stopping WireGuard Portal Server...")
+	logrus.Info("stopping WireGuard Portal Server...")
 	time.Sleep(2 * time.Second)
 
-	logrus.Infof("Stopped WireGuard Portal Server...")
+	logrus.Infof("stopped WireGuard Portal Server...")
 	logrus.Exit(0)
 }
 

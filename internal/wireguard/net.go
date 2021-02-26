@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/pkg/errors"
+
 	"github.com/milosgajdos/tenus"
 )
 
@@ -12,18 +14,18 @@ const DefaultMTU = 1420
 func (m *Manager) GetIPAddress() ([]string, error) {
 	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve WireGuard interface %s: %w", m.Cfg.DeviceName, err)
+		return nil, errors.Wrapf(err, "could not retrieve WireGuard interface %s", m.Cfg.DeviceName)
 	}
 
 	// Get golang net.interface
 	iface := wgInterface.NetInterface()
 	if iface == nil { // Not sure if this check is really necessary
-		return nil, fmt.Errorf("could not retrieve WireGuard net.interface: %w", err)
+		return nil, errors.Wrap(err, "could not retrieve WireGuard net.interface")
 	}
 
 	addrs, err := iface.Addrs()
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve WireGuard ip addresses: %w", err)
+		return nil, errors.Wrap(err, "could not retrieve WireGuard ip addresses")
 	}
 
 	ipAddresses := make([]string, 0, len(addrs))
@@ -53,22 +55,22 @@ func (m *Manager) GetIPAddress() ([]string, error) {
 func (m *Manager) SetIPAddress(cidrs []string) error {
 	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
 	if err != nil {
-		return fmt.Errorf("could not retrieve WireGuard interface %s: %w", m.Cfg.DeviceName, err)
+		return errors.Wrapf(err, "could not retrieve WireGuard interface %s", m.Cfg.DeviceName)
 	}
 
 	// First remove existing IP addresses
 	existingIPs, err := m.GetIPAddress()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not retrieve IP addresses")
 	}
 	for _, cidr := range existingIPs {
 		wgIp, wgIpNet, err := net.ParseCIDR(cidr)
 		if err != nil {
-			return fmt.Errorf("unable to parse cidr %s: %w", cidr, err)
+			return errors.Wrapf(err, "unable to parse cidr %s", cidr)
 		}
 
 		if err := wgInterface.UnsetLinkIp(wgIp, wgIpNet); err != nil {
-			return fmt.Errorf("failed to unset ip %s: %w", cidr, err)
+			return errors.Wrapf(err, "failed to unset ip %s", cidr)
 		}
 	}
 
@@ -76,11 +78,11 @@ func (m *Manager) SetIPAddress(cidrs []string) error {
 	for _, cidr := range cidrs {
 		wgIp, wgIpNet, err := net.ParseCIDR(cidr)
 		if err != nil {
-			return fmt.Errorf("unable to parse cidr %s: %w", cidr, err)
+			return errors.Wrapf(err, "unable to parse cidr %s", cidr)
 		}
 
 		if err := wgInterface.SetLinkIp(wgIp, wgIpNet); err != nil {
-			return fmt.Errorf("failed to set ip %s: %w", cidr, err)
+			return errors.Wrapf(err, "failed to set ip %s", cidr)
 		}
 	}
 
@@ -90,13 +92,13 @@ func (m *Manager) SetIPAddress(cidrs []string) error {
 func (m *Manager) GetMTU() (int, error) {
 	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
 	if err != nil {
-		return 0, fmt.Errorf("could not retrieve WireGuard interface %s: %w", m.Cfg.DeviceName, err)
+		return 0, errors.Wrapf(err, "could not retrieve WireGuard interface %s", m.Cfg.DeviceName)
 	}
 
 	// Get golang net.interface
 	iface := wgInterface.NetInterface()
 	if iface == nil { // Not sure if this check is really necessary
-		return 0, fmt.Errorf("could not retrieve WireGuard net.interface: %w", err)
+		return 0, errors.Wrap(err, "could not retrieve WireGuard net.interface")
 	}
 
 	return iface.MTU, nil
@@ -105,7 +107,7 @@ func (m *Manager) GetMTU() (int, error) {
 func (m *Manager) SetMTU(mtu int) error {
 	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
 	if err != nil {
-		return fmt.Errorf("could not retrieve WireGuard interface %s: %w", m.Cfg.DeviceName, err)
+		return errors.Wrapf(err, "could not retrieve WireGuard interface %s", m.Cfg.DeviceName)
 	}
 
 	if mtu == 0 {
@@ -113,7 +115,7 @@ func (m *Manager) SetMTU(mtu int) error {
 	}
 
 	if err := wgInterface.SetLinkMTU(mtu); err != nil {
-		return fmt.Errorf("could not set MTU on interface %s: %w", m.Cfg.DeviceName, err)
+		return errors.Wrapf(err, "could not set MTU on interface %s", m.Cfg.DeviceName)
 	}
 
 	return nil

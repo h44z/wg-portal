@@ -124,7 +124,7 @@ func (p Peer) GetConfig() wgtypes.PeerConfig {
 func (p Peer) GetConfigFile(device Device) ([]byte, error) {
 	tpl, err := template.New("client").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.ClientCfgTpl)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to parse client template")
 	}
 
 	var tplBuff bytes.Buffer
@@ -137,7 +137,7 @@ func (p Peer) GetConfigFile(device Device) ([]byte, error) {
 		Server: device,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to execute client template")
 	}
 
 	return tplBuff.Bytes(), nil
@@ -149,7 +149,7 @@ func (p Peer) GetQRCode() ([]byte, error) {
 		logrus.WithFields(logrus.Fields{
 			"err": err,
 		}).Error("failed to create qrcode")
-		return nil, err
+		return nil, errors.Wrap(err, "failed to encode qrcode")
 	}
 	return png, nil
 }
@@ -247,7 +247,7 @@ func (d Device) GetConfig() wgtypes.Config {
 func (d Device) GetConfigFile(peers []Peer) ([]byte, error) {
 	tpl, err := template.New("server").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.DeviceCfgTpl)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to parse server template")
 	}
 
 	var tplBuff bytes.Buffer
@@ -260,7 +260,7 @@ func (d Device) GetConfigFile(peers []Peer) ([]byte, error) {
 		Server:  d,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to execute server template")
 	}
 
 	return tplBuff.Bytes(), nil
@@ -582,7 +582,7 @@ func (u *PeerManager) CreatePeer(peer Peer) error {
 	res := u.db.Create(&peer)
 	if res.Error != nil {
 		logrus.Errorf("failed to create peer: %v", res.Error)
-		return res.Error
+		return errors.Wrap(res.Error, "failed to create peer")
 	}
 
 	return nil
@@ -596,7 +596,7 @@ func (u *PeerManager) UpdatePeer(peer Peer) error {
 	res := u.db.Save(&peer)
 	if res.Error != nil {
 		logrus.Errorf("failed to update peer: %v", res.Error)
-		return res.Error
+		return errors.Wrap(res.Error, "failed to update peer")
 	}
 
 	return nil
@@ -606,7 +606,7 @@ func (u *PeerManager) DeletePeer(peer Peer) error {
 	res := u.db.Delete(&peer)
 	if res.Error != nil {
 		logrus.Errorf("failed to delete peer: %v", res.Error)
-		return res.Error
+		return errors.Wrap(res.Error, "failed to delete peer")
 	}
 
 	return nil
@@ -621,7 +621,7 @@ func (u *PeerManager) UpdateDevice(device Device) error {
 	res := u.db.Save(&device)
 	if res.Error != nil {
 		logrus.Errorf("failed to update device: %v", res.Error)
-		return res.Error
+		return errors.Wrap(res.Error, "failed to update device")
 	}
 
 	return nil
@@ -637,7 +637,7 @@ func (u *PeerManager) GetAllReservedIps() ([]string, error) {
 			}
 			ip, _, err := net.ParseCIDR(cidr)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "failed to parse cidr")
 			}
 			reservedIps = append(reservedIps, ip.String())
 		}
@@ -650,7 +650,7 @@ func (u *PeerManager) GetAllReservedIps() ([]string, error) {
 		}
 		ip, _, err := net.ParseCIDR(cidr)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to parse cidr")
 		}
 
 		reservedIps = append(reservedIps, ip.String())
@@ -691,11 +691,11 @@ func (u *PeerManager) IsIPReserved(cidr string) bool {
 func (u *PeerManager) GetAvailableIp(cidr string) (string, error) {
 	reserved, err := u.GetAllReservedIps()
 	if err != nil {
-		return "", err
+		return "", errors.WithMessage(err, "failed to get all reserved IP addresses")
 	}
 	ip, ipnet, err := net.ParseCIDR(cidr)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to parse cidr")
 	}
 
 	// this two addresses are not usable

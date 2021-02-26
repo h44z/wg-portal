@@ -8,7 +8,6 @@ import (
 	"github.com/h44z/wg-portal/internal/authentication"
 	"github.com/h44z/wg-portal/internal/users"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 func (s *Server) GetLogin(c *gin.Context) {
@@ -85,10 +84,6 @@ func (s *Server) PostLogin(c *gin.Context) {
 			loginProvider = provider
 
 			// create new user in the database (or reactivate him)
-			if user, err = s.users.GetOrCreateUserUnscoped(email); err != nil {
-				s.GetHandleError(c, http.StatusInternalServerError, "login error", "failed to create new user")
-				return
-			}
 			userData, err := loginProvider.GetUserModel(&authentication.AuthContext{
 				Username: email,
 			})
@@ -96,23 +91,25 @@ func (s *Server) PostLogin(c *gin.Context) {
 				s.GetHandleError(c, http.StatusInternalServerError, "login error", err.Error())
 				return
 			}
-			user.Firstname = userData.Firstname
-			user.Lastname = userData.Lastname
-			user.Email = userData.Email
-			user.Phone = userData.Phone
-			user.IsAdmin = userData.IsAdmin
-			user.Source = users.UserSource(loginProvider.GetName())
-			user.DeletedAt = gorm.DeletedAt{} // reset deleted flag
-			if err = s.users.UpdateUser(user); err != nil {
+			if err := s.CreateUser(users.User{
+				Email:     userData.Email,
+				Source:    users.UserSource(loginProvider.GetName()),
+				IsAdmin:   userData.IsAdmin,
+				Firstname: userData.Firstname,
+				Lastname:  userData.Lastname,
+				Phone:     userData.Phone,
+			}); err != nil {
 				s.GetHandleError(c, http.StatusInternalServerError, "login error", "failed to update user data")
 				return
 			}
+
+			user = s.users.GetUser(username)
 			break
 		}
 	}
 
 	// Check if user is authenticated
-	if email == "" || loginProvider == nil {
+	if email == "" || loginProvider == nil || user == nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
 		return
 	}
@@ -126,17 +123,9 @@ func (s *Server) PostLogin(c *gin.Context) {
 	sessionData.Lastname = user.Lastname
 
 	// Check if user already has a peer setup, if not create one
-	if s.config.Core.CreateDefaultPeer {
-		peers := s.peers.GetPeersByMail(sessionData.Email)
-		if len(peers) == 0 { // Create vpn peer
-			err := s.CreatePeer(Peer{
-				Identifier: sessionData.Firstname + " " + sessionData.Lastname + " (Default)",
-				Email:      sessionData.Email,
-				CreatedBy:  sessionData.Email,
-				UpdatedBy:  sessionData.Email,
-			})
-			logrus.Errorf("Failed to automatically create vpn peer for %s: %v", sessionData.Email, err)
-		}
+	if err := s.CreateUserDefaultPeer(user.Email); err != nil {
+		// Not a fatal error, just log it...
+		logrus.Errorf("failed to automatically create vpn peer for %s: %v", sessionData.Email, err)
 	}
 
 	if err := UpdateSessionData(c, sessionData); err != nil {

@@ -18,20 +18,20 @@ type RawLdapData struct {
 func Open(cfg *Config) (*ldap.Conn, error) {
 	conn, err := ldap.DialURL(cfg.URL)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to connect to LDAP")
 	}
 
 	if cfg.StartTLS {
 		// Reconnect with TLS
 		err = conn.StartTLS(&tls.Config{InsecureSkipVerify: true})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to star TLS on connection")
 		}
 	}
 
 	err = conn.Bind(cfg.BindUser, cfg.BindPass)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to bind to LDAP")
 	}
 
 	return conn, nil

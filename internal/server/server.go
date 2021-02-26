@@ -84,8 +84,8 @@ func (s *Server) Setup(ctx context.Context) error {
 
 	dir := s.getExecutableDirectory()
 	rDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	logrus.Infof("Real working directory: %s", rDir)
-	logrus.Infof("Current working directory: %s", dir)
+	logrus.Infof("real working directory: %s", rDir)
+	logrus.Infof("current working directory: %s", dir)
 
 	// Init rand
 	rand.Seed(time.Now().UnixNano())
@@ -166,7 +166,7 @@ func (s *Server) Setup(ctx context.Context) error {
 		return errors.Wrap(err, "unable to pare mail template")
 	}
 
-	logrus.Infof("Setup of service completed!")
+	logrus.Infof("setup of service completed!")
 	return nil
 }
 
@@ -201,7 +201,7 @@ func (s *Server) Run() {
 func (s *Server) getExecutableDirectory() string {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
-		logrus.Errorf("Failed to get executable directory: %v", err)
+		logrus.Errorf("failed to get executable directory: %v", err)
 	}
 
 	if _, err := os.Stat(filepath.Join(dir, "assets")); os.IsNotExist(err) {
@@ -240,7 +240,7 @@ func GetSessionData(c *gin.Context) SessionData {
 		}
 		session.Set(SessionIdentifier, sessionData)
 		if err := session.Save(); err != nil {
-			logrus.Errorf("Failed to store session: %v", err)
+			logrus.Errorf("failed to store session: %v", err)
 		}
 	}
 
@@ -251,7 +251,7 @@ func GetFlashes(c *gin.Context) []FlashData {
 	session := sessions.Default(c)
 	flashes := session.Flashes()
 	if err := session.Save(); err != nil {
-		logrus.Errorf("Failed to store session after setting flash: %v", err)
+		logrus.Errorf("failed to store session after setting flash: %v", err)
 	}
 
 	flashData := make([]FlashData, len(flashes))
@@ -266,8 +266,8 @@ func UpdateSessionData(c *gin.Context, data SessionData) error {
 	session := sessions.Default(c)
 	session.Set(SessionIdentifier, data)
 	if err := session.Save(); err != nil {
-		logrus.Errorf("Failed to store session: %v", err)
-		return err
+		logrus.Errorf("failed to store session: %v", err)
+		return errors.Wrap(err, "failed to store session")
 	}
 	return nil
 }
@@ -276,8 +276,8 @@ func DestroySessionData(c *gin.Context) error {
 	session := sessions.Default(c)
 	session.Delete(SessionIdentifier)
 	if err := session.Save(); err != nil {
-		logrus.Errorf("Failed to destroy session: %v", err)
-		return err
+		logrus.Errorf("failed to destroy session: %v", err)
+		return errors.Wrap(err, "failed to destroy session")
 	}
 	return nil
 }
@@ -289,7 +289,7 @@ func SetFlashMessage(c *gin.Context, message, typ string) {
 		Type:    typ,
 	})
 	if err := session.Save(); err != nil {
-		logrus.Errorf("Failed to store session after setting flash: %v", err)
+		logrus.Errorf("failed to store session after setting flash: %v", err)
 	}
 }
 
