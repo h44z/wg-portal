@@ -38,7 +38,6 @@ RUN apt-get update && apt-get upgrade -y && \
         goss --version
 
 COPY --from=builder /build/dist/wg-portal-amd64 /app/wgportal
-COPY --from=builder /build/dist/assets /app/assets
 COPY --from=builder /build/scripts /app/
 
 # Set the Current Working Directory inside the container
