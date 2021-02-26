@@ -3,6 +3,7 @@ package password
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strings"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
+var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 // Provider implements a password login method for a database backend.
 type Provider struct {
@@ -104,6 +107,10 @@ func (provider Provider) GetUserModel(ctx *authentication.AuthContext) (*authent
 }
 
 func (provider Provider) InitializeAdmin(email, password string) error {
+	if !emailRegex.MatchString(email) {
+		return errors.New("admin username must be an email address")
+	}
+
 	admin := users.User{}
 	provider.db.Unscoped().Where("email = ?", email).FirstOrInit(&admin)
 

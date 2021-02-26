@@ -93,14 +93,14 @@ func (s *Server) SyncLdapWithUserDatabase() {
 					}
 				}
 
+				if err = s.users.UpdateUser(user); err != nil {
+					logrus.Errorf("failed to update ldap user %s in database: %v", user.Email, err)
+					continue
+				}
+
 				if ldapDeactivated {
 					if err = s.users.DeleteUser(user); err != nil {
 						logrus.Errorf("failed to delete deactivated user %s in database: %v", user.Email, err)
-						continue
-					}
-				} else {
-					if err = s.users.UpdateUser(user); err != nil {
-						logrus.Errorf("failed to update ldap user %s in database: %v", user.Email, err)
 						continue
 					}
 				}

@@ -60,7 +60,7 @@ type Config struct {
 		Title             string `yaml:"title" envconfig:"WEBSITE_TITLE"`
 		CompanyName       string `yaml:"company" envconfig:"COMPANY_NAME"`
 		MailFrom          string `yaml:"mailFrom" envconfig:"MAIL_FROM"`
-		AdminUser         string `yaml:"adminUser" envconfig:"ADMIN_USER"`
+		AdminUser         string `yaml:"adminUser" envconfig:"ADMIN_USER"` // must be an email address
 		AdminPassword     string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
 		EditableKeys      bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
 		CreateDefaultPeer bool   `yaml:"createDefaultPeer" envconfig:"CREATE_DEFAULT_PEER"`
