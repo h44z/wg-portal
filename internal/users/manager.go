@@ -75,6 +75,15 @@ func NewManager(cfg *Config) (*Manager, error) {
 		return nil, errors.Wrapf(err, "failed to setup user database %s", cfg.Database)
 	}
 
+	// check if old user table exists (from version <= 1.0.2), if so rename it to peers.
+	if m.db.Migrator().HasTable("users") && !m.db.Migrator().HasTable("peers") {
+		if err := m.db.Migrator().RenameTable("users", "peers"); err != nil {
+			return nil, errors.Wrapf(err, "failed to migrate old database structure")
+		} else {
+			logrus.Infof("upgraded database format from version v1.0.2")
+		}
+	}
+
 	return m, m.MigrateUserDB()
 }
 

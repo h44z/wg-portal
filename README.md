@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.com/h44z/wg-portal.svg?token=q4pSqaqT58Jzpxdx62xk&branch=master)](https://travis-ci.com/h44z/wg-portal)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![GitHub last commit](https://img.shields.io/github/last-commit/h44z/wg-portal)
+[![Go Report Card](https://goreportcard.com/badge/github.com/h44z/wg-portal)](https://goreportcard.com/report/github.com/h44z/wg-portal)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/h44z/wg-portal)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/h44z/wg-portal)
 [![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/h44z/wg-portal/)
@@ -27,6 +28,7 @@ It also supports LDAP (Active Directory or OpenLDAP) as authentication provider.
  * Dockerized
  * Responsive template
  * One single binary
+ * Can be used with existing WireGuard setups
  
 ![Screenshot](screenshot.png)
 

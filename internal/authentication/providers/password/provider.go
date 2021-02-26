@@ -59,7 +59,7 @@ func (provider Provider) Login(ctx *authentication.AuthContext) (string, error) 
 		return "", errors.New("empty username or password")
 	}
 
-	// Authenticate agains the users database
+	// Authenticate against the users database
 	user := users.User{}
 	provider.db.Where("email = ?", username).First(&user)
 
