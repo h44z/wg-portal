@@ -1,12 +1,12 @@
-package common
+package server
 
 import (
 	"os"
 	"reflect"
 	"runtime"
 
+	"github.com/h44z/wg-portal/internal/common"
 	"github.com/h44z/wg-portal/internal/ldap"
-	"github.com/h44z/wg-portal/internal/users"
 	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
@@ -66,10 +66,10 @@ type Config struct {
 		CreateDefaultPeer bool   `yaml:"createDefaultPeer" envconfig:"CREATE_DEFAULT_PEER"`
 		LdapEnabled       bool   `yaml:"ldapEnabled" envconfig:"LDAP_ENABLED"`
 	} `yaml:"core"`
-	Database users.Config     `yaml:"database"`
-	Email    MailConfig       `yaml:"email"`
-	LDAP     ldap.Config      `yaml:"ldap"`
-	WG       wireguard.Config `yaml:"wg"`
+	Database common.DatabaseConfig `yaml:"database"`
+	Email    common.MailConfig     `yaml:"email"`
+	LDAP     ldap.Config           `yaml:"ldap"`
+	WG       wireguard.Config      `yaml:"wg"`
 }
 
 func NewConfig() *Config {
@@ -103,8 +103,9 @@ func NewConfig() *Config {
 	cfg.LDAP.DisabledAttribute = "userAccountControl"
 	cfg.LDAP.AdminLdapGroup = "CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL"
 
-	cfg.WG.DeviceName = "wg0"
-	cfg.WG.WireGuardConfig = "/etc/wireguard/wg0.conf"
+	cfg.WG.DeviceNames = []string{"wg0"}
+	cfg.WG.DefaultDeviceName = "wg0"
+	cfg.WG.ConfigDirectoryPath = "/etc/wireguard"
 	cfg.WG.ManageIPAddresses = true
 	cfg.Email.Host = "127.0.0.1"
 	cfg.Email.Port = 25

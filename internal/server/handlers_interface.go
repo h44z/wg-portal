@@ -4,44 +4,37 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/h44z/wg-portal/internal/wireguard"
+
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/common"
 )
 
 func (s *Server) GetAdminEditInterface(c *gin.Context) {
-	device := s.peers.GetDevice()
-	users := s.peers.GetAllPeers()
-
+	currentSession := GetSessionData(c)
+	device := s.peers.GetDevice(currentSession.DeviceName)
 	currentSession, err := s.setFormInSession(c, device)
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "Session error", err.Error())
 		return
 	}
 
-	c.HTML(http.StatusOK, "admin_edit_interface.html", struct {
-		Route        string
-		Alerts       []FlashData
-		Session      SessionData
-		Static       StaticData
-		Peers        []Peer
-		Device       Device
-		EditableKeys bool
-	}{
-		Route:        c.Request.URL.Path,
-		Alerts:       GetFlashes(c),
-		Session:      currentSession,
-		Static:       s.getStaticData(),
-		Peers:        users,
-		Device:       currentSession.FormData.(Device),
-		EditableKeys: s.config.Core.EditableKeys,
+	c.HTML(http.StatusOK, "admin_edit_interface.html", gin.H{
+		"Route":        c.Request.URL.Path,
+		"Alerts":       GetFlashes(c),
+		"Session":      currentSession,
+		"Static":       s.getStaticData(),
+		"Device":       currentSession.FormData.(wireguard.Device),
+		"EditableKeys": s.config.Core.EditableKeys,
+		"DeviceNames":  s.wg.Cfg.DeviceNames,
 	})
 }
 
 func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	currentSession := GetSessionData(c)
-	var formDevice Device
+	var formDevice wireguard.Device
 	if currentSession.FormData != nil {
-		formDevice = currentSession.FormData.(Device)
+		formDevice = currentSession.FormData.(wireguard.Device)
 	}
 	if err := c.ShouldBind(&formDevice); err != nil {
 		_ = s.updateFormInSession(c, formDevice)
@@ -76,7 +69,7 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	}
 
 	// Update WireGuard config file
-	err = s.WriteWireGuardConfigFile()
+	err = s.WriteWireGuardConfigFile(currentSession.DeviceName)
 	if err != nil {
 		_ = s.updateFormInSession(c, formDevice)
 		SetFlashMessage(c, "Failed to update WireGuard config-file: "+err.Error(), "danger")
@@ -86,12 +79,12 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 
 	// Update interface IP address
 	if s.config.WG.ManageIPAddresses {
-		if err := s.wg.SetIPAddress(formDevice.IPs); err != nil {
+		if err := s.wg.SetIPAddress(currentSession.DeviceName, formDevice.IPs); err != nil {
 			_ = s.updateFormInSession(c, formDevice)
 			SetFlashMessage(c, "Failed to update ip address: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=update")
 		}
-		if err := s.wg.SetMTU(formDevice.Mtu); err != nil {
+		if err := s.wg.SetMTU(currentSession.DeviceName, formDevice.Mtu); err != nil {
 			_ = s.updateFormInSession(c, formDevice)
 			SetFlashMessage(c, "Failed to update MTU: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=update")
@@ -106,9 +99,10 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 }
 
 func (s *Server) GetInterfaceConfig(c *gin.Context) {
-	device := s.peers.GetDevice()
-	users := s.peers.GetActivePeers()
-	cfg, err := device.GetConfigFile(users)
+	currentSession := GetSessionData(c)
+	device := s.peers.GetDevice(currentSession.DeviceName)
+	peers := s.peers.GetActivePeers(device.DeviceName)
+	cfg, err := device.GetConfigFile(peers)
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
@@ -122,13 +116,14 @@ func (s *Server) GetInterfaceConfig(c *gin.Context) {
 }
 
 func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
-	device := s.peers.GetDevice()
-	users := s.peers.GetAllPeers()
+	currentSession := GetSessionData(c)
+	device := s.peers.GetDevice(currentSession.DeviceName)
+	peers := s.peers.GetAllPeers(device.DeviceName)
 
-	for _, user := range users {
-		user.AllowedIPs = device.AllowedIPs
-		user.AllowedIPsStr = device.AllowedIPsStr
-		if err := s.peers.UpdatePeer(user); err != nil {
+	for _, peer := range peers {
+		peer.AllowedIPs = device.AllowedIPs
+		peer.AllowedIPsStr = device.AllowedIPsStr
+		if err := s.peers.UpdatePeer(peer); err != nil {
 			SetFlashMessage(c, err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/device/edit")
 		}

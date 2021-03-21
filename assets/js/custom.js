@@ -25,6 +25,11 @@
             }
         });
     });
+    $(function() {
+        $('select.device-selector').change(function() {
+            this.form.submit();
+        });
+    });
 })(jQuery); // End of use strict
 
 

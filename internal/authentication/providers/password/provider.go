@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/h44z/wg-portal/internal/common"
+
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/authentication"
 	"github.com/h44z/wg-portal/internal/users"
@@ -22,11 +24,11 @@ type Provider struct {
 	db *gorm.DB
 }
 
-func New(cfg *users.Config) (*Provider, error) {
+func New(cfg *common.DatabaseConfig) (*Provider, error) {
 	p := &Provider{}
 
 	var err error
-	p.db, err = users.GetDatabaseForConfig(cfg)
+	p.db, err = common.GetDatabaseForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to setup authentication database %s", cfg.Database)
 	}

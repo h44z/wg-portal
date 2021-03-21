@@ -60,6 +60,16 @@ func ListToString(lst []string) string {
 	return strings.Join(lst, ", ")
 }
 
+// ListContains checks if a needle exists in the given list.
+func ListContains(lst []string, needle string) bool {
+	for _, entry := range lst {
+		if entry == needle {
+			return true
+		}
+	}
+	return false
+}
+
 // https://yourbasic.org/golang/formatting-byte-size-to-human-readable-format/
 func ByteCountSI(b int64) string {
 	const unit = 1000

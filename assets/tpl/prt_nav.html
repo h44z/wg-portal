@@ -22,6 +22,19 @@
             {{end}}
             {{end}}{{end}}
         </ul>
+        {{with eq $.Session.LoggedIn true}}{{with eq $.Session.IsAdmin true}}
+        {{with startsWith $.Route "/admin/"}}
+        <form class="form-inline my-2 my-lg-0" method="get">
+            <div class="form-group mr-sm-2">
+                <select name="device" id="inputDevice" class="form-control device-selector">
+                    {{range $i, $d :=$.DeviceNames}}
+                    <option value="{{$d}}" {{if eq $d $.Session.DeviceName}}selected{{end}}>{{$d}}</option>
+                    {{end}}
+                </select>
+            </div>
+        </form>
+        {{end}}
+        {{end}}{{end}}
         {{if eq $.Session.LoggedIn true}}
             <div class="nav-item dropdown">
                 <a href="#" class="navbar-text dropdown-toggle" data-toggle="dropdown">{{$.Session.Firstname}} {{$.Session.Lastname}} <span class="caret"></span></a>
@@ -43,6 +56,6 @@
 </nav>
 {{if not $.Device.IsValid}}
 <div class="container">
-    <div class="alert alert-danger">Warning: WireGuard Interface is not fully configured! Configurations may be incomplete and non functional!</div>
+    <div class="alert alert-danger">Warning: WireGuard Interface {{$.Device.DeviceName}} is not fully configured! Configurations may be incomplete and non functional!</div>
 </div>
 {{end}}

@@ -11,12 +11,15 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
-	wg_portal "github.com/h44z/wg-portal"
+	wgportal "github.com/h44z/wg-portal"
 	ldapprovider "github.com/h44z/wg-portal/internal/authentication/providers/ldap"
 	passwordprovider "github.com/h44z/wg-portal/internal/authentication/providers/password"
 	"github.com/h44z/wg-portal/internal/common"
@@ -32,18 +35,19 @@ const SessionIdentifier = "wgPortalSession"
 func init() {
 	gob.Register(SessionData{})
 	gob.Register(FlashData{})
-	gob.Register(Peer{})
-	gob.Register(Device{})
+	gob.Register(wireguard.Peer{})
+	gob.Register(wireguard.Device{})
 	gob.Register(LdapCreateForm{})
 	gob.Register(users.User{})
 }
 
 type SessionData struct {
-	LoggedIn  bool
-	IsAdmin   bool
-	Firstname string
-	Lastname  string
-	Email     string
+	LoggedIn   bool
+	IsAdmin    bool
+	Firstname  string
+	Lastname   string
+	Email      string
+	DeviceName string
 
 	SortedBy      map[string]string
 	SortDirection map[string]string
@@ -69,14 +73,15 @@ type StaticData struct {
 
 type Server struct {
 	ctx     context.Context
-	config  *common.Config
+	config  *Config
 	server  *gin.Engine
 	mailTpl *template.Template
 	auth    *AuthManager
 
+	db    *gorm.DB
 	users *users.Manager
 	wg    *wireguard.Manager
-	peers *PeerManager
+	peers *wireguard.PeerManager
 }
 
 func (s *Server) Setup(ctx context.Context) error {
@@ -90,8 +95,14 @@ func (s *Server) Setup(ctx context.Context) error {
 	// Init rand
 	rand.Seed(time.Now().UnixNano())
 
-	s.config = common.NewConfig()
+	s.config = NewConfig()
 	s.ctx = ctx
+
+	// Setup database connection
+	s.db, err = common.GetDatabaseForConfig(&s.config.Database)
+	if err != nil {
+		return errors.WithMessage(err, "database setup failed")
+	}
 
 	// Setup http server
 	gin.SetMode(gin.DebugMode)
@@ -104,24 +115,33 @@ func (s *Server) Setup(ctx context.Context) error {
 	s.server.SetFuncMap(template.FuncMap{
 		"formatBytes": common.ByteCountSI,
 		"urlEncode":   url.QueryEscape,
+		"startsWith":  strings.HasPrefix,
+		"userForEmail": func(users []users.User, email string) *users.User {
+			for i := range users {
+				if users[i].Email == email {
+					return &users[i]
+				}
+			}
+			return nil
+		},
 	})
 
 	// Setup templates
-	templates := template.Must(template.New("").Funcs(s.server.FuncMap).ParseFS(wg_portal.Templates, "assets/tpl/*.html"))
+	templates := template.Must(template.New("").Funcs(s.server.FuncMap).ParseFS(wgportal.Templates, "assets/tpl/*.html"))
 	s.server.SetHTMLTemplate(templates)
 	s.server.Use(sessions.Sessions("authsession", memstore.NewStore([]byte("secret")))) // TODO: change key?
 
 	// Serve static files
-	s.server.StaticFS("/css", http.FS(fsMust(fs.Sub(wg_portal.Statics, "assets/css"))))
-	s.server.StaticFS("/js", http.FS(fsMust(fs.Sub(wg_portal.Statics, "assets/js"))))
-	s.server.StaticFS("/img", http.FS(fsMust(fs.Sub(wg_portal.Statics, "assets/img"))))
-	s.server.StaticFS("/fonts", http.FS(fsMust(fs.Sub(wg_portal.Statics, "assets/fonts"))))
+	s.server.StaticFS("/css", http.FS(fsMust(fs.Sub(wgportal.Statics, "assets/css"))))
+	s.server.StaticFS("/js", http.FS(fsMust(fs.Sub(wgportal.Statics, "assets/js"))))
+	s.server.StaticFS("/img", http.FS(fsMust(fs.Sub(wgportal.Statics, "assets/img"))))
+	s.server.StaticFS("/fonts", http.FS(fsMust(fs.Sub(wgportal.Statics, "assets/fonts"))))
 
 	// Setup all routes
 	SetupRoutes(s)
 
 	// Setup user database (also needed for database authentication)
-	s.users, err = users.NewManager(&s.config.Database)
+	s.users, err = users.NewManager(s.db)
 	if err != nil {
 		return errors.WithMessage(err, "user-manager initialization failed")
 	}
@@ -153,18 +173,21 @@ func (s *Server) Setup(ctx context.Context) error {
 	}
 
 	// Setup peer manager
-	if s.peers, err = NewPeerManager(s.config, s.wg, s.users); err != nil {
+	if s.peers, err = wireguard.NewPeerManager(s.db, s.wg); err != nil {
 		return errors.WithMessage(err, "unable to setup peer manager")
 	}
-	if err = s.peers.InitFromCurrentInterface(); err != nil {
-		return errors.WithMessage(err, "unable to initialize peer manager")
+	if err = s.peers.InitFromPhysicalInterface(); err != nil {
+		return errors.WithMessagef(err, "unable to initialize peer manager")
 	}
-	if err = s.RestoreWireGuardInterface(); err != nil {
-		return errors.WithMessage(err, "unable to restore WireGuard state")
+
+	for _, deviceName := range s.wg.Cfg.DeviceNames {
+		if err = s.RestoreWireGuardInterface(deviceName); err != nil {
+			return errors.WithMessagef(err, "unable to restore WireGuard state for %s", deviceName)
+		}
 	}
 
 	// Setup mail template
-	s.mailTpl, err = template.New("email.html").ParseFS(wg_portal.Templates, "assets/tpl/email.html")
+	s.mailTpl, err = template.New("email.html").ParseFS(wgportal.Templates, "assets/tpl/email.html")
 	if err != nil {
 		return errors.Wrap(err, "unable to pare mail template")
 	}
@@ -174,6 +197,8 @@ func (s *Server) Setup(ctx context.Context) error {
 }
 
 func (s *Server) Run() {
+	logrus.Infof("starting web service on %s", s.config.Core.ListeningAddress)
+
 	// Start ldap sync
 	if s.config.Core.LdapEnabled {
 		go s.SyncLdapWithUserDatabase()
@@ -238,6 +263,7 @@ func GetSessionData(c *gin.Context) SessionData {
 			Email:         "",
 			Firstname:     "",
 			Lastname:      "",
+			DeviceName:    "",
 			IsAdmin:       false,
 			LoggedIn:      false,
 		}

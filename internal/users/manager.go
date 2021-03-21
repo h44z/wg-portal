@@ -1,9 +1,6 @@
 package users
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,69 +8,15 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
-
-func GetDatabaseForConfig(cfg *Config) (db *gorm.DB, err error) {
-	switch cfg.Typ {
-	case SupportedDatabaseSQLite:
-		if _, err = os.Stat(filepath.Dir(cfg.Database)); os.IsNotExist(err) {
-			if err = os.MkdirAll(filepath.Dir(cfg.Database), 0700); err != nil {
-				return
-			}
-		}
-		db, err = gorm.Open(sqlite.Open(cfg.Database), &gorm.Config{})
-		if err != nil {
-			return
-		}
-	case SupportedDatabaseMySQL:
-		connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
-		db, err = gorm.Open(mysql.Open(connectionString), &gorm.Config{})
-		if err != nil {
-			return
-		}
-
-		sqlDB, _ := db.DB()
-		sqlDB.SetConnMaxLifetime(time.Minute * 5)
-		sqlDB.SetMaxIdleConns(2)
-		sqlDB.SetMaxOpenConns(10)
-		err = sqlDB.Ping() // This DOES open a connection if necessary. This makes sure the database is accessible
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to ping mysql authentication database")
-		}
-	}
-
-	// Enable Logger (logrus)
-	logCfg := logger.Config{
-		SlowThreshold: time.Second, // all slower than one second
-		Colorful:      false,
-		LogLevel:      logger.Silent, // default: log nothing
-	}
-
-	if logrus.StandardLogger().GetLevel() == logrus.TraceLevel {
-		logCfg.LogLevel = logger.Info
-		logCfg.SlowThreshold = 500 * time.Millisecond // all slower than half a second
-	}
-
-	db.Config.Logger = logger.New(logrus.StandardLogger(), logCfg)
-	return
-}
 
 type Manager struct {
 	db *gorm.DB
 }
 
-func NewManager(cfg *Config) (*Manager, error) {
-	m := &Manager{}
-
-	var err error
-	m.db, err = GetDatabaseForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to setup user database %s", cfg.Database)
-	}
+func NewManager(db *gorm.DB) (*Manager, error) {
+	m := &Manager{db: db}
 
 	// check if old user table exists (from version <= 1.0.2), if so rename it to peers.
 	if m.db.Migrator().HasTable("users") && !m.db.Migrator().HasTable("peers") {
@@ -84,14 +27,11 @@ func NewManager(cfg *Config) (*Manager, error) {
 		}
 	}
 
-	return m, m.MigrateUserDB()
-}
-
-func (m Manager) MigrateUserDB() error {
 	if err := m.db.AutoMigrate(&User{}); err != nil {
-		return errors.Wrap(err, "failed to migrate user database")
+		return nil, errors.Wrap(err, "failed to migrate user database")
 	}
-	return nil
+
+	return m, nil
 }
 
 func (m Manager) GetUsers() []User {

@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/h44z/wg-portal/internal/wireguard"
+
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/common"
-	"github.com/h44z/wg-portal/internal/users"
 	"github.com/sirupsen/logrus"
 	"github.com/tatsushid/go-fastping"
 )
@@ -21,7 +22,6 @@ type LdapCreateForm struct {
 }
 
 func (s *Server) GetAdminEditPeer(c *gin.Context) {
-	device := s.peers.GetDevice()
 	peer := s.peers.GetPeerByKey(c.Query("pkey"))
 
 	currentSession, err := s.setFormInSession(c, peer)
@@ -30,22 +30,15 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "admin_edit_client.html", struct {
-		Route        string
-		Alerts       []FlashData
-		Session      SessionData
-		Static       StaticData
-		Peer         Peer
-		Device       Device
-		EditableKeys bool
-	}{
-		Route:        c.Request.URL.Path,
-		Alerts:       GetFlashes(c),
-		Session:      currentSession,
-		Static:       s.getStaticData(),
-		Peer:         currentSession.FormData.(Peer),
-		Device:       device,
-		EditableKeys: s.config.Core.EditableKeys,
+	c.HTML(http.StatusOK, "admin_edit_client.html", gin.H{
+		"Route":        c.Request.URL.Path,
+		"Alerts":       GetFlashes(c),
+		"Session":      currentSession,
+		"Static":       s.getStaticData(),
+		"Peer":         currentSession.FormData.(wireguard.Peer),
+		"EditableKeys": s.config.Core.EditableKeys,
+		"Device":       s.peers.GetDevice(currentSession.DeviceName),
+		"DeviceNames":  s.wg.Cfg.DeviceNames,
 	})
 }
 
@@ -54,9 +47,9 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	urlEncodedKey := url.QueryEscape(c.Query("pkey"))
 
 	currentSession := GetSessionData(c)
-	var formPeer Peer
+	var formPeer wireguard.Peer
 	if currentSession.FormData != nil {
-		formPeer = currentSession.FormData.(Peer)
+		formPeer = currentSession.FormData.(wireguard.Peer)
 	}
 	if err := c.ShouldBind(&formPeer); err != nil {
 		_ = s.updateFormInSession(c, formPeer)
@@ -92,37 +85,28 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 }
 
 func (s *Server) GetAdminCreatePeer(c *gin.Context) {
-	device := s.peers.GetDevice()
-
 	currentSession, err := s.setNewPeerFormInSession(c)
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "Session error", err.Error())
 		return
 	}
-	c.HTML(http.StatusOK, "admin_edit_client.html", struct {
-		Route        string
-		Alerts       []FlashData
-		Session      SessionData
-		Static       StaticData
-		Peer         Peer
-		Device       Device
-		EditableKeys bool
-	}{
-		Route:        c.Request.URL.Path,
-		Alerts:       GetFlashes(c),
-		Session:      currentSession,
-		Static:       s.getStaticData(),
-		Peer:         currentSession.FormData.(Peer),
-		Device:       device,
-		EditableKeys: s.config.Core.EditableKeys,
+	c.HTML(http.StatusOK, "admin_edit_client.html", gin.H{
+		"Route":        c.Request.URL.Path,
+		"Alerts":       GetFlashes(c),
+		"Session":      currentSession,
+		"Static":       s.getStaticData(),
+		"Peer":         currentSession.FormData.(wireguard.Peer),
+		"EditableKeys": s.config.Core.EditableKeys,
+		"Device":       s.peers.GetDevice(currentSession.DeviceName),
+		"DeviceNames":  s.wg.Cfg.DeviceNames,
 	})
 }
 
 func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	currentSession := GetSessionData(c)
-	var formPeer Peer
+	var formPeer wireguard.Peer
 	if currentSession.FormData != nil {
-		formPeer = currentSession.FormData.(Peer)
+		formPeer = currentSession.FormData.(wireguard.Peer)
 	}
 	if err := c.ShouldBind(&formPeer); err != nil {
 		_ = s.updateFormInSession(c, formPeer)
@@ -143,7 +127,7 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 		formPeer.DeactivatedAt = &now
 	}
 
-	if err := s.CreatePeer(formPeer); err != nil {
+	if err := s.CreatePeer(currentSession.DeviceName, formPeer); err != nil {
 		_ = s.updateFormInSession(c, formPeer)
 		SetFlashMessage(c, "failed to add user: "+err.Error(), "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/peer/create?formerr=create")
@@ -161,22 +145,15 @@ func (s *Server) GetAdminCreateLdapPeers(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "admin_create_clients.html", struct {
-		Route    string
-		Alerts   []FlashData
-		Session  SessionData
-		Static   StaticData
-		Users    []users.User
-		FormData LdapCreateForm
-		Device   Device
-	}{
-		Route:    c.Request.URL.Path,
-		Alerts:   GetFlashes(c),
-		Session:  currentSession,
-		Static:   s.getStaticData(),
-		Users:    s.users.GetFilteredAndSortedUsers("lastname", "asc", ""),
-		FormData: currentSession.FormData.(LdapCreateForm),
-		Device:   s.peers.GetDevice(),
+	c.HTML(http.StatusOK, "admin_create_clients.html", gin.H{
+		"Route":       c.Request.URL.Path,
+		"Alerts":      GetFlashes(c),
+		"Session":     currentSession,
+		"Static":      s.getStaticData(),
+		"Users":       s.users.GetFilteredAndSortedUsers("lastname", "asc", ""),
+		"FormData":    currentSession.FormData.(LdapCreateForm),
+		"Device":      s.peers.GetDevice(currentSession.DeviceName),
+		"DeviceNames": s.wg.Cfg.DeviceNames,
 	})
 }
 
@@ -207,7 +184,7 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 	logrus.Infof("creating %d ldap peers", len(emails))
 
 	for i := range emails {
-		if err := s.CreatePeerByEmail(emails[i], formData.Identifier, false); err != nil {
+		if err := s.CreatePeerByEmail(currentSession.DeviceName, emails[i], formData.Identifier, false); err != nil {
 			_ = s.updateFormInSession(c, formData)
 			SetFlashMessage(c, "failed to add user: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=create")
@@ -225,7 +202,7 @@ func (s *Server) GetAdminDeletePeer(c *gin.Context) {
 		s.GetHandleError(c, http.StatusInternalServerError, "Deletion error", err.Error())
 		return
 	}
-	SetFlashMessage(c, "user deleted successfully", "success")
+	SetFlashMessage(c, "peer deleted successfully", "success")
 	c.Redirect(http.StatusSeeOther, "/admin")
 }
 
@@ -254,7 +231,7 @@ func (s *Server) GetPeerConfig(c *gin.Context) {
 		return
 	}
 
-	cfg, err := user.GetConfigFile(s.peers.GetDevice())
+	cfg, err := user.GetConfigFile(s.peers.GetDevice(currentSession.DeviceName))
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
@@ -273,7 +250,7 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 		return
 	}
 
-	cfg, err := user.GetConfigFile(s.peers.GetDevice())
+	cfg, err := user.GetConfigFile(s.peers.GetDevice(currentSession.DeviceName))
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
@@ -286,7 +263,7 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 	// Apply mail template
 	var tplBuff bytes.Buffer
 	if err := s.mailTpl.Execute(&tplBuff, struct {
-		Client        Peer
+		Client        wireguard.Peer
 		QrcodePngName string
 		PortalUrl     string
 	}{

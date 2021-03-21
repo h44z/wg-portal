@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	wg_portal "github.com/h44z/wg-portal"
+	wgportal "github.com/h44z/wg-portal"
 )
 
 func SetupRoutes(s *Server) {
 	// Startpage
 	s.server.GET("/", s.GetIndex)
 	s.server.GET("/favicon.ico", func(c *gin.Context) {
-		file, _ := wg_portal.Statics.ReadFile("assets/img/favicon.ico")
+		file, _ := wgportal.Statics.ReadFile("assets/img/favicon.ico")
 		c.Data(
 			http.StatusOK,
 			"image/x-icon",

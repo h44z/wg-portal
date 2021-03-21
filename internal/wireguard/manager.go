@@ -9,6 +9,7 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
+// Manager offers a synchronized management interface to the real WireGuard interface.
 type Manager struct {
 	Cfg *Config
 	wg  *wgctrl.Client
@@ -25,8 +26,8 @@ func (m *Manager) Init() error {
 	return nil
 }
 
-func (m *Manager) GetDeviceInfo() (*wgtypes.Device, error) {
-	dev, err := m.wg.Device(m.Cfg.DeviceName)
+func (m *Manager) GetDeviceInfo(device string) (*wgtypes.Device, error) {
+	dev, err := m.wg.Device(device)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get WireGuard device")
 	}
@@ -34,11 +35,11 @@ func (m *Manager) GetDeviceInfo() (*wgtypes.Device, error) {
 	return dev, nil
 }
 
-func (m *Manager) GetPeerList() ([]wgtypes.Peer, error) {
+func (m *Manager) GetPeerList(device string) ([]wgtypes.Peer, error) {
 	m.mux.RLock()
 	defer m.mux.RUnlock()
 
-	dev, err := m.wg.Device(m.Cfg.DeviceName)
+	dev, err := m.wg.Device(device)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get WireGuard device")
 	}
@@ -46,7 +47,7 @@ func (m *Manager) GetPeerList() ([]wgtypes.Peer, error) {
 	return dev.Peers, nil
 }
 
-func (m *Manager) GetPeer(pubKey string) (*wgtypes.Peer, error) {
+func (m *Manager) GetPeer(device string, pubKey string) (*wgtypes.Peer, error) {
 	m.mux.RLock()
 	defer m.mux.RUnlock()
 
@@ -55,7 +56,7 @@ func (m *Manager) GetPeer(pubKey string) (*wgtypes.Peer, error) {
 		return nil, errors.Wrap(err, "invalid public key")
 	}
 
-	peers, err := m.GetPeerList()
+	peers, err := m.GetPeerList(device)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get WireGuard peers")
 	}
@@ -69,11 +70,11 @@ func (m *Manager) GetPeer(pubKey string) (*wgtypes.Peer, error) {
 	return nil, errors.Errorf("could not find WireGuard peer: %s", pubKey)
 }
 
-func (m *Manager) AddPeer(cfg wgtypes.PeerConfig) error {
+func (m *Manager) AddPeer(device string, cfg wgtypes.PeerConfig) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
-	err := m.wg.ConfigureDevice(m.Cfg.DeviceName, wgtypes.Config{Peers: []wgtypes.PeerConfig{cfg}})
+	err := m.wg.ConfigureDevice(device, wgtypes.Config{Peers: []wgtypes.PeerConfig{cfg}})
 	if err != nil {
 		return errors.Wrap(err, "could not configure WireGuard device")
 	}
@@ -81,12 +82,12 @@ func (m *Manager) AddPeer(cfg wgtypes.PeerConfig) error {
 	return nil
 }
 
-func (m *Manager) UpdatePeer(cfg wgtypes.PeerConfig) error {
+func (m *Manager) UpdatePeer(device string, cfg wgtypes.PeerConfig) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
 	cfg.UpdateOnly = true
-	err := m.wg.ConfigureDevice(m.Cfg.DeviceName, wgtypes.Config{Peers: []wgtypes.PeerConfig{cfg}})
+	err := m.wg.ConfigureDevice(device, wgtypes.Config{Peers: []wgtypes.PeerConfig{cfg}})
 	if err != nil {
 		return errors.Wrap(err, "could not configure WireGuard device")
 	}
@@ -94,7 +95,7 @@ func (m *Manager) UpdatePeer(cfg wgtypes.PeerConfig) error {
 	return nil
 }
 
-func (m *Manager) RemovePeer(pubKey string) error {
+func (m *Manager) RemovePeer(device string, pubKey string) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
@@ -108,7 +109,7 @@ func (m *Manager) RemovePeer(pubKey string) error {
 		Remove:    true,
 	}
 
-	err = m.wg.ConfigureDevice(m.Cfg.DeviceName, wgtypes.Config{Peers: []wgtypes.PeerConfig{peer}})
+	err = m.wg.ConfigureDevice(device, wgtypes.Config{Peers: []wgtypes.PeerConfig{peer}})
 	if err != nil {
 		return errors.Wrap(err, "could not configure WireGuard device")
 	}
@@ -116,6 +117,6 @@ func (m *Manager) RemovePeer(pubKey string) error {
 	return nil
 }
 
-func (m *Manager) UpdateDevice(name string, cfg wgtypes.Config) error {
-	return m.wg.ConfigureDevice(name, cfg)
+func (m *Manager) UpdateDevice(device string, cfg wgtypes.Config) error {
+	return m.wg.ConfigureDevice(device, cfg)
 }

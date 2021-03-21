@@ -11,10 +11,10 @@ import (
 
 const DefaultMTU = 1420
 
-func (m *Manager) GetIPAddress() ([]string, error) {
-	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
+func (m *Manager) GetIPAddress(device string) ([]string, error) {
+	wgInterface, err := tenus.NewLinkFrom(device)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not retrieve WireGuard interface %s", m.Cfg.DeviceName)
+		return nil, errors.Wrapf(err, "could not retrieve WireGuard interface %s", device)
 	}
 
 	// Get golang net.interface
@@ -52,14 +52,14 @@ func (m *Manager) GetIPAddress() ([]string, error) {
 	return ipAddresses, nil
 }
 
-func (m *Manager) SetIPAddress(cidrs []string) error {
-	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
+func (m *Manager) SetIPAddress(device string, cidrs []string) error {
+	wgInterface, err := tenus.NewLinkFrom(device)
 	if err != nil {
-		return errors.Wrapf(err, "could not retrieve WireGuard interface %s", m.Cfg.DeviceName)
+		return errors.Wrapf(err, "could not retrieve WireGuard interface %s", device)
 	}
 
 	// First remove existing IP addresses
-	existingIPs, err := m.GetIPAddress()
+	existingIPs, err := m.GetIPAddress(device)
 	if err != nil {
 		return errors.Wrap(err, "could not retrieve IP addresses")
 	}
@@ -89,10 +89,10 @@ func (m *Manager) SetIPAddress(cidrs []string) error {
 	return nil
 }
 
-func (m *Manager) GetMTU() (int, error) {
-	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
+func (m *Manager) GetMTU(device string) (int, error) {
+	wgInterface, err := tenus.NewLinkFrom(device)
 	if err != nil {
-		return 0, errors.Wrapf(err, "could not retrieve WireGuard interface %s", m.Cfg.DeviceName)
+		return 0, errors.Wrapf(err, "could not retrieve WireGuard interface %s", device)
 	}
 
 	// Get golang net.interface
@@ -104,10 +104,10 @@ func (m *Manager) GetMTU() (int, error) {
 	return iface.MTU, nil
 }
 
-func (m *Manager) SetMTU(mtu int) error {
-	wgInterface, err := tenus.NewLinkFrom(m.Cfg.DeviceName)
+func (m *Manager) SetMTU(device string, mtu int) error {
+	wgInterface, err := tenus.NewLinkFrom(device)
 	if err != nil {
-		return errors.Wrapf(err, "could not retrieve WireGuard interface %s", m.Cfg.DeviceName)
+		return errors.Wrapf(err, "could not retrieve WireGuard interface %s", device)
 	}
 
 	if mtu == 0 {
@@ -115,7 +115,7 @@ func (m *Manager) SetMTU(mtu int) error {
 	}
 
 	if err := wgInterface.SetLinkMTU(mtu); err != nil {
-		return errors.Wrapf(err, "could not set MTU on interface %s", m.Cfg.DeviceName)
+		return errors.Wrapf(err, "could not set MTU on interface %s", device)
 	}
 
 	return nil

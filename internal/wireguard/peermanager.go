@@ -1,4 +1,4 @@
-package server
+package wireguard
 
 import (
 	"bytes"
@@ -15,8 +15,6 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/h44z/wg-portal/internal/common"
-	"github.com/h44z/wg-portal/internal/users"
-	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/skip2/go-qrcode"
@@ -66,7 +64,6 @@ func init() {
 
 type Peer struct {
 	Peer   *wgtypes.Peer `gorm:"-"` // WireGuard peer
-	User   *users.User   `gorm:"-"` // user reference for the peer
 	Config string        `gorm:"-"`
 
 	UID               string `form:"uid" binding:"alphanum"` // uid for html identification
@@ -85,6 +82,7 @@ type Peer struct {
 	IPs                       []string `gorm:"-"` // The IPs of the client
 	PrivateKey                string   `form:"privkey" binding:"omitempty,base64"`
 	PublicKey                 string   `gorm:"primaryKey" form:"pubkey" binding:"required,base64"`
+	DeviceName                string   `gorm:"index"`
 
 	DeactivatedAt *time.Time
 	CreatedBy     string
@@ -122,7 +120,7 @@ func (p Peer) GetConfig() wgtypes.PeerConfig {
 }
 
 func (p Peer) GetConfigFile(device Device) ([]byte, error) {
-	tpl, err := template.New("client").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.ClientCfgTpl)
+	tpl, err := template.New("client").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(ClientCfgTpl)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse client template")
 	}
@@ -245,7 +243,7 @@ func (d Device) GetConfig() wgtypes.Config {
 }
 
 func (d Device) GetConfigFile(peers []Peer) ([]byte, error) {
-	tpl, err := template.New("server").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(wireguard.DeviceCfgTpl)
+	tpl, err := template.New("server").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(DeviceCfgTpl)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse server template")
 	}
@@ -271,63 +269,61 @@ func (d Device) GetConfigFile(peers []Peer) ([]byte, error) {
 //
 
 type PeerManager struct {
-	db    *gorm.DB
-	wg    *wireguard.Manager
-	users *users.Manager
+	db *gorm.DB
+	wg *Manager
 }
 
-func NewPeerManager(cfg *common.Config, wg *wireguard.Manager, userDB *users.Manager) (*PeerManager, error) {
-	um := &PeerManager{wg: wg, users: userDB}
-	var err error
-	um.db, err = users.GetDatabaseForConfig(&cfg.Database)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to open peer database")
-	}
+func NewPeerManager(db *gorm.DB, wg *Manager) (*PeerManager, error) {
+	um := &PeerManager{db: db, wg: wg}
 
-	err = um.db.AutoMigrate(&Peer{}, &Device{})
-	if err != nil {
+	if err := um.db.AutoMigrate(&Peer{}, &Device{}); err != nil {
 		return nil, errors.WithMessage(err, "failed to migrate peer database")
 	}
 
 	return um, nil
 }
 
-func (u *PeerManager) InitFromCurrentInterface() error {
-	peers, err := u.wg.GetPeerList()
-	if err != nil {
-		return errors.Wrapf(err, "failed to get peer list")
-	}
-	device, err := u.wg.GetDeviceInfo()
-	if err != nil {
-		return errors.Wrapf(err, "failed to get device info")
-	}
-	var ipAddresses []string
-	var mtu int
-	if u.wg.Cfg.ManageIPAddresses {
-		if ipAddresses, err = u.wg.GetIPAddress(); err != nil {
-			return errors.Wrapf(err, "failed to get ip address")
+// InitFromPhysicalInterface read all WireGuard peers from the WireGuard interface configuration. If a peer does not
+// exist in the local database, it gets created.
+func (m *PeerManager) InitFromPhysicalInterface() error {
+	for _, deviceName := range m.wg.Cfg.DeviceNames {
+		peers, err := m.wg.GetPeerList(deviceName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get peer list for device %s", deviceName)
 		}
-		if mtu, err = u.wg.GetMTU(); err != nil {
-			return errors.Wrapf(err, "failed to get MTU")
+		device, err := m.wg.GetDeviceInfo(deviceName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get device info for device %s", deviceName)
 		}
-	}
+		var ipAddresses []string
+		var mtu int
+		if m.wg.Cfg.ManageIPAddresses {
+			if ipAddresses, err = m.wg.GetIPAddress(deviceName); err != nil {
+				return errors.Wrapf(err, "failed to get ip address for device %s", deviceName)
+			}
+			if mtu, err = m.wg.GetMTU(deviceName); err != nil {
+				return errors.Wrapf(err, "failed to get MTU for device %s", deviceName)
+			}
+		}
 
-	// Check if entries already exist in database, if not create them
-	for _, peer := range peers {
-		if err := u.validateOrCreatePeer(peer); err != nil {
-			return errors.WithMessagef(err, "failed to validate peer %s", peer.PublicKey)
+		// Check if entries already exist in database, if not create them
+		for _, peer := range peers {
+			if err := m.validateOrCreatePeer(deviceName, peer); err != nil {
+				return errors.WithMessagef(err, "failed to validate peer %s for device %s", peer.PublicKey, deviceName)
+			}
 		}
-	}
-	if err := u.validateOrCreateDevice(*device, ipAddresses, mtu); err != nil {
-		return errors.WithMessagef(err, "failed to validate device %s", device.Name)
+		if err := m.validateOrCreateDevice(*device, ipAddresses, mtu); err != nil {
+			return errors.WithMessagef(err, "failed to validate device %s", device.Name)
+		}
 	}
 
 	return nil
 }
 
-func (u *PeerManager) validateOrCreatePeer(wgPeer wgtypes.Peer) error {
+// validateOrCreatePeer checks if the given WireGuard peer already exists in the database, if not, the peer entry will be created
+func (m *PeerManager) validateOrCreatePeer(device string, wgPeer wgtypes.Peer) error {
 	peer := Peer{}
-	u.db.Where("public_key = ?", wgPeer.PublicKey.String()).FirstOrInit(&peer)
+	m.db.Where("public_key = ?", wgPeer.PublicKey.String()).FirstOrInit(&peer)
 
 	if peer.PublicKey == "" { // peer not found, create
 		peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(wgPeer.PublicKey.String())))
@@ -347,8 +343,9 @@ func (u *PeerManager) validateOrCreatePeer(wgPeer wgtypes.Peer) error {
 		}
 		peer.AllowedIPsStr = strings.Join(peer.AllowedIPs, ", ")
 		peer.IPsStr = strings.Join(peer.IPs, ", ")
+		peer.DeviceName = device
 
-		res := u.db.Create(&peer)
+		res := m.db.Create(&peer)
 		if res.Error != nil {
 			return errors.Wrapf(res.Error, "failed to create autodetected peer %s", peer.PublicKey)
 		}
@@ -357,9 +354,10 @@ func (u *PeerManager) validateOrCreatePeer(wgPeer wgtypes.Peer) error {
 	return nil
 }
 
-func (u *PeerManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []string, mtu int) error {
+// validateOrCreateDevice checks if the given WireGuard device already exists in the database, if not, the peer entry will be created
+func (m *PeerManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []string, mtu int) error {
 	device := Device{}
-	u.db.Where("device_name = ?", dev.Name).FirstOrInit(&device)
+	m.db.Where("device_name = ?", dev.Name).FirstOrInit(&device)
 
 	if device.PublicKey == "" { // device not found, create
 		device.PublicKey = dev.PublicKey.String()
@@ -369,12 +367,12 @@ func (u *PeerManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []s
 		device.Mtu = 0
 		device.PersistentKeepalive = 16 // Default
 		device.IPsStr = strings.Join(ipAddresses, ", ")
-		if mtu == wireguard.DefaultMTU {
+		if mtu == DefaultMTU {
 			mtu = 0
 		}
 		device.Mtu = mtu
 
-		res := u.db.Create(&device)
+		res := m.db.Create(&device)
 		if res.Error != nil {
 			return errors.Wrapf(res.Error, "failed to create autodetected device")
 		}
@@ -383,21 +381,22 @@ func (u *PeerManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []s
 	return nil
 }
 
-func (u *PeerManager) populatePeerData(peer *Peer) {
+// populatePeerData enriches the peer struct with WireGuard live data like last handshake, ...
+func (m *PeerManager) populatePeerData(peer *Peer) {
 	peer.AllowedIPs = strings.Split(peer.AllowedIPsStr, ", ")
 	peer.IPs = strings.Split(peer.IPsStr, ", ")
 	// Set config file
-	tmpCfg, _ := peer.GetConfigFile(u.GetDevice())
+	tmpCfg, _ := peer.GetConfigFile(m.GetDevice(peer.DeviceName))
 	peer.Config = string(tmpCfg)
 
 	// set data from WireGuard interface
-	peer.Peer, _ = u.wg.GetPeer(peer.PublicKey)
+	peer.Peer, _ = m.wg.GetPeer(peer.DeviceName, peer.PublicKey)
 	peer.LastHandshake = "never"
 	peer.LastHandshakeTime = "Never connected, or user is disabled."
 	if peer.Peer != nil {
 		since := time.Since(peer.Peer.LastHandshakeTime)
 		sinceSeconds := int(since.Round(time.Second).Seconds())
-		sinceMinutes := int(sinceSeconds / 60)
+		sinceMinutes := sinceSeconds / 60
 		sinceSeconds -= sinceMinutes * 60
 
 		if sinceMinutes > 2*10080 { // 2 weeks
@@ -410,49 +409,47 @@ func (u *PeerManager) populatePeerData(peer *Peer) {
 		peer.LastHandshakeTime = peer.Peer.LastHandshakeTime.Format(time.UnixDate)
 	}
 	peer.IsOnline = false
-
-	// set user data
-	peer.User = u.users.GetUser(peer.Email)
 }
 
-func (u *PeerManager) populateDeviceData(device *Device) {
+// populateDeviceData enriches the device struct with WireGuard live data like interface information
+func (m *PeerManager) populateDeviceData(device *Device) {
 	device.AllowedIPs = strings.Split(device.AllowedIPsStr, ", ")
 	device.IPs = strings.Split(device.IPsStr, ", ")
 	device.DNS = strings.Split(device.DNSStr, ", ")
 
 	// set data from WireGuard interface
-	device.Interface, _ = u.wg.GetDeviceInfo()
+	device.Interface, _ = m.wg.GetDeviceInfo(device.DeviceName)
 }
 
-func (u *PeerManager) GetAllPeers() []Peer {
+func (m *PeerManager) GetAllPeers(device string) []Peer {
 	peers := make([]Peer, 0)
-	u.db.Find(&peers)
+	m.db.Where("device_name = ?", device).Find(&peers)
 
 	for i := range peers {
-		u.populatePeerData(&peers[i])
+		m.populatePeerData(&peers[i])
 	}
 
 	return peers
 }
 
-func (u *PeerManager) GetActivePeers() []Peer {
+func (m *PeerManager) GetActivePeers(device string) []Peer {
 	peers := make([]Peer, 0)
-	u.db.Where("deactivated_at IS NULL").Find(&peers)
+	m.db.Where("device_name = ? AND deactivated_at IS NULL", device).Find(&peers)
 
 	for i := range peers {
-		u.populatePeerData(&peers[i])
+		m.populatePeerData(&peers[i])
 	}
 
 	return peers
 }
 
-func (u *PeerManager) GetFilteredAndSortedPeers(sortKey, sortDirection, search string) []Peer {
+func (m *PeerManager) GetFilteredAndSortedPeers(device, sortKey, sortDirection, search string) []Peer {
 	peers := make([]Peer, 0)
-	u.db.Find(&peers)
+	m.db.Where("device_name = ?", device).Find(&peers)
 
 	filteredPeers := make([]Peer, 0, len(peers))
 	for i := range peers {
-		u.populatePeerData(&peers[i])
+		m.populatePeerData(&peers[i])
 
 		if search == "" ||
 			strings.Contains(peers[i].Email, search) ||
@@ -499,12 +496,12 @@ func (u *PeerManager) GetFilteredAndSortedPeers(sortKey, sortDirection, search s
 	return filteredPeers
 }
 
-func (u *PeerManager) GetSortedPeersForEmail(sortKey, sortDirection, email string) []Peer {
+func (m *PeerManager) GetSortedPeersForEmail(sortKey, sortDirection, email string) []Peer {
 	peers := make([]Peer, 0)
-	u.db.Where("email = ?", email).Find(&peers)
+	m.db.Where("email = ?", email).Find(&peers)
 
 	for i := range peers {
-		u.populatePeerData(&peers[i])
+		m.populatePeerData(&peers[i])
 	}
 
 	sort.Slice(peers, func(i, j int) bool {
@@ -544,42 +541,42 @@ func (u *PeerManager) GetSortedPeersForEmail(sortKey, sortDirection, email strin
 	return peers
 }
 
-func (u *PeerManager) GetDevice() Device {
-	devices := make([]Device, 0, 1)
-	u.db.Find(&devices)
+func (m *PeerManager) GetDevice(device string) Device {
+	dev := Device{}
 
-	for i := range devices {
-		u.populateDeviceData(&devices[i])
-	}
+	m.db.Where("device_name = ?", device).First(&dev)
+	m.populateDeviceData(&dev)
 
-	return devices[0] // use first device for now... more to come?
+	return dev
 }
 
-func (u *PeerManager) GetPeerByKey(publicKey string) Peer {
+func (m *PeerManager) GetPeerByKey(publicKey string) Peer {
 	peer := Peer{}
-	u.db.Where("public_key = ?", publicKey).FirstOrInit(&peer)
-	u.populatePeerData(&peer)
+	m.db.Where("public_key = ?", publicKey).FirstOrInit(&peer)
+	m.populatePeerData(&peer)
 	return peer
 }
 
-func (u *PeerManager) GetPeersByMail(mail string) []Peer {
+func (m *PeerManager) GetPeersByMail(mail string) []Peer {
 	var peers []Peer
-	u.db.Where("email = ?", mail).Find(&peers)
+	m.db.Where("email = ?", mail).Find(&peers)
 	for i := range peers {
-		u.populatePeerData(&peers[i])
+		m.populatePeerData(&peers[i])
 	}
 
 	return peers
 }
 
-func (u *PeerManager) CreatePeer(peer Peer) error {
+// ---- Database helpers -----
+
+func (m *PeerManager) CreatePeer(peer Peer) error {
 	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 	peer.UpdatedAt = time.Now()
 	peer.CreatedAt = time.Now()
 	peer.AllowedIPsStr = strings.Join(peer.AllowedIPs, ", ")
 	peer.IPsStr = strings.Join(peer.IPs, ", ")
 
-	res := u.db.Create(&peer)
+	res := m.db.Create(&peer)
 	if res.Error != nil {
 		logrus.Errorf("failed to create peer: %v", res.Error)
 		return errors.Wrap(res.Error, "failed to create peer")
@@ -588,12 +585,12 @@ func (u *PeerManager) CreatePeer(peer Peer) error {
 	return nil
 }
 
-func (u *PeerManager) UpdatePeer(peer Peer) error {
+func (m *PeerManager) UpdatePeer(peer Peer) error {
 	peer.UpdatedAt = time.Now()
 	peer.AllowedIPsStr = strings.Join(peer.AllowedIPs, ", ")
 	peer.IPsStr = strings.Join(peer.IPs, ", ")
 
-	res := u.db.Save(&peer)
+	res := m.db.Save(&peer)
 	if res.Error != nil {
 		logrus.Errorf("failed to update peer: %v", res.Error)
 		return errors.Wrap(res.Error, "failed to update peer")
@@ -602,8 +599,8 @@ func (u *PeerManager) UpdatePeer(peer Peer) error {
 	return nil
 }
 
-func (u *PeerManager) DeletePeer(peer Peer) error {
-	res := u.db.Delete(&peer)
+func (m *PeerManager) DeletePeer(peer Peer) error {
+	res := m.db.Delete(&peer)
 	if res.Error != nil {
 		logrus.Errorf("failed to delete peer: %v", res.Error)
 		return errors.Wrap(res.Error, "failed to delete peer")
@@ -612,13 +609,13 @@ func (u *PeerManager) DeletePeer(peer Peer) error {
 	return nil
 }
 
-func (u *PeerManager) UpdateDevice(device Device) error {
+func (m *PeerManager) UpdateDevice(device Device) error {
 	device.UpdatedAt = time.Now()
 	device.AllowedIPsStr = strings.Join(device.AllowedIPs, ", ")
 	device.IPsStr = strings.Join(device.IPs, ", ")
 	device.DNSStr = strings.Join(device.DNS, ", ")
 
-	res := u.db.Save(&device)
+	res := m.db.Save(&device)
 	if res.Error != nil {
 		logrus.Errorf("failed to update device: %v", res.Error)
 		return errors.Wrap(res.Error, "failed to update device")
@@ -627,9 +624,11 @@ func (u *PeerManager) UpdateDevice(device Device) error {
 	return nil
 }
 
-func (u *PeerManager) GetAllReservedIps() ([]string, error) {
+// ---- IP helpers ----
+
+func (m *PeerManager) GetAllReservedIps(device string) ([]string, error) {
 	reservedIps := make([]string, 0)
-	peers := u.GetAllPeers()
+	peers := m.GetAllPeers(device)
 	for _, user := range peers {
 		for _, cidr := range user.IPs {
 			if cidr == "" {
@@ -643,8 +642,8 @@ func (u *PeerManager) GetAllReservedIps() ([]string, error) {
 		}
 	}
 
-	device := u.GetDevice()
-	for _, cidr := range device.IPs {
+	dev := m.GetDevice(device)
+	for _, cidr := range dev.IPs {
 		if cidr == "" {
 			continue
 		}
@@ -659,8 +658,8 @@ func (u *PeerManager) GetAllReservedIps() ([]string, error) {
 	return reservedIps, nil
 }
 
-func (u *PeerManager) IsIPReserved(cidr string) bool {
-	reserved, err := u.GetAllReservedIps()
+func (m *PeerManager) IsIPReserved(device string, cidr string) bool {
+	reserved, err := m.GetAllReservedIps(device)
 	if err != nil {
 		return true // in case something failed, assume the ip is reserved
 	}
@@ -688,10 +687,10 @@ func (u *PeerManager) IsIPReserved(cidr string) bool {
 }
 
 // GetAvailableIp search for an available ip in cidr against a list of reserved ips
-func (u *PeerManager) GetAvailableIp(cidr string) (string, error) {
-	reserved, err := u.GetAllReservedIps()
+func (m *PeerManager) GetAvailableIp(device string, cidr string) (string, error) {
+	reserved, err := m.GetAllReservedIps(device)
 	if err != nil {
-		return "", errors.WithMessage(err, "failed to get all reserved IP addresses")
+		return "", errors.WithMessagef(err, "failed to get all reserved IP addresses for %s", device)
 	}
 	ip, ipnet, err := net.ParseCIDR(cidr)
 	if err != nil {

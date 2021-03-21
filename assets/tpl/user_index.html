@@ -30,6 +30,7 @@
                 </thead>
                 <tbody>
                 {{range $i, $p :=.Peers}}
+                    {{$peerUser:=(userForEmail $.Users $p.Email)}}
                     <tr id="user-pos-{{$i}}" {{if $p.DeactivatedAt}}class="disabled-peer"{{end}}>
                         <th scope="row" class="list-image-cell">
                             <a href="#{{$p.UID}}" data-toggle="collapse" class="collapse-indicator collapsed"></a>
@@ -58,14 +59,14 @@
                                         <div class="tab-content" id="tabContent{{$p.UID}}">
                                             <div id="t1{{$p.UID}}" class="tab-pane fade active show">
                                                 <h4>User details</h4>
-                                                {{if not $p.User}}
+                                                {{if not $peerUser}}
                                                     <p>No user information available...</p>
                                                 {{else}}
                                                     <ul>
-                                                        <li>Firstname: {{$p.User.Firstname}}</li>
-                                                        <li>Lastname: {{$p.User.Lastname}}</li>
-                                                        <li>Phone: {{$p.User.Phone}}</li>
-                                                        <li>Mail: {{$p.User.Email}}</li>
+                                                        <li>Firstname: {{$peerUser.Firstname}}</li>
+                                                        <li>Lastname: {{$peerUser.Lastname}}</li>
+                                                        <li>Phone: {{$peerUser.Phone}}</li>
+                                                        <li>Mail: {{$peerUser.Email}}</li>
                                                     </ul>
                                                 {{end}}
                                                 <h4>Traffic</h4>

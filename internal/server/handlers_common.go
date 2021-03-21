@@ -4,37 +4,42 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/h44z/wg-portal/internal/users"
+
+	"github.com/h44z/wg-portal/internal/common"
+
 	"github.com/pkg/errors"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Server) GetHandleError(c *gin.Context, code int, message, details string) {
+	currentSession := GetSessionData(c)
+
 	c.HTML(code, "error.html", gin.H{
 		"Data": gin.H{
 			"Code":    strconv.Itoa(code),
 			"Message": message,
 			"Details": details,
 		},
-		"Route":   c.Request.URL.Path,
-		"Session": GetSessionData(c),
-		"Static":  s.getStaticData(),
+		"Route":       c.Request.URL.Path,
+		"Session":     GetSessionData(c),
+		"Static":      s.getStaticData(),
+		"Device":      s.peers.GetDevice(currentSession.DeviceName),
+		"DeviceNames": s.wg.Cfg.DeviceNames,
 	})
 }
 
 func (s *Server) GetIndex(c *gin.Context) {
-	c.HTML(http.StatusOK, "index.html", struct {
-		Route   string
-		Alerts  []FlashData
-		Session SessionData
-		Static  StaticData
-		Device  Device
-	}{
-		Route:   c.Request.URL.Path,
-		Alerts:  GetFlashes(c),
-		Session: GetSessionData(c),
-		Static:  s.getStaticData(),
-		Device:  s.peers.GetDevice(),
+	currentSession := GetSessionData(c)
+
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"Route":       c.Request.URL.Path,
+		"Alerts":      GetFlashes(c),
+		"Session":     currentSession,
+		"Static":      s.getStaticData(),
+		"Device":      s.peers.GetDevice(currentSession.DeviceName),
+		"DeviceNames": s.wg.Cfg.DeviceNames,
 	})
 }
 
@@ -74,25 +79,35 @@ func (s *Server) GetAdminIndex(c *gin.Context) {
 		return
 	}
 
-	device := s.peers.GetDevice()
-	users := s.peers.GetFilteredAndSortedPeers(currentSession.SortedBy["peers"], currentSession.SortDirection["peers"], currentSession.Search["peers"])
+	deviceName := c.Query("device")
+	if deviceName != "" {
+		if !common.ListContains(s.wg.Cfg.DeviceNames, deviceName) {
+			s.GetHandleError(c, http.StatusInternalServerError, "device selection error", "no such device")
+			return
+		}
+		currentSession.DeviceName = deviceName
 
-	c.HTML(http.StatusOK, "admin_index.html", struct {
-		Route      string
-		Alerts     []FlashData
-		Session    SessionData
-		Static     StaticData
-		Peers      []Peer
-		TotalPeers int
-		Device     Device
-	}{
-		Route:      c.Request.URL.Path,
-		Alerts:     GetFlashes(c),
-		Session:    currentSession,
-		Static:     s.getStaticData(),
-		Peers:      users,
-		TotalPeers: len(s.peers.GetAllPeers()),
-		Device:     device,
+		if err := UpdateSessionData(c, currentSession); err != nil {
+			s.GetHandleError(c, http.StatusInternalServerError, "device selection error", "failed to save session")
+			return
+		}
+		c.Redirect(http.StatusSeeOther, "/admin/")
+		return
+	}
+
+	device := s.peers.GetDevice(currentSession.DeviceName)
+	users := s.peers.GetFilteredAndSortedPeers(currentSession.DeviceName, currentSession.SortedBy["peers"], currentSession.SortDirection["peers"], currentSession.Search["peers"])
+
+	c.HTML(http.StatusOK, "admin_index.html", gin.H{
+		"Route":       c.Request.URL.Path,
+		"Alerts":      GetFlashes(c),
+		"Session":     currentSession,
+		"Static":      s.getStaticData(),
+		"Peers":       users,
+		"TotalPeers":  len(s.peers.GetAllPeers(currentSession.DeviceName)),
+		"Users":       s.users.GetUsers(),
+		"Device":      device,
+		"DeviceNames": s.wg.Cfg.DeviceNames,
 	})
 }
 
@@ -120,25 +135,18 @@ func (s *Server) GetUserIndex(c *gin.Context) {
 		return
 	}
 
-	device := s.peers.GetDevice()
-	users := s.peers.GetSortedPeersForEmail(currentSession.SortedBy["userpeers"], currentSession.SortDirection["userpeers"], currentSession.Email)
+	peers := s.peers.GetSortedPeersForEmail(currentSession.SortedBy["userpeers"], currentSession.SortDirection["userpeers"], currentSession.Email)
 
-	c.HTML(http.StatusOK, "user_index.html", struct {
-		Route      string
-		Alerts     []FlashData
-		Session    SessionData
-		Static     StaticData
-		Peers      []Peer
-		TotalPeers int
-		Device     Device
-	}{
-		Route:      c.Request.URL.Path,
-		Alerts:     GetFlashes(c),
-		Session:    currentSession,
-		Static:     s.getStaticData(),
-		Peers:      users,
-		TotalPeers: len(users),
-		Device:     device,
+	c.HTML(http.StatusOK, "user_index.html", gin.H{
+		"Route":       c.Request.URL.Path,
+		"Alerts":      GetFlashes(c),
+		"Session":     currentSession,
+		"Static":      s.getStaticData(),
+		"Peers":       peers,
+		"TotalPeers":  len(peers),
+		"Users":       []users.User{*s.users.GetUser(currentSession.Email)},
+		"Device":      s.peers.GetDevice(currentSession.DeviceName),
+		"DeviceNames": s.wg.Cfg.DeviceNames,
 	})
 }
 
@@ -158,7 +166,7 @@ func (s *Server) setNewPeerFormInSession(c *gin.Context) (SessionData, error) {
 	// If session does not contain a peer form ignore update
 	// If url contains a formerr parameter reset the form
 	if currentSession.FormData == nil || c.Query("formerr") == "" {
-		user, err := s.PrepareNewPeer()
+		user, err := s.PrepareNewPeer(currentSession.DeviceName)
 		if err != nil {
 			return currentSession, errors.WithMessage(err, "failed to prepare new peer")
 		}
