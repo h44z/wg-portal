@@ -78,6 +78,7 @@ func (s *Server) GetAdminUsersEdit(c *gin.Context) {
 		"User":        currentSession.FormData.(users.User),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
 		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"Epoch":       time.Time{},
 	})
 }
 
@@ -154,6 +155,7 @@ func (s *Server) GetAdminUsersCreate(c *gin.Context) {
 		"User":        currentSession.FormData.(users.User),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
 		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"Epoch":       time.Time{},
 	})
 }
 
