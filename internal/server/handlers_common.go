@@ -4,13 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/h44z/wg-portal/internal/users"
-
-	"github.com/h44z/wg-portal/internal/common"
-
-	"github.com/pkg/errors"
-
 	"github.com/gin-gonic/gin"
+	"github.com/h44z/wg-portal/internal/common"
+	"github.com/h44z/wg-portal/internal/users"
+	"github.com/pkg/errors"
 )
 
 func (s *Server) GetHandleError(c *gin.Context, code int, message, details string) {

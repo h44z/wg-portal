@@ -14,7 +14,7 @@
 {{template "prt_nav.html" .}}
 <div class="container mt-5">
     {{if eq .User.CreatedAt .Epoch}}
-    <h1>Create a new user</h1><!-- fix me!!! -.>
+    <h1>Create a new user</h1>
     {{else}}
     <h1>Edit user <strong>{{.User.Email}}</strong></h1>
     {{end}}
@@ -22,6 +22,7 @@
     {{template "prt_flashes.html" .}}
 
     <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="{{.Csrf}}">
         {{if eq .User.CreatedAt .Epoch}}
         <div class="form-row">
             <div class="form-group required col-md-12">

@@ -22,6 +22,7 @@
         {{template "prt_flashes.html" .}}
 
         <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{.Csrf}}">
             <input type="hidden" name="uid" value="{{.Peer.UID}}">
             {{if .EditableKeys}}
                 <div class="form-row">

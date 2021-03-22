@@ -65,6 +65,7 @@ type Config struct {
 		EditableKeys      bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
 		CreateDefaultPeer bool   `yaml:"createDefaultPeer" envconfig:"CREATE_DEFAULT_PEER"`
 		LdapEnabled       bool   `yaml:"ldapEnabled" envconfig:"LDAP_ENABLED"`
+		SessionSecret     string `yaml:"sessionSecret" envconfig:"SESSION_SECRET"`
 	} `yaml:"core"`
 	Database common.DatabaseConfig `yaml:"database"`
 	Email    common.MailConfig     `yaml:"email"`
@@ -84,6 +85,7 @@ func NewConfig() *Config {
 	cfg.Core.AdminUser = "admin@wgportal.local"
 	cfg.Core.AdminPassword = "wgportal"
 	cfg.Core.LdapEnabled = false
+	cfg.Core.SessionSecret = "secret"
 
 	cfg.Database.Typ = "sqlite"
 	cfg.Database.Database = "data/wg_portal.db"

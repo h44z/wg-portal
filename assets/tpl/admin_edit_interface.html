@@ -17,6 +17,7 @@
         {{template "prt_flashes.html" .}}
 
         <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{.Csrf}}">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
             <h3>Server's interface configuration</h3>
             {{if .EditableKeys}}

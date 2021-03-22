@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/h44z/wg-portal/internal/wireguard"
-
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/common"
+	"github.com/h44z/wg-portal/internal/wireguard"
+	csrf "github.com/utrack/gin-csrf"
 )
 
 func (s *Server) GetAdminEditInterface(c *gin.Context) {
@@ -27,6 +27,7 @@ func (s *Server) GetAdminEditInterface(c *gin.Context) {
 		"Device":       currentSession.FormData.(wireguard.Device),
 		"EditableKeys": s.config.Core.EditableKeys,
 		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"Csrf":         csrf.GetToken(c),
 	})
 }
 

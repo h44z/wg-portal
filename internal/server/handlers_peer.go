@@ -14,6 +14,7 @@ import (
 	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/sirupsen/logrus"
 	"github.com/tatsushid/go-fastping"
+	csrf "github.com/utrack/gin-csrf"
 )
 
 type LdapCreateForm struct {
@@ -39,6 +40,7 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 		"EditableKeys": s.config.Core.EditableKeys,
 		"Device":       s.peers.GetDevice(currentSession.DeviceName),
 		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"Csrf":         csrf.GetToken(c),
 	})
 }
 
@@ -99,6 +101,7 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 		"EditableKeys": s.config.Core.EditableKeys,
 		"Device":       s.peers.GetDevice(currentSession.DeviceName),
 		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"Csrf":         csrf.GetToken(c),
 	})
 }
 
@@ -154,6 +157,7 @@ func (s *Server) GetAdminCreateLdapPeers(c *gin.Context) {
 		"FormData":    currentSession.FormData.(LdapCreateForm),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
 		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"Csrf":        csrf.GetToken(c),
 	})
 }
 

@@ -8,10 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/h44z/wg-portal/internal/wireguard"
-
 	"github.com/h44z/wg-portal/internal/common"
 	"github.com/h44z/wg-portal/internal/users"
+	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"

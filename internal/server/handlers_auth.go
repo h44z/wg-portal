@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	csrf "github.com/utrack/gin-csrf"
+
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/authentication"
 	"github.com/h44z/wg-portal/internal/users"
@@ -31,6 +33,7 @@ func (s *Server) GetLogin(c *gin.Context) {
 		"error":   authError != "",
 		"message": errMsg,
 		"static":  s.getStaticData(),
+		"Csrf":    csrf.GetToken(c),
 	})
 }
 

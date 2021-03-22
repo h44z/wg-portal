@@ -20,6 +20,7 @@
         <h2>Enter valid LDAP user email addresses to quickly create new accounts.</h2>
         {{template "prt_flashes.html" .}}
         <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{.Csrf}}">
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="inputEmail">Email Addresses</label>

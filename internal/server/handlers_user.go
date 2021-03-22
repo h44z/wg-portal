@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/users"
+	csrf "github.com/utrack/gin-csrf"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -79,6 +80,7 @@ func (s *Server) GetAdminUsersEdit(c *gin.Context) {
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
 		"DeviceNames": s.wg.Cfg.DeviceNames,
 		"Epoch":       time.Time{},
+		"Csrf":        csrf.GetToken(c),
 	})
 }
 
@@ -156,6 +158,7 @@ func (s *Server) GetAdminUsersCreate(c *gin.Context) {
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
 		"DeviceNames": s.wg.Cfg.DeviceNames,
 		"Epoch":       time.Time{},
+		"Csrf":        csrf.GetToken(c),
 	})
 }
 
