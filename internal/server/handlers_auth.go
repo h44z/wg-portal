@@ -98,7 +98,7 @@ func (s *Server) PostLogin(c *gin.Context) {
 				Firstname: userData.Firstname,
 				Lastname:  userData.Lastname,
 				Phone:     userData.Phone,
-			}, s.wg.Cfg.DefaultDeviceName); err != nil {
+			}, s.wg.Cfg.GetDefaultDeviceName()); err != nil {
 				s.GetHandleError(c, http.StatusInternalServerError, "login error", "failed to update user data")
 				return
 			}
@@ -124,7 +124,7 @@ func (s *Server) PostLogin(c *gin.Context) {
 	sessionData.DeviceName = s.wg.Cfg.DeviceNames[0]
 
 	// Check if user already has a peer setup, if not create one
-	if err := s.CreateUserDefaultPeer(user.Email, s.wg.Cfg.DefaultDeviceName); err != nil {
+	if err := s.CreateUserDefaultPeer(user.Email, s.wg.Cfg.GetDefaultDeviceName()); err != nil {
 		// Not a fatal error, just log it...
 		logrus.Errorf("failed to automatically create vpn peer for %s: %v", sessionData.Email, err)
 	}

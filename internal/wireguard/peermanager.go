@@ -274,13 +274,23 @@ type PeerManager struct {
 }
 
 func NewPeerManager(db *gorm.DB, wg *Manager) (*PeerManager, error) {
-	um := &PeerManager{db: db, wg: wg}
+	pm := &PeerManager{db: db, wg: wg}
 
-	if err := um.db.AutoMigrate(&Peer{}, &Device{}); err != nil {
+	if err := pm.db.AutoMigrate(&Peer{}, &Device{}); err != nil {
 		return nil, errors.WithMessage(err, "failed to migrate peer database")
 	}
 
-	return um, nil
+	// check if peers without device name exist (from version <= 1.0.3), if so assign them to the default device.
+	peers := make([]Peer, 0)
+	pm.db.Find(&peers)
+	for i := range peers {
+		if peers[i].DeviceName == "" {
+			peers[i].DeviceName = wg.Cfg.GetDefaultDeviceName()
+			pm.db.Save(&peers[i])
+		}
+	}
+
+	return pm, nil
 }
 
 // InitFromPhysicalInterface read all WireGuard peers from the WireGuard interface configuration. If a peer does not
