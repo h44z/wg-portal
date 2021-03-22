@@ -23,7 +23,7 @@ func Open(cfg *Config) (*ldap.Conn, error) {
 
 	if cfg.StartTLS {
 		// Reconnect with TLS
-		err = conn.StartTLS(&tls.Config{InsecureSkipVerify: true})
+		err = conn.StartTLS(&tls.Config{InsecureSkipVerify: !cfg.CertValidation})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to star TLS on connection")
 		}
@@ -92,7 +92,7 @@ func IsActiveDirectoryUserDisabled(userAccountControl string) bool {
 		return false
 	}
 
-	uacInt, err := strconv.Atoi(userAccountControl)
+	uacInt, err := strconv.ParseInt(userAccountControl, 10, 32)
 	if err != nil {
 		return true
 	}

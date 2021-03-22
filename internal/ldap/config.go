@@ -8,11 +8,12 @@ const (
 )
 
 type Config struct {
-	URL      string `yaml:"url" envconfig:"LDAP_URL"`
-	StartTLS bool   `yaml:"startTLS" envconfig:"LDAP_STARTTLS"`
-	BaseDN   string `yaml:"dn" envconfig:"LDAP_BASEDN"`
-	BindUser string `yaml:"user" envconfig:"LDAP_USER"`
-	BindPass string `yaml:"pass" envconfig:"LDAP_PASSWORD"`
+	URL            string `yaml:"url" envconfig:"LDAP_URL"`
+	StartTLS       bool   `yaml:"startTLS" envconfig:"LDAP_STARTTLS"`
+	CertValidation bool   `yaml:"certcheck" envconfig:"LDAP_CERT_VALIDATION"`
+	BaseDN         string `yaml:"dn" envconfig:"LDAP_BASEDN"`
+	BindUser       string `yaml:"user" envconfig:"LDAP_USER"`
+	BindPass       string `yaml:"pass" envconfig:"LDAP_PASSWORD"`
 
 	Type                 Type   `yaml:"typ" envconfig:"LDAP_TYPE"` // AD for active directory, OpenLDAP for OpenLDAP
 	UserClass            string `yaml:"userClass" envconfig:"LDAP_USER_CLASS"`

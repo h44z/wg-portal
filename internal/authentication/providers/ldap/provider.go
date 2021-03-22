@@ -182,7 +182,7 @@ func (provider Provider) open() (*ldap.Conn, error) {
 
 	if provider.config.StartTLS {
 		// Reconnect with TLS
-		err = conn.StartTLS(&tls.Config{InsecureSkipVerify: true})
+		err = conn.StartTLS(&tls.Config{InsecureSkipVerify: !provider.config.CertValidation})
 		if err != nil {
 			return nil, err
 		}
