@@ -71,9 +71,9 @@ func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body str
 		}
 	}
 
-	if cfg.CertValidation {
-		return e.Send(hostname, auth)
+	if cfg.TLS {
+		return e.SendWithStartTLS(hostname, auth, &tls.Config{InsecureSkipVerify: !cfg.CertValidation})
 	} else {
-		return e.SendWithStartTLS(hostname, auth, &tls.Config{InsecureSkipVerify: true})
+		return e.Send(hostname, auth)
 	}
 }
