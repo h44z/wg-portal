@@ -29,6 +29,7 @@ It also supports LDAP (Active Directory or OpenLDAP) as authentication provider.
  * Responsive template
  * One single binary
  * Can be used with existing WireGuard setups
+ * Support for multiple WireGuard interfaces
  
 ![Screenshot](screenshot.png)
 
@@ -54,14 +55,21 @@ services:
     ports:
       - '8123:8123'
     environment:
+      # WireGuard Settings
+      - WG_DEVICES=wg0
+      - WG_DEFAULT_DEVICE=wg0
+      - WG_CONFIG_PATH=/etc/wireguard
+      # Core Settings
       - EXTERNAL_URL=https://vpn.company.com
       - WEBSITE_TITLE=WireGuard VPN
       - COMPANY_NAME=Your Company Name
-      - MAIL_FROM=WireGuard VPN <noreply+wireguard@company.com>
       - ADMIN_USER=admin@domain.com
       - ADMIN_PASS=supersecret
+      # Mail Settings
+      - MAIL_FROM=WireGuard VPN <noreply+wireguard@company.com>
       - EMAIL_HOST=10.10.10.10
       - EMAIL_PORT=25
+      # LDAP Settings
       - LDAP_ENABLED=true
       - LDAP_URL=ldap://srv-ad01.company.local:389
       - LDAP_BASEDN=DC=COMPANY,DC=LOCAL
@@ -71,7 +79,7 @@ services:
 ```
 Please note that mapping ```/etc/wireguard``` to ```/etc/wireguard``` inside the docker, will erase your host's current configuration.
 If needed, please make sure to backup your files from ```/etc/wireguard```.
-For a full list of configuration options take a look at the source file [internal/common/configuration.go](internal/common/configuration.go#L57).
+For a full list of configuration options take a look at the source file [internal/server/configuration.go](internal/server/configuration.go#L56).
 
 ### Standalone
 For a standalone application, use the Makefile provided in the repository to build the application.
@@ -90,6 +98,7 @@ A detailed description for using this software with a raspberry pi can be found 
 
  * Generation or application of any `iptables` or `nftables` rules
  * Setting up or changing IP-addresses of the WireGuard interface on operating systems other than linux
+ * Importing private keys of an existing WireGuard setup
  
 ## Application stack
 

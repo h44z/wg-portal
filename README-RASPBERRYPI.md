@@ -1,6 +1,6 @@
 # WireGuard Portal on Raspberry Pi
 
-This readme only contains a detailed explanation of how to setup the WireGuard Portal service on a raspberry pi (>= 3).
+This readme only contains a detailed explanation of how to set up the WireGuard Portal service on a raspberry pi (>= 3).
 
 ## Setup
 
