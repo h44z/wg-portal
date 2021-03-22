@@ -92,7 +92,7 @@
                                                         <th class="column-top" width="210" style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;">
                                                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                                                 <tr>
-                                                                    <td class="fluid-img" style="font-size:0pt; line-height:0pt; text-align:left;"><img src="cid:{{.QrcodePngName}}" width="210" height="210" border="0" alt="" /></td>
+                                                                    <td class="fluid-img" style="font-size:0pt; line-height:0pt; text-align:left;"><img src="cid:{{$.QrcodePngName}}" width="210" height="210" border="0" alt="" /></td>
                                                                 </tr>
                                                             </table>
                                                         </th>
@@ -100,14 +100,14 @@
                                                         <th class="column-top" width="280" style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;">
                                                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                                                 <tr>
-                                                                    {{if .Client.LdapUser}}
-                                                                    <td class="h4 pb20" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello {{.Client.LdapUser.Firstname}} {{.Client.LdapUser.Lastname}}</td>
+                                                                    {{if $.User}}
+                                                                    <td class="h4 pb20" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello {{$.User.Firstname}} {{$.User.Lastname}}</td>
                                                                     {{else}}
                                                                     <td class="h4 pb20" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello</td>
                                                                     {{end}}
                                                                 </tr>
                                                                 <tr>
-                                                                    <td class="text pb20" style="color:#000000; font-family:Arial,sans-serif; font-size:14px; line-height:26px; text-align:left; padding-bottom:20px;">You or your administrator probably requested this VPN configuration. Scan the Qrcode or open the attached configuration file ({{.Client.GetConfigFileName}}) in the WireGuard VPN client to establish a secure VPN connection.</td>
+                                                                    <td class="text pb20" style="color:#000000; font-family:Arial,sans-serif; font-size:14px; line-height:26px; text-align:left; padding-bottom:20px;">You or your administrator probably requested this VPN configuration. Scan the Qrcode or open the attached configuration file ({{$.Peer.GetConfigFileName}}) in the WireGuard VPN client to establish a secure VPN connection.</td>
                                                                 </tr>
                                                             </table>
                                                         </th>
@@ -170,7 +170,7 @@
                                             <td class="text-footer1 pb10" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:16px; line-height:20px; text-align:center; padding-bottom:10px;">This mail was generated using WireGuard Portal.</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-footer2" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:12px; line-height:26px; text-align:center;"><a href="{{.PortalUrl}}" target="_blank" rel="noopener noreferrer" class="link" style="color:#000000; text-decoration:none;"><span class="link" style="color:#000000; text-decoration:none;">Visit WireGuard Portal</span></a></td>
+                                            <td class="text-footer2" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:12px; line-height:26px; text-align:center;"><a href="{{$.PortalUrl}}" target="_blank" rel="noopener noreferrer" class="link" style="color:#000000; text-decoration:none;"><span class="link" style="color:#000000; text-decoration:none;">Visit WireGuard Portal</span></a></td>
                                         </tr>
                                     </table>
                                 </td>

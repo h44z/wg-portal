@@ -14,8 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
@@ -28,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
+	"gorm.io/gorm"
 )
 
 const SessionIdentifier = "wgPortalSession"
@@ -258,8 +257,8 @@ func GetSessionData(c *gin.Context) SessionData {
 	} else {
 		sessionData = SessionData{
 			Search:        map[string]string{"peers": "", "userpeers": "", "users": ""},
-			SortedBy:      map[string]string{"peers": "mail", "userpeers": "mail", "users": "email"},
-			SortDirection: map[string]string{"peers": "asc", "userpeers": "asc", "users": "asc"},
+			SortedBy:      map[string]string{"peers": "handshake", "userpeers": "id", "users": "email"},
+			SortDirection: map[string]string{"peers": "desc", "userpeers": "asc", "users": "asc"},
 			Email:         "",
 			Firstname:     "",
 			Lastname:      "",

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/h44z/wg-portal/internal/wireguard"
-
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/common"
+	"github.com/h44z/wg-portal/internal/users"
+	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/sirupsen/logrus"
 	"github.com/tatsushid/go-fastping"
 )
@@ -197,8 +197,8 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 }
 
 func (s *Server) GetAdminDeletePeer(c *gin.Context) {
-	currentUser := s.peers.GetPeerByKey(c.Query("pkey"))
-	if err := s.DeletePeer(currentUser); err != nil {
+	currentPeer := s.peers.GetPeerByKey(c.Query("pkey"))
+	if err := s.DeletePeer(currentPeer); err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "Deletion error", err.Error())
 		return
 	}
@@ -207,14 +207,14 @@ func (s *Server) GetAdminDeletePeer(c *gin.Context) {
 }
 
 func (s *Server) GetPeerQRCode(c *gin.Context) {
-	user := s.peers.GetPeerByKey(c.Query("pkey"))
+	peer := s.peers.GetPeerByKey(c.Query("pkey"))
 	currentSession := GetSessionData(c)
-	if !currentSession.IsAdmin && user.Email != currentSession.Email {
+	if !currentSession.IsAdmin && peer.Email != currentSession.Email {
 		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
 		return
 	}
 
-	png, err := user.GetQRCode()
+	png, err := peer.GetQRCode()
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "QRCode error", err.Error())
 		return
@@ -224,38 +224,40 @@ func (s *Server) GetPeerQRCode(c *gin.Context) {
 }
 
 func (s *Server) GetPeerConfig(c *gin.Context) {
-	user := s.peers.GetPeerByKey(c.Query("pkey"))
+	peer := s.peers.GetPeerByKey(c.Query("pkey"))
 	currentSession := GetSessionData(c)
-	if !currentSession.IsAdmin && user.Email != currentSession.Email {
+	if !currentSession.IsAdmin && peer.Email != currentSession.Email {
 		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
 		return
 	}
 
-	cfg, err := user.GetConfigFile(s.peers.GetDevice(currentSession.DeviceName))
+	cfg, err := peer.GetConfigFile(s.peers.GetDevice(currentSession.DeviceName))
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename="+user.GetConfigFileName())
+	c.Header("Content-Disposition", "attachment; filename="+peer.GetConfigFileName())
 	c.Data(http.StatusOK, "application/config", cfg)
 	return
 }
 
 func (s *Server) GetPeerConfigMail(c *gin.Context) {
-	user := s.peers.GetPeerByKey(c.Query("pkey"))
+	peer := s.peers.GetPeerByKey(c.Query("pkey"))
 	currentSession := GetSessionData(c)
-	if !currentSession.IsAdmin && user.Email != currentSession.Email {
+	if !currentSession.IsAdmin && peer.Email != currentSession.Email {
 		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
 		return
 	}
 
-	cfg, err := user.GetConfigFile(s.peers.GetDevice(currentSession.DeviceName))
+	user := s.users.GetUser(peer.Email)
+
+	cfg, err := peer.GetConfigFile(s.peers.GetDevice(currentSession.DeviceName))
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
 	}
-	png, err := user.GetQRCode()
+	png, err := peer.GetQRCode()
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "QRCode error", err.Error())
 		return
@@ -263,11 +265,13 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 	// Apply mail template
 	var tplBuff bytes.Buffer
 	if err := s.mailTpl.Execute(&tplBuff, struct {
-		Client        wireguard.Peer
+		Peer          wireguard.Peer
+		User          *users.User
 		QrcodePngName string
 		PortalUrl     string
 	}{
-		Client:        user,
+		Peer:          peer,
+		User:          user,
 		QrcodePngName: "wireguard-config.png",
 		PortalUrl:     s.config.Core.ExternalUrl,
 	}); err != nil {
@@ -278,7 +282,7 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 	// Send mail
 	attachments := []common.MailAttachment{
 		{
-			Name:        user.GetConfigFileName(),
+			Name:        peer.GetConfigFileName(),
 			ContentType: "application/config",
 			Data:        bytes.NewReader(cfg),
 		},
@@ -291,7 +295,7 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 
 	if err := common.SendEmailWithAttachments(s.config.Email, s.config.Core.MailFrom, "", "WireGuard VPN Configuration",
 		"Your mail client does not support HTML. Please find the configuration attached to this mail.", tplBuff.String(),
-		[]string{user.Email}, attachments); err != nil {
+		[]string{peer.Email}, attachments); err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "Email error", err.Error())
 		return
 	}
@@ -301,14 +305,14 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 }
 
 func (s *Server) GetPeerStatus(c *gin.Context) {
-	user := s.peers.GetPeerByKey(c.Query("pkey"))
+	peer := s.peers.GetPeerByKey(c.Query("pkey"))
 	currentSession := GetSessionData(c)
-	if !currentSession.IsAdmin && user.Email != currentSession.Email {
+	if !currentSession.IsAdmin && peer.Email != currentSession.Email {
 		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
 		return
 	}
 
-	if user.Peer == nil { // no peer means disabled
+	if peer.Peer == nil { // no peer means disabled
 		c.JSON(http.StatusOK, false)
 		return
 	}
@@ -316,7 +320,7 @@ func (s *Server) GetPeerStatus(c *gin.Context) {
 	isOnline := false
 	ping := make(chan bool)
 	defer close(ping)
-	for _, cidr := range user.IPs {
+	for _, cidr := range peer.IPs {
 		ip, _, _ := net.ParseCIDR(cidr)
 		var ra *net.IPAddr
 		if common.IsIPv6(ip.String()) {
