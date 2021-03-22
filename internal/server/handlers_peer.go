@@ -301,7 +301,11 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 	}
 
 	SetFlashMessage(c, "mail sent successfully", "success")
-	c.Redirect(http.StatusSeeOther, "/admin")
+	if strings.HasPrefix(c.Request.URL.Path, "/user") {
+		c.Redirect(http.StatusSeeOther, "/user/profile")
+	} else {
+		c.Redirect(http.StatusSeeOther, "/admin")
+	}
 }
 
 func (s *Server) GetPeerStatus(c *gin.Context) {
