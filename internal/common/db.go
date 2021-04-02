@@ -38,7 +38,7 @@ func GetDatabaseForConfig(cfg *DatabaseConfig) (db *gorm.DB, err error) {
 				return
 			}
 		}
-		db, err = gorm.Open(sqlite.Open(cfg.Database), &gorm.Config{})
+		db, err = gorm.Open(sqlite.Open(cfg.Database), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
 		if err != nil {
 			return
 		}

@@ -45,10 +45,10 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	}
 	// Clean list input
 	formDevice.IPs = common.ParseStringList(formDevice.IPsStr)
-	formDevice.AllowedIPs = common.ParseStringList(formDevice.AllowedIPsStr)
+	formDevice.DefaultAllowedIPs = common.ParseStringList(formDevice.DefaultAllowedIPsStr)
 	formDevice.DNS = common.ParseStringList(formDevice.DNSStr)
 	formDevice.IPsStr = common.ListToString(formDevice.IPs)
-	formDevice.AllowedIPsStr = common.ListToString(formDevice.AllowedIPs)
+	formDevice.DefaultAllowedIPsStr = common.ListToString(formDevice.DefaultAllowedIPs)
 	formDevice.DNSStr = common.ListToString(formDevice.DNS)
 
 	// Update WireGuard device
@@ -122,8 +122,8 @@ func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
 	peers := s.peers.GetAllPeers(device.DeviceName)
 
 	for _, peer := range peers {
-		peer.AllowedIPs = device.AllowedIPs
-		peer.AllowedIPsStr = device.AllowedIPsStr
+		peer.AllowedIPs = device.DefaultAllowedIPs
+		peer.AllowedIPsStr = device.DefaultAllowedIPsStr
 		if err := s.peers.UpdatePeer(peer); err != nil {
 			SetFlashMessage(c, err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/device/edit")

@@ -23,7 +23,7 @@ func (s *Server) PrepareNewPeer(device string) (wireguard.Peer, error) {
 
 	peer := wireguard.Peer{}
 	peer.IsNew = true
-	peer.AllowedIPsStr = dev.AllowedIPsStr
+	peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
 	peer.IPs = make([]string, len(dev.IPs))
 	for i := range dev.IPs {
 		freeIP, err := s.peers.GetAvailableIp(device, dev.IPs[i])
@@ -77,7 +77,7 @@ func (s *Server) CreatePeerByEmail(device, email, identifierSuffix string, disab
 // This function also configures the new peer on the physical WireGuard interface if the peer is not deactivated.
 func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 	dev := s.peers.GetDevice(device)
-	peer.AllowedIPsStr = dev.AllowedIPsStr
+	peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
 	if peer.IPs == nil || len(peer.IPs) == 0 {
 		peer.IPs = make([]string, len(dev.IPs))
 		for i := range dev.IPs {

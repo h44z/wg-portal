@@ -1,5 +1,7 @@
 package wireguard
 
+// WireGuard documentation: https://manpages.debian.org/unstable/wireguard-tools/wg.8.en.html
+
 import (
 	"bytes"
 	"crypto/md5"
@@ -63,26 +65,34 @@ func init() {
 //
 
 type Peer struct {
-	Peer   *wgtypes.Peer `gorm:"-"` // WireGuard peer
+	Peer   *wgtypes.Peer `gorm:"-"`                     // WireGuard peer
+	Device *Device       `gorm:"foreignKey:DeviceName"` // linked WireGuard device
 	Config string        `gorm:"-"`
 
-	UID               string `form:"uid" binding:"alphanum"` // uid for html identification
-	IsOnline          bool   `gorm:"-"`
-	IsNew             bool   `gorm:"-"`
-	Identifier        string `form:"identifier" binding:"required,lt=64"` // Identifier AND Email make a WireGuard peer unique
-	Email             string `gorm:"index" form:"mail" binding:"required,email"`
-	LastHandshake     string `gorm:"-"`
-	LastHandshakeTime string `gorm:"-"`
+	UID                  string `form:"uid" binding:"alphanum"` // uid for html identification
+	IsOnline             bool   `gorm:"-"`
+	IsNew                bool   `gorm:"-"`
+	Identifier           string `form:"identifier" binding:"required,lt=64"` // Identifier AND Email make a WireGuard peer unique
+	Email                string `gorm:"index" form:"mail" binding:"required,email"`
+	LastHandshake        string `gorm:"-"`
+	LastHandshakeTime    string `gorm:"-"`
+	IgnoreGlobalSettings bool   `form:"ignoreglobalsettings"`
+	DeviceName           string `gorm:"index"`
 
-	IgnorePersistentKeepalive bool     `form:"ignorekeepalive"`
-	PresharedKey              string   `form:"presharedkey" binding:"omitempty,base64"`
-	AllowedIPsStr             string   `form:"allowedip" binding:"cidrlist"`
-	IPsStr                    string   `form:"ip" binding:"cidrlist"`
-	AllowedIPs                []string `gorm:"-"` // IPs that are used in the client config file
-	IPs                       []string `gorm:"-"` // The IPs of the client
-	PrivateKey                string   `form:"privkey" binding:"omitempty,base64"`
-	PublicKey                 string   `gorm:"primaryKey" form:"pubkey" binding:"required,base64"`
-	DeviceName                string   `gorm:"index"`
+	// Core WireGuard Settings
+	PublicKey           string   `gorm:"primaryKey" form:"pubkey" binding:"required,base64"`
+	PresharedKey        string   `form:"presharedkey" binding:"omitempty,base64"`
+	AllowedIPsStr       string   `form:"allowedip" binding:"cidrlist"`
+	AllowedIPs          []string `gorm:"-"` // IPs that are used in the client config file
+	Endpoint            string   `form:"endpoint" binding:"hostname_port"`
+	PersistentKeepalive int      `form:"keepalive" binding:"gte=0"`
+
+	// Misc. WireGuard Settings
+	PrivateKey string   `form:"privkey" binding:"omitempty,base64"`
+	IPsStr     string   `form:"ip" binding:"cidrlist"`
+	IPs        []string `gorm:"-"`                    // The IPs of the client
+	DNSStr     string   `form:"dns" binding:"iplist"` // comma separated list of:
+	DNS        []string `gorm:"-"`                    // the DNS servers for the client
 
 	DeactivatedAt *time.Time
 	CreatedBy     string
@@ -189,28 +199,46 @@ func (p Peer) GetConfigFileName() string {
 //  DEVICE --------------------------------------------------------------------------------------
 //
 
+type DeviceType string
+
+const (
+	DeviceTypeServer DeviceType = "server"
+	DeviceTypeClient DeviceType = "client"
+	DeviceTypeCustom DeviceType = "custom"
+)
+
 type Device struct {
 	Interface *wgtypes.Device `gorm:"-"`
 
-	DeviceName          string   `form:"device" gorm:"primaryKey" binding:"required,alphanum"`
-	PrivateKey          string   `form:"privkey" binding:"required,base64"`
-	PublicKey           string   `form:"pubkey" binding:"required,base64"`
-	PersistentKeepalive int      `form:"keepalive" binding:"gte=0"`
-	ListenPort          int      `form:"port" binding:"required,gt=0"`
-	Mtu                 int      `form:"mtu" binding:"gte=0,lte=1500"`
-	Endpoint            string   `form:"endpoint" binding:"required,hostname_port"`
-	AllowedIPsStr       string   `form:"allowedip" binding:"cidrlist"`
-	IPsStr              string   `form:"ip" binding:"required,cidrlist"`
-	AllowedIPs          []string `gorm:"-"` // IPs that are used in the client config file
-	IPs                 []string `gorm:"-"` // The IPs of the client
-	DNSStr              string   `form:"dns" binding:"iplist"`
-	DNS                 []string `gorm:"-"` // The DNS servers of the client
-	PreUp               string   `form:"preup"`
-	PostUp              string   `form:"postup"`
-	PreDown             string   `form:"predown"`
-	PostDown            string   `form:"postdown"`
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	Type       DeviceType `form:"devicetype"`
+	DeviceName string     `form:"device" gorm:"primaryKey" binding:"required,alphanum"`
+
+	// Core WireGuard Settings (Interface section)
+	PrivateKey   string `form:"privkey" binding:"required,base64"`
+	ListenPort   int    `form:"port" binding:"required,gt=0"`
+	FirewallMark int32  `form:"firewallmark"`
+	// Misc. WireGuard Settings
+	PublicKey    string   `form:"pubkey" binding:"required,base64"`
+	Mtu          int      `form:"mtu" binding:"gte=0,lte=1500"`   // the interface MTU, wg-quick addition
+	IPsStr       string   `form:"ip" binding:"required,cidrlist"` // comma separated list of:
+	IPs          []string `gorm:"-"`                              // the IPs of the client, wg-quick addition
+	DNSStr       string   `form:"dns" binding:"iplist"`           // comma separated list of:
+	DNS          []string `gorm:"-"`                              // the DNS servers of the client, wg-quick addition
+	RoutingTable string   `form:"routingtable"`                   // the routing table, wg-quick addition
+	PreUp        string   `form:"preup"`                          // pre up script, wg-quick addition
+	PostUp       string   `form:"postup"`                         // post up script, wg-quick addition
+	PreDown      string   `form:"predown"`                        // pre down script, wg-quick addition
+	PostDown     string   `form:"postdown"`                       // post down script, wg-quick addition
+	SaveConfig   bool     `form:"saveconfig"`                     // if set to `true', the configuration is saved from the current state of the interface upon shutdown, wg-quick addition
+
+	// Settings that are applied to all peer by default
+	DefaultEndpoint            string   `form:"endpoint" binding:"required,hostname_port"`
+	DefaultAllowedIPsStr       string   `form:"allowedip" binding:"cidrlist"`
+	DefaultAllowedIPs          []string `gorm:"-"` // IPs that are used in the client config file
+	DefaultPersistentKeepalive int      `form:"keepalive" binding:"gte=0"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (d Device) IsValid() bool {
@@ -220,7 +248,7 @@ func (d Device) IsValid() bool {
 	if len(d.IPs) == 0 {
 		return false
 	}
-	if d.Endpoint == "" {
+	if d.DefaultEndpoint == "" {
 		return false
 	}
 
@@ -370,12 +398,13 @@ func (m *PeerManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []s
 	m.db.Where("device_name = ?", dev.Name).FirstOrInit(&device)
 
 	if device.PublicKey == "" { // device not found, create
+		device.Type = DeviceTypeCustom // imported device, we do not (easily) know if it is a client or server
 		device.PublicKey = dev.PublicKey.String()
 		device.PrivateKey = dev.PrivateKey.String()
 		device.DeviceName = dev.Name
 		device.ListenPort = dev.ListenPort
 		device.Mtu = 0
-		device.PersistentKeepalive = 16 // Default
+		device.DefaultPersistentKeepalive = 16 // Default
 		device.IPsStr = strings.Join(ipAddresses, ", ")
 		if mtu == DefaultMTU {
 			mtu = 0
@@ -423,7 +452,7 @@ func (m *PeerManager) populatePeerData(peer *Peer) {
 
 // populateDeviceData enriches the device struct with WireGuard live data like interface information
 func (m *PeerManager) populateDeviceData(device *Device) {
-	device.AllowedIPs = strings.Split(device.AllowedIPsStr, ", ")
+	device.DefaultAllowedIPs = strings.Split(device.DefaultAllowedIPsStr, ", ")
 	device.IPs = strings.Split(device.IPsStr, ", ")
 	device.DNS = strings.Split(device.DNSStr, ", ")
 
@@ -621,7 +650,7 @@ func (m *PeerManager) DeletePeer(peer Peer) error {
 
 func (m *PeerManager) UpdateDevice(device Device) error {
 	device.UpdatedAt = time.Now()
-	device.AllowedIPsStr = strings.Join(device.AllowedIPs, ", ")
+	device.DefaultAllowedIPsStr = strings.Join(device.DefaultAllowedIPs, ", ")
 	device.IPsStr = strings.Join(device.IPs, ", ")
 	device.DNSStr = strings.Join(device.DNS, ", ")
 
