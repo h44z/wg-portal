@@ -23,7 +23,6 @@ func (s *Server) PrepareNewPeer(device string) (wireguard.Peer, error) {
 
 	peer := wireguard.Peer{}
 	peer.IsNew = true
-	peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
 	peerIPs := make([]string, len(deviceIPs))
 	for i := range deviceIPs {
 		freeIP, err := s.peers.GetAvailableIp(device, deviceIPs[i])
@@ -46,24 +45,36 @@ func (s *Server) PrepareNewPeer(device string) (wireguard.Peer, error) {
 	peer.PublicKey = key.PublicKey().String()
 	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 
+	switch dev.Type {
+	case wireguard.DeviceTypeCustom:
+		fallthrough
+	case wireguard.DeviceTypeServer:
+		peer.EndpointPublicKey = dev.PublicKey
+		peer.Endpoint = dev.DefaultEndpoint
+		peer.DNSStr = dev.DNSStr
+		peer.PersistentKeepalive = dev.DefaultPersistentKeepalive
+		peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
+		peer.Mtu = dev.Mtu
+	case wireguard.DeviceTypeClient:
+	}
+
 	return peer, nil
 }
 
-// CreatePeerByEmail creates a new peer for the given email. If no user with the specified email was found, a new one
-// will be created.
+// CreatePeerByEmail creates a new peer for the given email.
 func (s *Server) CreatePeerByEmail(device, email, identifierSuffix string, disabled bool) error {
-	user, err := s.users.GetOrCreateUser(email)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to load/create related user %s", email)
-	}
+	user := s.users.GetUser(email)
 
 	peer, err := s.PrepareNewPeer(device)
 	if err != nil {
 		return errors.WithMessage(err, "failed to prepare new peer")
 	}
 	peer.Email = email
-	peer.Identifier = fmt.Sprintf("%s %s (%s)", user.Firstname, user.Lastname, identifierSuffix)
-
+	if user != nil {
+		peer.Identifier = fmt.Sprintf("%s %s (%s)", user.Firstname, user.Lastname, identifierSuffix)
+	} else {
+		peer.Identifier = fmt.Sprintf("%s (%s)", email, identifierSuffix)
+	}
 	now := time.Now()
 	if disabled {
 		peer.DeactivatedAt = &now

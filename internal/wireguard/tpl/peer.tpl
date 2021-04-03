@@ -18,7 +18,7 @@ MTU = {{.Peer.Mtu}}
 
 [Peer]
 PublicKey = {{ .Peer.EndpointPublicKey }}
-Endpoint = {{ .Server.Endpoint }}
+Endpoint = {{ .Peer.Endpoint }}
 AllowedIPs = {{ .Peer.AllowedIPsStr }}
 {{- if .Peer.PresharedKey}}
 PresharedKey = {{ .Peer.PresharedKey }}

@@ -24,7 +24,7 @@
                 <a class="nav-link {{if eq .Device.Type "client"}}active{{end}}" data-toggle="tab" href="#client">Client Mode</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{if eq .Device.Type "custom"}}active{{end}}" data-toggle="tab" href="#custom">Custom Mode</a>
+                <a class="nav-link {{if eq .Device.Type "custom"}}active{{end}}" data-toggle="tab" href="#custom">Custom Mode (Experimental)</a>
             </li>
         </ul>
 
@@ -34,7 +34,7 @@
                 <form method="post" enctype="multipart/form-data">
                 <input type="hidden" name="_csrf" value="{{.Csrf}}">
                 <input type="hidden" name="device" value="{{.Device.DeviceName}}">
-                <input type="hidden" name="type" value="server">
+                <input type="hidden" name="devicetype" value="server">
                 <h3>Server's interface configuration</h3>
                 <div class="form-row">
                     <div class="form-group col-md-12">
@@ -46,13 +46,13 @@
                 <div class="form-row">
                     <div class="form-group required col-md-12">
                         <label for="server_PrivateKey">Private Key</label>
-                        <input type="text" name="privkey" class="form-control" id="server_PrivateKey" value="{{.Device.PrivateKey}}">
+                        <input type="text" name="privkey" class="form-control" id="server_PrivateKey" value="{{.Device.PrivateKey}}" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group required col-md-12">
                         <label for="server_PublicKey">Public Key</label>
-                        <input type="text" name="pubkey" class="form-control" id="server_PublicKey" value="{{.Device.PublicKey}}">
+                        <input type="text" name="pubkey" class="form-control" id="server_PublicKey" value="{{.Device.PublicKey}}" required>
                     </div>
                 </div>
                 {{else}}
@@ -67,18 +67,18 @@
                 <div class="form-row">
                     <div class="form-group required col-md-6">
                         <label for="server_ListenPort">Listen port</label>
-                        <input type="number" name="port" class="form-control" id="server_ListenPort" placeholder="51820" value="{{.Device.ListenPort}}">
+                        <input type="number" name="port" class="form-control" id="server_ListenPort" placeholder="51820" value="{{.Device.ListenPort}}" required>
                     </div>
                     <div class="form-group required col-md-6">
                         <label for="server_IPs">Server IP address</label>
-                        <input type="text" name="ip" class="form-control" id="server_IPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}">
+                        <input type="text" name="ip" class="form-control" id="server_IPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}" required>
                     </div>
                 </div>
                 <h3>Client's global configuration</h3>
                 <div class="form-row">
                     <div class="form-group required col-md-12">
                         <label for="server_PublicEndpoint">Public Endpoint for Clients</label>
-                        <input type="text" name="endpoint" class="form-control" id="server_PublicEndpoint" placeholder="vpn.company.com:51820" value="{{.Device.DefaultEndpoint}}">
+                        <input type="text" name="endpoint" class="form-control" id="server_PublicEndpoint" placeholder="vpn.company.com:51820" value="{{.Device.DefaultEndpoint}}" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -138,7 +138,7 @@
                 <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="{{.Csrf}}">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
-            <input type="hidden" name="type" value="client">
+            <input type="hidden" name="devicetype" value="client">
             <h3>Client's interface configuration</h3>
             <div class="form-row">
                 <div class="form-group col-md-12">
@@ -150,13 +150,13 @@
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="client_PrivateKey">Private Key</label>
-                    <input type="text" name="privkey" class="form-control" id="client_PrivateKey" value="{{.Device.PrivateKey}}">
+                    <input type="text" name="privkey" class="form-control" id="client_PrivateKey" value="{{.Device.PrivateKey}}" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="client_PublicKey">Public Key</label>
-                    <input type="text" name="pubkey" class="form-control" id="client_PublicKey" value="{{.Device.PublicKey}}">
+                    <input type="text" name="pubkey" class="form-control" id="client_PublicKey" value="{{.Device.PublicKey}}" required>
                 </div>
             </div>
             {{else}}
@@ -171,7 +171,7 @@
             <div class="form-row">
                 <div class="form-group required col-md-6">
                     <label for="client_IPs">Client IP address</label>
-                    <input type="text" name="ip" class="form-control" id="client_IPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}">
+                    <input type="text" name="ip" class="form-control" id="client_IPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}" required>
                 </div>
                 <div class="form-group col-md-6">
                     <label for="client_DNS">DNS Servers</label>
@@ -220,7 +220,6 @@
 
             <button type="submit" class="btn btn-primary">Save</button>
             <a href="/admin" class="btn btn-secondary">Cancel</a>
-            <a href="/admin/device/applyglobals" class="btn btn-dark float-right">Apply Global Settings to peers</a>
         </form>
             </div>
 
@@ -229,7 +228,7 @@
                 <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="{{.Csrf}}">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
-            <input type="hidden" name="type" value="custom">
+            <input type="hidden" name="devicetype" value="custom">
             <h3>Custom interface configuration</h3>
             <div class="form-row">
                 <div class="form-group col-md-12">
@@ -241,13 +240,13 @@
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="custom_PrivateKey">Private Key</label>
-                    <input type="text" name="privkey" class="form-control" id="custom_PrivateKey" value="{{.Device.PrivateKey}}">
+                    <input type="text" name="privkey" class="form-control" id="custom_PrivateKey" value="{{.Device.PrivateKey}}" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="custom_PublicKey">Public Key</label>
-                    <input type="text" name="pubkey" class="form-control" id="custom_PublicKey" value="{{.Device.PublicKey}}">
+                    <input type="text" name="pubkey" class="form-control" id="custom_PublicKey" value="{{.Device.PublicKey}}" required>
                 </div>
             </div>
             {{else}}
@@ -266,21 +265,7 @@
                 </div>
                 <div class="form-group required col-md-6">
                     <label for="custom_IPs">Interface IP address</label>
-                    <input type="text" name="ip" class="form-control" id="custom_IPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="custom_MTU">Global MTU</label>
-                    <input type="number" name="mtu" class="form-control" id="custom_MTU" placeholder="0" value="{{.Device.Mtu}}">
-                </div>
-                <div class="form-group col-md-6">
-                    <div class="custom-control custom-switch">
-                        <label class="custom-control-label" for="custom_SaveConfig">
-                            Save Configuration (if Interface was edited via WireGuard configuration tool)
-                        </label>
-                        <input class="custom-control-input" name="saveconfig" type="checkbox" value="true" id="custom_SaveConfig" {{if .Peer.SaveConfig}}checked{{end}}>
-                    </div>
+                    <input type="text" name="ip" class="form-control" id="custom_IPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}" required>
                 </div>
             </div>
             <div class="form-row">
@@ -291,6 +276,16 @@
                 <div class="form-group col-md-6">
                     <label for="custom_RoutingTable">Routing Table</label>
                     <input type="text" name="routingtable" class="form-control" id="custom_RoutingTable" placeholder="0" value="{{.Device.RoutingTable}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <div class="custom-control custom-switch">
+                        <input class="custom-control-input" name="saveconfig" type="checkbox" value="true" id="custom_SaveConfig" {{if .Peer.SaveConfig}}checked{{end}}>
+                        <label class="custom-control-label" for="custom_SaveConfig">
+                            Save Configuration (if Interface was edited via WireGuard configuration tool)
+                        </label>
+                    </div>
                 </div>
             </div>
             <h3>Peer's global configuration</h3>
@@ -312,6 +307,12 @@
                 <div class="form-group col-md-6">
                     <label for="custom_AllowedIP">Default allowed IPs</label>
                     <input type="text" name="allowedip" class="form-control" id="custom_AllowedIP" placeholder="10.6.6.0/24" value="{{.Device.DefaultAllowedIPsStr}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="custom_MTU">Global MTU</label>
+                    <input type="number" name="mtu" class="form-control" id="custom_MTU" placeholder="0" value="{{.Device.Mtu}}">
                 </div>
             </div>
             <h3>Interface configuration hooks</h3>

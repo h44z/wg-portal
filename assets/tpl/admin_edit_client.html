@@ -28,7 +28,8 @@
             <input type="hidden" name="uid" value="{{.Peer.UID}}">
             <input type="hidden" name="devicetype" value="{{.Device.Type}}">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
-            <input type="hidden" name="endpointpubkey" value="{{.Device.PublicKey}}">
+            <input type="hidden" name="endpointpubkey" value="{{.Peer.EndpointPublicKey}}">
+            <input type="hidden" name="endpoint" value="{{.Peer.Endpoint}}">
             {{if .EditableKeys}}
                 <div class="form-row">
                     <div class="form-group col-md-12">
@@ -39,13 +40,13 @@
                 <div class="form-row">
                     <div class="form-group required col-md-12">
                         <label for="server_PublicKey">Public Key</label>
-                        <input type="text" name="pubkey" class="form-control" id="server_PublicKey" value="{{.Peer.PublicKey}}">
+                        <input type="text" name="pubkey" class="form-control" id="server_PublicKey" value="{{.Peer.PublicKey}}" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-12">
                         <label for="server_PresharedKey">Preshared Key</label>
-                        <input type="text" name="presharedkey" class="form-control" id="server_PresharedKey" value="{{.Peer.PresharedKey}}">
+                        <input type="text" name="presharedkey" class="form-control" id="server_PresharedKey" value="{{.Peer.PresharedKey}}" required>
                     </div>
                 </div>
             {{else}}
@@ -61,19 +62,19 @@
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="server_Identifier">Client Friendly Name</label>
-                    <input type="text" name="identifier" class="form-control" id="server_Identifier" value="{{.Peer.Identifier}}">
+                    <input type="text" name="identifier" class="form-control" id="server_Identifier" value="{{.Peer.Identifier}}" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="server_Email">Client Email Address</label>
-                    <input type="email" name="mail" class="form-control" id="server_Email" value="{{.Peer.Email}}">
+                    <input type="email" name="mail" class="form-control" id="server_Email" value="{{.Peer.Email}}" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="server_IP">Client IP Address</label>
-                    <input type="text" name="ip" class="form-control" id="server_IP" value="{{.Peer.IPsStr}}">
+                    <input type="text" name="ip" class="form-control" id="server_IP" value="{{.Peer.IPsStr}}" required>
                 </div>
             </div>
             <div class="form-row">
@@ -95,7 +96,7 @@
                 </div>
                 <div class="form-group col-md-6">
                     <label for="server_MTU">Client MTU</label>
-                    <input type="number" name="mtu" class="form-control" id="server_MTU" placeholder="0" value="{{.Peer.MTU}}">
+                    <input type="number" name="mtu" class="form-control" id="server_MTU" placeholder="0" value="{{.Peer.Mtu}}">
                 </div>
             </div>
 
@@ -108,7 +109,7 @@
                         </label>
                     </div>
                     <div class="custom-control custom-switch">
-                        <input class="custom-control-input" name="ignoreglobalsettings" type="checkbox" value="true" id="server_IgnoreGlobalSettings" {{if .Peer.IgnorePersistentKeepalive}}checked{{end}}>
+                        <input class="custom-control-input" name="ignoreglobalsettings" type="checkbox" value="true" id="server_IgnoreGlobalSettings" {{if .Peer.IgnoreGlobalSettings}}checked{{end}}>
                         <label class="custom-control-label" for="server_IgnoreGlobalSettings">
                             Ignore global settings
                         </label>
@@ -146,7 +147,7 @@
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="client_PublicKey">Peer Public Key</label>
-                    <input type="text" name="pubkey" class="form-control" id="client_PublicKey" value="{{.Peer.PublicKey}}">
+                    <input type="text" name="pubkey" class="form-control" id="client_PublicKey" value="{{.Peer.PublicKey}}" required>
                 </div>
             </div>
             <div class="form-row">
@@ -168,19 +169,19 @@
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="client_Identifier">Endpoint Friendly Name</label>
-                    <input type="text" name="identifier" class="form-control" id="client_Identifier" value="{{.Peer.Identifier}}">
+                    <input type="text" name="identifier" class="form-control" id="client_Identifier" value="{{.Peer.Identifier}}" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="client_Endpoint">Endpoint Address</label>
-                    <input type="text" name="endpoint" class="form-control" id="client_Endpoint" value="{{.Peer.Endpoint}}">
+                    <input type="text" name="endpoint" class="form-control" id="client_Endpoint" value="{{.Peer.Endpoint}}" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="client_EndpointPublicKey">Endpoint Public Key</label>
-                    <input type="text" name="endpointpubkey" class="form-control" id="client_EndpointPublicKey" value="{{.Peer.EndpointPublicKey}}">
+                    <input type="text" name="endpointpubkey" class="form-control" id="client_EndpointPublicKey" value="{{.Peer.EndpointPublicKey}}" required>
                 </div>
             </div>
             <div class="form-row">
@@ -236,7 +237,7 @@
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="custom_PublicKey">Public Key</label>
-                    <input type="text" name="pubkey" class="form-control" id="custom_PublicKey" value="{{.Peer.PublicKey}}">
+                    <input type="text" name="pubkey" class="form-control" id="custom_PublicKey" value="{{.Peer.PublicKey}}" required>
                 </div>
             </div>
             <div class="form-row">
@@ -258,13 +259,13 @@
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="custom_Identifier">Peer Friendly Name</label>
-                    <input type="text" name="identifier" class="form-control" id="custom_Identifier" value="{{.Peer.Identifier}}">
+                    <input type="text" name="identifier" class="form-control" id="custom_Identifier" value="{{.Peer.Identifier}}" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="custom_Email">Peer Email Address</label>
-                    <input type="email" name="mail" class="form-control" id="custom_Email" value="{{.Peer.Email}}">
+                    <input type="email" name="mail" class="form-control" id="custom_Email" value="{{.Peer.Email}}" required>
                 </div>
             </div>
             <div class="form-row">
@@ -276,7 +277,7 @@
             <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="custom_EndpointPublicKey">Endpoint Public Key</label>
-                    <input type="text" name="endpointpubkey" class="form-control" id="custom_EndpointPublicKey" value="{{.Peer.EndpointPublicKey}}">
+                    <input type="text" name="endpointpubkey" class="form-control" id="custom_EndpointPublicKey" value="{{.Peer.EndpointPublicKey}}" required>
                 </div>
             </div>
             <div class="form-row">
@@ -304,7 +305,7 @@
                 </div>
                 <div class="form-group col-md-6">
                     <label for="custom_MTU">Client MTU</label>
-                    <input type="number" name="mtu" class="form-control" id="custom_MTU" placeholder="0" value="{{.Peer.MTU}}">
+                    <input type="number" name="mtu" class="form-control" id="custom_MTU" placeholder="0" value="{{.Peer.Mtu}}">
                 </div>
             </div>
 

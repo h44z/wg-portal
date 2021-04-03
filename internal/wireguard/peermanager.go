@@ -90,7 +90,7 @@ type Peer struct {
 	// Misc. WireGuard Settings
 	EndpointPublicKey string `form:"endpointpubkey" binding:"required,base64"` // the public key of the remote endpoint
 	PrivateKey        string `form:"privkey" binding:"omitempty,base64"`
-	IPsStr            string `form:"ip" binding:"cidrlist,required_if=devicetype server"` // a comma separated list of IPs of the client
+	IPsStr            string `form:"ip" binding:"cidrlist,required_if=DeviceType server"` // a comma separated list of IPs of the client
 	DNSStr            string `form:"dns" binding:"iplist"`                                // comma separated list of the DNS servers for the client
 	// Global Device Settings (can be ignored, only make sense if device is in server mode)
 	Mtu int `form:"mtu" binding:"gte=0,lte=1500"`
@@ -230,7 +230,7 @@ type Device struct {
 
 	// Core WireGuard Settings (Interface section)
 	PrivateKey   string `form:"privkey" binding:"required,base64"`
-	ListenPort   int    `form:"port" binding:"omitempty,gt=0,lt=65535,required_if=devicetype server"`
+	ListenPort   int    `form:"port" binding:"required_if=Type server,omitempty,gt=0,lt=65535"`
 	FirewallMark int32  `form:"firewallmark" binding:"gte=0"`
 	// Misc. WireGuard Settings
 	PublicKey    string `form:"pubkey" binding:"required,base64"`
@@ -245,7 +245,7 @@ type Device struct {
 	SaveConfig   bool   `form:"saveconfig"`                     // if set to `true', the configuration is saved from the current state of the interface upon shutdown, wg-quick addition
 
 	// Settings that are applied to all peer by default
-	DefaultEndpoint            string `form:"endpoint" binding:"omitempty,hostname_port,required_if=devicetype server"`
+	DefaultEndpoint            string `form:"endpoint" binding:"required_if=Type server,omitempty,hostname_port"`
 	DefaultAllowedIPsStr       string `form:"allowedip" binding:"cidrlist"` // comma separated list  of IPs that are used in the client config file
 	DefaultPersistentKeepalive int    `form:"keepalive" binding:"gte=0"`
 
@@ -386,14 +386,16 @@ func (m *PeerManager) InitFromPhysicalInterface() error {
 			}
 		}
 
-		// Check if entries already exist in database, if not create them
+		// Check if device already exists in database, if not, create it
+		if err := m.validateOrCreateDevice(*device, ipAddresses, mtu); err != nil {
+			return errors.WithMessagef(err, "failed to validate device %s", device.Name)
+		}
+
+		// Check if entries already exist in database, if not, create them
 		for _, peer := range peers {
 			if err := m.validateOrCreatePeer(deviceName, peer); err != nil {
 				return errors.WithMessagef(err, "failed to validate peer %s for device %s", peer.PublicKey, deviceName)
 			}
-		}
-		if err := m.validateOrCreateDevice(*device, ipAddresses, mtu); err != nil {
-			return errors.WithMessagef(err, "failed to validate device %s", device.Name)
 		}
 	}
 
@@ -401,6 +403,7 @@ func (m *PeerManager) InitFromPhysicalInterface() error {
 }
 
 // validateOrCreatePeer checks if the given WireGuard peer already exists in the database, if not, the peer entry will be created
+// assumption: server mode is used
 func (m *PeerManager) validateOrCreatePeer(device string, wgPeer wgtypes.Peer) error {
 	peer := Peer{}
 	m.db.Where("public_key = ?", wgPeer.PublicKey.String()).FirstOrInit(&peer)
@@ -408,21 +411,22 @@ func (m *PeerManager) validateOrCreatePeer(device string, wgPeer wgtypes.Peer) e
 	if peer.PublicKey == "" { // peer not found, create
 		peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(wgPeer.PublicKey.String())))
 		peer.PublicKey = wgPeer.PublicKey.String()
-		peer.PrivateKey = "" // UNKNOWN
 		if wgPeer.PresharedKey != (wgtypes.Key{}) {
 			peer.PresharedKey = wgPeer.PresharedKey.String()
 		}
 		peer.Email = "autodetected@example.com"
-		peer.Identifier = "Autodetected (" + peer.PublicKey[0:8] + ")"
+		peer.Identifier = "Autodetected Client (" + peer.PublicKey[0:8] + ")"
 		peer.UpdatedAt = time.Now()
 		peer.CreatedAt = time.Now()
-		IPs := make([]string, len(wgPeer.AllowedIPs))
+		IPs := make([]string, len(wgPeer.AllowedIPs)) // use allowed IP's as the peer IP's
 		for i, ip := range wgPeer.AllowedIPs {
 			IPs[i] = ip.String()
 		}
-		peer.AllowedIPsStr = "" // UNKNOWN
 		peer.SetIPAddresses(IPs...)
 		peer.DeviceName = device
+		if wgPeer.Endpoint != nil {
+			peer.Endpoint = wgPeer.Endpoint.String() // TODO: do we need to import this for server mode?
+		}
 
 		res := m.db.Create(&peer)
 		if res.Error != nil {
@@ -439,11 +443,12 @@ func (m *PeerManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []s
 	m.db.Where("device_name = ?", dev.Name).FirstOrInit(&device)
 
 	if device.PublicKey == "" { // device not found, create
-		device.Type = DeviceTypeCustom // imported device, we do not (easily) know if it is a client or server
+		device.Type = DeviceTypeServer // imported device, we assume that server mode is used
 		device.PublicKey = dev.PublicKey.String()
 		device.PrivateKey = dev.PrivateKey.String()
 		device.DeviceName = dev.Name
 		device.ListenPort = dev.ListenPort
+		device.FirewallMark = int32(dev.FirewallMark)
 		device.Mtu = 0
 		device.DefaultPersistentKeepalive = 16 // Default
 		device.IPsStr = strings.Join(ipAddresses, ", ")

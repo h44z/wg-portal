@@ -48,7 +48,7 @@ PublicKey = {{ .PublicKey }}
 PresharedKey = {{ .PresharedKey }}
 {{- end}}
 AllowedIPs = {{ .AllowedIPsStr }}
-{{- if ne .Endpoint ""}}
+{{- if and (ne .Endpoint "") (ne $.Interface.Type "server")}}
 Endpoint = {{ .Endpoint }}
 {{- end}}
 {{- if ne .PersistentKeepalive 0}}

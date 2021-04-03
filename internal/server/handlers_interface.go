@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -47,6 +48,21 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 	formDevice.IPsStr = common.ListToString(common.ParseStringList(formDevice.IPsStr))
 	formDevice.DefaultAllowedIPsStr = common.ListToString(common.ParseStringList(formDevice.DefaultAllowedIPsStr))
 	formDevice.DNSStr = common.ListToString(common.ParseStringList(formDevice.DNSStr))
+
+	// Clean interface parameters based on interface type
+	switch formDevice.Type {
+	case wireguard.DeviceTypeClient:
+		formDevice.ListenPort = 0
+		formDevice.DefaultEndpoint = ""
+		formDevice.DefaultAllowedIPsStr = ""
+		formDevice.DefaultPersistentKeepalive = 0
+		formDevice.SaveConfig = false
+	case wireguard.DeviceTypeServer:
+		formDevice.FirewallMark = 0
+		formDevice.RoutingTable = ""
+		formDevice.SaveConfig = false
+	case wireguard.DeviceTypeCustom:
+	}
 
 	// Update WireGuard device
 	err := s.wg.UpdateDevice(formDevice.DeviceName, formDevice.GetConfig())
@@ -118,15 +134,37 @@ func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
 	device := s.peers.GetDevice(currentSession.DeviceName)
 	peers := s.peers.GetAllPeers(device.DeviceName)
 
+	if device.Type == wireguard.DeviceTypeClient {
+		SetFlashMessage(c, "Cannot apply global configuration while interface is in client mode.", "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
+		return
+	}
+
+	updateCounter := 0
 	for _, peer := range peers {
+		if peer.IgnoreGlobalSettings {
+			continue
+		}
+
 		peer.AllowedIPsStr = device.DefaultAllowedIPsStr
+		peer.Endpoint = device.DefaultEndpoint
+		peer.PersistentKeepalive = device.DefaultPersistentKeepalive
+		peer.DNSStr = device.DNSStr
+		peer.Mtu = device.Mtu
+
+		if device.Type == wireguard.DeviceTypeServer {
+			peer.EndpointPublicKey = device.PublicKey
+		}
+
 		if err := s.peers.UpdatePeer(peer); err != nil {
 			SetFlashMessage(c, err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/device/edit")
+			return
 		}
+		updateCounter++
 	}
 
-	SetFlashMessage(c, "Allowed IP's updated for all clients.", "success")
+	SetFlashMessage(c, fmt.Sprintf("Global configuration updated for %d clients.", updateCounter), "success")
 	c.Redirect(http.StatusSeeOther, "/admin/device/edit")
 	return
 }

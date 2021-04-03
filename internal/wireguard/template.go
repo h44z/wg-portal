@@ -2,8 +2,8 @@ package wireguard
 
 import (
 	"embed"
-	"html/template"
 	"strings"
+	"text/template"
 )
 
 //go:embed tpl/*
