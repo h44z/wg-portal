@@ -44,12 +44,9 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 		return
 	}
 	// Clean list input
-	formDevice.IPs = common.ParseStringList(formDevice.IPsStr)
-	formDevice.DefaultAllowedIPs = common.ParseStringList(formDevice.DefaultAllowedIPsStr)
-	formDevice.DNS = common.ParseStringList(formDevice.DNSStr)
-	formDevice.IPsStr = common.ListToString(formDevice.IPs)
-	formDevice.DefaultAllowedIPsStr = common.ListToString(formDevice.DefaultAllowedIPs)
-	formDevice.DNSStr = common.ListToString(formDevice.DNS)
+	formDevice.IPsStr = common.ListToString(common.ParseStringList(formDevice.IPsStr))
+	formDevice.DefaultAllowedIPsStr = common.ListToString(common.ParseStringList(formDevice.DefaultAllowedIPsStr))
+	formDevice.DNSStr = common.ListToString(common.ParseStringList(formDevice.DNSStr))
 
 	// Update WireGuard device
 	err := s.wg.UpdateDevice(formDevice.DeviceName, formDevice.GetConfig())
@@ -80,7 +77,7 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 
 	// Update interface IP address
 	if s.config.WG.ManageIPAddresses {
-		if err := s.wg.SetIPAddress(currentSession.DeviceName, formDevice.IPs); err != nil {
+		if err := s.wg.SetIPAddress(currentSession.DeviceName, formDevice.GetIPAddresses()); err != nil {
 			_ = s.updateFormInSession(c, formDevice)
 			SetFlashMessage(c, "Failed to update ip address: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=update")
@@ -122,7 +119,6 @@ func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
 	peers := s.peers.GetAllPeers(device.DeviceName)
 
 	for _, peer := range peers {
-		peer.AllowedIPs = device.DefaultAllowedIPs
 		peer.AllowedIPsStr = device.DefaultAllowedIPsStr
 		if err := s.peers.UpdatePeer(peer); err != nil {
 			SetFlashMessage(c, err.Error(), "danger")

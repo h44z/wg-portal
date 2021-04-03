@@ -85,6 +85,7 @@ func NewConfig() *Config {
 	cfg.Core.AdminUser = "admin@wgportal.local"
 	cfg.Core.AdminPassword = "wgportal"
 	cfg.Core.LdapEnabled = false
+	cfg.Core.EditableKeys = true
 	cfg.Core.SessionSecret = "secret"
 
 	cfg.Database.Typ = "sqlite"

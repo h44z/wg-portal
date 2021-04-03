@@ -40,6 +40,7 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 		"EditableKeys": s.config.Core.EditableKeys,
 		"Device":       s.peers.GetDevice(currentSession.DeviceName),
 		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"AdminEmail":   s.config.Core.AdminUser,
 		"Csrf":         csrf.GetToken(c),
 	})
 }
@@ -61,10 +62,8 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	}
 
 	// Clean list input
-	formPeer.IPs = common.ParseStringList(formPeer.IPsStr)
-	formPeer.AllowedIPs = common.ParseStringList(formPeer.AllowedIPsStr)
-	formPeer.IPsStr = common.ListToString(formPeer.IPs)
-	formPeer.AllowedIPsStr = common.ListToString(formPeer.AllowedIPs)
+	formPeer.IPsStr = common.ListToString(common.ParseStringList(formPeer.IPsStr))
+	formPeer.AllowedIPsStr = common.ListToString(common.ParseStringList(formPeer.AllowedIPsStr))
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
@@ -101,6 +100,7 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 		"EditableKeys": s.config.Core.EditableKeys,
 		"Device":       s.peers.GetDevice(currentSession.DeviceName),
 		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"AdminEmail":   s.config.Core.AdminUser,
 		"Csrf":         csrf.GetToken(c),
 	})
 }
@@ -119,10 +119,8 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	}
 
 	// Clean list input
-	formPeer.IPs = common.ParseStringList(formPeer.IPsStr)
-	formPeer.AllowedIPs = common.ParseStringList(formPeer.AllowedIPsStr)
-	formPeer.IPsStr = common.ListToString(formPeer.IPs)
-	formPeer.AllowedIPsStr = common.ListToString(formPeer.AllowedIPs)
+	formPeer.IPsStr = common.ListToString(common.ParseStringList(formPeer.IPsStr))
+	formPeer.AllowedIPsStr = common.ListToString(common.ParseStringList(formPeer.AllowedIPsStr))
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
@@ -328,7 +326,7 @@ func (s *Server) GetPeerStatus(c *gin.Context) {
 	isOnline := false
 	ping := make(chan bool)
 	defer close(ping)
-	for _, cidr := range peer.IPs {
+	for _, cidr := range peer.GetIPAddresses() {
 		ip, _, _ := net.ParseCIDR(cidr)
 		var ra *net.IPAddr
 		if common.IsIPv6(ip.String()) {

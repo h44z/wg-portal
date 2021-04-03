@@ -84,11 +84,18 @@
         </div>
         <div class="mt-4 row">
             <div class="col-sm-10 col-12">
+                {{with or (eq $.Device.Type "server") (eq $.Device.Type "custom")}}
                 <h2 class="mt-2">Current VPN Peers</h2>
+                {{end}}
+                {{with eq $.Device.Type "client"}}
+                <h2 class="mt-2">Current VPN Endpoints</h2>
+                {{end}}
             </div>
             <div class="col-sm-2 col-12 text-right">
+                {{with eq $.Device.Type "server"}}
                 <a href="/admin/peer/createldap" title="Add multiple peers" class="btn btn-primary"><i class="fa fa-fw fa-user-plus"></i></a>
-                <a href="/admin/peer/create" title="Manually add a peer" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
+                {{end}}
+                <a href="/admin/peer/create" title="Add a peer" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
             </div>
         </div>
         <div class="mt-2 table-responsive">

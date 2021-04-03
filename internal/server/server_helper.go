@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/h44z/wg-portal/internal/common"
 	"github.com/h44z/wg-portal/internal/users"
 	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/pkg/errors"
@@ -20,19 +19,20 @@ import (
 // PrepareNewPeer initiates a new peer for the given WireGuard device.
 func (s *Server) PrepareNewPeer(device string) (wireguard.Peer, error) {
 	dev := s.peers.GetDevice(device)
+	deviceIPs := dev.GetIPAddresses()
 
 	peer := wireguard.Peer{}
 	peer.IsNew = true
 	peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
-	peer.IPs = make([]string, len(dev.IPs))
-	for i := range dev.IPs {
-		freeIP, err := s.peers.GetAvailableIp(device, dev.IPs[i])
+	peerIPs := make([]string, len(deviceIPs))
+	for i := range deviceIPs {
+		freeIP, err := s.peers.GetAvailableIp(device, deviceIPs[i])
 		if err != nil {
 			return wireguard.Peer{}, errors.WithMessage(err, "failed to get available IP addresses")
 		}
-		peer.IPs[i] = freeIP
+		peerIPs[i] = freeIP
 	}
-	peer.IPsStr = common.ListToString(peer.IPs)
+	peer.SetIPAddresses(peerIPs...)
 	psk, err := wgtypes.GenerateKey()
 	if err != nil {
 		return wireguard.Peer{}, errors.Wrap(err, "failed to generate key")
@@ -77,17 +77,20 @@ func (s *Server) CreatePeerByEmail(device, email, identifierSuffix string, disab
 // This function also configures the new peer on the physical WireGuard interface if the peer is not deactivated.
 func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 	dev := s.peers.GetDevice(device)
+	deviceIPs := dev.GetIPAddresses()
+	peerIPs := peer.GetIPAddresses()
+
 	peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
-	if peer.IPs == nil || len(peer.IPs) == 0 {
-		peer.IPs = make([]string, len(dev.IPs))
-		for i := range dev.IPs {
-			freeIP, err := s.peers.GetAvailableIp(device, dev.IPs[i])
+	if len(peerIPs) == 0 {
+		peerIPs = make([]string, len(deviceIPs))
+		for i := range deviceIPs {
+			freeIP, err := s.peers.GetAvailableIp(device, deviceIPs[i])
 			if err != nil {
 				return errors.WithMessage(err, "failed to get available IP addresses")
 			}
-			peer.IPs[i] = freeIP
+			peerIPs[i] = freeIP
 		}
-		peer.IPsStr = common.ListToString(peer.IPs)
+		peer.SetIPAddresses(peerIPs...)
 	}
 	if peer.PrivateKey == "" { // if private key is empty create a new one
 		psk, err := wgtypes.GenerateKey()
