@@ -175,7 +175,7 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 	emails := common.ParseStringList(formData.Emails)
 	for i := range emails {
 		// TODO: also check email addr for validity?
-		if !strings.ContainsRune(emails[i], '@') || s.users.GetUser(emails[i]) == nil {
+		if !strings.ContainsRune(emails[i], '@') {
 			_ = s.updateFormInSession(c, formData)
 			SetFlashMessage(c, "invalid email address: "+emails[i], "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=mail")

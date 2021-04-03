@@ -74,6 +74,16 @@
                         <input type="text" name="ip" class="form-control" id="server_IPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}" required>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="server_FirewallMark">Firewall Mark</label>
+                        <input type="number" name="firewallmark" class="form-control" id="server_FirewallMark" placeholder="0" value="{{.Device.FirewallMark}}">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="server_RoutingTable">Routing Table</label>
+                        <input type="text" name="routingtable" class="form-control" id="server_RoutingTable" placeholder="auto" value="{{.Device.RoutingTable}}">
+                    </div>
+                </div>
                 <h3>Client's global configuration</h3>
                 <div class="form-row">
                     <div class="form-group required col-md-12">
@@ -94,7 +104,7 @@
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label for="server_MTU">Global MTU</label>
-                        <input type="number" name="mtu" class="form-control" id="server_MTU" placeholder="0" value="{{.Device.Mtu}}">
+                        <input type="number" name="mtu" class="form-control" id="server_MTU" placeholder="" value="{{.Device.Mtu}}">
                     </div>
                     <div class="form-group col-md-6">
                         <label for="server_PersistentKeepalive">Persistent Keepalive</label>
@@ -181,15 +191,15 @@
             <div class="form-row">
                 <div class="form-group col-md-4">
                     <label for="client_MTU">Global MTU</label>
-                    <input type="number" name="mtu" class="form-control" id="client_MTU" placeholder="0" value="{{.Device.Mtu}}">
+                    <input type="number" name="mtu" class="form-control" id="client_MTU" placeholder="" value="{{.Device.Mtu}}">
                 </div>
                 <div class="form-group col-md-4">
                     <label for="client_FirewallMark">Firewall Mark</label>
-                    <input type="number" name="firewallmark" class="form-control" id="client_FirewallMark" placeholder="0" value="{{.Device.FirewallMark}}">
+                    <input type="number" name="firewallmark" class="form-control" id="client_FirewallMark" placeholder="" value="{{.Device.FirewallMark}}">
                 </div>
                 <div class="form-group col-md-4">
                     <label for="client_RoutingTable">Routing Table</label>
-                    <input type="text" name="routingtable" class="form-control" id="client_RoutingTable" placeholder="0" value="{{.Device.RoutingTable}}">
+                    <input type="text" name="routingtable" class="form-control" id="client_RoutingTable" placeholder="auto" value="{{.Device.RoutingTable}}">
                 </div>
             </div>
             <h3>Interface configuration hooks</h3>
@@ -271,11 +281,11 @@
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="custom_FirewallMark">Firewall Mark</label>
-                    <input type="number" name="firewallmark" class="form-control" id="custom_FirewallMark" placeholder="0" value="{{.Device.FirewallMark}}">
+                    <input type="number" name="firewallmark" class="form-control" id="custom_FirewallMark" placeholder="" value="{{.Device.FirewallMark}}">
                 </div>
                 <div class="form-group col-md-6">
                     <label for="custom_RoutingTable">Routing Table</label>
-                    <input type="text" name="routingtable" class="form-control" id="custom_RoutingTable" placeholder="0" value="{{.Device.RoutingTable}}">
+                    <input type="text" name="routingtable" class="form-control" id="custom_RoutingTable" placeholder="auto" value="{{.Device.RoutingTable}}">
                 </div>
             </div>
             <div class="form-row">
@@ -312,7 +322,7 @@
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="custom_MTU">Global MTU</label>
-                    <input type="number" name="mtu" class="form-control" id="custom_MTU" placeholder="0" value="{{.Device.Mtu}}">
+                    <input type="number" name="mtu" class="form-control" id="custom_MTU" placeholder="" value="{{.Device.Mtu}}">
                 </div>
             </div>
             <h3>Interface configuration hooks</h3>

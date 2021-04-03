@@ -58,8 +58,6 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 		formDevice.DefaultPersistentKeepalive = 0
 		formDevice.SaveConfig = false
 	case wireguard.DeviceTypeServer:
-		formDevice.FirewallMark = 0
-		formDevice.RoutingTable = ""
 		formDevice.SaveConfig = false
 	case wireguard.DeviceTypeCustom:
 	}
