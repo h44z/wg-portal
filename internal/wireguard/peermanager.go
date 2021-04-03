@@ -7,12 +7,12 @@ import (
 	"crypto/md5"
 	"fmt"
 	"net"
-	"reflect"
 	"regexp"
 	"sort"
 	"strings"
-	"text/template"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -42,7 +42,6 @@ var cidrList validator.Func = func(fl validator.FieldLevel) bool {
 
 var ipList validator.Func = func(fl validator.FieldLevel) bool {
 	ipListStr := fl.Field().String()
-
 	ipList := common.ParseStringList(ipListStr)
 	for i := range ipList {
 		ip := net.ParseIP(ipList[i])
@@ -65,15 +64,16 @@ func init() {
 //
 
 type Peer struct {
-	Peer   *wgtypes.Peer `gorm:"-"`                     // WireGuard peer
-	Device *Device       `gorm:"foreignKey:DeviceName"` // linked WireGuard device
+	Peer   *wgtypes.Peer `gorm:"-"`                                 // WireGuard peer
+	Device *Device       `gorm:"foreignKey:DeviceName" binding:"-"` // linked WireGuard device
 	Config string        `gorm:"-"`
 
-	UID                  string `form:"uid" binding:"alphanum"` // uid for html identification
-	DeviceName           string `gorm:"index"`
-	Identifier           string `form:"identifier" binding:"required,max=64"` // Identifier AND Email make a WireGuard peer unique
-	Email                string `gorm:"index" form:"mail" binding:"omitempty,email"`
-	IgnoreGlobalSettings bool   `form:"ignoreglobalsettings"`
+	UID                  string     `form:"uid" binding:"required,alphanum"` // uid for html identification
+	DeviceName           string     `gorm:"index" form:"device" binding:"required"`
+	DeviceType           DeviceType `gorm:"-" form:"devicetype" binding:"required,oneof=client server custom"`
+	Identifier           string     `form:"identifier" binding:"required,max=64"` // Identifier AND Email make a WireGuard peer unique
+	Email                string     `gorm:"index" form:"mail" binding:"required,email"`
+	IgnoreGlobalSettings bool       `form:"ignoreglobalsettings"`
 
 	IsOnline          bool   `gorm:"-"`
 	IsNew             bool   `gorm:"-"`
@@ -81,16 +81,19 @@ type Peer struct {
 	LastHandshakeTime string `gorm:"-"`
 
 	// Core WireGuard Settings
-	PublicKey           string `gorm:"primaryKey" form:"pubkey" binding:"required,base64"`
+	PublicKey           string `gorm:"primaryKey" form:"pubkey" binding:"required,base64"` // the public key of the peer itself
 	PresharedKey        string `form:"presharedkey" binding:"omitempty,base64"`
 	AllowedIPsStr       string `form:"allowedip" binding:"cidrlist"` // a comma separated list of IPs that are used in the client config file
 	Endpoint            string `form:"endpoint" binding:"omitempty,hostname_port"`
 	PersistentKeepalive int    `form:"keepalive" binding:"gte=0"`
 
 	// Misc. WireGuard Settings
-	PrivateKey string `form:"privkey" binding:"omitempty,base64"`
-	IPsStr     string `form:"ip" binding:"cidrlist"` // a comma separated list of IPs of the client
-	DNSStr     string `form:"dns" binding:"iplist"`  // comma separated list of the DNS servers for the client
+	EndpointPublicKey string `form:"endpointpubkey" binding:"required,base64"` // the public key of the remote endpoint
+	PrivateKey        string `form:"privkey" binding:"omitempty,base64"`
+	IPsStr            string `form:"ip" binding:"cidrlist,required_if=devicetype server"` // a comma separated list of IPs of the client
+	DNSStr            string `form:"dns" binding:"iplist"`                                // comma separated list of the DNS servers for the client
+	// Global Device Settings (can be ignored, only make sense if device is in server mode)
+	Mtu int `form:"mtu" binding:"gte=0,lte=1500"`
 
 	DeactivatedAt *time.Time
 	CreatedBy     string
@@ -131,40 +134,49 @@ func (p Peer) GetConfig() wgtypes.PeerConfig {
 		presharedKey = &presharedKeyTmp
 	}
 
+	var endpoint *net.UDPAddr
+	if p.Endpoint != "" {
+		addr, err := net.ResolveUDPAddr("udp", p.Endpoint)
+		if err == nil {
+			endpoint = addr
+		}
+	}
+
+	var keepAlive *time.Duration
+	if p.PersistentKeepalive != 0 {
+		keepAliveDuration := time.Duration(p.PersistentKeepalive) * time.Second
+		keepAlive = &keepAliveDuration
+	}
+
+	peerAllowedIPs := p.GetAllowedIPs()
+	allowedIPs := make([]net.IPNet, len(peerAllowedIPs))
+	for i, ip := range peerAllowedIPs {
+		_, ipNet, err := net.ParseCIDR(ip)
+		if err == nil {
+			allowedIPs[i] = *ipNet
+		}
+	}
+
 	cfg := wgtypes.PeerConfig{
 		PublicKey:                   publicKey,
 		Remove:                      false,
 		UpdateOnly:                  false,
 		PresharedKey:                presharedKey,
-		Endpoint:                    nil,
-		PersistentKeepaliveInterval: nil,
+		Endpoint:                    endpoint,
+		PersistentKeepaliveInterval: keepAlive,
 		ReplaceAllowedIPs:           true,
-		AllowedIPs:                  make([]net.IPNet, len(p.GetIPAddresses())),
-	}
-	for i, ip := range p.GetIPAddresses() {
-		_, ipNet, err := net.ParseCIDR(ip)
-		if err == nil {
-			cfg.AllowedIPs[i] = *ipNet
-		}
+		AllowedIPs:                  allowedIPs,
 	}
 
 	return cfg
 }
 
 func (p Peer) GetConfigFile(device Device) ([]byte, error) {
-	tpl, err := template.New("client").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(ClientCfgTpl)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse client template")
-	}
-
 	var tplBuff bytes.Buffer
 
-	err = tpl.Execute(&tplBuff, struct {
-		Client Peer
-		Server Device
-	}{
-		Client: p,
-		Server: device,
+	err := templateCache.ExecuteTemplate(&tplBuff, "peer.tpl", gin.H{
+		"Peer":      p,
+		"Interface": device,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute client template")
@@ -190,26 +202,6 @@ func (p Peer) IsValid() bool {
 	}
 
 	return true
-}
-
-func (p Peer) ToMap() map[string]string {
-	out := make(map[string]string)
-
-	v := reflect.ValueOf(p)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	typ := v.Type()
-	for i := 0; i < v.NumField(); i++ {
-		// gets us a StructField
-		fi := typ.Field(i)
-		if tagv := fi.Tag.Get("form"); tagv != "" {
-			// set key of map to value in struct field
-			out[tagv] = v.Field(i).String()
-		}
-	}
-	return out
 }
 
 func (p Peer) GetConfigFileName() string {
@@ -238,7 +230,7 @@ type Device struct {
 
 	// Core WireGuard Settings (Interface section)
 	PrivateKey   string `form:"privkey" binding:"required,base64"`
-	ListenPort   int    `form:"port" binding:"gt=0,lt=65535"`
+	ListenPort   int    `form:"port" binding:"omitempty,gt=0,lt=65535,required_if=devicetype server"`
 	FirewallMark int32  `form:"firewallmark" binding:"gte=0"`
 	// Misc. WireGuard Settings
 	PublicKey    string `form:"pubkey" binding:"required,base64"`
@@ -253,7 +245,7 @@ type Device struct {
 	SaveConfig   bool   `form:"saveconfig"`                     // if set to `true', the configuration is saved from the current state of the interface upon shutdown, wg-quick addition
 
 	// Settings that are applied to all peer by default
-	DefaultEndpoint            string `form:"endpoint" binding:"omitempty,hostname_port"`
+	DefaultEndpoint            string `form:"endpoint" binding:"omitempty,hostname_port,required_if=devicetype server"`
 	DefaultAllowedIPsStr       string `form:"allowedip" binding:"cidrlist"` // comma separated list  of IPs that are used in the client config file
 	DefaultPersistentKeepalive int    `form:"keepalive" binding:"gte=0"`
 
@@ -317,28 +309,23 @@ func (d Device) GetConfig() wgtypes.Config {
 		privateKey = &pKey
 	}
 
+	fwMark := int(d.FirewallMark)
+
 	cfg := wgtypes.Config{
-		PrivateKey: privateKey,
-		ListenPort: &d.ListenPort,
+		PrivateKey:   privateKey,
+		ListenPort:   &d.ListenPort,
+		FirewallMark: &fwMark,
 	}
 
 	return cfg
 }
 
 func (d Device) GetConfigFile(peers []Peer) ([]byte, error) {
-	tpl, err := template.New("server").Funcs(template.FuncMap{"StringsJoin": strings.Join}).Parse(DeviceCfgTpl)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse server template")
-	}
-
 	var tplBuff bytes.Buffer
 
-	err = tpl.Execute(&tplBuff, struct {
-		Clients []Peer
-		Server  Device
-	}{
-		Clients: peers,
-		Server:  d,
+	err := templateCache.ExecuteTemplate(&tplBuff, "interface.tpl", gin.H{
+		"Peers":     peers,
+		"Interface": d,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute server template")

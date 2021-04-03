@@ -26,6 +26,9 @@
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="{{.Csrf}}">
             <input type="hidden" name="uid" value="{{.Peer.UID}}">
+            <input type="hidden" name="devicetype" value="{{.Device.Type}}">
+            <input type="hidden" name="device" value="{{.Device.DeviceName}}">
+            <input type="hidden" name="endpointpubkey" value="{{.Device.PublicKey}}">
             {{if .EditableKeys}}
                 <div class="form-row">
                     <div class="form-group col-md-12">
@@ -74,21 +77,25 @@
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group required col-md-12">
+                <div class="form-group col-md-12">
                     <label for="server_AllowedIP">Allowed IPs</label>
                     <input type="text" name="allowedip" class="form-control" id="server_AllowedIP" value="{{.Peer.AllowedIPsStr}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group required col-md-12">
+                <div class="form-group col-md-12">
                     <label for="server_DNS">Client DNS Servers</label>
                     <input type="text" name="dns" class="form-control" id="server_DNS" value="{{.Peer.DNSStr}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group required col-md-12">
+                <div class="form-group col-md-6">
                     <label for="server_PersistentKeepalive">Persistent Keepalive</label>
                     <input type="number" name="keepalive" class="form-control" id="server_PersistentKeepalive" placeholder="16" value="{{.Peer.PersistentKeepalive}}">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="server_MTU">Client MTU</label>
+                    <input type="number" name="mtu" class="form-control" id="server_MTU" placeholder="0" value="{{.Peer.MTU}}">
                 </div>
             </div>
 
@@ -127,6 +134,8 @@
             <input type="hidden" name="_csrf" value="{{.Csrf}}">
             <input type="hidden" name="uid" value="{{.Peer.UID}}">
             <input type="hidden" name="mail" value="{{.AdminEmail}}">
+            <input type="hidden" name="devicetype" value="{{.Device.Type}}">
+            <input type="hidden" name="device" value="{{.Device.DeviceName}}">
             {{if .EditableKeys}}
             <div class="form-row">
                 <div class="form-group col-md-12">
@@ -136,7 +145,7 @@
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
-                    <label for="client_PublicKey">Public Key</label>
+                    <label for="client_PublicKey">Peer Public Key</label>
                     <input type="text" name="pubkey" class="form-control" id="client_PublicKey" value="{{.Peer.PublicKey}}">
                 </div>
             </div>
@@ -170,12 +179,18 @@
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
+                    <label for="client_EndpointPublicKey">Endpoint Public Key</label>
+                    <input type="text" name="endpointpubkey" class="form-control" id="client_EndpointPublicKey" value="{{.Peer.EndpointPublicKey}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
                     <label for="client_AllowedIP">Allowed IPs</label>
                     <input type="text" name="allowedip" class="form-control" id="client_AllowedIP" value="{{.Peer.AllowedIPsStr}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group required col-md-12">
+                <div class="form-group col-md-12">
                     <label for="client_PersistentKeepalive">Persistent Keepalive</label>
                     <input type="number" name="keepalive" class="form-control" id="client_PersistentKeepalive" placeholder="16" value="{{.Peer.PersistentKeepalive}}">
                 </div>
@@ -209,6 +224,8 @@
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="{{.Csrf}}">
             <input type="hidden" name="uid" value="{{.Peer.UID}}">
+            <input type="hidden" name="devicetype" value="{{.Device.Type}}">
+            <input type="hidden" name="device" value="{{.Device.DeviceName}}">
             {{if .EditableKeys}}
             <div class="form-row">
                 <div class="form-group col-md-12">
@@ -251,33 +268,43 @@
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group required col-md-12">
+                <div class="form-group col-md-12">
                     <label for="custom_Endpoint">Endpoint Address</label>
                     <input type="text" name="endpoint" class="form-control" id="custom_Endpoint" value="{{.Peer.Endpoint}}">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
+                    <label for="custom_EndpointPublicKey">Endpoint Public Key</label>
+                    <input type="text" name="endpointpubkey" class="form-control" id="custom_EndpointPublicKey" value="{{.Peer.EndpointPublicKey}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
                     <label for="custom_IP">Peer IP Address</label>
                     <input type="text" name="ip" class="form-control" id="custom_IP" value="{{.Peer.IPsStr}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group required col-md-12">
+                <div class="form-group col-md-12">
                     <label for="custom_AllowedIP">Allowed IPs</label>
                     <input type="text" name="allowedip" class="form-control" id="custom_AllowedIP" value="{{.Peer.AllowedIPsStr}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group required col-md-12">
+                <div class="form-group col-md-12">
                     <label for="custom_DNS">Peer DNS Servers</label>
                     <input type="text" name="dns" class="form-control" id="custom_DNS" value="{{.Peer.DNSStr}}">
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group required col-md-12">
+                <div class="form-group col-md-6">
                     <label for="custom_PersistentKeepalive">Persistent Keepalive</label>
                     <input type="number" name="keepalive" class="form-control" id="custom_PersistentKeepalive" placeholder="16" value="{{.Peer.PersistentKeepalive}}">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="custom_MTU">Client MTU</label>
+                    <input type="number" name="mtu" class="form-control" id="custom_MTU" placeholder="0" value="{{.Peer.MTU}}">
                 </div>
             </div>
 
