@@ -28,7 +28,6 @@
             <input type="hidden" name="uid" value="{{.Peer.UID}}">
             <input type="hidden" name="devicetype" value="{{.Device.Type}}">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
-            <input type="hidden" name="endpointpubkey" value="{{.Peer.EndpointPublicKey}}">
             <input type="hidden" name="endpoint" value="{{.Peer.Endpoint}}">
             {{if .EditableKeys}}
                 <div class="form-row">
@@ -138,7 +137,6 @@
             <input type="hidden" name="devicetype" value="{{.Device.Type}}">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
             <input type="hidden" name="privkey" value="{{.Peer.PrivateKey}}">
-            <input type="hidden" name="pubkey" value="{{.Peer.PublicKey}}">
                         <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="client_Identifier">Endpoint Friendly Name</label>
@@ -153,8 +151,8 @@
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
-                    <label for="client_EndpointPublicKey">Endpoint Public Key</label>
-                    <input type="text" name="endpointpubkey" class="form-control" id="client_EndpointPublicKey" value="{{.Peer.EndpointPublicKey}}" required>
+                    <label for="client_PublicKey">Endpoint Public Key</label>
+                    <input type="text" name="pubkey" class="form-control" id="client_PublicKey" value="{{.Peer.PublicKey}}" required>
                 </div>
             </div>
             <div class="form-row">

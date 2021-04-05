@@ -52,14 +52,11 @@ PostDown = {{ .Interface.PostDown }}
 {{- if not .DeactivatedAt}}
 # -WGP- Peer: {{.Identifier}} / Updated: {{.UpdatedAt}} / Created: {{.CreatedAt}}
 # -WGP- Peer email: {{.Email}}
+{{- if .PrivateKey}}
 # -WGP- PrivateKey: {{.PrivateKey}}
+{{- end}}
 [Peer]
-{{- if eq $.Interface.Type "server"}}
 PublicKey = {{ .PublicKey }}
-{{- end}}
-{{- if eq $.Interface.Type "client"}}
-PublicKey = {{ .EndpointPublicKey }}
-{{- end}}
 {{- if .PresharedKey}}
 PresharedKey = {{ .PresharedKey }}
 {{- end}}

@@ -162,7 +162,6 @@ func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
 		peer.PersistentKeepalive = device.DefaultPersistentKeepalive
 		peer.DNSStr = device.DNSStr
 		peer.Mtu = device.Mtu
-		peer.EndpointPublicKey = device.PublicKey
 
 		if err := s.peers.UpdatePeer(peer); err != nil {
 			SetFlashMessage(c, err.Error(), "danger")

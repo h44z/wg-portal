@@ -23,37 +23,37 @@ func (s *Server) PrepareNewPeer(device string) (wireguard.Peer, error) {
 
 	peer := wireguard.Peer{}
 	peer.IsNew = true
-	peerIPs := make([]string, len(deviceIPs))
-	for i := range deviceIPs {
-		freeIP, err := s.peers.GetAvailableIp(device, deviceIPs[i])
-		if err != nil {
-			return wireguard.Peer{}, errors.WithMessage(err, "failed to get available IP addresses")
-		}
-		peerIPs[i] = freeIP
-	}
-	peer.SetIPAddresses(peerIPs...)
-	psk, err := wgtypes.GenerateKey()
-	if err != nil {
-		return wireguard.Peer{}, errors.Wrap(err, "failed to generate key")
-	}
-	key, err := wgtypes.GeneratePrivateKey()
-	if err != nil {
-		return wireguard.Peer{}, errors.Wrap(err, "failed to generate private key")
-	}
-	peer.PresharedKey = psk.String()
-	peer.PrivateKey = key.String()
-	peer.PublicKey = key.PublicKey().String()
-	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 
 	switch dev.Type {
 	case wireguard.DeviceTypeServer:
-		peer.EndpointPublicKey = dev.PublicKey
+		peerIPs := make([]string, len(deviceIPs))
+		for i := range deviceIPs {
+			freeIP, err := s.peers.GetAvailableIp(device, deviceIPs[i])
+			if err != nil {
+				return wireguard.Peer{}, errors.WithMessage(err, "failed to get available IP addresses")
+			}
+			peerIPs[i] = freeIP
+		}
+		peer.SetIPAddresses(peerIPs...)
+		psk, err := wgtypes.GenerateKey()
+		if err != nil {
+			return wireguard.Peer{}, errors.Wrap(err, "failed to generate key")
+		}
+		key, err := wgtypes.GeneratePrivateKey()
+		if err != nil {
+			return wireguard.Peer{}, errors.Wrap(err, "failed to generate private key")
+		}
+		peer.PresharedKey = psk.String()
+		peer.PrivateKey = key.String()
+		peer.PublicKey = key.PublicKey().String()
+		peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 		peer.Endpoint = dev.DefaultEndpoint
 		peer.DNSStr = dev.DNSStr
 		peer.PersistentKeepalive = dev.DefaultPersistentKeepalive
 		peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
 		peer.Mtu = dev.Mtu
 	case wireguard.DeviceTypeClient:
+		peer.UID = "newendpoint"
 	}
 
 	return peer, nil
@@ -90,7 +90,7 @@ func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 	peerIPs := peer.GetIPAddresses()
 
 	peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
-	if len(peerIPs) == 0 {
+	if len(peerIPs) == 0 && dev.Type == wireguard.DeviceTypeServer {
 		peerIPs = make([]string, len(deviceIPs))
 		for i := range deviceIPs {
 			freeIP, err := s.peers.GetAvailableIp(device, deviceIPs[i])
@@ -101,7 +101,7 @@ func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 		}
 		peer.SetIPAddresses(peerIPs...)
 	}
-	if peer.PrivateKey == "" { // if private key is empty create a new one
+	if peer.PrivateKey == "" && dev.Type == wireguard.DeviceTypeServer { // if private key is empty create a new one
 		psk, err := wgtypes.GenerateKey()
 		if err != nil {
 			return errors.Wrap(err, "failed to generate key")
@@ -141,12 +141,7 @@ func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 	var err error
 	switch {
 	case peer.DeactivatedAt != nil && *peer.DeactivatedAt == updateTime:
-		switch dev.Type {
-		case wireguard.DeviceTypeServer:
-			err = s.wg.RemovePeer(peer.DeviceName, peer.PublicKey)
-		case wireguard.DeviceTypeClient:
-			err = s.wg.RemovePeer(peer.DeviceName, peer.EndpointPublicKey)
-		}
+		err = s.wg.RemovePeer(peer.DeviceName, peer.PublicKey)
 	case peer.DeactivatedAt == nil && currentPeer.Peer != nil:
 		err = s.wg.UpdatePeer(peer.DeviceName, peer.GetConfig(&dev))
 	case peer.DeactivatedAt == nil && currentPeer.Peer == nil:
@@ -155,6 +150,8 @@ func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to update WireGuard peer")
 	}
+
+	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 
 	// Update in database
 	if err := s.peers.UpdatePeer(peer); err != nil {
@@ -166,18 +163,8 @@ func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 
 // DeletePeer removes the peer from the physical WireGuard interface and the database.
 func (s *Server) DeletePeer(peer wireguard.Peer) error {
-	dev := s.peers.GetDevice(peer.DeviceName)
-
-	var publicKey string
-	switch dev.Type {
-	case wireguard.DeviceTypeServer:
-		publicKey = peer.PublicKey
-	case wireguard.DeviceTypeClient:
-		publicKey = peer.EndpointPublicKey
-	}
-
 	// Delete WireGuard peer
-	if err := s.wg.RemovePeer(peer.DeviceName, publicKey); err != nil {
+	if err := s.wg.RemovePeer(peer.DeviceName, peer.PublicKey); err != nil {
 		return errors.WithMessage(err, "failed to remove WireGuard peer")
 	}
 

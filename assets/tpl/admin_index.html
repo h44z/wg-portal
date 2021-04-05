@@ -163,7 +163,7 @@
                             <span title="Online status" class="online-status" id="online-{{$p.UID}}" data-pkey="{{$p.PublicKey}}"><i class="fas fa-unlink"></i></span>
                         </th>
                         <td>{{$p.Identifier}}</td>
-                        <td>{{if eq $.Device.Type "server"}}{{$p.PublicKey}}{{end}}{{if eq $.Device.Type "client"}}{{$p.EndpointPublicKey}}{{end}}</td>
+                        <td>{{$p.PublicKey}}</td>
                         <td>{{$p.Email}}</td>
                         <td>{{$p.IPsStr}}</td>
                         <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{{$p.LastHandshakeTime}}">{{$p.LastHandshake}}</span></td>

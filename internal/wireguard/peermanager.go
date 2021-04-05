@@ -88,10 +88,9 @@ type Peer struct {
 	PersistentKeepalive int    `form:"keepalive" binding:"gte=0"`
 
 	// Misc. WireGuard Settings
-	EndpointPublicKey string `form:"endpointpubkey" binding:"required,base64"` // the public key of the remote endpoint
-	PrivateKey        string `form:"privkey" binding:"omitempty,base64"`
-	IPsStr            string `form:"ip" binding:"cidrlist,required_if=DeviceType server"` // a comma separated list of IPs of the client
-	DNSStr            string `form:"dns" binding:"iplist"`                                // comma separated list of the DNS servers for the client
+	PrivateKey string `form:"privkey" binding:"omitempty,base64"`
+	IPsStr     string `form:"ip" binding:"cidrlist,required_if=DeviceType server"` // a comma separated list of IPs of the client
+	DNSStr     string `form:"dns" binding:"iplist"`                                // comma separated list of the DNS servers for the client
 	// Global Device Settings (can be ignored, only make sense if device is in server mode)
 	Mtu int `form:"mtu" binding:"gte=0,lte=1500"`
 
@@ -126,14 +125,8 @@ func (p Peer) GetAllowedIPs() []string {
 	return common.ParseStringList(p.AllowedIPsStr)
 }
 
-func (p Peer) GetConfig(dev *Device) wgtypes.PeerConfig {
-	var publicKey wgtypes.Key
-	switch dev.Type {
-	case DeviceTypeServer:
-		publicKey, _ = wgtypes.ParseKey(p.PublicKey)
-	case DeviceTypeClient:
-		publicKey, _ = wgtypes.ParseKey(p.EndpointPublicKey)
-	}
+func (p Peer) GetConfig(_ *Device) wgtypes.PeerConfig {
+	publicKey, _ := wgtypes.ParseKey(p.PublicKey)
 
 	var presharedKey *wgtypes.Key
 	if p.PresharedKey != "" {
@@ -432,18 +425,11 @@ func (m *PeerManager) validateOrCreatePeer(device string, wgPeer wgtypes.Peer) e
 			peer.PublicKey = wgPeer.PublicKey.String()
 			peer.Identifier = "Autodetected Client (" + peer.PublicKey[0:8] + ")"
 		} else if dev.Type == DeviceTypeClient {
-			// create a new key pair, not really needed but otherwise our "client exists" detection does not work...
-			key, err := wgtypes.GeneratePrivateKey()
-			if err != nil {
-				return errors.Wrap(err, "failed to generate dummy private key")
-			}
-			peer.PrivateKey = key.String()
-			peer.PublicKey = key.PublicKey().String()
-			peer.EndpointPublicKey = wgPeer.PublicKey.String()
+			peer.PublicKey = wgPeer.PublicKey.String()
 			if wgPeer.Endpoint != nil {
 				peer.Endpoint = wgPeer.Endpoint.String()
 			}
-			peer.Identifier = "Autodetected Endpoint (" + peer.EndpointPublicKey[0:8] + ")"
+			peer.Identifier = "Autodetected Endpoint (" + peer.PublicKey[0:8] + ")"
 		}
 		if wgPeer.PresharedKey != (wgtypes.Key{}) {
 			peer.PresharedKey = wgPeer.PresharedKey.String()
@@ -525,6 +511,7 @@ func (m *PeerManager) populatePeerData(peer *Peer) {
 }
 
 // fixPeerDefaultData tries to fill all required fields for the given peer
+// also tries to migrate data if the database schema changed
 func (m *PeerManager) fixPeerDefaultData(peer *Peer, device *Device) error {
 	updatePeer := false
 
@@ -532,10 +519,6 @@ func (m *PeerManager) fixPeerDefaultData(peer *Peer, device *Device) error {
 	case DeviceTypeServer:
 		if peer.Endpoint == "" {
 			peer.Endpoint = device.DefaultEndpoint
-			updatePeer = true
-		}
-		if peer.EndpointPublicKey == "" {
-			peer.EndpointPublicKey = device.PublicKey
 			updatePeer = true
 		}
 	case DeviceTypeClient:
