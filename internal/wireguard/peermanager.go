@@ -126,8 +126,15 @@ func (p Peer) GetAllowedIPs() []string {
 	return common.ParseStringList(p.AllowedIPsStr)
 }
 
-func (p Peer) GetConfig() wgtypes.PeerConfig {
-	publicKey, _ := wgtypes.ParseKey(p.PublicKey)
+func (p Peer) GetConfig(dev *Device) wgtypes.PeerConfig {
+	var publicKey wgtypes.Key
+	switch dev.Type {
+	case DeviceTypeServer:
+		publicKey, _ = wgtypes.ParseKey(p.PublicKey)
+	case DeviceTypeClient:
+		publicKey, _ = wgtypes.ParseKey(p.EndpointPublicKey)
+	}
+
 	var presharedKey *wgtypes.Key
 	if p.PresharedKey != "" {
 		presharedKeyTmp, _ := wgtypes.ParseKey(p.PresharedKey)
@@ -218,7 +225,6 @@ type DeviceType string
 const (
 	DeviceTypeServer DeviceType = "server"
 	DeviceTypeClient DeviceType = "client"
-	DeviceTypeCustom DeviceType = "custom"
 )
 
 type Device struct {
@@ -272,7 +278,6 @@ func (d Device) IsValid() bool {
 		if len(d.GetIPAddresses()) == 0 {
 			return false
 		}
-	case DeviceTypeCustom:
 	}
 
 	return true
@@ -360,6 +365,17 @@ func NewPeerManager(db *gorm.DB, wg *Manager) (*PeerManager, error) {
 		}
 	}
 
+	// validate and update existing peers if needed
+	for _, deviceName := range wg.Cfg.DeviceNames {
+		dev := pm.GetDevice(deviceName)
+		peers = pm.GetAllPeers(deviceName)
+		for i := range peers {
+			if err := pm.fixPeerDefaultData(&peers[i], &dev); err != nil {
+				return nil, errors.WithMessagef(err, "unable to fix peers for interface %s", deviceName)
+			}
+		}
+	}
+
 	return pm, nil
 }
 
@@ -406,16 +422,33 @@ func (m *PeerManager) InitFromPhysicalInterface() error {
 // assumption: server mode is used
 func (m *PeerManager) validateOrCreatePeer(device string, wgPeer wgtypes.Peer) error {
 	peer := Peer{}
-	m.db.Where("public_key = ?", wgPeer.PublicKey.String()).FirstOrInit(&peer)
+	m.db.Where("public_key = ? OR endpoint_public_key = ?", wgPeer.PublicKey.String(), wgPeer.PublicKey.String()).FirstOrInit(&peer)
+
+	dev := m.GetDevice(device)
 
 	if peer.PublicKey == "" { // peer not found, create
 		peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(wgPeer.PublicKey.String())))
-		peer.PublicKey = wgPeer.PublicKey.String()
+		if dev.Type == DeviceTypeServer {
+			peer.PublicKey = wgPeer.PublicKey.String()
+			peer.Identifier = "Autodetected Client (" + peer.PublicKey[0:8] + ")"
+		} else if dev.Type == DeviceTypeClient {
+			// create a new key pair, not really needed but otherwise our "client exists" detection does not work...
+			key, err := wgtypes.GeneratePrivateKey()
+			if err != nil {
+				return errors.Wrap(err, "failed to generate dummy private key")
+			}
+			peer.PrivateKey = key.String()
+			peer.PublicKey = key.PublicKey().String()
+			peer.EndpointPublicKey = wgPeer.PublicKey.String()
+			if wgPeer.Endpoint != nil {
+				peer.Endpoint = wgPeer.Endpoint.String()
+			}
+			peer.Identifier = "Autodetected Endpoint (" + peer.EndpointPublicKey[0:8] + ")"
+		}
 		if wgPeer.PresharedKey != (wgtypes.Key{}) {
 			peer.PresharedKey = wgPeer.PresharedKey.String()
 		}
 		peer.Email = "autodetected@example.com"
-		peer.Identifier = "Autodetected Client (" + peer.PublicKey[0:8] + ")"
 		peer.UpdatedAt = time.Now()
 		peer.CreatedAt = time.Now()
 		IPs := make([]string, len(wgPeer.AllowedIPs)) // use allowed IP's as the peer IP's
@@ -424,9 +457,6 @@ func (m *PeerManager) validateOrCreatePeer(device string, wgPeer wgtypes.Peer) e
 		}
 		peer.SetIPAddresses(IPs...)
 		peer.DeviceName = device
-		if wgPeer.Endpoint != nil {
-			peer.Endpoint = wgPeer.Endpoint.String() // TODO: do we need to import this for server mode?
-		}
 
 		res := m.db.Create(&peer)
 		if res.Error != nil {
@@ -492,6 +522,29 @@ func (m *PeerManager) populatePeerData(peer *Peer) {
 		peer.LastHandshakeTime = peer.Peer.LastHandshakeTime.Format(time.UnixDate)
 	}
 	peer.IsOnline = false
+}
+
+// fixPeerDefaultData tries to fill all required fields for the given peer
+func (m *PeerManager) fixPeerDefaultData(peer *Peer, device *Device) error {
+	updatePeer := false
+
+	switch device.Type {
+	case DeviceTypeServer:
+		if peer.Endpoint == "" {
+			peer.Endpoint = device.DefaultEndpoint
+			updatePeer = true
+		}
+		if peer.EndpointPublicKey == "" {
+			peer.EndpointPublicKey = device.PublicKey
+			updatePeer = true
+		}
+	case DeviceTypeClient:
+	}
+
+	if updatePeer {
+		return m.UpdatePeer(*peer)
+	}
+	return nil
 }
 
 // populateDeviceData enriches the device struct with WireGuard live data like interface information

@@ -160,6 +160,7 @@ func (s *Server) updateFormInSession(c *gin.Context, formData interface{}) error
 
 func (s *Server) setNewPeerFormInSession(c *gin.Context) (SessionData, error) {
 	currentSession := GetSessionData(c)
+
 	// If session does not contain a peer form ignore update
 	// If url contains a formerr parameter reset the form
 	if currentSession.FormData == nil || c.Query("formerr") == "" {

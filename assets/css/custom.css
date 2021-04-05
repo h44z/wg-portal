@@ -81,3 +81,11 @@ pre{background:#f7f7f9}iframe{overflow:hidden;border:none}@media (min-width: 768
     content:"*";
     color:red;
 }
+
+a.advanced-settings:before {
+    content: "Hide";
+}
+
+a.advanced-settings.collapsed:before {
+    content: "Show";
+}

@@ -8,7 +8,7 @@
 PrivateKey = {{ .Peer.PrivateKey }}
 Address = {{ .Peer.IPsStr }}
 
-# Misc. settings
+# Misc. settings (optional)
 {{- if .Peer.DNSStr}}
 DNS = {{ .Peer.DNSStr }}
 {{- end}}

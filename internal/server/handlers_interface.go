@@ -58,8 +58,6 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 		formDevice.DefaultPersistentKeepalive = 0
 		formDevice.SaveConfig = false
 	case wireguard.DeviceTypeServer:
-		formDevice.SaveConfig = false
-	case wireguard.DeviceTypeCustom:
 	}
 
 	// Update WireGuard device
@@ -127,6 +125,21 @@ func (s *Server) GetInterfaceConfig(c *gin.Context) {
 	return
 }
 
+func (s *Server) GetSaveConfig(c *gin.Context) {
+	currentSession := GetSessionData(c)
+
+	err := s.WriteWireGuardConfigFile(currentSession.DeviceName)
+	if err != nil {
+		SetFlashMessage(c, "Failed to save WireGuard config-file: "+err.Error(), "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/")
+		return
+	}
+
+	SetFlashMessage(c, "Updated WireGuard config-file", "success")
+	c.Redirect(http.StatusSeeOther, "/admin/")
+	return
+}
+
 func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
 	currentSession := GetSessionData(c)
 	device := s.peers.GetDevice(currentSession.DeviceName)
@@ -149,10 +162,7 @@ func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
 		peer.PersistentKeepalive = device.DefaultPersistentKeepalive
 		peer.DNSStr = device.DNSStr
 		peer.Mtu = device.Mtu
-
-		if device.Type == wireguard.DeviceTypeServer {
-			peer.EndpointPublicKey = device.PublicKey
-		}
+		peer.EndpointPublicKey = device.PublicKey
 
 		if err := s.peers.UpdatePeer(peer); err != nil {
 			SetFlashMessage(c, err.Error(), "danger")

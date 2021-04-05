@@ -91,11 +91,11 @@
             </div>
             <div class="form-row">
                 <div class="form-group col-md-6">
-                    <label for="server_PersistentKeepalive">Persistent Keepalive</label>
+                    <label for="server_PersistentKeepalive">Persistent Keepalive (0 = off)</label>
                     <input type="number" name="keepalive" class="form-control" id="server_PersistentKeepalive" placeholder="16" value="{{.Peer.PersistentKeepalive}}">
                 </div>
                 <div class="form-group col-md-6">
-                    <label for="server_MTU">Client MTU</label>
+                    <label for="server_MTU">Client MTU (0 = default)</label>
                     <input type="number" name="mtu" class="form-control" id="server_MTU" placeholder="" value="{{.Peer.Mtu}}">
                 </div>
             </div>
@@ -192,7 +192,7 @@
             </div>
             <div class="form-row">
                 <div class="form-group col-md-12">
-                    <label for="client_PersistentKeepalive">Persistent Keepalive</label>
+                    <label for="client_PersistentKeepalive">Persistent Keepalive (0 = off)</label>
                     <input type="number" name="keepalive" class="form-control" id="client_PersistentKeepalive" placeholder="16" value="{{.Peer.PersistentKeepalive}}">
                 </div>
             </div>
@@ -203,124 +203,6 @@
                         <input class="custom-control-input" name="isdisabled" type="checkbox" value="true" id="client_Disabled" {{if .Peer.DeactivatedAt}}checked{{end}}>
                         <label class="custom-control-label" for="client_Disabled">
                             Disabled
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a href="/admin" class="btn btn-secondary">Cancel</a>
-        </form>
-        {{end}}
-
-        <!-- custom mode -->
-        {{if eq .Device.Type "custom"}}
-        {{if .Peer.IsNew}}
-        <h1>Create a new peer</h1>
-        {{else}}
-        <h1>Edit peer: <strong>{{.Peer.Identifier}}</strong></h1>
-        {{end}}
-
-        <form method="post" enctype="multipart/form-data">
-            <input type="hidden" name="_csrf" value="{{.Csrf}}">
-            <input type="hidden" name="uid" value="{{.Peer.UID}}">
-            <input type="hidden" name="devicetype" value="{{.Device.Type}}">
-            <input type="hidden" name="device" value="{{.Device.DeviceName}}">
-            {{if .EditableKeys}}
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="custom_PrivateKey">Private Key</label>
-                    <input type="text" name="privkey" class="form-control" id="custom_PrivateKey" value="{{.Peer.PrivateKey}}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group required col-md-12">
-                    <label for="custom_PublicKey">Public Key</label>
-                    <input type="text" name="pubkey" class="form-control" id="custom_PublicKey" value="{{.Peer.PublicKey}}" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="custom_PresharedKey">Preshared Key</label>
-                    <input type="text" name="presharedkey" class="form-control" id="custom_PresharedKey" value="{{.Peer.PresharedKey}}">
-                </div>
-            </div>
-            {{else}}
-            <input type="hidden" name="privkey" value="{{.Peer.PrivateKey}}">
-            <input type="hidden" name="presharedkey" value="{{.Peer.PresharedKey}}">
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="custom_ro_PublicKey">Public Key</label>
-                    <input type="text" name="pubkey" readonly class="form-control" id="custom_ro_PublicKey" value="{{.Peer.PublicKey}}">
-                </div>
-            </div>
-            {{end}}
-            <div class="form-row">
-                <div class="form-group required col-md-12">
-                    <label for="custom_Identifier">Peer Friendly Name</label>
-                    <input type="text" name="identifier" class="form-control" id="custom_Identifier" value="{{.Peer.Identifier}}" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group required col-md-12">
-                    <label for="custom_Email">Peer Email Address</label>
-                    <input type="email" name="mail" class="form-control" id="custom_Email" value="{{.Peer.Email}}" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="custom_Endpoint">Endpoint Address</label>
-                    <input type="text" name="endpoint" class="form-control" id="custom_Endpoint" value="{{.Peer.Endpoint}}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group required col-md-12">
-                    <label for="custom_EndpointPublicKey">Endpoint Public Key</label>
-                    <input type="text" name="endpointpubkey" class="form-control" id="custom_EndpointPublicKey" value="{{.Peer.EndpointPublicKey}}" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="custom_IP">Peer IP Address</label>
-                    <input type="text" name="ip" class="form-control" id="custom_IP" value="{{.Peer.IPsStr}}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="custom_AllowedIP">Allowed IPs</label>
-                    <input type="text" name="allowedip" class="form-control" id="custom_AllowedIP" value="{{.Peer.AllowedIPsStr}}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="custom_DNS">Peer DNS Servers</label>
-                    <input type="text" name="dns" class="form-control" id="custom_DNS" value="{{.Peer.DNSStr}}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="custom_PersistentKeepalive">Persistent Keepalive</label>
-                    <input type="number" name="keepalive" class="form-control" id="custom_PersistentKeepalive" placeholder="16" value="{{.Peer.PersistentKeepalive}}">
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="custom_MTU">Client MTU</label>
-                    <input type="number" name="mtu" class="form-control" id="custom_MTU" placeholder="" value="{{.Peer.Mtu}}">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <div class="custom-control custom-switch">
-                        <input class="custom-control-input" name="isdisabled" type="checkbox" value="true" id="custom_Disabled" {{if .Peer.DeactivatedAt}}checked{{end}}>
-                        <label class="custom-control-label" for="custom_Disabled">
-                            Disabled
-                        </label>
-                    </div>
-                    <div class="custom-control custom-switch">
-                        <input class="custom-control-input" name="ignoreglobalsettings" type="checkbox" value="true" id="custom_IgnoreGlobalSettings" {{if .Peer.IgnoreGlobalSettings}}checked{{end}}>
-                        <label class="custom-control-label" for="custom_IgnoreGlobalSettings">
-                            Ignore global settings
                         </label>
                     </div>
                 </div>

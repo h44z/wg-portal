@@ -46,8 +46,6 @@ func (s *Server) PrepareNewPeer(device string) (wireguard.Peer, error) {
 	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 
 	switch dev.Type {
-	case wireguard.DeviceTypeCustom:
-		fallthrough
 	case wireguard.DeviceTypeServer:
 		peer.EndpointPublicKey = dev.PublicKey
 		peer.Endpoint = dev.DefaultEndpoint
@@ -121,7 +119,7 @@ func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 
 	// Create WireGuard interface
 	if peer.DeactivatedAt == nil {
-		if err := s.wg.AddPeer(device, peer.GetConfig()); err != nil {
+		if err := s.wg.AddPeer(device, peer.GetConfig(&dev)); err != nil {
 			return errors.WithMessage(err, "failed to add WireGuard peer")
 		}
 	}
@@ -137,6 +135,7 @@ func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 // UpdatePeer updates the physical WireGuard interface and the database.
 func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 	currentPeer := s.peers.GetPeerByKey(peer.PublicKey)
+	dev := s.peers.GetDevice(peer.DeviceName)
 
 	// Update WireGuard device
 	var err error
@@ -144,9 +143,9 @@ func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 	case peer.DeactivatedAt == &updateTime:
 		err = s.wg.RemovePeer(peer.DeviceName, peer.PublicKey)
 	case peer.DeactivatedAt == nil && currentPeer.Peer != nil:
-		err = s.wg.UpdatePeer(peer.DeviceName, peer.GetConfig())
+		err = s.wg.UpdatePeer(peer.DeviceName, peer.GetConfig(&dev))
 	case peer.DeactivatedAt == nil && currentPeer.Peer == nil:
-		err = s.wg.AddPeer(peer.DeviceName, peer.GetConfig())
+		err = s.wg.AddPeer(peer.DeviceName, peer.GetConfig(&dev))
 	}
 	if err != nil {
 		return errors.WithMessage(err, "failed to update WireGuard peer")
@@ -178,10 +177,11 @@ func (s *Server) DeletePeer(peer wireguard.Peer) error {
 // RestoreWireGuardInterface restores the state of the physical WireGuard interface from the database.
 func (s *Server) RestoreWireGuardInterface(device string) error {
 	activePeers := s.peers.GetActivePeers(device)
+	dev := s.peers.GetDevice(device)
 
 	for i := range activePeers {
 		if activePeers[i].Peer == nil {
-			if err := s.wg.AddPeer(device, activePeers[i].GetConfig()); err != nil {
+			if err := s.wg.AddPeer(device, activePeers[i].GetConfig(&dev)); err != nil {
 				return errors.WithMessage(err, "failed to add WireGuard peer")
 			}
 		}
