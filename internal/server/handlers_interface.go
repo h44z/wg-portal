@@ -27,7 +27,7 @@ func (s *Server) GetAdminEditInterface(c *gin.Context) {
 		"Static":       s.getStaticData(),
 		"Device":       currentSession.FormData.(wireguard.Device),
 		"EditableKeys": s.config.Core.EditableKeys,
-		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"DeviceNames":  s.GetDeviceNames(),
 		"Csrf":         csrf.GetToken(c),
 	})
 }

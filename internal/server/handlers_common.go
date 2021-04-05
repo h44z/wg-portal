@@ -23,7 +23,7 @@ func (s *Server) GetHandleError(c *gin.Context, code int, message, details strin
 		"Session":     GetSessionData(c),
 		"Static":      s.getStaticData(),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 	})
 }
 
@@ -36,7 +36,7 @@ func (s *Server) GetIndex(c *gin.Context) {
 		"Session":     currentSession,
 		"Static":      s.getStaticData(),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 	})
 }
 
@@ -104,7 +104,7 @@ func (s *Server) GetAdminIndex(c *gin.Context) {
 		"TotalPeers":  len(s.peers.GetAllPeers(currentSession.DeviceName)),
 		"Users":       s.users.GetUsers(),
 		"Device":      device,
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 	})
 }
 
@@ -143,7 +143,7 @@ func (s *Server) GetUserIndex(c *gin.Context) {
 		"TotalPeers":  len(peers),
 		"Users":       []users.User{*s.users.GetUser(currentSession.Email)},
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 	})
 }
 

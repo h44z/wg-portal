@@ -140,8 +140,13 @@ func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 	// Update WireGuard device
 	var err error
 	switch {
-	case peer.DeactivatedAt == &updateTime:
-		err = s.wg.RemovePeer(peer.DeviceName, peer.PublicKey)
+	case peer.DeactivatedAt != nil && *peer.DeactivatedAt == updateTime:
+		switch dev.Type {
+		case wireguard.DeviceTypeServer:
+			err = s.wg.RemovePeer(peer.DeviceName, peer.PublicKey)
+		case wireguard.DeviceTypeClient:
+			err = s.wg.RemovePeer(peer.DeviceName, peer.EndpointPublicKey)
+		}
 	case peer.DeactivatedAt == nil && currentPeer.Peer != nil:
 		err = s.wg.UpdatePeer(peer.DeviceName, peer.GetConfig(&dev))
 	case peer.DeactivatedAt == nil && currentPeer.Peer == nil:
@@ -161,8 +166,18 @@ func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 
 // DeletePeer removes the peer from the physical WireGuard interface and the database.
 func (s *Server) DeletePeer(peer wireguard.Peer) error {
+	dev := s.peers.GetDevice(peer.DeviceName)
+
+	var publicKey string
+	switch dev.Type {
+	case wireguard.DeviceTypeServer:
+		publicKey = peer.PublicKey
+	case wireguard.DeviceTypeClient:
+		publicKey = peer.EndpointPublicKey
+	}
+
 	// Delete WireGuard peer
-	if err := s.wg.RemovePeer(peer.DeviceName, peer.PublicKey); err != nil {
+	if err := s.wg.RemovePeer(peer.DeviceName, publicKey); err != nil {
 		return errors.WithMessage(err, "failed to remove WireGuard peer")
 	}
 
@@ -307,4 +322,15 @@ func (s *Server) CreateUserDefaultPeer(email, device string) error {
 	}
 
 	return nil
+}
+
+func (s *Server) GetDeviceNames() map[string]string {
+	devNames := make(map[string]string, len(s.wg.Cfg.DeviceNames))
+
+	for _, devName := range s.wg.Cfg.DeviceNames {
+		dev := s.peers.GetDevice(devName)
+		devNames[devName] = dev.DisplayName
+	}
+
+	return devNames
 }

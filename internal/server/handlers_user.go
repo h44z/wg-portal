@@ -58,7 +58,7 @@ func (s *Server) GetAdminUsersIndex(c *gin.Context) {
 		"Users":       dbUsers,
 		"TotalUsers":  len(s.users.GetUsers()),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 	})
 }
 
@@ -78,7 +78,7 @@ func (s *Server) GetAdminUsersEdit(c *gin.Context) {
 		"Static":      s.getStaticData(),
 		"User":        currentSession.FormData.(users.User),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 		"Epoch":       time.Time{},
 		"Csrf":        csrf.GetToken(c),
 	})
@@ -156,7 +156,7 @@ func (s *Server) GetAdminUsersCreate(c *gin.Context) {
 		"Static":      s.getStaticData(),
 		"User":        currentSession.FormData.(users.User),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 		"Epoch":       time.Time{},
 		"Csrf":        csrf.GetToken(c),
 	})

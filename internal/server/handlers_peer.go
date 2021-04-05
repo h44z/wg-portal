@@ -39,7 +39,7 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 		"Peer":         currentSession.FormData.(wireguard.Peer),
 		"EditableKeys": s.config.Core.EditableKeys,
 		"Device":       s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"DeviceNames":  s.GetDeviceNames(),
 		"AdminEmail":   s.config.Core.AdminUser,
 		"Csrf":         csrf.GetToken(c),
 	})
@@ -99,7 +99,7 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 		"Peer":         currentSession.FormData.(wireguard.Peer),
 		"EditableKeys": s.config.Core.EditableKeys,
 		"Device":       s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"DeviceNames":  s.GetDeviceNames(),
 		"AdminEmail":   s.config.Core.AdminUser,
 		"Csrf":         csrf.GetToken(c),
 	})
@@ -154,7 +154,7 @@ func (s *Server) GetAdminCreateLdapPeers(c *gin.Context) {
 		"Users":       s.users.GetFilteredAndSortedUsers("lastname", "asc", ""),
 		"FormData":    currentSession.FormData.(LdapCreateForm),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 		"Csrf":        csrf.GetToken(c),
 	})
 }

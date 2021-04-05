@@ -137,36 +137,9 @@
             <input type="hidden" name="mail" value="{{.AdminEmail}}">
             <input type="hidden" name="devicetype" value="{{.Device.Type}}">
             <input type="hidden" name="device" value="{{.Device.DeviceName}}">
-            {{if .EditableKeys}}
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="client_PrivateKey">Private Key</label>
-                    <input type="text" name="privkey" class="form-control" id="client_PrivateKey" value="{{.Peer.PrivateKey}}">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group required col-md-12">
-                    <label for="client_PublicKey">Peer Public Key</label>
-                    <input type="text" name="pubkey" class="form-control" id="client_PublicKey" value="{{.Peer.PublicKey}}" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="client_PresharedKey">Preshared Key</label>
-                    <input type="text" name="presharedkey" class="form-control" id="client_PresharedKey" value="{{.Peer.PresharedKey}}">
-                </div>
-            </div>
-            {{else}}
             <input type="hidden" name="privkey" value="{{.Peer.PrivateKey}}">
-            <input type="hidden" name="presharedkey" value="{{.Peer.PresharedKey}}">
-            <div class="form-row">
-                <div class="form-group col-md-12">
-                    <label for="client_ro_PublicKey">Public Key</label>
-                    <input type="text" name="pubkey" readonly class="form-control" id="client_ro_PublicKey" value="{{.Peer.PublicKey}}">
-                </div>
-            </div>
-            {{end}}
-            <div class="form-row">
+            <input type="hidden" name="pubkey" value="{{.Peer.PublicKey}}">
+                        <div class="form-row">
                 <div class="form-group required col-md-12">
                     <label for="client_Identifier">Endpoint Friendly Name</label>
                     <input type="text" name="identifier" class="form-control" id="client_Identifier" value="{{.Peer.Identifier}}" required>
@@ -182,6 +155,12 @@
                 <div class="form-group required col-md-12">
                     <label for="client_EndpointPublicKey">Endpoint Public Key</label>
                     <input type="text" name="endpointpubkey" class="form-control" id="client_EndpointPublicKey" value="{{.Peer.EndpointPublicKey}}" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="client_PresharedKey">Preshared Key</label>
+                    <input type="text" name="presharedkey" class="form-control" id="client_PresharedKey" value="{{.Peer.PresharedKey}}">
                 </div>
             </div>
             <div class="form-row">
