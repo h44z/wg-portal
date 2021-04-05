@@ -74,3 +74,36 @@ func GetDatabaseForConfig(cfg *DatabaseConfig) (db *gorm.DB, err error) {
 	db.Config.Logger = logger.New(logrus.StandardLogger(), logCfg)
 	return
 }
+
+type DatabaseMigrationInfo struct {
+	Version string `gorm:"primaryKey"`
+	Applied time.Time
+}
+
+func MigrateDatabase(db *gorm.DB, version string) error {
+	if err := db.AutoMigrate(&DatabaseMigrationInfo{}); err != nil {
+		return errors.Wrap(err, "failed to migrate version database")
+	}
+
+	newVersion := DatabaseMigrationInfo{
+		Version: version,
+		Applied: time.Now(),
+	}
+
+	existingMigration := DatabaseMigrationInfo{}
+	db.Where("version = ?", version).FirstOrInit(&existingMigration)
+
+	if existingMigration.Version == "" {
+		lastVersion := DatabaseMigrationInfo{}
+		db.Order("applied desc, version desc").FirstOrInit(&lastVersion)
+
+		// TODO: migrate database
+
+		res := db.Create(&newVersion)
+		if res.Error != nil {
+			return errors.Wrap(res.Error, "failed to write version to database")
+		}
+	}
+
+	return nil
+}

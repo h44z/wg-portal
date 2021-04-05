@@ -103,6 +103,10 @@ func (s *Server) Setup(ctx context.Context) error {
 	if err != nil {
 		return errors.WithMessage(err, "database setup failed")
 	}
+	err = common.MigrateDatabase(s.db, Version)
+	if err != nil {
+		return errors.WithMessage(err, "database migration failed")
+	}
 
 	// Setup http server
 	gin.SetMode(gin.DebugMode)
@@ -182,9 +186,6 @@ func (s *Server) Setup(ctx context.Context) error {
 	// Setup peer manager
 	if s.peers, err = wireguard.NewPeerManager(s.db, s.wg); err != nil {
 		return errors.WithMessage(err, "unable to setup peer manager")
-	}
-	if err = s.peers.InitFromPhysicalInterface(); err != nil {
-		return errors.WithMessagef(err, "unable to initialize peer manager")
 	}
 
 	for _, deviceName := range s.wg.Cfg.DeviceNames {

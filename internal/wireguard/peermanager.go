@@ -70,7 +70,7 @@ type Peer struct {
 
 	UID                  string     `form:"uid" binding:"required,alphanum"` // uid for html identification
 	DeviceName           string     `gorm:"index" form:"device" binding:"required"`
-	DeviceType           DeviceType `gorm:"-" form:"devicetype" binding:"required,oneof=client server custom"`
+	DeviceType           DeviceType `gorm:"-" form:"devicetype" binding:"required,oneof=client server"`
 	Identifier           string     `form:"identifier" binding:"required,max=64"` // Identifier AND Email make a WireGuard peer unique
 	Email                string     `gorm:"index" form:"mail" binding:"required,email"`
 	IgnoreGlobalSettings bool       `form:"ignoreglobalsettings"`
@@ -223,7 +223,7 @@ const (
 type Device struct {
 	Interface *wgtypes.Device `gorm:"-"`
 
-	Type        DeviceType `form:"devicetype" binding:"required,oneof=client server custom"`
+	Type        DeviceType `form:"devicetype" binding:"required,oneof=client server"`
 	DeviceName  string     `form:"device" gorm:"primaryKey" binding:"required,alphanum"`
 	DisplayName string     `form:"displayname" binding:"omitempty,max=200"`
 
@@ -344,8 +344,29 @@ type PeerManager struct {
 func NewPeerManager(db *gorm.DB, wg *Manager) (*PeerManager, error) {
 	pm := &PeerManager{db: db, wg: wg}
 
+	// check if old device table exists (from version <= 1.0.3), if so migrate it.
+	if db.Migrator().HasColumn(&Device{}, "endpoint") {
+		if err := db.Migrator().RenameColumn(&Device{}, "endpoint", "default_endpoint"); err != nil {
+			return nil, errors.Wrapf(err, "failed to migrate old database structure for column endpoint")
+		}
+	}
+	if db.Migrator().HasColumn(&Device{}, "allowed_ips_str") {
+		if err := db.Migrator().RenameColumn(&Device{}, "allowed_ips_str", "default_allowed_ips_str"); err != nil {
+			return nil, errors.Wrapf(err, "failed to migrate old database structure for column allowed_ips_str")
+		}
+	}
+	if db.Migrator().HasColumn(&Device{}, "persistent_keepalive") {
+		if err := db.Migrator().RenameColumn(&Device{}, "persistent_keepalive", "default_persistent_keepalive"); err != nil {
+			return nil, errors.Wrapf(err, "failed to migrate old database structure for column persistent_keepalive")
+		}
+	}
+
 	if err := pm.db.AutoMigrate(&Peer{}, &Device{}); err != nil {
 		return nil, errors.WithMessage(err, "failed to migrate peer database")
+	}
+
+	if err := pm.initFromPhysicalInterface(); err != nil {
+		return nil, errors.WithMessagef(err, "unable to initialize peer manager")
 	}
 
 	// check if peers without device name exist (from version <= 1.0.3), if so assign them to the default device.
@@ -361,7 +382,7 @@ func NewPeerManager(db *gorm.DB, wg *Manager) (*PeerManager, error) {
 	// validate and update existing peers if needed
 	for _, deviceName := range wg.Cfg.DeviceNames {
 		dev := pm.GetDevice(deviceName)
-		peers = pm.GetAllPeers(deviceName)
+		peers := pm.GetAllPeers(deviceName)
 		for i := range peers {
 			if err := pm.fixPeerDefaultData(&peers[i], &dev); err != nil {
 				return nil, errors.WithMessagef(err, "unable to fix peers for interface %s", deviceName)
@@ -372,9 +393,9 @@ func NewPeerManager(db *gorm.DB, wg *Manager) (*PeerManager, error) {
 	return pm, nil
 }
 
-// InitFromPhysicalInterface read all WireGuard peers from the WireGuard interface configuration. If a peer does not
+// initFromPhysicalInterface read all WireGuard peers from the WireGuard interface configuration. If a peer does not
 // exist in the local database, it gets created.
-func (m *PeerManager) InitFromPhysicalInterface() error {
+func (m *PeerManager) initFromPhysicalInterface() error {
 	for _, deviceName := range m.wg.Cfg.DeviceNames {
 		peers, err := m.wg.GetPeerList(deviceName)
 		if err != nil {
@@ -415,7 +436,7 @@ func (m *PeerManager) InitFromPhysicalInterface() error {
 // assumption: server mode is used
 func (m *PeerManager) validateOrCreatePeer(device string, wgPeer wgtypes.Peer) error {
 	peer := Peer{}
-	m.db.Where("public_key = ? OR endpoint_public_key = ?", wgPeer.PublicKey.String(), wgPeer.PublicKey.String()).FirstOrInit(&peer)
+	m.db.Where("public_key = ?", wgPeer.PublicKey.String()).FirstOrInit(&peer)
 
 	dev := m.GetDevice(device)
 
@@ -450,6 +471,14 @@ func (m *PeerManager) validateOrCreatePeer(device string, wgPeer wgtypes.Peer) e
 		}
 	}
 
+	if peer.DeviceName == "" {
+		peer.DeviceName = device
+		res := m.db.Save(&peer)
+		if res.Error != nil {
+			return errors.Wrapf(res.Error, "failed to update autodetected peer %s", peer.PublicKey)
+		}
+	}
+
 	return nil
 }
 
@@ -476,6 +505,15 @@ func (m *PeerManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []s
 		res := m.db.Create(&device)
 		if res.Error != nil {
 			return errors.Wrapf(res.Error, "failed to create autodetected device")
+		}
+	}
+
+	if device.Type == "" {
+		device.Type = DeviceTypeServer // from version <= 1.0.3, only server mode devices were supported
+
+		res := m.db.Save(&device)
+		if res.Error != nil {
+			return errors.Wrapf(res.Error, "failed to update autodetected device")
 		}
 	}
 
