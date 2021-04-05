@@ -147,8 +147,15 @@
                     <th scope="col" class="list-image-cell"></th><!-- Status and expand -->
                     <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{.Session.GetSortIcon "peers" "id"}}"></i></a></th>
                     <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "peers" "pubKey"}}"></i></a></th>
+                    {{if eq $.Device.Type "server"}}
                     <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "peers" "mail"}}"></i></a></th>
+                    {{end}}
+                    {{if eq $.Device.Type "server"}}
                     <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "peers" "ip"}}"></i></a></th>
+                    {{end}}
+                    {{if eq $.Device.Type "client"}}
+                    <th scope="col"><a href="?sort=endpoint">Endpoint <i class="fa fa-fw {{.Session.GetSortIcon "peers" "endpoint"}}"></i></a></th>
+                    {{end}}
                     <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{.Session.GetSortIcon "peers" "handshake"}}"></i></a></th>
                     <th scope="col"></th><!-- Actions -->
                 </tr>
@@ -164,8 +171,15 @@
                         </th>
                         <td>{{$p.Identifier}}</td>
                         <td>{{$p.PublicKey}}</td>
+                        {{if eq $.Device.Type "server"}}
                         <td>{{$p.Email}}</td>
+                        {{end}}
+                        {{if eq $.Device.Type "server"}}
                         <td>{{$p.IPsStr}}</td>
+                        {{end}}
+                        {{if eq $.Device.Type "client"}}
+                        <td>{{$p.Endpoint}}</td>
+                        {{end}}
                         <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{{$p.LastHandshakeTime}}">{{$p.LastHandshake}}</span></td>
                         <td>
                             {{if eq $.Session.IsAdmin true}}

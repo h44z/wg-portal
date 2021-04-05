@@ -89,3 +89,15 @@ a.advanced-settings:before {
 a.advanced-settings.collapsed:before {
     content: "Show";
 }
+
+.form-group.global-config label:after, .custom-control.global-config label:after {
+    content: "g";
+    color: #0057bb;
+    font-size: xx-small;
+    top: -5px;
+    position: absolute;
+}
+
+.text-blue {
+    color: #0057bb;
+}

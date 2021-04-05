@@ -574,39 +574,7 @@ func (m *PeerManager) GetFilteredAndSortedPeers(device, sortKey, sortDirection, 
 		}
 	}
 
-	sort.Slice(filteredPeers, func(i, j int) bool {
-		var sortValueLeft string
-		var sortValueRight string
-
-		switch sortKey {
-		case "id":
-			sortValueLeft = filteredPeers[i].Identifier
-			sortValueRight = filteredPeers[j].Identifier
-		case "pubKey":
-			sortValueLeft = filteredPeers[i].PublicKey
-			sortValueRight = filteredPeers[j].PublicKey
-		case "mail":
-			sortValueLeft = filteredPeers[i].Email
-			sortValueRight = filteredPeers[j].Email
-		case "ip":
-			sortValueLeft = filteredPeers[i].IPsStr
-			sortValueRight = filteredPeers[j].IPsStr
-		case "handshake":
-			if filteredPeers[i].Peer == nil {
-				return false
-			} else if filteredPeers[j].Peer == nil {
-				return true
-			}
-			sortValueLeft = filteredPeers[i].Peer.LastHandshakeTime.Format(time.RFC3339)
-			sortValueRight = filteredPeers[j].Peer.LastHandshakeTime.Format(time.RFC3339)
-		}
-
-		if sortDirection == "asc" {
-			return sortValueLeft < sortValueRight
-		} else {
-			return sortValueLeft > sortValueRight
-		}
-	})
+	sortPeers(sortKey, sortDirection, filteredPeers)
 
 	return filteredPeers
 }
@@ -619,6 +587,12 @@ func (m *PeerManager) GetSortedPeersForEmail(sortKey, sortDirection, email strin
 		m.populatePeerData(&peers[i])
 	}
 
+	sortPeers(sortKey, sortDirection, peers)
+
+	return peers
+}
+
+func sortPeers(sortKey string, sortDirection string, peers []Peer) {
 	sort.Slice(peers, func(i, j int) bool {
 		var sortValueLeft string
 		var sortValueRight string
@@ -636,6 +610,9 @@ func (m *PeerManager) GetSortedPeersForEmail(sortKey, sortDirection, email strin
 		case "ip":
 			sortValueLeft = peers[i].IPsStr
 			sortValueRight = peers[j].IPsStr
+		case "endpoint":
+			sortValueLeft = peers[i].Endpoint
+			sortValueRight = peers[j].Endpoint
 		case "handshake":
 			if peers[i].Peer == nil {
 				return true
@@ -652,8 +629,6 @@ func (m *PeerManager) GetSortedPeersForEmail(sortKey, sortDirection, email strin
 			return sortValueLeft > sortValueRight
 		}
 	})
-
-	return peers
 }
 
 func (m *PeerManager) GetDevice(device string) Device {

@@ -71,7 +71,7 @@
                             <input type="text" name="ip" class="form-control" id="server_IPs" placeholder="10.6.6.1/24" value="{{.Device.IPsStr}}" required>
                         </div>
                     </div>
-                    <h3>Client's global configuration</h3>
+                    <h3>Client's global configuration (<span class="text-blue">g</span>)</h3>
                     <div class="form-row">
                         <div class="form-group required col-md-12">
                             <label for="server_PublicEndpoint">Public Endpoint for Clients</label>
@@ -156,7 +156,7 @@
 
                     <button type="submit" class="btn btn-primary">Save</button>
                     <a href="/admin" class="btn btn-secondary">Cancel</a>
-                    <a href="/admin/device/applyglobals" class="btn btn-dark float-right">Apply Global Settings to clients</a>
+                    <a href="/admin/device/applyglobals" class="btn btn-dark float-right">Apply Global Settings (<span class="text-blue">g</span>) to clients</a>
                 </form>
             </div>
 

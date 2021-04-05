@@ -106,7 +106,7 @@ func NewConfig() *Config {
 	cfg.LDAP.DisabledAttribute = "userAccountControl"
 	cfg.LDAP.AdminLdapGroup = "CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL"
 
-	cfg.WG.DeviceNames = []string{"wg0", "wg1"}
+	cfg.WG.DeviceNames = []string{"wg0"}
 	cfg.WG.DefaultDeviceName = "wg0"
 	cfg.WG.ConfigDirectoryPath = "/etc/wireguard"
 	cfg.WG.ManageIPAddresses = true
