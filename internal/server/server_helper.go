@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/h44z/wg-portal/internal/common"
 	"github.com/h44z/wg-portal/internal/users"
 	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/pkg/errors"
@@ -20,50 +19,60 @@ import (
 // PrepareNewPeer initiates a new peer for the given WireGuard device.
 func (s *Server) PrepareNewPeer(device string) (wireguard.Peer, error) {
 	dev := s.peers.GetDevice(device)
+	deviceIPs := dev.GetIPAddresses()
 
 	peer := wireguard.Peer{}
 	peer.IsNew = true
-	peer.AllowedIPsStr = dev.AllowedIPsStr
-	peer.IPs = make([]string, len(dev.IPs))
-	for i := range dev.IPs {
-		freeIP, err := s.peers.GetAvailableIp(device, dev.IPs[i])
-		if err != nil {
-			return wireguard.Peer{}, errors.WithMessage(err, "failed to get available IP addresses")
+
+	switch dev.Type {
+	case wireguard.DeviceTypeServer:
+		peerIPs := make([]string, len(deviceIPs))
+		for i := range deviceIPs {
+			freeIP, err := s.peers.GetAvailableIp(device, deviceIPs[i])
+			if err != nil {
+				return wireguard.Peer{}, errors.WithMessage(err, "failed to get available IP addresses")
+			}
+			peerIPs[i] = freeIP
 		}
-		peer.IPs[i] = freeIP
+		peer.SetIPAddresses(peerIPs...)
+		psk, err := wgtypes.GenerateKey()
+		if err != nil {
+			return wireguard.Peer{}, errors.Wrap(err, "failed to generate key")
+		}
+		key, err := wgtypes.GeneratePrivateKey()
+		if err != nil {
+			return wireguard.Peer{}, errors.Wrap(err, "failed to generate private key")
+		}
+		peer.PresharedKey = psk.String()
+		peer.PrivateKey = key.String()
+		peer.PublicKey = key.PublicKey().String()
+		peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
+		peer.Endpoint = dev.DefaultEndpoint
+		peer.DNSStr = dev.DNSStr
+		peer.PersistentKeepalive = dev.DefaultPersistentKeepalive
+		peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
+		peer.Mtu = dev.Mtu
+	case wireguard.DeviceTypeClient:
+		peer.UID = "newendpoint"
 	}
-	peer.IPsStr = common.ListToString(peer.IPs)
-	psk, err := wgtypes.GenerateKey()
-	if err != nil {
-		return wireguard.Peer{}, errors.Wrap(err, "failed to generate key")
-	}
-	key, err := wgtypes.GeneratePrivateKey()
-	if err != nil {
-		return wireguard.Peer{}, errors.Wrap(err, "failed to generate private key")
-	}
-	peer.PresharedKey = psk.String()
-	peer.PrivateKey = key.String()
-	peer.PublicKey = key.PublicKey().String()
-	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 
 	return peer, nil
 }
 
-// CreatePeerByEmail creates a new peer for the given email. If no user with the specified email was found, a new one
-// will be created.
+// CreatePeerByEmail creates a new peer for the given email.
 func (s *Server) CreatePeerByEmail(device, email, identifierSuffix string, disabled bool) error {
-	user, err := s.users.GetOrCreateUser(email)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to load/create related user %s", email)
-	}
+	user := s.users.GetUser(email)
 
 	peer, err := s.PrepareNewPeer(device)
 	if err != nil {
 		return errors.WithMessage(err, "failed to prepare new peer")
 	}
 	peer.Email = email
-	peer.Identifier = fmt.Sprintf("%s %s (%s)", user.Firstname, user.Lastname, identifierSuffix)
-
+	if user != nil {
+		peer.Identifier = fmt.Sprintf("%s %s (%s)", user.Firstname, user.Lastname, identifierSuffix)
+	} else {
+		peer.Identifier = fmt.Sprintf("%s (%s)", email, identifierSuffix)
+	}
 	now := time.Now()
 	if disabled {
 		peer.DeactivatedAt = &now
@@ -77,19 +86,22 @@ func (s *Server) CreatePeerByEmail(device, email, identifierSuffix string, disab
 // This function also configures the new peer on the physical WireGuard interface if the peer is not deactivated.
 func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 	dev := s.peers.GetDevice(device)
-	peer.AllowedIPsStr = dev.AllowedIPsStr
-	if peer.IPs == nil || len(peer.IPs) == 0 {
-		peer.IPs = make([]string, len(dev.IPs))
-		for i := range dev.IPs {
-			freeIP, err := s.peers.GetAvailableIp(device, dev.IPs[i])
+	deviceIPs := dev.GetIPAddresses()
+	peerIPs := peer.GetIPAddresses()
+
+	peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
+	if len(peerIPs) == 0 && dev.Type == wireguard.DeviceTypeServer {
+		peerIPs = make([]string, len(deviceIPs))
+		for i := range deviceIPs {
+			freeIP, err := s.peers.GetAvailableIp(device, deviceIPs[i])
 			if err != nil {
 				return errors.WithMessage(err, "failed to get available IP addresses")
 			}
-			peer.IPs[i] = freeIP
+			peerIPs[i] = freeIP
 		}
-		peer.IPsStr = common.ListToString(peer.IPs)
+		peer.SetIPAddresses(peerIPs...)
 	}
-	if peer.PrivateKey == "" { // if private key is empty create a new one
+	if peer.PrivateKey == "" && dev.Type == wireguard.DeviceTypeServer { // if private key is empty create a new one
 		psk, err := wgtypes.GenerateKey()
 		if err != nil {
 			return errors.Wrap(err, "failed to generate key")
@@ -107,7 +119,7 @@ func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 
 	// Create WireGuard interface
 	if peer.DeactivatedAt == nil {
-		if err := s.wg.AddPeer(device, peer.GetConfig()); err != nil {
+		if err := s.wg.AddPeer(device, peer.GetConfig(&dev)); err != nil {
 			return errors.WithMessage(err, "failed to add WireGuard peer")
 		}
 	}
@@ -123,20 +135,23 @@ func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 // UpdatePeer updates the physical WireGuard interface and the database.
 func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 	currentPeer := s.peers.GetPeerByKey(peer.PublicKey)
+	dev := s.peers.GetDevice(peer.DeviceName)
 
 	// Update WireGuard device
 	var err error
 	switch {
-	case peer.DeactivatedAt == &updateTime:
+	case peer.DeactivatedAt != nil && *peer.DeactivatedAt == updateTime:
 		err = s.wg.RemovePeer(peer.DeviceName, peer.PublicKey)
 	case peer.DeactivatedAt == nil && currentPeer.Peer != nil:
-		err = s.wg.UpdatePeer(peer.DeviceName, peer.GetConfig())
+		err = s.wg.UpdatePeer(peer.DeviceName, peer.GetConfig(&dev))
 	case peer.DeactivatedAt == nil && currentPeer.Peer == nil:
-		err = s.wg.AddPeer(peer.DeviceName, peer.GetConfig())
+		err = s.wg.AddPeer(peer.DeviceName, peer.GetConfig(&dev))
 	}
 	if err != nil {
 		return errors.WithMessage(err, "failed to update WireGuard peer")
 	}
+
+	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 
 	// Update in database
 	if err := s.peers.UpdatePeer(peer); err != nil {
@@ -164,10 +179,11 @@ func (s *Server) DeletePeer(peer wireguard.Peer) error {
 // RestoreWireGuardInterface restores the state of the physical WireGuard interface from the database.
 func (s *Server) RestoreWireGuardInterface(device string) error {
 	activePeers := s.peers.GetActivePeers(device)
+	dev := s.peers.GetDevice(device)
 
 	for i := range activePeers {
 		if activePeers[i].Peer == nil {
-			if err := s.wg.AddPeer(device, activePeers[i].GetConfig()); err != nil {
+			if err := s.wg.AddPeer(device, activePeers[i].GetConfig(&dev)); err != nil {
 				return errors.WithMessage(err, "failed to add WireGuard peer")
 			}
 		}
@@ -293,4 +309,15 @@ func (s *Server) CreateUserDefaultPeer(email, device string) error {
 	}
 
 	return nil
+}
+
+func (s *Server) GetDeviceNames() map[string]string {
+	devNames := make(map[string]string, len(s.wg.Cfg.DeviceNames))
+
+	for _, devName := range s.wg.Cfg.DeviceNames {
+		dev := s.peers.GetDevice(devName)
+		devNames[devName] = dev.DisplayName
+	}
+
+	return devNames
 }

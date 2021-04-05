@@ -27,8 +27,8 @@
         <form class="form-inline my-2 my-lg-0" method="get">
             <div class="form-group mr-sm-2">
                 <select name="device" id="inputDevice" class="form-control device-selector">
-                    {{range $i, $d :=$.DeviceNames}}
-                    <option value="{{$d}}" {{if eq $d $.Session.DeviceName}}selected{{end}}>{{$d}}</option>
+                    {{range $d, $dn := $.DeviceNames}}
+                    <option value="{{$d}}" {{if eq $d $.Session.DeviceName}}selected{{end}}>{{$d}} {{if and (ne $dn "") (ne $d $dn)}}({{$dn}}){{end}}</option>
                     {{end}}
                 </select>
             </div>

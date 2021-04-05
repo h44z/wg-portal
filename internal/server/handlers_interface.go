@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -26,7 +27,7 @@ func (s *Server) GetAdminEditInterface(c *gin.Context) {
 		"Static":       s.getStaticData(),
 		"Device":       currentSession.FormData.(wireguard.Device),
 		"EditableKeys": s.config.Core.EditableKeys,
-		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"DeviceNames":  s.GetDeviceNames(),
 		"Csrf":         csrf.GetToken(c),
 	})
 }
@@ -44,12 +45,20 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 		return
 	}
 	// Clean list input
-	formDevice.IPs = common.ParseStringList(formDevice.IPsStr)
-	formDevice.AllowedIPs = common.ParseStringList(formDevice.AllowedIPsStr)
-	formDevice.DNS = common.ParseStringList(formDevice.DNSStr)
-	formDevice.IPsStr = common.ListToString(formDevice.IPs)
-	formDevice.AllowedIPsStr = common.ListToString(formDevice.AllowedIPs)
-	formDevice.DNSStr = common.ListToString(formDevice.DNS)
+	formDevice.IPsStr = common.ListToString(common.ParseStringList(formDevice.IPsStr))
+	formDevice.DefaultAllowedIPsStr = common.ListToString(common.ParseStringList(formDevice.DefaultAllowedIPsStr))
+	formDevice.DNSStr = common.ListToString(common.ParseStringList(formDevice.DNSStr))
+
+	// Clean interface parameters based on interface type
+	switch formDevice.Type {
+	case wireguard.DeviceTypeClient:
+		formDevice.ListenPort = 0
+		formDevice.DefaultEndpoint = ""
+		formDevice.DefaultAllowedIPsStr = ""
+		formDevice.DefaultPersistentKeepalive = 0
+		formDevice.SaveConfig = false
+	case wireguard.DeviceTypeServer:
+	}
 
 	// Update WireGuard device
 	err := s.wg.UpdateDevice(formDevice.DeviceName, formDevice.GetConfig())
@@ -80,7 +89,7 @@ func (s *Server) PostAdminEditInterface(c *gin.Context) {
 
 	// Update interface IP address
 	if s.config.WG.ManageIPAddresses {
-		if err := s.wg.SetIPAddress(currentSession.DeviceName, formDevice.IPs); err != nil {
+		if err := s.wg.SetIPAddress(currentSession.DeviceName, formDevice.GetIPAddresses()); err != nil {
 			_ = s.updateFormInSession(c, formDevice)
 			SetFlashMessage(c, "Failed to update ip address: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/device/edit?formerr=update")
@@ -116,21 +125,53 @@ func (s *Server) GetInterfaceConfig(c *gin.Context) {
 	return
 }
 
+func (s *Server) GetSaveConfig(c *gin.Context) {
+	currentSession := GetSessionData(c)
+
+	err := s.WriteWireGuardConfigFile(currentSession.DeviceName)
+	if err != nil {
+		SetFlashMessage(c, "Failed to save WireGuard config-file: "+err.Error(), "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/")
+		return
+	}
+
+	SetFlashMessage(c, "Updated WireGuard config-file", "success")
+	c.Redirect(http.StatusSeeOther, "/admin/")
+	return
+}
+
 func (s *Server) GetApplyGlobalConfig(c *gin.Context) {
 	currentSession := GetSessionData(c)
 	device := s.peers.GetDevice(currentSession.DeviceName)
 	peers := s.peers.GetAllPeers(device.DeviceName)
 
+	if device.Type == wireguard.DeviceTypeClient {
+		SetFlashMessage(c, "Cannot apply global configuration while interface is in client mode.", "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/device/edit")
+		return
+	}
+
+	updateCounter := 0
 	for _, peer := range peers {
-		peer.AllowedIPs = device.AllowedIPs
-		peer.AllowedIPsStr = device.AllowedIPsStr
+		if peer.IgnoreGlobalSettings {
+			continue
+		}
+
+		peer.AllowedIPsStr = device.DefaultAllowedIPsStr
+		peer.Endpoint = device.DefaultEndpoint
+		peer.PersistentKeepalive = device.DefaultPersistentKeepalive
+		peer.DNSStr = device.DNSStr
+		peer.Mtu = device.Mtu
+
 		if err := s.peers.UpdatePeer(peer); err != nil {
 			SetFlashMessage(c, err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/device/edit")
+			return
 		}
+		updateCounter++
 	}
 
-	SetFlashMessage(c, "Allowed IP's updated for all clients.", "success")
+	SetFlashMessage(c, fmt.Sprintf("Global configuration updated for %d clients.", updateCounter), "success")
 	c.Redirect(http.StatusSeeOther, "/admin/device/edit")
 	return
 }

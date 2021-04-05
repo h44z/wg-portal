@@ -18,7 +18,9 @@
         <div class="card">
             <div class="card-header">
                 <div class="d-flex align-items-center">
-                    <span class="mr-auto">Interface status for <strong>{{.Device.DeviceName}}</strong></span>
+                    <span class="mr-auto">Interface status for <strong>{{.Device.DeviceName}}</strong> {{if eq $.Device.Type "server"}}(server mode){{end}}{{if eq $.Device.Type "client"}}(client mode){{end}}</span>
+                    <a href="/admin/device/write?dev={{.Device.DeviceName}}" title="Write interface configuration"><i class="fas fa-save"></i></a>
+                    &nbsp;&nbsp;&nbsp;
                     <a href="/admin/device/download?dev={{.Device.DeviceName}}" title="Download interface configuration"><i class="fas fa-download"></i></a>
                     &nbsp;&nbsp;&nbsp;
                     <a href="/admin/device/edit?dev={{.Device.DeviceName}}" title="Edit interface settings"><i class="fas fa-cog"></i></a>
@@ -26,6 +28,7 @@
             </div>
             <div class="card-body">
                 <div class="row">
+                    {{if eq $.Device.Type "server"}}
                     <div class="col-sm-6">
                         <table class="table table-sm table-borderless device-status-table">
                             <tbody>
@@ -35,7 +38,7 @@
                             </tr>
                             <tr>
                                 <td>Public Endpoint:</td>
-                                <td>{{.Device.Endpoint}}</td>
+                                <td>{{.Device.DefaultEndpoint}}</td>
                             </tr>
                             <tr>
                                 <td>Listening Port:</td>
@@ -61,7 +64,7 @@
                             </tr>
                             <tr>
                                 <td>Default allowed IP's:</td>
-                                <td>{{.Device.AllowedIPsStr}}</td>
+                                <td>{{.Device.DefaultAllowedIPsStr}}</td>
                             </tr>
                             <tr>
                                 <td>Default DNS servers:</td>
@@ -73,22 +76,68 @@
                             </tr>
                             <tr>
                                 <td>Default Keepalive Interval:</td>
-                                <td>{{.Device.PersistentKeepalive}}</td>
+                                <td>{{.Device.DefaultPersistentKeepalive}}</td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
+                    {{end}}
+                    {{if eq $.Device.Type "client"}}
+                    <div class="col-sm-6">
+                        <table class="table table-sm table-borderless device-status-table">
+                            <tbody>
+                            <tr>
+                                <td>Public Key:</td>
+                                <td>{{.Device.PublicKey}}</td>
+                            </tr>
+                            <tr>
+                                <td>Enabled Endpoints:</td>
+                                <td>{{len .Device.Interface.Peers}}</td>
+                            </tr>
+                            <tr>
+                                <td>Total Endpoints:</td>
+                                <td>{{.TotalPeers}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-sm-6">
+                        <table class="table table-sm table-borderless device-status-table">
+                            <tbody>
+                            <tr>
+                                <td>IP Address:</td>
+                                <td>{{.Device.IPsStr}}</td>
+                            </tr>
+                            <tr>
+                                <td>DNS servers:</td>
+                                <td>{{.Device.DNSStr}}</td>
+                            </tr>
+                            <tr>
+                                <td>Default MTU:</td>
+                                <td>{{.Device.Mtu}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {{end}}
                 </div>
 
             </div>
         </div>
         <div class="mt-4 row">
             <div class="col-sm-10 col-12">
+                {{if eq $.Device.Type "server"}}
                 <h2 class="mt-2">Current VPN Peers</h2>
+                {{end}}
+                {{if eq $.Device.Type "client"}}
+                <h2 class="mt-2">Current VPN Endpoints</h2>
+                {{end}}
             </div>
             <div class="col-sm-2 col-12 text-right">
+                {{if eq $.Device.Type "server"}}
                 <a href="/admin/peer/createldap" title="Add multiple peers" class="btn btn-primary"><i class="fa fa-fw fa-user-plus"></i></a>
-                <a href="/admin/peer/create" title="Manually add a peer" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
+                {{end}}
+                <a href="/admin/peer/create" title="Add a peer" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
             </div>
         </div>
         <div class="mt-2 table-responsive">
@@ -98,8 +147,15 @@
                     <th scope="col" class="list-image-cell"></th><!-- Status and expand -->
                     <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{.Session.GetSortIcon "peers" "id"}}"></i></a></th>
                     <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "peers" "pubKey"}}"></i></a></th>
+                    {{if eq $.Device.Type "server"}}
                     <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "peers" "mail"}}"></i></a></th>
+                    {{end}}
+                    {{if eq $.Device.Type "server"}}
                     <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "peers" "ip"}}"></i></a></th>
+                    {{end}}
+                    {{if eq $.Device.Type "client"}}
+                    <th scope="col"><a href="?sort=endpoint">Endpoint <i class="fa fa-fw {{.Session.GetSortIcon "peers" "endpoint"}}"></i></a></th>
+                    {{end}}
                     <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{.Session.GetSortIcon "peers" "handshake"}}"></i></a></th>
                     <th scope="col"></th><!-- Actions -->
                 </tr>
@@ -115,8 +171,15 @@
                         </th>
                         <td>{{$p.Identifier}}</td>
                         <td>{{$p.PublicKey}}</td>
+                        {{if eq $.Device.Type "server"}}
                         <td>{{$p.Email}}</td>
+                        {{end}}
+                        {{if eq $.Device.Type "server"}}
                         <td>{{$p.IPsStr}}</td>
+                        {{end}}
+                        {{if eq $.Device.Type "client"}}
+                        <td>{{$p.Endpoint}}</td>
+                        {{end}}
                         <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{{$p.LastHandshakeTime}}">{{$p.LastHandshake}}</span></td>
                         <td>
                             {{if eq $.Session.IsAdmin true}}
@@ -133,9 +196,11 @@
                                             <li class="nav-item">
                                                 <a class="nav-link active" data-toggle="tab" href="#t1{{$p.UID}}">Personal</a>
                                             </li>
+                                            {{if eq $.Device.Type "server"}}
                                             <li class="nav-item">
                                                 <a class="nav-link" data-toggle="tab" href="#t2{{$p.UID}}">Configuration</a>
                                             </li>
+                                            {{end}}
                                             <li class="nav-item">
                                                 <a class="nav-link" data-toggle="tab" href="#t3{{$p.UID}}">Danger Zone</a>
                                             </li>
@@ -161,22 +226,28 @@
                                                     <p class="ml-4">{{if $p.DeactivatedAt}}-{{else}}<i class="fas fa-long-arrow-alt-down" title="Download"></i> {{formatBytes $p.Peer.ReceiveBytes}} / <i class="fas fa-long-arrow-alt-up" title="Upload"></i> {{formatBytes $p.Peer.TransmitBytes}}{{end}}</p>
                                                 {{end}}
                                             </div>
+                                            {{if eq $.Device.Type "server"}}
                                             <div id="t2{{$p.UID}}" class="tab-pane fade">
                                                 <pre>{{$p.Config}}</pre>
                                             </div>
+                                            {{end}}
                                             <div id="t3{{$p.UID}}" class="tab-pane fade">
                                                 <a href="/admin/peer/delete?pkey={{$p.PublicKey}}" class="btn btn-danger" title="Delete peer">Delete</a>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
+                                        {{if eq $.Device.Type "server"}}
                                         <img class="list-image-large" src="/user/qrcode?pkey={{$p.PublicKey}}"/>
+                                        {{end}}
                                     </div>
                                     <div class="col-md-3">
+                                        {{if eq $.Device.Type "server"}}
                                         <div class="float-right mt-5">
                                         <a href="/admin/peer/download?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Download configuration">Download</a>
                                         <a href="/admin/peer/email?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Send configuration via Email">Email</a>
                                         </div>
+                                        {{end}}
                                     </div>
                                 </div>
                             </div>

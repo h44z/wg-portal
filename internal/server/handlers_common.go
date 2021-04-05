@@ -23,7 +23,7 @@ func (s *Server) GetHandleError(c *gin.Context, code int, message, details strin
 		"Session":     GetSessionData(c),
 		"Static":      s.getStaticData(),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 	})
 }
 
@@ -36,7 +36,7 @@ func (s *Server) GetIndex(c *gin.Context) {
 		"Session":     currentSession,
 		"Static":      s.getStaticData(),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 	})
 }
 
@@ -104,7 +104,7 @@ func (s *Server) GetAdminIndex(c *gin.Context) {
 		"TotalPeers":  len(s.peers.GetAllPeers(currentSession.DeviceName)),
 		"Users":       s.users.GetUsers(),
 		"Device":      device,
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 	})
 }
 
@@ -143,7 +143,7 @@ func (s *Server) GetUserIndex(c *gin.Context) {
 		"TotalPeers":  len(peers),
 		"Users":       []users.User{*s.users.GetUser(currentSession.Email)},
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 	})
 }
 
@@ -160,6 +160,7 @@ func (s *Server) updateFormInSession(c *gin.Context, formData interface{}) error
 
 func (s *Server) setNewPeerFormInSession(c *gin.Context) (SessionData, error) {
 	currentSession := GetSessionData(c)
+
 	// If session does not contain a peer form ignore update
 	// If url contains a formerr parameter reset the form
 	if currentSession.FormData == nil || c.Query("formerr") == "" {

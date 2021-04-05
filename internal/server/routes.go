@@ -32,6 +32,7 @@ func SetupRoutes(s *Server) {
 	admin.GET("/device/edit", s.GetAdminEditInterface)
 	admin.POST("/device/edit", s.PostAdminEditInterface)
 	admin.GET("/device/download", s.GetInterfaceConfig)
+	admin.GET("/device/write", s.GetSaveConfig)
 	admin.GET("/device/applyglobals", s.GetApplyGlobalConfig)
 	admin.GET("/peer/edit", s.GetAdminEditPeer)
 	admin.POST("/peer/edit", s.PostAdminEditPeer)

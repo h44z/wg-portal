@@ -39,7 +39,8 @@ func (s *Server) GetAdminEditPeer(c *gin.Context) {
 		"Peer":         currentSession.FormData.(wireguard.Peer),
 		"EditableKeys": s.config.Core.EditableKeys,
 		"Device":       s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"DeviceNames":  s.GetDeviceNames(),
+		"AdminEmail":   s.config.Core.AdminUser,
 		"Csrf":         csrf.GetToken(c),
 	})
 }
@@ -61,10 +62,8 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	}
 
 	// Clean list input
-	formPeer.IPs = common.ParseStringList(formPeer.IPsStr)
-	formPeer.AllowedIPs = common.ParseStringList(formPeer.AllowedIPsStr)
-	formPeer.IPsStr = common.ListToString(formPeer.IPs)
-	formPeer.AllowedIPsStr = common.ListToString(formPeer.AllowedIPs)
+	formPeer.IPsStr = common.ListToString(common.ParseStringList(formPeer.IPsStr))
+	formPeer.AllowedIPsStr = common.ListToString(common.ParseStringList(formPeer.AllowedIPsStr))
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
@@ -100,7 +99,8 @@ func (s *Server) GetAdminCreatePeer(c *gin.Context) {
 		"Peer":         currentSession.FormData.(wireguard.Peer),
 		"EditableKeys": s.config.Core.EditableKeys,
 		"Device":       s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames":  s.wg.Cfg.DeviceNames,
+		"DeviceNames":  s.GetDeviceNames(),
+		"AdminEmail":   s.config.Core.AdminUser,
 		"Csrf":         csrf.GetToken(c),
 	})
 }
@@ -119,10 +119,8 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	}
 
 	// Clean list input
-	formPeer.IPs = common.ParseStringList(formPeer.IPsStr)
-	formPeer.AllowedIPs = common.ParseStringList(formPeer.AllowedIPsStr)
-	formPeer.IPsStr = common.ListToString(formPeer.IPs)
-	formPeer.AllowedIPsStr = common.ListToString(formPeer.AllowedIPs)
+	formPeer.IPsStr = common.ListToString(common.ParseStringList(formPeer.IPsStr))
+	formPeer.AllowedIPsStr = common.ListToString(common.ParseStringList(formPeer.AllowedIPsStr))
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
@@ -156,7 +154,7 @@ func (s *Server) GetAdminCreateLdapPeers(c *gin.Context) {
 		"Users":       s.users.GetFilteredAndSortedUsers("lastname", "asc", ""),
 		"FormData":    currentSession.FormData.(LdapCreateForm),
 		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.wg.Cfg.DeviceNames,
+		"DeviceNames": s.GetDeviceNames(),
 		"Csrf":        csrf.GetToken(c),
 	})
 }
@@ -177,7 +175,7 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 	emails := common.ParseStringList(formData.Emails)
 	for i := range emails {
 		// TODO: also check email addr for validity?
-		if !strings.ContainsRune(emails[i], '@') || s.users.GetUser(emails[i]) == nil {
+		if !strings.ContainsRune(emails[i], '@') {
 			_ = s.updateFormInSession(c, formData)
 			SetFlashMessage(c, "invalid email address: "+emails[i], "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=mail")
@@ -328,7 +326,7 @@ func (s *Server) GetPeerStatus(c *gin.Context) {
 	isOnline := false
 	ping := make(chan bool)
 	defer close(ping)
-	for _, cidr := range peer.IPs {
+	for _, cidr := range peer.GetIPAddresses() {
 		ip, _, _ := net.ParseCIDR(cidr)
 		var ra *net.IPAddr
 		if common.IsIPv6(ip.String()) {

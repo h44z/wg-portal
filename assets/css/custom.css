@@ -81,3 +81,23 @@ pre{background:#f7f7f9}iframe{overflow:hidden;border:none}@media (min-width: 768
     content:"*";
     color:red;
 }
+
+a.advanced-settings:before {
+    content: "Hide";
+}
+
+a.advanced-settings.collapsed:before {
+    content: "Show";
+}
+
+.form-group.global-config label:after, .custom-control.global-config label:after {
+    content: "g";
+    color: #0057bb;
+    font-size: xx-small;
+    top: -5px;
+    position: absolute;
+}
+
+.text-blue {
+    color: #0057bb;
+}
