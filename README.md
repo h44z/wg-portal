@@ -94,6 +94,102 @@ make build-cross-plat
 The compiled binary will be located in the dist folder.
 A detailed description for using this software with a raspberry pi can be found in the [README-RASPBERRYPI.md](README-RASPBERRYPI.md).
 
+## Configuration
+You can configure WireGuard Portal using either environment variables or a yaml configuration file.
+The filepath of the yaml configuration file defaults to **config.yml** in the working directory of the executable.
+It is possible to override the configuration filepath using the environment variable **CONFIG_FILE**.
+For example: `CONFIG_FILE=/home/test/config.yml ./wg-portal-amd64`.
+
+### Configuration Options
+The following configuration options are available:
+
+| environment           | yaml              | yaml_parent | default_value                                   | description                                                                                                                          |
+|-----------------------|-------------------|-------------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| LISTENING_ADDRESS     | listeningAddress  | core        | :8123                                           | The address on which the web server is listening. Optional IP address and port, e.g.: 127.0.0.1:8080.                                |
+| EXTERNAL_URL          | externalUrl       | core        | http://localhost:8123                           | The external URL where the web server is reachable. This link is used in emails that are created by the WireGuard Portal.            |
+| WEBSITE_TITLE         | title             | core        | WireGuard VPN                                   | The website title.                                                                                                                   |
+| COMPANY_NAME          | company           | core        | WireGuard Portal                                | The company name (for branding).                                                                                                     |
+| MAIL_FROM             | mailFrom          | core        | WireGuard VPN <noreply@company.com>             | The email address from which emails are sent.                                                                                        |
+| ADMIN_USER            | adminUser         | core        | admin@wgportal.local                            | The administrator user. Must be a valid email address.                                                                               |
+| ADMIN_PASS            | adminPass         | core        | wgportal                                        | The administrator password. If unchanged, a random password will be set on first startup.                                            |
+| EDITABLE_KEYS         | editableKeys      | core        | true                                            | Allow to edit key-pairs in the UI.                                                                                                   |
+| CREATE_DEFAULT_PEER   | createDefaultPeer | core        | false                                           | If an LDAP user logs in for the first time, a new WireGuard peer will be created on the WG_DEFAULT_DEVICE if this option is enabled. |
+| LDAP_ENABLED          | ldapEnabled       | core        | false                                           | Enable or disable the LDAP backend.                                                                                                  |
+| SESSION_SECRET        | sessionSecret     | core        | secret                                          | Use a custom secret to encrypt session data.                                                                                         |
+| DATABASE_TYPE         | typ               | database    | sqlite                                          | Either mysql or sqlite.                                                                                                              |
+| DATABASE_HOST         | host              | database    |                                                 | The mysql server address.                                                                                                            |
+| DATABASE_PORT         | port              | database    |                                                 | The mysql server port.                                                                                                               |
+| DATABASE_NAME         | database          | database    | data/wg_portal.db                               | For sqlite database: the database file-path, otherwise the database name.                                                            |
+| DATABASE_USERNAME     | user              | database    |                                                 | The mysql user.                                                                                                                      |
+| DATABASE_PASSWORD     | password          | database    |                                                 | The mysql password.                                                                                                                  |
+| EMAIL_HOST            | host              | email       | 127.0.0.1                                       | The email server address.                                                                                                            |
+| EMAIL_PORT            | port              | email       | 25                                              | The email server port.                                                                                                               |
+| EMAIL_TLS             | tls               | email       | false                                           | Use STARTTLS.                                                                                                                        |
+| EMAIL_CERT_VALIDATION | certcheck         | email       | false                                           | Validate the email server certificate.                                                                                               |
+| EMAIL_USERNAME        | user              | email       |                                                 | An optional username for SMTP authentication.                                                                                        |
+| EMAIL_PASSWORD        | pass              | email       |                                                 | An optional password for SMTP authentication.                                                                                        |
+| WG_DEVICES            | devices           | wg          | wg0                                             | A comma separated list of WireGuard devices.                                                                                         |
+| WG_DEFAULT_DEVICE     | defaultDevice     | wg          | wg0                                             | This device is used for auto-created peers (if CREATE_DEFAULT_PEER is enabled).                                                      |
+| WG_CONFIG_PATH        | configDirectory   | wg          | /etc/wireguard                                  | If set, interface configuration updates will be written to this path, filename: <devicename>.conf.                                   |
+| MANAGE_IPS            | manageIPAddresses | wg          | true                                            | Handle IP address setup of interface, only available on linux.                                                                       |
+| LDAP_URL              | url               | ldap        | ldap://srv-ad01.company.local:389               | The LDAP server url.                                                                                                                 |
+| LDAP_STARTTLS         | startTLS          | ldap        | true                                            | Use STARTTLS.                                                                                                                        |
+| LDAP_CERT_VALIDATION  | certcheck         | ldap        | false                                           | Validate the LDAP server certificate.                                                                                                |
+| LDAP_BASEDN           | dn                | ldap        | DC=COMPANY,DC=LOCAL                             | The base DN for searching users.                                                                                                     |
+| LDAP_USER             | user              | ldap        | company\\\\ldap_wireguard                       | The bind user.                                                                                                                       |
+| LDAP_PASSWORD         | pass              | ldap        | SuperSecret                                     | The bind password.                                                                                                                   |
+| LDAP_TYPE             | typ               | ldap        | AD                                              | Either AD or OpenLDAP.                                                                                                               |
+| LDAP_USER_CLASS       | userClass         | ldap        | organizationalPerson                            | The user class that specifies the LDAP object category of users.                                                                     |
+| LDAP_ADMIN_GROUP      | adminGroup        | ldap        | CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL | Users in this group are marked as administrators.                                                                                    |
+| LDAP_ATTR_EMAIL       | attrEmail         | ldap        | mail                                            | User email attribute.                                                                                                                |
+| LDAP_ATTR_FIRSTNAME   | attrFirstname     | ldap        | givenName                                       | User firstname attribute.                                                                                                            |
+| LDAP_ATTR_LASTNAME    | attrLastname      | ldap        | sn                                              | User lastname attribute.                                                                                                             |
+| LDAP_ATTR_PHONE       | attrPhone         | ldap        | telephoneNumber                                 | User phone number attribute.                                                                                                         |
+| LDAP_ATTR_GROUPS      | attrGroups        | ldap        | memberOf                                        | User groups attribute.                                                                                                               |
+| LDAP_ATTR_DISABLED    | attrDisabled      | ldap        | userAccountControl                              | User status attribute. This attribute is used to detect deactivated users.                                                           |
+| LOG_LEVEL             |                   |             | debug                                           | Specify log level, one of: trace, debug, info, off.                                                                                  |
+| LOG_JSON              |                   |             | false                                           | Format log output as JSON.                                                                                                           |
+| LOG_COLOR             |                   |             | true                                            | Colorize log output.                                                                                                                 |
+| CONFIG_FILE           |                   |             | config.yml                                      | The config file path.                                                                                                                |
+
+### Sample yaml configuration
+config.yml:
+```yaml
+core:
+  listeningAddress: :8123
+  externalUrl: https://wg-test.test.com
+  adminUser: test@test.com
+  adminPass: test
+  editableKeys: true
+  createDefaultPeer: false
+  ldapEnabled: true
+  mailFrom: WireGuard VPN <noreply@test.com>
+ldap:
+  url: ldap://10.10.10.10:389
+  dn: DC=test,DC=test
+  startTLS: false
+  user: wireguard@test.test
+  pass: test
+  adminGroup: CN=WireGuardAdmins,CN=Users,DC=test,DC=test
+  typ: AD
+database:
+  typ: sqlite
+  database: data/wg_portal.db
+email:
+  host: smtp.gmail.com
+  port: 587
+  tls: true
+  user: test@gmail.com
+  pass: topsecret
+wg:
+  devices: 
+    - wg0
+    - wg1
+  defaultDevice: wg0
+  configDirectory: /etc/wireguard
+  manageIPAddresses: true
+```
+
 ## What is out of scope
 
  * Generation or application of any `iptables` or `nftables` rules
