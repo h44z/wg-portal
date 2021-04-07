@@ -69,6 +69,7 @@ type StaticData struct {
 	WebsiteLogo  string
 	CompanyName  string
 	Year         int
+	Version      string
 }
 
 type Server struct {
@@ -253,6 +254,7 @@ func (s *Server) getStaticData() StaticData {
 		WebsiteLogo:  "/img/header-logo.png",
 		CompanyName:  s.config.Core.CompanyName,
 		Year:         time.Now().Year(),
+		Version:      Version,
 	}
 }
 
