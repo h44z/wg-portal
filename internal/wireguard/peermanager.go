@@ -148,12 +148,18 @@ func (p Peer) GetConfig(dev *Device) wgtypes.PeerConfig {
 		keepAlive = &keepAliveDuration
 	}
 
-	peerAllowedIPs := p.GetAllowedIPs()
-	allowedIPs := make([]net.IPNet, len(peerAllowedIPs))
-	for i, ip := range peerAllowedIPs {
+	allowedIPs := make([]net.IPNet, 0)
+	var peerAllowedIPs []string
+	switch dev.Type {
+	case DeviceTypeClient:
+		peerAllowedIPs = p.GetAllowedIPs()
+	case DeviceTypeServer:
+		peerAllowedIPs = p.GetIPAddresses()
+	}
+	for _, ip := range peerAllowedIPs {
 		_, ipNet, err := net.ParseCIDR(ip)
 		if err == nil {
-			allowedIPs[i] = *ipNet
+			allowedIPs = append(allowedIPs, *ipNet)
 		}
 	}
 
