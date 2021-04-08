@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"git.prolicht.digital/pub/healthcheck"
 	"github.com/h44z/wg-portal/internal/server"
 	"github.com/sirupsen/logrus"
 )
@@ -25,6 +26,9 @@ func main() {
 	// Context for clean shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// start health check service on port 11223
+	healthcheck.New(healthcheck.WithContext(ctx)).Start()
 
 	service := server.Server{}
 	if err := service.Setup(ctx); err != nil {

@@ -104,7 +104,7 @@ func (s *Server) Setup(ctx context.Context) error {
 	if err != nil {
 		return errors.WithMessage(err, "database setup failed")
 	}
-	err = common.MigrateDatabase(s.db, Version)
+	err = common.MigrateDatabase(s.db, DatabaseVersion)
 	if err != nil {
 		return errors.WithMessage(err, "database migration failed")
 	}
