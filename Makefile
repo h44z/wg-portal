@@ -19,7 +19,7 @@ build-cross-plat: dep build $(addsuffix -arm,$(addprefix $(BUILDDIR)/,$(BINARIES
 	cp scripts/wg-portal.env $(BUILDDIR)
 
 build-docker: dep
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOCMD) build -o $(BUILDDIR)/wgportal -ldflags "-w -s -extldflags \"-static\" -X github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}" cmd/wg-portal/main.go
+	GOOS=linux GOARCH=amd64 $(GOCMD) build -o $(BUILDDIR)/wgportal -ldflags "-w -s -extldflags \"-static\" -X github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}" cmd/wg-portal/main.go
 
 dep:
 	$(GOCMD) mod download
