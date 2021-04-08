@@ -125,7 +125,7 @@ func (p Peer) GetAllowedIPs() []string {
 	return common.ParseStringList(p.AllowedIPsStr)
 }
 
-func (p Peer) GetConfig(_ *Device) wgtypes.PeerConfig {
+func (p Peer) GetConfig(dev *Device) wgtypes.PeerConfig {
 	publicKey, _ := wgtypes.ParseKey(p.PublicKey)
 
 	var presharedKey *wgtypes.Key
@@ -135,7 +135,7 @@ func (p Peer) GetConfig(_ *Device) wgtypes.PeerConfig {
 	}
 
 	var endpoint *net.UDPAddr
-	if p.Endpoint != "" {
+	if p.Endpoint != "" && dev.Type == DeviceTypeClient {
 		addr, err := net.ResolveUDPAddr("udp", p.Endpoint)
 		if err == nil {
 			endpoint = addr
