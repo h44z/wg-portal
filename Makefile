@@ -52,12 +52,12 @@ docker-push:
 	docker push $(IMAGE)
 
 $(BUILDDIR)/%-amd64: cmd/%/main.go dep phony
-	GOOS=linux GOARCH=amd64 $(GOCMD) build -o $@ $<
+	GOOS=linux GOARCH=amd64 $(GOCMD) build -ldflags "-X github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}" -o $@ $<
 
 # On arch-linux install aarch64-linux-gnu-gcc to crosscompile for arm64
 $(BUILDDIR)/%-arm64: cmd/%/main.go dep phony
-	CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc GOOS=linux GOARCH=arm64 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@ $<
+	CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc GOOS=linux GOARCH=arm64 $(GOCMD) build -ldflags "-linkmode external -extldflags \"-static\" -X github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}" -o $@ $<
 
 # On arch-linux install arm-linux-gnueabihf-gcc to crosscompile for arm
 $(BUILDDIR)/%-arm: cmd/%/main.go dep phony
-	CGO_ENABLED=1 CC=arm-linux-gnueabi-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -ldflags "-linkmode external -extldflags -static" -o $@ $<
+	CGO_ENABLED=1 CC=arm-linux-gnueabi-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -ldflags "-linkmode external -extldflags \"-static\" -X github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}" -o $@ $<
