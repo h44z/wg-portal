@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )

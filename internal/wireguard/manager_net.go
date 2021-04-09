@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/pkg/errors"
-
 	"github.com/milosgajdos/tenus"
+	"github.com/pkg/errors"
 )
 
 const DefaultMTU = 1420
