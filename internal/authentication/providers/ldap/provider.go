@@ -175,14 +175,15 @@ func (provider Provider) GetUserModel(ctx *authentication.AuthContext) (*authent
 }
 
 func (provider Provider) open() (*ldap.Conn, error) {
-	conn, err := ldap.DialURL(provider.config.URL)
+	tlsConfig := &tls.Config{InsecureSkipVerify: !provider.config.CertValidation}
+	conn, err := ldap.DialURL(provider.config.URL, ldap.DialWithTLSConfig(tlsConfig))
 	if err != nil {
 		return nil, err
 	}
 
 	if provider.config.StartTLS {
 		// Reconnect with TLS
-		err = conn.StartTLS(&tls.Config{InsecureSkipVerify: !provider.config.CertValidation})
+		err = conn.StartTLS(tlsConfig)
 		if err != nil {
 			return nil, err
 		}
