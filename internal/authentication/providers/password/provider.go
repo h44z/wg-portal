@@ -108,6 +108,7 @@ func (provider Provider) GetUserModel(ctx *authentication.AuthContext) (*authent
 }
 
 func (provider Provider) InitializeAdmin(email, password string) error {
+	email = strings.ToLower(email)
 	if !emailRegex.MatchString(email) {
 		return errors.New("admin username must be an email address")
 	}

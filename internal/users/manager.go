@@ -51,6 +51,8 @@ func (m Manager) UserExists(email string) bool {
 }
 
 func (m Manager) GetUser(email string) *User {
+	email = strings.ToLower(email)
+
 	user := User{}
 	m.db.Where("email = ?", email).First(&user)
 
@@ -62,6 +64,8 @@ func (m Manager) GetUser(email string) *User {
 }
 
 func (m Manager) GetUserUnscoped(email string) *User {
+	email = strings.ToLower(email)
+
 	user := User{}
 	m.db.Unscoped().Where("email = ?", email).First(&user)
 
@@ -93,6 +97,8 @@ func (m Manager) GetFilteredAndSortedUsersUnscoped(sortKey, sortDirection, searc
 }
 
 func (m Manager) GetOrCreateUser(email string) (*User, error) {
+	email = strings.ToLower(email)
+
 	user := User{}
 	m.db.Where("email = ?", email).FirstOrInit(&user)
 
@@ -113,6 +119,8 @@ func (m Manager) GetOrCreateUser(email string) (*User, error) {
 }
 
 func (m Manager) GetOrCreateUserUnscoped(email string) (*User, error) {
+	email = strings.ToLower(email)
+
 	user := User{}
 	m.db.Unscoped().Where("email = ?", email).FirstOrInit(&user)
 
@@ -133,6 +141,7 @@ func (m Manager) GetOrCreateUserUnscoped(email string) (*User, error) {
 }
 
 func (m Manager) CreateUser(user *User) error {
+	user.Email = strings.ToLower(user.Email)
 	res := m.db.Create(user)
 	if res.Error != nil {
 		return errors.Wrapf(res.Error, "failed to create user %s", user.Email)
@@ -142,6 +151,7 @@ func (m Manager) CreateUser(user *User) error {
 }
 
 func (m Manager) UpdateUser(user *User) error {
+	user.Email = strings.ToLower(user.Email)
 	res := m.db.Save(user)
 	if res.Error != nil {
 		return errors.Wrapf(res.Error, "failed to update user %s", user.Email)
@@ -151,6 +161,7 @@ func (m Manager) UpdateUser(user *User) error {
 }
 
 func (m Manager) DeleteUser(user *User) error {
+	user.Email = strings.ToLower(user.Email)
 	res := m.db.Delete(user)
 	if res.Error != nil {
 		return errors.Wrapf(res.Error, "failed to update user %s", user.Email)

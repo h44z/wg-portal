@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,6 +14,22 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
+
+func init() {
+	migrations = append(migrations, Migration{
+		version: "1.0.7",
+		migrateFn: func(db *gorm.DB) error {
+			if err := db.Exec("UPDATE users SET email = LOWER(email)").Error; err != nil {
+				return errors.Wrap(err, "failed to convert user emails to lower case")
+			}
+			if err := db.Exec("UPDATE peers SET email = LOWER(email)").Error; err != nil {
+				return errors.Wrap(err, "failed to convert peer emails to lower case")
+			}
+			logrus.Infof("upgraded database format to version 1.0.7")
+			return nil
+		},
+	})
+}
 
 type SupportedDatabase string
 
@@ -80,14 +97,16 @@ type DatabaseMigrationInfo struct {
 	Applied time.Time
 }
 
+type Migration struct {
+	version   string
+	migrateFn func(db *gorm.DB) error
+}
+
+var migrations []Migration
+
 func MigrateDatabase(db *gorm.DB, version string) error {
 	if err := db.AutoMigrate(&DatabaseMigrationInfo{}); err != nil {
 		return errors.Wrap(err, "failed to migrate version database")
-	}
-
-	newVersion := DatabaseMigrationInfo{
-		Version: version,
-		Applied: time.Now(),
 	}
 
 	existingMigration := DatabaseMigrationInfo{}
@@ -97,11 +116,24 @@ func MigrateDatabase(db *gorm.DB, version string) error {
 		lastVersion := DatabaseMigrationInfo{}
 		db.Order("applied desc, version desc").FirstOrInit(&lastVersion)
 
-		// TODO: migrate database
+		sort.Slice(migrations, func(i, j int) bool {
+			return migrations[i].version < migrations[j].version
+		})
 
-		res := db.Create(&newVersion)
-		if res.Error != nil {
-			return errors.Wrap(res.Error, "failed to write version to database")
+		for _, migration := range migrations {
+			if migration.version > lastVersion.Version {
+				if err := migration.migrateFn(db); err != nil {
+					return errors.Wrapf(err, "failed to migrate to version %s", migration.version)
+				}
+
+				res := db.Create(&DatabaseMigrationInfo{
+					Version: migration.version,
+					Applied: time.Now(),
+				})
+				if res.Error != nil {
+					return errors.Wrapf(res.Error, "failed to write version %s to database", migration.version)
+				}
+			}
 		}
 	}
 

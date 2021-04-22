@@ -1,4 +1,4 @@
 package server
 
 var Version = "testbuild"
-var DatabaseVersion = "1.0.6"
+var DatabaseVersion = "1.0.7"

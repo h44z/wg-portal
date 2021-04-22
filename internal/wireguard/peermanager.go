@@ -623,6 +623,7 @@ func (m *PeerManager) GetFilteredAndSortedPeers(device, sortKey, sortDirection, 
 }
 
 func (m *PeerManager) GetSortedPeersForEmail(sortKey, sortDirection, email string) []Peer {
+	email = strings.ToLower(email)
 	peers := make([]Peer, 0)
 	m.db.Where("email = ?", email).Find(&peers)
 
@@ -691,6 +692,7 @@ func (m *PeerManager) GetPeerByKey(publicKey string) Peer {
 }
 
 func (m *PeerManager) GetPeersByMail(mail string) []Peer {
+	mail = strings.ToLower(mail)
 	var peers []Peer
 	m.db.Where("email = ?", mail).Find(&peers)
 	for i := range peers {
@@ -706,6 +708,7 @@ func (m *PeerManager) CreatePeer(peer Peer) error {
 	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
 	peer.UpdatedAt = time.Now()
 	peer.CreatedAt = time.Now()
+	peer.Email = strings.ToLower(peer.Email)
 
 	res := m.db.Create(&peer)
 	if res.Error != nil {
@@ -718,6 +721,7 @@ func (m *PeerManager) CreatePeer(peer Peer) error {
 
 func (m *PeerManager) UpdatePeer(peer Peer) error {
 	peer.UpdatedAt = time.Now()
+	peer.Email = strings.ToLower(peer.Email)
 
 	res := m.db.Save(&peer)
 	if res.Error != nil {
