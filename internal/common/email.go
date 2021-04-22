@@ -7,16 +7,27 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/jordan-wright/email"
 )
 
+type MailEncryption string
+
+const (
+	MailEncryptionNone     MailEncryption = "none"
+	MailEncryptionTLS      MailEncryption = "tls"
+	MailEncryptionStartTLS MailEncryption = "starttls"
+)
+
 type MailConfig struct {
-	Host           string `yaml:"host" envconfig:"EMAIL_HOST"`
-	Port           int    `yaml:"port" envconfig:"EMAIL_PORT"`
-	TLS            bool   `yaml:"tls" envconfig:"EMAIL_TLS"`
-	CertValidation bool   `yaml:"certcheck" envconfig:"EMAIL_CERT_VALIDATION"`
-	Username       string `yaml:"user" envconfig:"EMAIL_USERNAME"`
-	Password       string `yaml:"pass" envconfig:"EMAIL_PASSWORD"`
+	Host           string         `yaml:"host" envconfig:"EMAIL_HOST"`
+	Port           int            `yaml:"port" envconfig:"EMAIL_PORT"`
+	TLS            bool           `yaml:"tls" envconfig:"EMAIL_TLS"` // Deprecated, use MailConfig.Encryption instead.
+	Encryption     MailEncryption `yaml:"encryption" envconfig:"EMAIL_ENCRYPTION"`
+	CertValidation bool           `yaml:"certcheck" envconfig:"EMAIL_CERT_VALIDATION"`
+	Username       string         `yaml:"user" envconfig:"EMAIL_USERNAME"`
+	Password       string         `yaml:"pass" envconfig:"EMAIL_PASSWORD"`
 }
 
 type MailAttachment struct {
@@ -64,16 +75,24 @@ func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body str
 	for _, attachment := range attachments {
 		a, err := e.Attach(attachment.Data, attachment.Name, attachment.ContentType)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to attach %s to mailbody", attachment.Name)
 		}
 		if attachment.Embedded {
 			a.HTMLRelated = true
 		}
 	}
 
+	// TODO: remove this once the deprecated MailConfig.TLS config option has been removed
 	if cfg.TLS {
+		cfg.Encryption = MailEncryptionStartTLS
+	}
+
+	switch cfg.Encryption {
+	case MailEncryptionTLS:
+		return e.SendWithTLS(hostname, auth, &tls.Config{InsecureSkipVerify: !cfg.CertValidation})
+	case MailEncryptionStartTLS:
 		return e.SendWithStartTLS(hostname, auth, &tls.Config{InsecureSkipVerify: !cfg.CertValidation})
-	} else {
+	default: // MailEncryptionNone
 		return e.Send(hostname, auth)
 	}
 }

@@ -112,6 +112,7 @@ func NewConfig() *Config {
 	cfg.WG.ManageIPAddresses = true
 	cfg.Email.Host = "127.0.0.1"
 	cfg.Email.Port = 25
+	cfg.Email.Encryption = common.MailEncryptionNone
 
 	// Load config from file and environment
 	cfgFile, ok := os.LookupEnv("CONFIG_FILE")
