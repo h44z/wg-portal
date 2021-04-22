@@ -610,7 +610,7 @@ func (m *PeerManager) GetFilteredAndSortedPeers(device, sortKey, sortDirection, 
 		m.populatePeerData(&peers[i])
 
 		if search == "" ||
-			strings.Contains(peers[i].Email, search) ||
+			strings.Contains(peers[i].Email, strings.ToLower(search)) ||
 			strings.Contains(peers[i].Identifier, search) ||
 			strings.Contains(peers[i].PublicKey, search) {
 			filteredPeers = append(filteredPeers, peers[i])

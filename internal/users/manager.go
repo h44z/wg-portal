@@ -211,7 +211,7 @@ func filterUsers(users []User, search string) []User {
 
 	filteredUsers := make([]User, 0, len(users))
 	for i := range users {
-		if strings.Contains(users[i].Email, search) ||
+		if strings.Contains(users[i].Email, strings.ToLower(search)) ||
 			strings.Contains(users[i].Firstname, search) ||
 			strings.Contains(users[i].Lastname, search) ||
 			strings.Contains(string(users[i].Source), search) ||
