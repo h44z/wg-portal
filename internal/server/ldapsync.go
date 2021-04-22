@@ -1,6 +1,7 @@
 package server
 
 import (
+	"strings"
 	"time"
 
 	"github.com/h44z/wg-portal/internal/ldap"
@@ -117,7 +118,7 @@ func (s Server) UserChangedInLdap(user *users.User, ldapData *ldap.RawLdapData) 
 	if user.Lastname != ldapData.Attributes[s.config.LDAP.LastNameAttribute] {
 		return true
 	}
-	if user.Email != ldapData.Attributes[s.config.LDAP.EmailAttribute] {
+	if user.Email != strings.ToLower(ldapData.Attributes[s.config.LDAP.EmailAttribute]) {
 		return true
 	}
 	if user.Phone != ldapData.Attributes[s.config.LDAP.PhoneAttribute] {
