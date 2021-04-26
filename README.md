@@ -114,6 +114,7 @@ The following configuration options are available:
 | ADMIN_PASS            | adminPass         | core        | wgportal                                        | The administrator password. If unchanged, a random password will be set on first startup.                                            |
 | EDITABLE_KEYS         | editableKeys      | core        | true                                            | Allow to edit key-pairs in the UI.                                                                                                   |
 | CREATE_DEFAULT_PEER   | createDefaultPeer | core        | false                                           | If an LDAP user logs in for the first time, a new WireGuard peer will be created on the WG_DEFAULT_DEVICE if this option is enabled. |
+| SELF_PROVISIONING     | selfProvisioning  | core        | false                                           | Allow registered users to automatically create peers via the RESTful API.                                                            |
 | LDAP_ENABLED          | ldapEnabled       | core        | false                                           | Enable or disable the LDAP backend.                                                                                                  |
 | SESSION_SECRET        | sessionSecret     | core        | secret                                          | Use a custom secret to encrypt session data.                                                                                         |
 | DATABASE_TYPE         | typ               | database    | sqlite                                          | Either mysql or sqlite.                                                                                                              |
@@ -190,6 +191,11 @@ wg:
   configDirectory: /etc/wireguard
   manageIPAddresses: true
 ```
+
+### RESTful API
+WireGuard Portal offers a RESTful API to interact with. 
+The API is documented using OpenAPI 2.0, the Swagger UI can be found 
+under the URL `http://<your wg-portal ip/domain>/swagger/index.html`.
 
 ## What is out of scope
 

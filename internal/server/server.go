@@ -26,7 +26,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
-	csrf "github.com/utrack/gin-csrf"
 	"gorm.io/gorm"
 )
 
@@ -118,13 +117,6 @@ func (s *Server) Setup(ctx context.Context) error {
 	}
 	s.server.Use(gin.Recovery())
 	s.server.Use(sessions.Sessions("authsession", memstore.NewStore([]byte(s.config.Core.SessionSecret))))
-	s.server.Use(csrf.Middleware(csrf.Options{
-		Secret: s.config.Core.SessionSecret,
-		ErrorFunc: func(c *gin.Context) {
-			c.String(400, "CSRF token mismatch")
-			c.Abort()
-		},
-	}))
 	s.server.SetFuncMap(template.FuncMap{
 		"formatBytes": common.ByteCountSI,
 		"urlEncode":   url.QueryEscape,

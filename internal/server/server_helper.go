@@ -12,6 +12,7 @@ import (
 	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"gorm.io/gorm"
 )
@@ -52,6 +53,7 @@ func (s *Server) PrepareNewPeer(device string) (wireguard.Peer, error) {
 		peer.PersistentKeepalive = dev.DefaultPersistentKeepalive
 		peer.AllowedIPsStr = dev.DefaultAllowedIPsStr
 		peer.Mtu = dev.Mtu
+		peer.DeviceName = device
 	case wireguard.DeviceTypeClient:
 		peer.UID = "newendpoint"
 	}
@@ -225,6 +227,15 @@ func (s *Server) CreateUser(user users.User, device string) error {
 		return s.UpdateUser(user)
 	}
 
+	// Hash user password (if set)
+	if user.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return errors.Wrap(err, "unable to hash password")
+		}
+		user.Password = users.PrivateString(hashedPassword)
+	}
+
 	// Create user in database
 	if err := s.users.CreateUser(&user); err != nil {
 		return errors.WithMessage(err, "failed to create user in manager")
@@ -242,6 +253,17 @@ func (s *Server) UpdateUser(user users.User) error {
 	}
 
 	currentUser := s.users.GetUserUnscoped(user.Email)
+
+	// Hash user password (if set)
+	if user.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return errors.Wrap(err, "unable to hash password")
+		}
+		user.Password = users.PrivateString(hashedPassword)
+	} else {
+		user.Password = currentUser.Password // keep current password
+	}
 
 	// Update in database
 	if err := s.users.UpdateUser(&user); err != nil {

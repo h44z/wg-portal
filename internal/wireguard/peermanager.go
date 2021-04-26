@@ -63,21 +63,21 @@ func init() {
 //
 
 type Peer struct {
-	Peer   *wgtypes.Peer `gorm:"-"`                                 // WireGuard peer
-	Device *Device       `gorm:"foreignKey:DeviceName" binding:"-"` // linked WireGuard device
-	Config string        `gorm:"-"`
+	Peer   *wgtypes.Peer `gorm:"-" json:"-"`                                 // WireGuard peer
+	Device *Device       `gorm:"foreignKey:DeviceName" binding:"-" json:"-"` // linked WireGuard device
+	Config string        `gorm:"-" json:"-"`
 
-	UID                  string     `form:"uid" binding:"required,alphanum"` // uid for html identification
+	UID                  string     `form:"uid" binding:"required,alphanum" json:"-"` // uid for html identification
 	DeviceName           string     `gorm:"index" form:"device" binding:"required"`
-	DeviceType           DeviceType `gorm:"-" form:"devicetype" binding:"required,oneof=client server"`
+	DeviceType           DeviceType `gorm:"-" form:"devicetype" binding:"required,oneof=client server" json:"-"`
 	Identifier           string     `form:"identifier" binding:"required,max=64"` // Identifier AND Email make a WireGuard peer unique
 	Email                string     `gorm:"index" form:"mail" binding:"required,email"`
 	IgnoreGlobalSettings bool       `form:"ignoreglobalsettings"`
 
-	IsOnline          bool   `gorm:"-"`
-	IsNew             bool   `gorm:"-"`
-	LastHandshake     string `gorm:"-"`
-	LastHandshakeTime string `gorm:"-"`
+	IsOnline          bool   `gorm:"-" json:"-"`
+	IsNew             bool   `gorm:"-" json:"-"`
+	LastHandshake     string `gorm:"-" json:"-"`
+	LastHandshakeTime string `gorm:"-" json:"-"`
 
 	// Core WireGuard Settings
 	PublicKey           string `gorm:"primaryKey" form:"pubkey" binding:"required,base64"` // the public key of the peer itself
@@ -93,7 +93,7 @@ type Peer struct {
 	// Global Device Settings (can be ignored, only make sense if device is in server mode)
 	Mtu int `form:"mtu" binding:"gte=0,lte=1500"`
 
-	DeactivatedAt *time.Time
+	DeactivatedAt *time.Time `json:",omitempty"`
 	CreatedBy     string
 	UpdatedBy     string
 	CreatedAt     time.Time
@@ -226,7 +226,7 @@ const (
 )
 
 type Device struct {
-	Interface *wgtypes.Device `gorm:"-"`
+	Interface *wgtypes.Device `gorm:"-" json:"-"`
 
 	Type        DeviceType `form:"devicetype" binding:"required,oneof=client server"`
 	DeviceName  string     `form:"device" gorm:"primaryKey" binding:"required,alphanum"`

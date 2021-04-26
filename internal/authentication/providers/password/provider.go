@@ -136,7 +136,7 @@ func (provider Provider) InitializeAdmin(email, password string) error {
 		}
 
 		admin.Email = email
-		admin.Password = string(hashedPassword)
+		admin.Password = users.PrivateString(hashedPassword)
 		admin.Firstname = "WireGuard"
 		admin.Lastname = "Administrator"
 		admin.CreatedAt = time.Now()
@@ -170,7 +170,7 @@ func (provider Provider) InitializeAdmin(email, password string) error {
 			return errors.Wrap(err, "failed to hash admin password")
 		}
 
-		admin.Password = string(hashedPassword)
+		admin.Password = users.PrivateString(hashedPassword)
 		admin.IsAdmin = true
 		admin.UpdatedAt = time.Now()
 

@@ -142,6 +142,7 @@ func (m Manager) GetOrCreateUserUnscoped(email string) (*User, error) {
 
 func (m Manager) CreateUser(user *User) error {
 	user.Email = strings.ToLower(user.Email)
+	user.Source = UserSourceDatabase
 	res := m.db.Create(user)
 	if res.Error != nil {
 		return errors.Wrapf(res.Error, "failed to create user %s", user.Email)

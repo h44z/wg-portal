@@ -55,17 +55,18 @@ func loadConfigEnv(cfg interface{}) error {
 
 type Config struct {
 	Core struct {
-		ListeningAddress  string `yaml:"listeningAddress" envconfig:"LISTENING_ADDRESS"`
-		ExternalUrl       string `yaml:"externalUrl" envconfig:"EXTERNAL_URL"`
-		Title             string `yaml:"title" envconfig:"WEBSITE_TITLE"`
-		CompanyName       string `yaml:"company" envconfig:"COMPANY_NAME"`
-		MailFrom          string `yaml:"mailFrom" envconfig:"MAIL_FROM"`
-		AdminUser         string `yaml:"adminUser" envconfig:"ADMIN_USER"` // must be an email address
-		AdminPassword     string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
-		EditableKeys      bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
-		CreateDefaultPeer bool   `yaml:"createDefaultPeer" envconfig:"CREATE_DEFAULT_PEER"`
-		LdapEnabled       bool   `yaml:"ldapEnabled" envconfig:"LDAP_ENABLED"`
-		SessionSecret     string `yaml:"sessionSecret" envconfig:"SESSION_SECRET"`
+		ListeningAddress        string `yaml:"listeningAddress" envconfig:"LISTENING_ADDRESS"`
+		ExternalUrl             string `yaml:"externalUrl" envconfig:"EXTERNAL_URL"`
+		Title                   string `yaml:"title" envconfig:"WEBSITE_TITLE"`
+		CompanyName             string `yaml:"company" envconfig:"COMPANY_NAME"`
+		MailFrom                string `yaml:"mailFrom" envconfig:"MAIL_FROM"`
+		AdminUser               string `yaml:"adminUser" envconfig:"ADMIN_USER"` // must be an email address
+		AdminPassword           string `yaml:"adminPass" envconfig:"ADMIN_PASS"`
+		EditableKeys            bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
+		CreateDefaultPeer       bool   `yaml:"createDefaultPeer" envconfig:"CREATE_DEFAULT_PEER"`
+		SelfProvisioningAllowed bool   `yaml:"selfProvisioning" envconfig:"SELF_PROVISIONING"`
+		LdapEnabled             bool   `yaml:"ldapEnabled" envconfig:"LDAP_ENABLED"`
+		SessionSecret           string `yaml:"sessionSecret" envconfig:"SESSION_SECRET"`
 	} `yaml:"core"`
 	Database common.DatabaseConfig `yaml:"database"`
 	Email    common.MailConfig     `yaml:"email"`

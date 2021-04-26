@@ -18,7 +18,10 @@ var doc = `{
     "info": {
         "description": "{{.Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "contact": {
+            "name": "WireGuard Portal Project",
+            "url": "https://github.com/h44z/wg-portal"
+        },
         "license": {
             "name": "MIT",
             "url": "https://github.com/h44z/wg-portal/blob/master/LICENSE.txt"
@@ -28,7 +31,7 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/user/{email}": {
+        "/backend/device/{device}": {
             "get": {
                 "security": [
                     {
@@ -37,6 +40,645 @@ var doc = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Get the given device",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device Name",
+                        "name": "device",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Device"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Updates the given device based on the given device model (UNIMPLEMENTED)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device Name",
+                        "name": "device",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Device Model",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Device"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Device"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Updates the given device based on the given partial device model (UNIMPLEMENTED)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device Name",
+                        "name": "device",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Device Model",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Device"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Device"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/backend/devices": {
+            "get": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Get all devices",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/wireguard.Device"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/backend/peer/{pkey}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Retrieves the peer for the given public key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Public Key (Base 64)",
+                        "name": "pkey",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Peer"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Updates the given peer based on the given peer model",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Public Key",
+                        "name": "pkey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Peer Model",
+                        "name": "peer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Peer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Updates the given peer based on the given partial peer model",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Public Key",
+                        "name": "pkey",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Updates the given peer based on the given partial peer model",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Public Key",
+                        "name": "pkey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Peer Model",
+                        "name": "peer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Peer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/backend/peers/{device}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Retrieves all peers for the given interface",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device Name",
+                        "name": "device",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/wireguard.Peer"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Creates a new peer based on the given peer model",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device Name",
+                        "name": "device",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Peer Model",
+                        "name": "peer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Peer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/wireguard.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/backend/user/{email}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiBasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
                 ],
                 "summary": "Retrieves user based on given Email",
                 "parameters": [
@@ -87,8 +729,14 @@ var doc = `{
                         "ApiBasicAuth": []
                     }
                 ],
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "Users"
                 ],
                 "summary": "Updates a user based on the given user model",
                 "parameters": [
@@ -98,6 +746,15 @@ var doc = `{
                         "name": "email",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "User Model",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/users.User"
+                        }
                     }
                 ],
                 "responses": {
@@ -147,6 +804,9 @@ var doc = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "Users"
                 ],
                 "summary": "Deletes the specified user",
                 "parameters": [
@@ -200,8 +860,14 @@ var doc = `{
                         "ApiBasicAuth": []
                     }
                 ],
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "Users"
                 ],
                 "summary": "Updates a user based on the given partial user model",
                 "parameters": [
@@ -211,6 +877,15 @@ var doc = `{
                         "name": "email",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "User Model",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/users.User"
+                        }
                     }
                 ],
                 "responses": {
@@ -253,7 +928,7 @@ var doc = `{
                 }
             }
         },
-        "/users": {
+        "/backend/users": {
             "get": {
                 "security": [
                     {
@@ -262,6 +937,9 @@ var doc = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "Users"
                 ],
                 "summary": "Retrieves all users",
                 "responses": {
@@ -300,10 +978,27 @@ var doc = `{
                         "ApiBasicAuth": []
                     }
                 ],
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "Users"
+                ],
                 "summary": "Creates a new user based on the given user model",
+                "parameters": [
+                    {
+                        "description": "User Model",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/users.User"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -343,6 +1038,113 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/provisioning/peer": {
+            "post": {
+                "security": [
+                    {
+                        "GeneralBasicAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Creates the requested peer config and returns the config file",
+                "parameters": [
+                    {
+                        "description": "Provisioning Request Model",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.ProvisioningRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The WireGuard configuration file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/peer/{pkey}": {
+            "get": {
+                "security": [
+                    {
+                        "GeneralBasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Retrieves the peer config for the given public key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Public Key (Base 64)",
+                        "name": "pkey",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The WireGuard configuration file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -363,6 +1165,37 @@ var doc = `{
             "properties": {
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "server.ProvisioningRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "identifier"
+            ],
+            "properties": {
+                "allowedIPsStr": {
+                    "type": "string"
+                },
+                "deviceName": {
+                    "description": "DeviceName is optional, if not specified, the configured default device will be used.",
+                    "type": "string"
+                },
+                "dnsstr": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "identifier": {
+                    "type": "string"
+                },
+                "mtu": {
+                    "type": "integer"
+                },
+                "persistentKeepalive": {
+                    "type": "integer"
                 }
             }
         },
@@ -409,10 +1242,173 @@ var doc = `{
                     "type": "string"
                 }
             }
+        },
+        "wireguard.Device": {
+            "type": "object",
+            "required": [
+                "deviceName",
+                "ipsStr",
+                "privateKey",
+                "publicKey",
+                "type"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "defaultAllowedIPsStr": {
+                    "description": "comma separated list  of IPs that are used in the client config file",
+                    "type": "string"
+                },
+                "defaultEndpoint": {
+                    "description": "Settings that are applied to all peer by default",
+                    "type": "string"
+                },
+                "defaultPersistentKeepalive": {
+                    "type": "integer"
+                },
+                "deviceName": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "dnsstr": {
+                    "description": "comma separated list of the DNS servers of the client, wg-quick addition",
+                    "type": "string"
+                },
+                "firewallMark": {
+                    "type": "integer"
+                },
+                "ipsStr": {
+                    "description": "comma separated list of the IPs of the client, wg-quick addition",
+                    "type": "string"
+                },
+                "listenPort": {
+                    "type": "integer"
+                },
+                "mtu": {
+                    "description": "the interface MTU, wg-quick addition",
+                    "type": "integer"
+                },
+                "postDown": {
+                    "description": "post down script, wg-quick addition",
+                    "type": "string"
+                },
+                "postUp": {
+                    "description": "post up script, wg-quick addition",
+                    "type": "string"
+                },
+                "preDown": {
+                    "description": "pre down script, wg-quick addition",
+                    "type": "string"
+                },
+                "preUp": {
+                    "description": "pre up script, wg-quick addition",
+                    "type": "string"
+                },
+                "privateKey": {
+                    "description": "Core WireGuard Settings (Interface section)",
+                    "type": "string"
+                },
+                "publicKey": {
+                    "description": "Misc. WireGuard Settings",
+                    "type": "string"
+                },
+                "routingTable": {
+                    "description": "the routing table, wg-quick addition",
+                    "type": "string"
+                },
+                "saveConfig": {
+                    "description": "if set to ` + "`" + `true', the configuration is saved from the current state of the interface upon shutdown, wg-quick addition",
+                    "type": "boolean"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "wireguard.Peer": {
+            "type": "object",
+            "required": [
+                "deviceName",
+                "email",
+                "identifier",
+                "publicKey"
+            ],
+            "properties": {
+                "allowedIPsStr": {
+                    "description": "a comma separated list of IPs that are used in the client config file",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "deactivatedAt": {
+                    "type": "string"
+                },
+                "deviceName": {
+                    "type": "string"
+                },
+                "dnsstr": {
+                    "description": "comma separated list of the DNS servers for the client",
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "endpoint": {
+                    "type": "string"
+                },
+                "identifier": {
+                    "description": "Identifier AND Email make a WireGuard peer unique",
+                    "type": "string"
+                },
+                "ignoreGlobalSettings": {
+                    "type": "boolean"
+                },
+                "ipsStr": {
+                    "description": "a comma separated list of IPs of the client",
+                    "type": "string"
+                },
+                "mtu": {
+                    "description": "Global Device Settings (can be ignored, only make sense if device is in server mode)",
+                    "type": "integer"
+                },
+                "persistentKeepalive": {
+                    "type": "integer"
+                },
+                "presharedKey": {
+                    "type": "string"
+                },
+                "privateKey": {
+                    "description": "Misc. WireGuard Settings",
+                    "type": "string"
+                },
+                "publicKey": {
+                    "description": "Core WireGuard Settings",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "updatedBy": {
+                    "type": "string"
+                }
+            }
         }
     },
     "securityDefinitions": {
         "ApiBasicAuth": {
+            "type": "basic"
+        },
+        "GeneralBasicAuth": {
             "type": "basic"
         }
     }

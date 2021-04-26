@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/users"
 	csrf "github.com/utrack/gin-csrf"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -105,19 +104,6 @@ func (s *Server) PostAdminUsersEdit(c *gin.Context) {
 		return
 	}
 
-	if formUser.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(formUser.Password), bcrypt.DefaultCost)
-		if err != nil {
-			_ = s.updateFormInSession(c, formUser)
-			SetFlashMessage(c, "failed to hash admin password", "danger")
-			c.Redirect(http.StatusSeeOther, "/admin/users/edit?pkey="+urlEncodedKey+"&formerr=bind")
-			return
-		}
-		formUser.Password = string(hashedPassword)
-	} else {
-		formUser.Password = currentUser.Password
-	}
-
 	disabled := c.PostForm("isdisabled") != ""
 	if disabled {
 		formUser.DeletedAt = gorm.DeletedAt{
@@ -175,15 +161,7 @@ func (s *Server) PostAdminUsersCreate(c *gin.Context) {
 		return
 	}
 
-	if formUser.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(formUser.Password), bcrypt.DefaultCost)
-		if err != nil {
-			SetFlashMessage(c, "failed to hash admin password", "danger")
-			c.Redirect(http.StatusSeeOther, "/admin/users/create?formerr=bind")
-			return
-		}
-		formUser.Password = string(hashedPassword)
-	} else {
+	if formUser.Password == "" {
 		_ = s.updateFormInSession(c, formUser)
 		SetFlashMessage(c, "invalid password", "danger")
 		c.Redirect(http.StatusSeeOther, "/admin/users/create?formerr=create")
