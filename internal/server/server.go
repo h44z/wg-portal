@@ -151,6 +151,7 @@ func (s *Server) Setup(ctx context.Context) error {
 
 	// Setup all routes
 	SetupRoutes(s)
+	SetupApiRoutes(s)
 
 	// Setup user database (also needed for database authentication)
 	s.users, err = users.NewManager(s.db)

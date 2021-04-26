@@ -51,6 +51,10 @@ docker-build:
 docker-push:
 	docker push $(IMAGE)
 
+api-docs:
+	cd internal/server; swag init --parseDependency --parseInternal --generalInfo api.go
+	$(GOCMD) fmt internal/server/docs/docs.go
+
 $(BUILDDIR)/%-amd64: cmd/%/main.go dep phony
 	GOOS=linux GOARCH=amd64 $(GOCMD) build -ldflags "-X github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}" -o $@ $<
 
