@@ -61,7 +61,7 @@ func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body, ht
 	}
 	switch cfg.Encryption {
 	case MailEncryptionTLS:
-		srv.Encryption = mail.EncryptionTLS
+		srv.Encryption = mail.EncryptionSSLTLS
 	case MailEncryptionStartTLS:
 		srv.Encryption = mail.EncryptionSTARTTLS
 	default: // MailEncryptionNone
