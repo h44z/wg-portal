@@ -265,6 +265,7 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 		return
 	}
 	// Apply mail template
+	qrcodeFileName := "wireguard-qrcode.png"
 	var tplBuff bytes.Buffer
 	if err := s.mailTpl.Execute(&tplBuff, struct {
 		Peer          wireguard.Peer
@@ -274,7 +275,7 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 	}{
 		Peer:          peer,
 		User:          user,
-		QrcodePngName: "wireguard-config.png",
+		QrcodePngName: qrcodeFileName,
 		PortalUrl:     s.config.Core.ExternalUrl,
 	}); err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "Template error", err.Error())
@@ -289,7 +290,13 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 			Data:        bytes.NewReader(cfg),
 		},
 		{
-			Name:        "wireguard-config.png",
+			Name:        qrcodeFileName,
+			ContentType: "image/png",
+			Data:        bytes.NewReader(png),
+			Embedded:    true,
+		},
+		{
+			Name:        qrcodeFileName,
 			ContentType: "image/png",
 			Data:        bytes.NewReader(png),
 		},

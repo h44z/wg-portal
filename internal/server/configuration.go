@@ -114,6 +114,7 @@ func NewConfig() *Config {
 	cfg.Email.Host = "127.0.0.1"
 	cfg.Email.Port = 25
 	cfg.Email.Encryption = common.MailEncryptionNone
+	cfg.Email.AuthType = common.MailAuthPlain
 
 	// Load config from file and environment
 	cfgFile, ok := os.LookupEnv("CONFIG_FILE")

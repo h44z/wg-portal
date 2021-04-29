@@ -3,13 +3,10 @@ package common
 import (
 	"crypto/tls"
 	"io"
-	"net/smtp"
-	"strconv"
-	"strings"
+	"io/ioutil"
 
 	"github.com/pkg/errors"
-
-	"github.com/jordan-wright/email"
+	mail "github.com/xhit/go-simple-mail/v2"
 )
 
 type MailEncryption string
@@ -20,6 +17,14 @@ const (
 	MailEncryptionStartTLS MailEncryption = "starttls"
 )
 
+type MailAuthType string
+
+const (
+	MailAuthPlain   MailAuthType = "plain"
+	MailAuthLogin   MailAuthType = "login"
+	MailAuthCramMD5 MailAuthType = "crammd5"
+)
+
 type MailConfig struct {
 	Host           string         `yaml:"host" envconfig:"EMAIL_HOST"`
 	Port           int            `yaml:"port" envconfig:"EMAIL_PORT"`
@@ -28,6 +33,7 @@ type MailConfig struct {
 	CertValidation bool           `yaml:"certcheck" envconfig:"EMAIL_CERT_VALIDATION"`
 	Username       string         `yaml:"user" envconfig:"EMAIL_USERNAME"`
 	Password       string         `yaml:"pass" envconfig:"EMAIL_PASSWORD"`
+	AuthType       MailAuthType   `yaml:"auth" envconfig:"EMAIL_AUTHTYPE"`
 }
 
 type MailAttachment struct {
@@ -39,60 +45,72 @@ type MailAttachment struct {
 
 // SendEmailWithAttachments sends a mail with optional attachments.
 func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body string, htmlBody string, receivers []string, attachments []MailAttachment) error {
-	e := email.NewEmail()
+	srv := mail.NewSMTPClient()
 
-	hostname := cfg.Host + ":" + strconv.Itoa(cfg.Port)
-	subject = strings.Trim(subject, "\n\r\t")
-	sender = strings.Trim(sender, "\n\r\t")
-	replyTo = strings.Trim(replyTo, "\n\r\t")
-	if replyTo == "" {
-		replyTo = sender
-	}
-
-	var auth smtp.Auth
-	if cfg.Username == "" {
-		auth = nil
-	} else {
-		// Set up authentication information.
-		auth = smtp.PlainAuth(
-			"",
-			cfg.Username,
-			cfg.Password,
-			cfg.Host,
-		)
-	}
-
-	// Set email data.
-	e.From = sender
-	e.To = receivers
-	e.ReplyTo = []string{replyTo}
-	e.Subject = subject
-	e.Text = []byte(body)
-	if htmlBody != "" {
-		e.HTML = []byte(htmlBody)
-	}
-
-	for _, attachment := range attachments {
-		a, err := e.Attach(attachment.Data, attachment.Name, attachment.ContentType)
-		if err != nil {
-			return errors.Wrapf(err, "failed to attach %s to mailbody", attachment.Name)
-		}
-		if attachment.Embedded {
-			a.HTMLRelated = true
-		}
-	}
+	srv.Host = cfg.Host
+	srv.Port = cfg.Port
+	srv.Username = cfg.Username
+	srv.Password = cfg.Password
 
 	// TODO: remove this once the deprecated MailConfig.TLS config option has been removed
 	if cfg.TLS {
 		cfg.Encryption = MailEncryptionStartTLS
 	}
-
 	switch cfg.Encryption {
 	case MailEncryptionTLS:
-		return e.SendWithTLS(hostname, auth, &tls.Config{ServerName: cfg.Host, InsecureSkipVerify: !cfg.CertValidation})
+		srv.Encryption = mail.EncryptionTLS
 	case MailEncryptionStartTLS:
-		return e.SendWithStartTLS(hostname, auth, &tls.Config{ServerName: cfg.Host, InsecureSkipVerify: !cfg.CertValidation})
+		srv.Encryption = mail.EncryptionSTARTTLS
 	default: // MailEncryptionNone
-		return e.Send(hostname, auth)
+		srv.Encryption = mail.EncryptionNone
 	}
+	srv.TLSConfig = &tls.Config{InsecureSkipVerify: !cfg.CertValidation}
+	switch cfg.AuthType {
+	case MailAuthPlain:
+		srv.Authentication = mail.AuthPlain
+	case MailAuthLogin:
+		srv.Authentication = mail.AuthLogin
+	case MailAuthCramMD5:
+		srv.Authentication = mail.AuthCRAMMD5
+	}
+
+	client, err := srv.Connect()
+	if err != nil {
+		return errors.Wrap(err, "failed to connect via SMTP")
+	}
+
+	if replyTo == "" {
+		replyTo = sender
+	}
+
+	email := mail.NewMSG()
+	email.SetFrom(sender).
+		AddTo(receivers...).
+		SetReplyTo(replyTo).
+		SetSubject(subject)
+
+	email.SetBody(mail.TextPlain, body)
+	if htmlBody != "" {
+		email.SetBody(mail.TextHTML, htmlBody)
+	}
+
+	for _, attachment := range attachments {
+		attachmentData, err := ioutil.ReadAll(attachment.Data)
+		if err != nil {
+			return errors.Wrapf(err, "failed to read attachment data for %s", attachment.Name)
+		}
+
+		if attachment.Embedded {
+			email.AddInlineData(attachmentData, attachment.Name, attachment.ContentType)
+		} else {
+			email.AddAttachmentData(attachmentData, attachment.Name, attachment.ContentType)
+		}
+	}
+
+	// Call Send and pass the client
+	err = email.Send(client)
+	if err != nil {
+		return errors.Wrapf(err, "failed to send email")
+	}
+	return nil
 }
