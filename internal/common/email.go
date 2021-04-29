@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"io"
 	"io/ioutil"
+	"time"
 
 	"github.com/pkg/errors"
 	mail "github.com/xhit/go-simple-mail/v2"
@@ -47,6 +48,8 @@ type MailAttachment struct {
 func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body, htmlBody string, receivers []string, attachments []MailAttachment) error {
 	srv := mail.NewSMTPClient()
 
+	srv.ConnectTimeout = 30 * time.Second
+	srv.SendTimeout = 30 * time.Second
 	srv.Host = cfg.Host
 	srv.Port = cfg.Port
 	srv.Username = cfg.Username
