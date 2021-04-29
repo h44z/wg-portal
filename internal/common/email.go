@@ -44,7 +44,7 @@ type MailAttachment struct {
 }
 
 // SendEmailWithAttachments sends a mail with optional attachments.
-func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body string, htmlBody string, receivers []string, attachments []MailAttachment) error {
+func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body, htmlBody string, receivers []string, attachments []MailAttachment) error {
 	srv := mail.NewSMTPClient()
 
 	srv.Host = cfg.Host
@@ -89,10 +89,8 @@ func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body str
 		SetReplyTo(replyTo).
 		SetSubject(subject)
 
-	email.SetBody(mail.TextPlain, body)
-	if htmlBody != "" {
-		email.SetBody(mail.TextHTML, htmlBody)
-	}
+	email.SetBody(mail.TextHTML, htmlBody)
+	email.AddAlternative(mail.TextPlain, body)
 
 	for _, attachment := range attachments {
 		attachmentData, err := ioutil.ReadAll(attachment.Data)
