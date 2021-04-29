@@ -67,7 +67,7 @@ func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body, ht
 	default: // MailEncryptionNone
 		srv.Encryption = mail.EncryptionNone
 	}
-	srv.TLSConfig = &tls.Config{InsecureSkipVerify: !cfg.CertValidation}
+	srv.TLSConfig = &tls.Config{ServerName: srv.Host, InsecureSkipVerify: !cfg.CertValidation}
 	switch cfg.AuthType {
 	case MailAuthPlain:
 		srv.Authentication = mail.AuthPlain
