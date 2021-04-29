@@ -89,9 +89,9 @@ func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body str
 
 	switch cfg.Encryption {
 	case MailEncryptionTLS:
-		return e.SendWithTLS(hostname, auth, &tls.Config{InsecureSkipVerify: !cfg.CertValidation})
+		return e.SendWithTLS(hostname, auth, &tls.Config{ServerName: cfg.Host, InsecureSkipVerify: !cfg.CertValidation})
 	case MailEncryptionStartTLS:
-		return e.SendWithStartTLS(hostname, auth, &tls.Config{InsecureSkipVerify: !cfg.CertValidation})
+		return e.SendWithStartTLS(hostname, auth, &tls.Config{ServerName: cfg.Host, InsecureSkipVerify: !cfg.CertValidation})
 	default: // MailEncryptionNone
 		return e.Send(hostname, auth)
 	}
