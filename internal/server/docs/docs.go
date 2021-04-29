@@ -1039,7 +1039,58 @@ var doc = `{
                 }
             }
         },
-        "/provisioning/peer": {
+        "/provisioning/peer/{pkey}": {
+            "get": {
+                "security": [
+                    {
+                        "GeneralBasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Retrieves the peer config for the given public key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Public Key (Base 64)",
+                        "name": "pkey",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The WireGuard configuration file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/peers": {
             "post": {
                 "security": [
                     {
@@ -1095,7 +1146,7 @@ var doc = `{
                 }
             }
         },
-        "/provisioning/peer/{pkey}": {
+        "/provisioning/peers/{email}": {
             "get": {
                 "security": [
                     {
@@ -1103,26 +1154,29 @@ var doc = `{
                     }
                 ],
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
                     "Provisioning"
                 ],
-                "summary": "Retrieves the peer config for the given public key",
+                "summary": "Retrieves all active peers for the given email address",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Public Key (Base 64)",
-                        "name": "pkey",
+                        "description": "Email Address",
+                        "name": "email",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "The WireGuard configuration file",
+                        "description": "All active WireGuard peers",
                         "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/server.PeerDeploymentInformation"
+                            }
                         }
                     },
                     "401": {
@@ -1164,6 +1218,23 @@ var doc = `{
             "type": "object",
             "properties": {
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.PeerDeploymentInformation": {
+            "type": "object",
+            "properties": {
+                "device": {
+                    "type": "string"
+                },
+                "deviceIdentifier": {
+                    "type": "string"
+                },
+                "identifier": {
+                    "type": "string"
+                },
+                "publicKey": {
                     "type": "string"
                 }
             }

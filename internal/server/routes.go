@@ -107,8 +107,9 @@ func SetupApiRoutes(s *Server) {
 	apiV1Deployment := s.server.Group("/api/v1/provisioning")
 	apiV1Deployment.Use(s.RequireApiAuthentication(""))
 
+	apiV1Deployment.GET("/peers/:email", api.GetPeerDeploymentInformation)
 	apiV1Deployment.GET("/peer/:pkey", api.GetPeerDeploymentConfig)
-	apiV1Deployment.POST("/peer", api.PostPeerDeploymentConfig)
+	apiV1Deployment.POST("/peers", api.PostPeerDeploymentConfig)
 
 	// Swagger doc/ui
 	s.server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

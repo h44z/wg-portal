@@ -732,6 +732,63 @@ func (s *ApiServer) PatchDevice(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, device)
 }
 
+type PeerDeploymentInformation struct {
+	PublicKey        string
+	Identifier       string
+	Device           string
+	DeviceIdentifier string
+}
+
+// GetPeerDeploymentInformation godoc
+// @Tags Provisioning
+// @Summary Retrieves all active peers for the given email address
+// @Produce json
+// @Param email path string true "Email Address"
+// @Success 200 {object} []PeerDeploymentInformation "All active WireGuard peers"
+// @Failure 401 {object} ApiError
+// @Failure 403 {object} ApiError
+// @Failure 404 {object} ApiError
+// @Router /provisioning/peers/{email} [get]
+// @Security GeneralBasicAuth
+func (s *ApiServer) GetPeerDeploymentInformation(c *gin.Context) {
+	email := c.Param("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, ApiError{Message: "email parameter must be specified"})
+		return
+	}
+
+	// Get authenticated user to check permissions
+	username, _, _ := c.Request.BasicAuth()
+	user := s.s.users.GetUser(username)
+
+	if !user.IsAdmin && user.Email != email {
+		c.JSON(http.StatusForbidden, ApiError{Message: "not enough permissions to access this resource"})
+		return
+	}
+
+	peers := s.s.peers.GetPeersByMail(email)
+	result := make([]PeerDeploymentInformation, 0, len(peers))
+	for i := range peers {
+		if peers[i].DeactivatedAt != nil {
+			continue // skip deactivated peers
+		}
+
+		device := s.s.peers.GetDevice(peers[i].DeviceName)
+		if device.Type != wireguard.DeviceTypeServer {
+			continue // Skip peers on non-server devices
+		}
+
+		result = append(result, PeerDeploymentInformation{
+			PublicKey:        peers[i].PublicKey,
+			Identifier:       peers[i].Identifier,
+			Device:           device.DeviceName,
+			DeviceIdentifier: device.DisplayName,
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 // GetPeerDeploymentConfig godoc
 // @Tags Provisioning
 // @Summary Retrieves the peer config for the given public key
@@ -760,7 +817,7 @@ func (s *ApiServer) GetPeerDeploymentConfig(c *gin.Context) {
 	username, _, _ := c.Request.BasicAuth()
 	user := s.s.users.GetUser(username)
 
-	if !user.IsAdmin && user.Email == peer.Email {
+	if !user.IsAdmin && user.Email != peer.Email {
 		c.JSON(http.StatusForbidden, ApiError{Message: "not enough permissions to access this resource"})
 		return
 	}
@@ -799,7 +856,7 @@ type ProvisioningRequest struct {
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError
 // @Failure 404 {object} ApiError
-// @Router /provisioning/peer [post]
+// @Router /provisioning/peers [post]
 // @Security GeneralBasicAuth
 func (s *ApiServer) PostPeerDeploymentConfig(c *gin.Context) {
 	req := ProvisioningRequest{}
@@ -817,7 +874,7 @@ func (s *ApiServer) PostPeerDeploymentConfig(c *gin.Context) {
 		return
 	}
 
-	if !user.IsAdmin && user.Email == req.Email {
+	if !user.IsAdmin && user.Email != req.Email {
 		c.JSON(http.StatusForbidden, ApiError{Message: "not enough permissions to access this resource"})
 		return
 	}
