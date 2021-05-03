@@ -285,7 +285,7 @@ var doc = `{
                 }
             }
         },
-        "/backend/peer/{pkey}": {
+        "/backend/peer": {
             "get": {
                 "security": [
                     {
@@ -304,7 +304,7 @@ var doc = `{
                         "type": "string",
                         "description": "Public Key (Base 64)",
                         "name": "pkey",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -356,7 +356,7 @@ var doc = `{
                         "type": "string",
                         "description": "Public Key",
                         "name": "pkey",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -426,7 +426,7 @@ var doc = `{
                         "type": "string",
                         "description": "Public Key",
                         "name": "pkey",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -487,7 +487,7 @@ var doc = `{
                         "type": "string",
                         "description": "Public Key",
                         "name": "pkey",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -1039,7 +1039,7 @@ var doc = `{
                 }
             }
         },
-        "/provisioning/peer/{pkey}": {
+        "/provisioning/peer": {
             "get": {
                 "security": [
                     {
@@ -1058,7 +1058,7 @@ var doc = `{
                         "type": "string",
                         "description": "Public Key (Base 64)",
                         "name": "pkey",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],

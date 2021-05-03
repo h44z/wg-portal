@@ -93,10 +93,10 @@ func SetupApiRoutes(s *Server) {
 
 	apiV1Backend.GET("/peers/:device", api.GetPeers)
 	apiV1Backend.POST("/peers/:device", api.PostPeer)
-	apiV1Backend.GET("/peer/:pkey", api.GetPeer)
-	apiV1Backend.PUT("/peer/:pkey", api.PutPeer)
-	apiV1Backend.PATCH("/peer/:pkey", api.PatchPeer)
-	apiV1Backend.DELETE("/peer/:pkey", api.DeletePeer)
+	apiV1Backend.GET("/peer", api.GetPeer)
+	apiV1Backend.PUT("/peer", api.PutPeer)
+	apiV1Backend.PATCH("/peer", api.PatchPeer)
+	apiV1Backend.DELETE("/peer", api.DeletePeer)
 
 	apiV1Backend.GET("/devices", api.GetDevices)
 	apiV1Backend.GET("/device/:device", api.GetDevice)
@@ -108,7 +108,7 @@ func SetupApiRoutes(s *Server) {
 	apiV1Deployment.Use(s.RequireApiAuthentication(""))
 
 	apiV1Deployment.GET("/peers/:email", api.GetPeerDeploymentInformation)
-	apiV1Deployment.GET("/peer/:pkey", api.GetPeerDeploymentConfig)
+	apiV1Deployment.GET("/peer", api.GetPeerDeploymentConfig)
 	apiV1Deployment.POST("/peers", api.PostPeerDeploymentConfig)
 
 	// Swagger doc/ui

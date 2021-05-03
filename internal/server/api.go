@@ -313,15 +313,15 @@ func (s *ApiServer) GetPeers(c *gin.Context) {
 // @Tags Peers
 // @Summary Retrieves the peer for the given public key
 // @Produce json
-// @Param pkey path string true "Public Key (Base 64)"
+// @Param pkey query string true "Public Key (Base 64)"
 // @Success 200 {object} wireguard.Peer
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError
 // @Failure 404 {object} ApiError
-// @Router /backend/peer/{pkey} [get]
+// @Router /backend/peer [get]
 // @Security ApiBasicAuth
 func (s *ApiServer) GetPeer(c *gin.Context) {
-	pkey := c.Param("pkey")
+	pkey := c.Query("pkey")
 	if pkey == "" {
 		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
 		return
@@ -392,7 +392,7 @@ func (s *ApiServer) PostPeer(c *gin.Context) {
 // @Summary Updates the given peer based on the given peer model
 // @Accept  json
 // @Produce json
-// @Param pkey path string true "Public Key"
+// @Param pkey query string true "Public Key"
 // @Param peer body wireguard.Peer true "Peer Model"
 // @Success 200 {object} wireguard.Peer
 // @Failure 400 {object} ApiError
@@ -400,7 +400,7 @@ func (s *ApiServer) PostPeer(c *gin.Context) {
 // @Failure 403 {object} ApiError
 // @Failure 404 {object} ApiError
 // @Failure 500 {object} ApiError
-// @Router /backend/peer/{pkey} [put]
+// @Router /backend/peer [put]
 // @Security ApiBasicAuth
 func (s *ApiServer) PutPeer(c *gin.Context) {
 	updatePeer := wireguard.Peer{}
@@ -409,7 +409,7 @@ func (s *ApiServer) PutPeer(c *gin.Context) {
 		return
 	}
 
-	pkey := c.Param("pkey")
+	pkey := c.Query("pkey")
 	if pkey == "" {
 		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
 		return
@@ -448,7 +448,7 @@ func (s *ApiServer) PutPeer(c *gin.Context) {
 // @Summary Updates the given peer based on the given partial peer model
 // @Accept  json
 // @Produce json
-// @Param pkey path string true "Public Key"
+// @Param pkey query string true "Public Key"
 // @Param peer body wireguard.Peer true "Peer Model"
 // @Success 200 {object} wireguard.Peer
 // @Failure 400 {object} ApiError
@@ -456,7 +456,7 @@ func (s *ApiServer) PutPeer(c *gin.Context) {
 // @Failure 403 {object} ApiError
 // @Failure 404 {object} ApiError
 // @Failure 500 {object} ApiError
-// @Router /backend/peer/{pkey} [patch]
+// @Router /backend/peer [patch]
 // @Security ApiBasicAuth
 func (s *ApiServer) PatchPeer(c *gin.Context) {
 	patch, err := c.GetRawData()
@@ -465,7 +465,7 @@ func (s *ApiServer) PatchPeer(c *gin.Context) {
 		return
 	}
 
-	pkey := c.Param("pkey")
+	pkey := c.Query("pkey")
 	if pkey == "" {
 		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
 		return
@@ -523,17 +523,17 @@ func (s *ApiServer) PatchPeer(c *gin.Context) {
 // @Tags Peers
 // @Summary Updates the given peer based on the given partial peer model
 // @Produce json
-// @Param pkey path string true "Public Key"
+// @Param pkey query string true "Public Key"
 // @Success 202 "No Content"
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError
 // @Failure 404 {object} ApiError
 // @Failure 500 {object} ApiError
-// @Router /backend/peer/{pkey} [delete]
+// @Router /backend/peer [delete]
 // @Security ApiBasicAuth
 func (s *ApiServer) DeletePeer(c *gin.Context) {
-	pkey := c.Param("pkey")
+	pkey := c.Query("pkey")
 	if pkey == "" {
 		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
 		return
@@ -793,15 +793,15 @@ func (s *ApiServer) GetPeerDeploymentInformation(c *gin.Context) {
 // @Tags Provisioning
 // @Summary Retrieves the peer config for the given public key
 // @Produce plain
-// @Param pkey path string true "Public Key (Base 64)"
+// @Param pkey query string true "Public Key (Base 64)"
 // @Success 200 {object} string "The WireGuard configuration file"
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError
 // @Failure 404 {object} ApiError
-// @Router /provisioning/peer/{pkey} [get]
+// @Router /provisioning/peer [get]
 // @Security GeneralBasicAuth
 func (s *ApiServer) GetPeerDeploymentConfig(c *gin.Context) {
-	pkey := c.Param("pkey")
+	pkey := c.Query("pkey")
 	if pkey == "" {
 		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
 		return
