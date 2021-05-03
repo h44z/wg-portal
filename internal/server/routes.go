@@ -86,28 +86,28 @@ func SetupApiRoutes(s *Server) {
 
 	apiV1Backend.GET("/users", api.GetUsers)
 	apiV1Backend.POST("/users", api.PostUser)
-	apiV1Backend.GET("/user/:email", api.GetUser)
-	apiV1Backend.PUT("/user/:email", api.PutUser)
-	apiV1Backend.PATCH("/user/:email", api.PatchUser)
-	apiV1Backend.DELETE("/user/:email", api.DeleteUser)
+	apiV1Backend.GET("/user", api.GetUser)
+	apiV1Backend.PUT("/user", api.PutUser)
+	apiV1Backend.PATCH("/user", api.PatchUser)
+	apiV1Backend.DELETE("/user", api.DeleteUser)
 
-	apiV1Backend.GET("/peers/:device", api.GetPeers)
-	apiV1Backend.POST("/peers/:device", api.PostPeer)
+	apiV1Backend.GET("/peers", api.GetPeers)
+	apiV1Backend.POST("/peers", api.PostPeer)
 	apiV1Backend.GET("/peer", api.GetPeer)
 	apiV1Backend.PUT("/peer", api.PutPeer)
 	apiV1Backend.PATCH("/peer", api.PatchPeer)
 	apiV1Backend.DELETE("/peer", api.DeletePeer)
 
 	apiV1Backend.GET("/devices", api.GetDevices)
-	apiV1Backend.GET("/device/:device", api.GetDevice)
-	apiV1Backend.PUT("/device/:device", api.PutDevice)
-	apiV1Backend.PATCH("/device/:device", api.PatchDevice)
+	apiV1Backend.GET("/device", api.GetDevice)
+	apiV1Backend.PUT("/device", api.PutDevice)
+	apiV1Backend.PATCH("/device", api.PatchDevice)
 
 	// Simple authenticated routes
 	apiV1Deployment := s.server.Group("/api/v1/provisioning")
 	apiV1Deployment.Use(s.RequireApiAuthentication(""))
 
-	apiV1Deployment.GET("/peers/:email", api.GetPeerDeploymentInformation)
+	apiV1Deployment.GET("/peers", api.GetPeerDeploymentInformation)
 	apiV1Deployment.GET("/peer", api.GetPeerDeploymentConfig)
 	apiV1Deployment.POST("/peers", api.PostPeerDeploymentConfig)
 

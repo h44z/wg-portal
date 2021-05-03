@@ -31,7 +31,7 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/backend/device/{device}": {
+        "/backend/device": {
             "get": {
                 "security": [
                     {
@@ -50,7 +50,7 @@ var doc = `{
                         "type": "string",
                         "description": "Device Name",
                         "name": "device",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -108,7 +108,7 @@ var doc = `{
                         "type": "string",
                         "description": "Device Name",
                         "name": "device",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -181,7 +181,7 @@ var doc = `{
                         "type": "string",
                         "description": "Device Name",
                         "name": "device",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -540,7 +540,7 @@ var doc = `{
                 }
             }
         },
-        "/backend/peers/{device}": {
+        "/backend/peers": {
             "get": {
                 "security": [
                     {
@@ -559,7 +559,7 @@ var doc = `{
                         "type": "string",
                         "description": "Device Name",
                         "name": "device",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -614,7 +614,7 @@ var doc = `{
                         "type": "string",
                         "description": "Device Name",
                         "name": "device",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -667,7 +667,7 @@ var doc = `{
                 }
             }
         },
-        "/backend/user/{email}": {
+        "/backend/user": {
             "get": {
                 "security": [
                     {
@@ -686,7 +686,7 @@ var doc = `{
                         "type": "string",
                         "description": "User Email",
                         "name": "email",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -744,7 +744,7 @@ var doc = `{
                         "type": "string",
                         "description": "User Email",
                         "name": "email",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -814,7 +814,7 @@ var doc = `{
                         "type": "string",
                         "description": "User Email",
                         "name": "email",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -875,7 +875,7 @@ var doc = `{
                         "type": "string",
                         "description": "User Email",
                         "name": "email",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -1091,6 +1091,58 @@ var doc = `{
             }
         },
         "/provisioning/peers": {
+            "get": {
+                "security": [
+                    {
+                        "GeneralBasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Retrieves all active peers for the given email address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Email Address",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All active WireGuard peers",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/server.PeerDeploymentInformation"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ApiError"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1123,60 +1175,6 @@ var doc = `{
                         "description": "The WireGuard configuration file",
                         "schema": {
                             "type": "string"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/server.ApiError"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/server.ApiError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/server.ApiError"
-                        }
-                    }
-                }
-            }
-        },
-        "/provisioning/peers/{email}": {
-            "get": {
-                "security": [
-                    {
-                        "GeneralBasicAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Provisioning"
-                ],
-                "summary": "Retrieves all active peers for the given email address",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Email Address",
-                        "name": "email",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "All active WireGuard peers",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/server.PeerDeploymentInformation"
-                            }
                         }
                     },
                     "401": {
