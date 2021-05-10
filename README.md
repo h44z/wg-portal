@@ -130,7 +130,7 @@ The following configuration options are available:
 | EMAIL_CERT_VALIDATION | certcheck         | email       | false                                           | Validate the email server certificate.                                                                                               |
 | EMAIL_USERNAME        | user              | email       |                                                 | An optional username for SMTP authentication.                                                                                        |
 | EMAIL_PASSWORD        | pass              | email       |                                                 | An optional password for SMTP authentication.                                                                                        |
-| EMAIL_AUTHTYPE        | auth              | email       | plain                                           | Either plain, login or crammd5. If username and password are empty, this value is ignored.                                                                                                        |
+| EMAIL_AUTHTYPE        | auth              | email       | plain                                           | Either plain, login or crammd5. If username and password are empty, this value is ignored.                                           |
 | WG_DEVICES            | devices           | wg          | wg0                                             | A comma separated list of WireGuard devices.                                                                                         |
 | WG_DEFAULT_DEVICE     | defaultDevice     | wg          | wg0                                             | This device is used for auto-created peers (if CREATE_DEFAULT_PEER is enabled).                                                      |
 | WG_CONFIG_PATH        | configDirectory   | wg          | /etc/wireguard                                  | If set, interface configuration updates will be written to this path, filename: <devicename>.conf.                                   |
@@ -141,15 +141,14 @@ The following configuration options are available:
 | LDAP_BASEDN           | dn                | ldap        | DC=COMPANY,DC=LOCAL                             | The base DN for searching users.                                                                                                     |
 | LDAP_USER             | user              | ldap        | company\\\\ldap_wireguard                       | The bind user.                                                                                                                       |
 | LDAP_PASSWORD         | pass              | ldap        | SuperSecret                                     | The bind password.                                                                                                                   |
-| LDAP_TYPE             | typ               | ldap        | AD                                              | Either AD or OpenLDAP.                                                                                                               |
-| LDAP_USER_CLASS       | userClass         | ldap        | organizationalPerson                            | The user class that specifies the LDAP object category of users.                                                                     |
+| LDAP_LOGIN_FILTER     | loginFilter       | ldap        | (&(objectClass=organizationalPerson)(mail={{login_identifier}})(!userAccountControl:1.2.840.113556.1.4.803:=2)) | {{login_identifier}} will be replaced with the login email address.  |
+| LDAP_SYNC_FILTER      | syncFilter        | ldap        | (&(objectClass=organizationalPerson)(!userAccountControl:1.2.840.113556.1.4.803:=2))                            | The filter string for the LDAP synchronization service.              |
 | LDAP_ADMIN_GROUP      | adminGroup        | ldap        | CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL | Users in this group are marked as administrators.                                                                                    |
 | LDAP_ATTR_EMAIL       | attrEmail         | ldap        | mail                                            | User email attribute.                                                                                                                |
 | LDAP_ATTR_FIRSTNAME   | attrFirstname     | ldap        | givenName                                       | User firstname attribute.                                                                                                            |
 | LDAP_ATTR_LASTNAME    | attrLastname      | ldap        | sn                                              | User lastname attribute.                                                                                                             |
 | LDAP_ATTR_PHONE       | attrPhone         | ldap        | telephoneNumber                                 | User phone number attribute.                                                                                                         |
 | LDAP_ATTR_GROUPS      | attrGroups        | ldap        | memberOf                                        | User groups attribute.                                                                                                               |
-| LDAP_ATTR_DISABLED    | attrDisabled      | ldap        | userAccountControl                              | User status attribute. This attribute is used to detect deactivated users.                                                           |
 | LOG_LEVEL             |                   |             | debug                                           | Specify log level, one of: trace, debug, info, off.                                                                                  |
 | LOG_JSON              |                   |             | false                                           | Format log output as JSON.                                                                                                           |
 | LOG_COLOR             |                   |             | true                                            | Colorize log output.                                                                                                                 |
@@ -174,7 +173,6 @@ ldap:
   user: wireguard@test.test
   pass: test
   adminGroup: CN=WireGuardAdmins,CN=Users,DC=test,DC=test
-  typ: AD
 database:
   typ: sqlite
   database: data/wg_portal.db

@@ -97,15 +97,14 @@ func NewConfig() *Config {
 	cfg.LDAP.StartTLS = true
 	cfg.LDAP.BindUser = "company\\\\ldap_wireguard"
 	cfg.LDAP.BindPass = "SuperSecret"
-	cfg.LDAP.Type = "AD"
-	cfg.LDAP.UserClass = "organizationalPerson"
 	cfg.LDAP.EmailAttribute = "mail"
 	cfg.LDAP.FirstNameAttribute = "givenName"
 	cfg.LDAP.LastNameAttribute = "sn"
 	cfg.LDAP.PhoneAttribute = "telephoneNumber"
 	cfg.LDAP.GroupMemberAttribute = "memberOf"
-	cfg.LDAP.DisabledAttribute = "userAccountControl"
 	cfg.LDAP.AdminLdapGroup = "CN=WireGuardAdmins,OU=_O_IT,DC=COMPANY,DC=LOCAL"
+	cfg.LDAP.LoginFilter = "(&(objectClass=organizationalPerson)(mail={{login_identifier}})(!userAccountControl:1.2.840.113556.1.4.803:=2))"
+	cfg.LDAP.SyncFilter = "(&(objectClass=organizationalPerson)(!userAccountControl:1.2.840.113556.1.4.803:=2))"
 
 	cfg.WG.DeviceNames = []string{"wg0"}
 	cfg.WG.DefaultDeviceName = "wg0"

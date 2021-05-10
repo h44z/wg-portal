@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/authentication"
 	"github.com/h44z/wg-portal/internal/users"
@@ -53,65 +55,15 @@ func (s *Server) PostLogin(c *gin.Context) {
 		return
 	}
 
-	// Check user database for an matching entry
-	var loginProvider authentication.AuthProvider
-	email := ""
-	user := s.users.GetUser(username) // retrieve active candidate user from db
-	if user != nil {                  // existing user
-		loginProvider = s.auth.GetProvider(string(user.Source))
-		if loginProvider == nil {
-			s.GetHandleError(c, http.StatusInternalServerError, "login error", "login provider unavailable")
-			return
-		}
-		authEmail, err := loginProvider.Login(&authentication.AuthContext{
-			Username: username,
-			Password: password,
-		})
-		if err == nil {
-			email = authEmail
-		}
-	} else { // possible new user
-		// Check all available auth backends
-		for _, provider := range s.auth.GetProvidersForType(authentication.AuthProviderTypePassword) {
-			// try to log in to the given provider
-			authEmail, err := provider.Login(&authentication.AuthContext{
-				Username: username,
-				Password: password,
-			})
-			if err != nil {
-				continue
-			}
-
-			email = authEmail
-			loginProvider = provider
-
-			// create new user in the database (or reactivate him)
-			userData, err := loginProvider.GetUserModel(&authentication.AuthContext{
-				Username: email,
-			})
-			if err != nil {
-				s.GetHandleError(c, http.StatusInternalServerError, "login error", err.Error())
-				return
-			}
-			if err := s.CreateUser(users.User{
-				Email:     userData.Email,
-				Source:    users.UserSource(loginProvider.GetName()),
-				IsAdmin:   userData.IsAdmin,
-				Firstname: userData.Firstname,
-				Lastname:  userData.Lastname,
-				Phone:     userData.Phone,
-			}, s.wg.Cfg.GetDefaultDeviceName()); err != nil {
-				s.GetHandleError(c, http.StatusInternalServerError, "login error", "failed to update user data")
-				return
-			}
-
-			user = s.users.GetUser(username)
-			break
-		}
+	// Check all available auth backends
+	user, err := s.checkAuthentication(username, password)
+	if err != nil {
+		s.GetHandleError(c, http.StatusInternalServerError, "login error", err.Error())
+		return
 	}
 
 	// Check if user is authenticated
-	if email == "" || loginProvider == nil || user == nil {
+	if user == nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
 		return
 	}
@@ -151,4 +103,49 @@ func (s *Server) GetLogout(c *gin.Context) {
 		return
 	}
 	c.Redirect(http.StatusSeeOther, "/")
+}
+
+func (s *Server) checkAuthentication(username, password string) (*users.User, error) {
+	var user *users.User
+
+	// Check all available auth backends
+	for _, provider := range s.auth.GetProvidersForType(authentication.AuthProviderTypePassword) {
+		// try to log in to the given provider
+		authEmail, err := provider.Login(&authentication.AuthContext{
+			Username: username,
+			Password: password,
+		})
+		if err != nil {
+			continue
+		}
+
+		// Login succeeded
+		user = s.users.GetUser(authEmail)
+		if user != nil {
+			break // user exists, nothing more to do...
+		}
+
+		// create new user in the database (or reactivate him)
+		userData, err := provider.GetUserModel(&authentication.AuthContext{
+			Username: username,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get user model")
+		}
+		if err := s.CreateUser(users.User{
+			Email:     userData.Email,
+			Source:    users.UserSource(provider.GetName()),
+			IsAdmin:   userData.IsAdmin,
+			Firstname: userData.Firstname,
+			Lastname:  userData.Lastname,
+			Phone:     userData.Phone,
+		}, s.wg.Cfg.GetDefaultDeviceName()); err != nil {
+			return nil, errors.Wrap(err, "failed to update user data")
+		}
+
+		user = s.users.GetUser(authEmail)
+		break
+	}
+
+	return user, nil
 }

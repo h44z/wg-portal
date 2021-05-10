@@ -32,86 +32,16 @@ func (s *Server) SyncLdapWithUserDatabase() {
 			continue
 		}
 
-		for i := range ldapUsers {
-			// prefilter
-			if ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute] == "" ||
-				ldapUsers[i].Attributes[s.config.LDAP.FirstNameAttribute] == "" ||
-				ldapUsers[i].Attributes[s.config.LDAP.LastNameAttribute] == "" {
-				continue
-			}
+		// Update existing LDAP users
+		s.updateLdapUsers(ldapUsers)
 
-			user, err := s.users.GetOrCreateUserUnscoped(ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute])
-			if err != nil {
-				logrus.Errorf("failed to get/create user %s in database: %v", ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute], err)
-			}
-
-			// check if user should be deactivated
-			ldapDeactivated := false
-			switch s.config.LDAP.Type {
-			case ldap.TypeActiveDirectory:
-				ldapDeactivated = ldap.IsActiveDirectoryUserDisabled(ldapUsers[i].Attributes[s.config.LDAP.DisabledAttribute])
-			case ldap.TypeOpenLDAP:
-				ldapDeactivated = ldap.IsOpenLdapUserDisabled(ldapUsers[i].Attributes[s.config.LDAP.DisabledAttribute])
-			}
-
-			// check if user has been disabled in ldap, update peers accordingly
-			if ldapDeactivated != user.DeletedAt.Valid {
-				if ldapDeactivated {
-					// disable all peers for the given user
-					for _, peer := range s.peers.GetPeersByMail(user.Email) {
-						now := time.Now()
-						peer.DeactivatedAt = &now
-						if err = s.UpdatePeer(peer, now); err != nil {
-							logrus.Errorf("failed to update deactivated peer %s: %v", peer.PublicKey, err)
-						}
-					}
-				} else {
-					// enable all peers for the given user
-					for _, peer := range s.peers.GetPeersByMail(user.Email) {
-						now := time.Now()
-						peer.DeactivatedAt = nil
-						if err = s.UpdatePeer(peer, now); err != nil {
-							logrus.Errorf("failed to update activated peer %s: %v", peer.PublicKey, err)
-						}
-					}
-				}
-			}
-
-			// Sync attributes from ldap
-			if s.UserChangedInLdap(user, &ldapUsers[i]) {
-				user.Firstname = ldapUsers[i].Attributes[s.config.LDAP.FirstNameAttribute]
-				user.Lastname = ldapUsers[i].Attributes[s.config.LDAP.LastNameAttribute]
-				user.Email = ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute]
-				user.Phone = ldapUsers[i].Attributes[s.config.LDAP.PhoneAttribute]
-				user.IsAdmin = false
-				user.Source = users.UserSourceLdap
-				user.DeletedAt = gorm.DeletedAt{} // Not deleted
-
-				for _, group := range ldapUsers[i].RawAttributes[s.config.LDAP.GroupMemberAttribute] {
-					if string(group) == s.config.LDAP.AdminLdapGroup {
-						user.IsAdmin = true
-						break
-					}
-				}
-
-				if err = s.users.UpdateUser(user); err != nil {
-					logrus.Errorf("failed to update ldap user %s in database: %v", user.Email, err)
-					continue
-				}
-
-				if ldapDeactivated {
-					if err = s.users.DeleteUser(user); err != nil {
-						logrus.Errorf("failed to delete deactivated user %s in database: %v", user.Email, err)
-						continue
-					}
-				}
-			}
-		}
+		// Disable missing LDAP users
+		s.disableMissingLdapUsers(ldapUsers)
 	}
 	logrus.Info("ldap user synchronization stopped")
 }
 
-func (s Server) UserChangedInLdap(user *users.User, ldapData *ldap.RawLdapData) bool {
+func (s Server) userChangedInLdap(user *users.User, ldapData *ldap.RawLdapData) bool {
 	if user.Firstname != ldapData.Attributes[s.config.LDAP.FirstNameAttribute] {
 		return true
 	}
@@ -125,14 +55,7 @@ func (s Server) UserChangedInLdap(user *users.User, ldapData *ldap.RawLdapData) 
 		return true
 	}
 
-	ldapDeactivated := false
-	switch s.config.LDAP.Type {
-	case ldap.TypeActiveDirectory:
-		ldapDeactivated = ldap.IsActiveDirectoryUserDisabled(ldapData.Attributes[s.config.LDAP.DisabledAttribute])
-	case ldap.TypeOpenLDAP:
-		ldapDeactivated = ldap.IsOpenLdapUserDisabled(ldapData.Attributes[s.config.LDAP.DisabledAttribute])
-	}
-	if ldapDeactivated != user.DeletedAt.Valid {
+	if user.DeletedAt.Valid {
 		return true
 	}
 
@@ -148,4 +71,83 @@ func (s Server) UserChangedInLdap(user *users.User, ldapData *ldap.RawLdapData) 
 	}
 
 	return false
+}
+
+func (s *Server) disableMissingLdapUsers(ldapUsers []ldap.RawLdapData) {
+	// Disable missing LDAP users
+	activeUsers := s.users.GetUsers()
+	for i := range activeUsers {
+		if activeUsers[i].Source != users.UserSourceLdap {
+			continue
+		}
+
+		existsInLDAP := false
+		for j := range ldapUsers {
+			if activeUsers[i].Email == ldapUsers[j].Attributes[s.config.LDAP.EmailAttribute] {
+				existsInLDAP = true
+				break
+			}
+		}
+
+		if existsInLDAP {
+			continue
+		}
+
+		// disable all peers for the given user
+		for _, peer := range s.peers.GetPeersByMail(activeUsers[i].Email) {
+			now := time.Now()
+			peer.DeactivatedAt = &now
+			if err := s.UpdatePeer(peer, now); err != nil {
+				logrus.Errorf("failed to update deactivated peer %s: %v", peer.PublicKey, err)
+			}
+		}
+
+		if err := s.users.DeleteUser(&activeUsers[i]); err != nil {
+			logrus.Errorf("failed to delete deactivated user %s in database: %v", activeUsers[i].Email, err)
+		}
+	}
+}
+
+func (s *Server) updateLdapUsers(ldapUsers []ldap.RawLdapData) {
+	for i := range ldapUsers {
+		user, err := s.users.GetOrCreateUserUnscoped(ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute])
+		if err != nil {
+			logrus.Errorf("failed to get/create user %s in database: %v", ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute], err)
+		}
+
+		// re-enable LDAP user if the user was disabled
+		if user.DeletedAt.Valid {
+			// enable all peers for the given user
+			for _, peer := range s.peers.GetPeersByMail(user.Email) {
+				now := time.Now()
+				peer.DeactivatedAt = nil
+				if err = s.UpdatePeer(peer, now); err != nil {
+					logrus.Errorf("failed to update activated peer %s: %v", peer.PublicKey, err)
+				}
+			}
+		}
+
+		// Sync attributes from ldap
+		if s.userChangedInLdap(user, &ldapUsers[i]) {
+			user.Firstname = ldapUsers[i].Attributes[s.config.LDAP.FirstNameAttribute]
+			user.Lastname = ldapUsers[i].Attributes[s.config.LDAP.LastNameAttribute]
+			user.Email = ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute]
+			user.Phone = ldapUsers[i].Attributes[s.config.LDAP.PhoneAttribute]
+			user.IsAdmin = false
+			user.Source = users.UserSourceLdap
+			user.DeletedAt = gorm.DeletedAt{} // Not deleted
+
+			for _, group := range ldapUsers[i].RawAttributes[s.config.LDAP.GroupMemberAttribute] {
+				if string(group) == s.config.LDAP.AdminLdapGroup {
+					user.IsAdmin = true
+					break
+				}
+			}
+
+			if err = s.users.UpdateUser(user); err != nil {
+				logrus.Errorf("failed to update ldap user %s in database: %v", user.Email, err)
+				continue
+			}
+		}
+	}
 }

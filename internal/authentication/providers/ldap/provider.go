@@ -2,7 +2,6 @@ package ldap
 
 import (
 	"crypto/tls"
-	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -69,13 +68,11 @@ func (provider Provider) Login(ctx *authentication.AuthContext) (string, error) 
 
 	// Search for the given username
 	attrs := []string{"dn", provider.config.EmailAttribute}
-	if provider.config.DisabledAttribute != "" {
-		attrs = append(attrs, provider.config.DisabledAttribute)
-	}
+	loginFilter := strings.Replace(provider.config.LoginFilter, "{{login_identifier}}", username, -1)
 	searchRequest := ldap.NewSearchRequest(
 		provider.config.BaseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf("(&(objectClass=%s)(%s=%s))", provider.config.UserClass, provider.config.EmailAttribute, username),
+		loginFilter,
 		attrs,
 		nil,
 	)
@@ -89,24 +86,8 @@ func (provider Provider) Login(ctx *authentication.AuthContext) (string, error) 
 		return "", errors.Errorf("invalid amount of ldap entries (%d)", len(sr.Entries))
 	}
 
-	userDN := sr.Entries[0].DN
-
-	// Check if user is disabled, if so deny login
-	if provider.config.DisabledAttribute != "" {
-		uac := sr.Entries[0].GetAttributeValue(provider.config.DisabledAttribute)
-		switch provider.config.Type {
-		case ldapconfig.TypeActiveDirectory:
-			if ldapconfig.IsActiveDirectoryUserDisabled(uac) {
-				return "", errors.New("user is disabled")
-			}
-		case ldapconfig.TypeOpenLDAP:
-			if ldapconfig.IsOpenLdapUserDisabled(uac) {
-				return "", errors.New("user is disabled")
-			}
-		}
-	}
-
 	// Bind as the user to verify their password
+	userDN := sr.Entries[0].DN
 	err = client.Bind(userDN, password)
 	if err != nil {
 		return "", errors.Wrapf(err, "invalid credentials")
@@ -136,13 +117,11 @@ func (provider Provider) GetUserModel(ctx *authentication.AuthContext) (*authent
 	// Search for the given username
 	attrs := []string{"dn", provider.config.EmailAttribute, provider.config.FirstNameAttribute, provider.config.LastNameAttribute,
 		provider.config.PhoneAttribute, provider.config.GroupMemberAttribute}
-	if provider.config.DisabledAttribute != "" {
-		attrs = append(attrs, provider.config.DisabledAttribute)
-	}
+	loginFilter := strings.Replace(provider.config.LoginFilter, "{{login_identifier}}", username, -1)
 	searchRequest := ldap.NewSearchRequest(
 		provider.config.BaseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf("(&(objectClass=%s)(%s=%s))", provider.config.UserClass, provider.config.EmailAttribute, username),
+		loginFilter,
 		attrs,
 		nil,
 	)
