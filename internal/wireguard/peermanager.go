@@ -192,12 +192,21 @@ func (p Peer) GetConfigFile(device Device) ([]byte, error) {
 
 func (p Peer) GetQRCode() ([]byte, error) {
 	png, err := qrcode.Encode(p.Config, qrcode.Medium, 250)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"err": err,
-		}).Error("failed to create qrcode")
+	if err == nil {
+		return png, nil
+	}
+
+	if err.Error() != "content too long to encode" {
+		logrus.Errorf("failed to create qrcode: %v", err)
 		return nil, errors.Wrap(err, "failed to encode qrcode")
 	}
+
+	png, err = qrcode.Encode(p.Config, qrcode.Low, 250)
+	if err != nil {
+		logrus.Errorf("failed to create qrcode: %v", err)
+		return nil, errors.Wrap(err, "failed to encode qrcode")
+	}
+
 	return png, nil
 }
 
