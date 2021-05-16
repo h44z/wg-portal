@@ -2,8 +2,6 @@ package ldap
 
 import (
 	"crypto/tls"
-	"fmt"
-	"strconv"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/pkg/errors"
@@ -54,13 +52,10 @@ func FindAllUsers(cfg *Config) ([]RawLdapData, error) {
 	// Search all users
 	attrs := []string{"dn", cfg.EmailAttribute, cfg.EmailAttribute, cfg.FirstNameAttribute, cfg.LastNameAttribute,
 		cfg.PhoneAttribute, cfg.GroupMemberAttribute}
-	if cfg.DisabledAttribute != "" {
-		attrs = append(attrs, cfg.DisabledAttribute)
-	}
 	searchRequest := ldap.NewSearchRequest(
 		cfg.BaseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf("(objectClass=%s)", cfg.UserClass), attrs, nil,
+		cfg.SyncFilter, attrs, nil,
 	)
 
 	sr, err := client.Search(searchRequest)
@@ -86,28 +81,4 @@ func FindAllUsers(cfg *Config) ([]RawLdapData, error) {
 	}
 
 	return tmpData, nil
-}
-
-func IsActiveDirectoryUserDisabled(userAccountControl string) bool {
-	if userAccountControl == "" {
-		return false
-	}
-
-	uacInt, err := strconv.ParseInt(userAccountControl, 10, 32)
-	if err != nil {
-		return true
-	}
-	if int32(uacInt)&0x2 != 0 {
-		return true // bit 2 set means account is disabled
-	}
-
-	return false
-}
-
-func IsOpenLdapUserDisabled(pwdAccountLockedTime string) bool {
-	if pwdAccountLockedTime != "" {
-		return true
-	}
-
-	return false
 }
