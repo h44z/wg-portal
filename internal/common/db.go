@@ -117,7 +117,15 @@ func MigrateDatabase(db *gorm.DB, version string) error {
 		db.Order("applied desc, version desc").FirstOrInit(&lastVersion)
 
 		if lastVersion.Version == "" {
-			return nil // no previous version exists, no migrations to apply
+			// fresh database, no migrations to apply
+			res := db.Create(&DatabaseMigrationInfo{
+				Version: version,
+				Applied: time.Now(),
+			})
+			if res.Error != nil {
+				return errors.Wrapf(res.Error, "failed to write version %s to database", version)
+			}
+			return nil
 		}
 
 		sort.Slice(migrations, func(i, j int) bool {
