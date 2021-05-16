@@ -54,6 +54,9 @@ func (s Server) userChangedInLdap(user *users.User, ldapData *ldap.RawLdapData) 
 	if user.Phone != ldapData.Attributes[s.config.LDAP.PhoneAttribute] {
 		return true
 	}
+	if user.Source != users.UserSourceLdap {
+		return true
+	}
 
 	if user.DeletedAt.Valid {
 		return true
@@ -83,7 +86,7 @@ func (s *Server) disableMissingLdapUsers(ldapUsers []ldap.RawLdapData) {
 
 		existsInLDAP := false
 		for j := range ldapUsers {
-			if activeUsers[i].Email == ldapUsers[j].Attributes[s.config.LDAP.EmailAttribute] {
+			if activeUsers[i].Email == strings.ToLower(ldapUsers[j].Attributes[s.config.LDAP.EmailAttribute]) {
 				existsInLDAP = true
 				break
 			}
@@ -129,6 +132,7 @@ func (s *Server) updateLdapUsers(ldapUsers []ldap.RawLdapData) {
 
 		// Sync attributes from ldap
 		if s.userChangedInLdap(user, &ldapUsers[i]) {
+			logrus.Debugf("updating ldap user %s", user.Email)
 			user.Firstname = ldapUsers[i].Attributes[s.config.LDAP.FirstNameAttribute]
 			user.Lastname = ldapUsers[i].Attributes[s.config.LDAP.LastNameAttribute]
 			user.Email = ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute]
