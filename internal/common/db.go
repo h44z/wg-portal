@@ -116,6 +116,10 @@ func MigrateDatabase(db *gorm.DB, version string) error {
 		lastVersion := DatabaseMigrationInfo{}
 		db.Order("applied desc, version desc").FirstOrInit(&lastVersion)
 
+		if lastVersion.Version == "" {
+			return nil // no previous version exists, no migrations to apply
+		}
+
 		sort.Slice(migrations, func(i, j int) bool {
 			return migrations[i].version < migrations[j].version
 		})
