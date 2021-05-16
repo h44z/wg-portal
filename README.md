@@ -30,6 +30,7 @@ It also supports LDAP (Active Directory or OpenLDAP) as authentication provider.
  * One single binary
  * Can be used with existing WireGuard setups
  * Support for multiple WireGuard interfaces
+ * REST API for management and client deployment
  
 ![Screenshot](screenshot.png)
 
@@ -37,6 +38,8 @@ It also supports LDAP (Active Directory or OpenLDAP) as authentication provider.
 
 ### Docker
 The easiest way to run WireGuard Portal is to use the Docker image provided.
+
+HINT: the *latest* tag always refers to the master branch and might contain unstable or incompatible code!
 
 Docker Compose snippet with some sample configuration values:
 ```
