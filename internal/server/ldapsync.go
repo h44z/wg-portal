@@ -113,6 +113,11 @@ func (s *Server) disableMissingLdapUsers(ldapUsers []ldap.RawLdapData) {
 
 func (s *Server) updateLdapUsers(ldapUsers []ldap.RawLdapData) {
 	for i := range ldapUsers {
+		if ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute] == "" {
+			logrus.Tracef("skipping sync of %s, empty email attribute", ldapUsers[i].DN)
+			continue
+		}
+
 		user, err := s.users.GetOrCreateUserUnscoped(ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute])
 		if err != nil {
 			logrus.Errorf("failed to get/create user %s in database: %v", ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute], err)
