@@ -63,8 +63,7 @@ func init() {
 //
 
 type Peer struct {
-	Peer   *wgtypes.Peer `gorm:"-" json:"-"`                                 // WireGuard peer
-	Device *Device       `gorm:"foreignKey:DeviceName" binding:"-" json:"-"` // linked WireGuard device
+	Peer   *wgtypes.Peer `gorm:"-" json:"-"` // WireGuard peer
 	Config string        `gorm:"-" json:"-"`
 
 	UID                  string     `form:"uid" binding:"required,alphanum" json:"-"` // uid for html identification
@@ -236,6 +235,7 @@ const (
 
 type Device struct {
 	Interface *wgtypes.Device `gorm:"-" json:"-"`
+	Peers     []Peer          `gorm:"foreignKey:DeviceName" binding:"-" json:"-"` // linked WireGuard peers
 
 	Type        DeviceType `form:"devicetype" binding:"required,oneof=client server"`
 	DeviceName  string     `form:"device" gorm:"primaryKey" binding:"required,alphanum"`
@@ -375,7 +375,7 @@ func NewPeerManager(db *gorm.DB, wg *Manager) (*PeerManager, error) {
 		}
 	}
 
-	if err := pm.db.AutoMigrate(&Peer{}, &Device{}); err != nil {
+	if err := pm.db.AutoMigrate(&Device{}, &Peer{}); err != nil {
 		return nil, errors.WithMessage(err, "failed to migrate peer database")
 	}
 
