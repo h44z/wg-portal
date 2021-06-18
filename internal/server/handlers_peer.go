@@ -64,6 +64,7 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	// Clean list input
 	formPeer.IPsStr = common.ListToString(common.ParseStringList(formPeer.IPsStr))
 	formPeer.AllowedIPsStr = common.ListToString(common.ParseStringList(formPeer.AllowedIPsStr))
+	formPeer.AllowedIPsSrvStr = common.ListToString(common.ParseStringList(formPeer.AllowedIPsSrvStr))
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()
@@ -121,6 +122,7 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	// Clean list input
 	formPeer.IPsStr = common.ListToString(common.ParseStringList(formPeer.IPsStr))
 	formPeer.AllowedIPsStr = common.ListToString(common.ParseStringList(formPeer.AllowedIPsStr))
+	formPeer.AllowedIPsSrvStr = common.ListToString(common.ParseStringList(formPeer.AllowedIPsSrvStr))
 
 	disabled := c.PostForm("isdisabled") != ""
 	now := time.Now()

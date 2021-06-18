@@ -81,7 +81,8 @@ type Peer struct {
 	// Core WireGuard Settings
 	PublicKey           string `gorm:"primaryKey" form:"pubkey" binding:"required,base64"` // the public key of the peer itself
 	PresharedKey        string `form:"presharedkey" binding:"omitempty,base64"`
-	AllowedIPsStr       string `form:"allowedip" binding:"cidrlist"` // a comma separated list of IPs that are used in the client config file
+	AllowedIPsStr       string `form:"allowedip" binding:"cidrlist"`    // a comma separated list of IPs that are used in the client config file
+	AllowedIPsSrvStr    string `form:"allowedipSrv" binding:"cidrlist"` // a comma separated list of IPs that are used in the server config file
 	Endpoint            string `form:"endpoint" binding:"omitempty,hostname_port"`
 	PersistentKeepalive int    `form:"keepalive" binding:"gte=0"`
 
@@ -123,6 +124,10 @@ func (p Peer) GetAllowedIPs() []string {
 	return common.ParseStringList(p.AllowedIPsStr)
 }
 
+func (p Peer) GetAllowedIPsSrv() []string {
+	return common.ParseStringList(p.AllowedIPsSrvStr)
+}
+
 func (p Peer) GetConfig(dev *Device) wgtypes.PeerConfig {
 	publicKey, _ := wgtypes.ParseKey(p.PublicKey)
 
@@ -153,6 +158,7 @@ func (p Peer) GetConfig(dev *Device) wgtypes.PeerConfig {
 		peerAllowedIPs = p.GetAllowedIPs()
 	case DeviceTypeServer:
 		peerAllowedIPs = p.GetIPAddresses()
+		peerAllowedIPs = append(peerAllowedIPs, p.GetAllowedIPsSrv()...)
 	}
 	for _, ip := range peerAllowedIPs {
 		_, ipNet, err := net.ParseCIDR(ip)

@@ -83,6 +83,12 @@
                 </div>
             </div>
             <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="server_AllowedIPSrv">Extra Allowed IPs (Server sided)</label>
+                    <input type="text" name="allowedipSrv" class="form-control" id="server_AllowedIPSrv" value="{{.Peer.AllowedIPsSrvStr}}">
+                </div>
+            </div>
+            <div class="form-row">
                 <div class="form-group col-md-12 global-config">
                     <label for="server_DNS">Client DNS Servers</label>
                     <input type="text" name="dns" class="form-control" id="server_DNS" value="{{.Peer.DNSStr}}">

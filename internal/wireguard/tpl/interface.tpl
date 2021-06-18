@@ -61,7 +61,7 @@ PublicKey = {{ .PublicKey }}
 PresharedKey = {{ .PresharedKey }}
 {{- end}}
 {{- if eq $.Interface.Type "server"}}
-AllowedIPs = {{ .IPsStr }}
+AllowedIPs = {{ .IPsStr }}{{if ne .AllowedIPsSrvStr ""}}, {{ .AllowedIPsSrvStr }}{{end}}
 {{- end}}
 {{- if eq $.Interface.Type "client"}}
 {{- if .AllowedIPsStr}}
