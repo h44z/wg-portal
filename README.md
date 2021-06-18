@@ -9,11 +9,11 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/h44z/wg-portal/)
 
 A simple, web based configuration portal for [WireGuard](https://wireguard.com). 
-The portal uses the WireGuard [wgctrl](https://github.com/WireGuard/wgctrl-go) library to manage the VPN 
-interface. This allows for seamless activation or deactivation of new users, without disturbing existing VPN 
+The portal uses the WireGuard [wgctrl](https://github.com/WireGuard/wgctrl-go) library to manage existing VPN 
+interfaces. This allows for seamless activation or deactivation of new users, without disturbing existing VPN 
 connections.
 
-The configuration portal currently supports using SQLite, MySQL as a user source for authentication and profile data.
+The configuration portal currently supports using SQLite and MySQL as a user source for authentication and profile data.
 It also supports LDAP (Active Directory or OpenLDAP) as authentication provider.
 
 ## Features
@@ -35,6 +35,8 @@ It also supports LDAP (Active Directory or OpenLDAP) as authentication provider.
 ![Screenshot](screenshot.png)
 
 ## Setup
+Make sure that your host system has at least one WireGuard interface (for example wg0) available. 
+If you did not start up a WireGuard interface yet, take a look at [wg-quick](https://manpages.debian.org/unstable/wireguard-tools/wg-quick.8.en.html) in order to get started.
 
 ### Docker
 The easiest way to run WireGuard Portal is to use the Docker image provided.
@@ -81,7 +83,7 @@ services:
       - LDAP_ADMIN_GROUP=CN=WireGuardAdmins,OU=Users,DC=COMPANY,DC=LOCAL
 ```
 Please note that mapping ```/etc/wireguard``` to ```/etc/wireguard``` inside the docker, will erase your host's current configuration.
-If needed, please make sure to backup your files from ```/etc/wireguard```.
+If needed, please make sure to back up your files from ```/etc/wireguard```.
 For a full list of configuration options take a look at the source file [internal/server/configuration.go](internal/server/configuration.go#L56).
 
 ### Standalone
@@ -200,10 +202,10 @@ The API is documented using OpenAPI 2.0, the Swagger UI can be found
 under the URL `http://<your wg-portal ip/domain>/swagger/index.html`.
 
 ## What is out of scope
-
- * Generation or application of any `iptables` or `nftables` rules
- * Setting up or changing IP-addresses of the WireGuard interface on operating systems other than linux
- * Importing private keys of an existing WireGuard setup
+ * Creating or removing WireGuard (wgX) interfaces.
+ * Generation or application of any `iptables` or `nftables` rules.
+ * Setting up or changing IP-addresses of the WireGuard interface on operating systems other than linux.
+ * Importing private keys of an existing WireGuard setup.
  
 ## Application stack
 
