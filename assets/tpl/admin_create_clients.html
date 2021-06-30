@@ -52,11 +52,18 @@
             if (!valid) {
                 $(e.relatedTarget).addClass('invalid')
             }
+        }).on('tokenfield:createtoken', function (e) {
+            var existingTokens = $(this).tokenfield('getTokens');
+            $.each(existingTokens, function(index, token) {
+                if (token.value === e.attrs.value)
+                    e.preventDefault();
+            });
         }).tokenfield({
             autocomplete: {
-                source: [{{range $i, $u :=.Users}}{{$u.Email}},{{end}}],
+                source: [{{range $i, $u :=.Users}}{{if ne $i 0}},{{end}}'{{$u.Email}}'{{end}}],
                 delay: 100
             },
+            inputType: 'email',
             showAutocompleteOnFocus: false
         })</script>
 </body>
