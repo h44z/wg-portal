@@ -309,6 +309,11 @@ func (s *Server) DeleteUser(user users.User) error {
 }
 
 func (s *Server) CreateUserDefaultPeer(email, device string) error {
+	// Check if automatic peer creation is enabled
+	if !s.config.Core.CreateDefaultPeer {
+		return nil
+	}
+
 	// Check if user is active, if not, quit
 	var existingUser *users.User
 	if existingUser = s.users.GetUser(email); existingUser == nil {
@@ -316,18 +321,26 @@ func (s *Server) CreateUserDefaultPeer(email, device string) error {
 	}
 
 	// Check if user already has a peer setup, if not, create one
-	if s.config.Core.CreateDefaultPeer {
-		peers := s.peers.GetPeersByMail(email)
-		if len(peers) == 0 { // Create default vpn peer
-			if err := s.CreatePeer(device, wireguard.Peer{
-				Identifier: existingUser.Firstname + " " + existingUser.Lastname + " (Default)",
-				Email:      existingUser.Email,
-				CreatedBy:  existingUser.Email,
-				UpdatedBy:  existingUser.Email,
-			}); err != nil {
-				return errors.WithMessagef(err, "failed to automatically create vpn peer for %s", email)
-			}
-		}
+	peers := s.peers.GetPeersByMail(email)
+	if len(peers) != 0 {
+		return nil
+	}
+
+	// Create default vpn peer
+	peer, err := s.PrepareNewPeer(device)
+	if err != nil {
+		return errors.WithMessage(err, "failed to prepare new peer")
+	}
+	peer.Email = email
+	if existingUser.Firstname != "" && existingUser.Lastname != "" {
+		peer.Identifier = fmt.Sprintf("%s %s (%s)", existingUser.Firstname, existingUser.Lastname, "Default")
+	} else {
+		peer.Identifier = fmt.Sprintf("%s (%s)", existingUser.Email, "Default")
+	}
+	peer.CreatedBy = existingUser.Email
+	peer.UpdatedBy = existingUser.Email
+	if err := s.CreatePeer(device, peer); err != nil {
+		return errors.WithMessagef(err, "failed to automatically create vpn peer for %s", email)
 	}
 
 	return nil
