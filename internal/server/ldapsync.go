@@ -31,6 +31,7 @@ func (s *Server) SyncLdapWithUserDatabase() {
 			logrus.Errorf("failed to fetch users from ldap: %v", err)
 			continue
 		}
+		logrus.Trace("found %d users in ldap", len(ldapUsers))
 
 		// Update existing LDAP users
 		s.updateLdapUsers(ldapUsers)
