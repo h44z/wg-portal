@@ -141,6 +141,14 @@ func (s *Server) RequireAuthentication(scope string) gin.HandlerFunc {
 			return
 		}
 
+		// Check if logged-in user is still valid
+		if !s.isUserStillValid(session.Email) {
+			_ = DestroySessionData(c)
+			c.Abort()
+			s.GetHandleError(c, http.StatusUnauthorized, "unauthorized", "session no longer available")
+			return
+		}
+
 		// Continue down the chain to handler etc
 		c.Next()
 	}

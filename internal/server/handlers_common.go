@@ -192,3 +192,10 @@ func (s *Server) setFormInSession(c *gin.Context, formData interface{}) (Session
 
 	return currentSession, nil
 }
+
+func (s *Server) isUserStillValid(email string) bool {
+	if s.users.GetUser(email) == nil {
+		return false
+	}
+	return true
+}
