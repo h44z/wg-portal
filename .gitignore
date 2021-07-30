@@ -34,3 +34,4 @@ wg_portal.db
 go.sum
 swagger.json
 swagger.yaml
+/config.yml
