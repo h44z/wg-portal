@@ -12,6 +12,7 @@ import (
 	"github.com/h44z/wg-portal/internal/common"
 	"github.com/h44z/wg-portal/internal/users"
 	"github.com/h44z/wg-portal/internal/wireguard"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tatsushid/go-fastping"
 	csrf "github.com/utrack/gin-csrf"
@@ -254,59 +255,7 @@ func (s *Server) GetPeerConfigMail(c *gin.Context) {
 		return
 	}
 
-	user := s.users.GetUser(peer.Email)
-
-	cfg, err := peer.GetConfigFile(s.peers.GetDevice(currentSession.DeviceName))
-	if err != nil {
-		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
-		return
-	}
-	png, err := peer.GetQRCode()
-	if err != nil {
-		s.GetHandleError(c, http.StatusInternalServerError, "QRCode error", err.Error())
-		return
-	}
-	// Apply mail template
-	qrcodeFileName := "wireguard-qrcode.png"
-	var tplBuff bytes.Buffer
-	if err := s.mailTpl.Execute(&tplBuff, struct {
-		Peer          wireguard.Peer
-		User          *users.User
-		QrcodePngName string
-		PortalUrl     string
-	}{
-		Peer:          peer,
-		User:          user,
-		QrcodePngName: qrcodeFileName,
-		PortalUrl:     s.config.Core.ExternalUrl,
-	}); err != nil {
-		s.GetHandleError(c, http.StatusInternalServerError, "Template error", err.Error())
-		return
-	}
-
-	// Send mail
-	attachments := []common.MailAttachment{
-		{
-			Name:        peer.GetConfigFileName(),
-			ContentType: "application/config",
-			Data:        bytes.NewReader(cfg),
-		},
-		{
-			Name:        qrcodeFileName,
-			ContentType: "image/png",
-			Data:        bytes.NewReader(png),
-			Embedded:    true,
-		},
-		{
-			Name:        qrcodeFileName,
-			ContentType: "image/png",
-			Data:        bytes.NewReader(png),
-		},
-	}
-
-	if err := common.SendEmailWithAttachments(s.config.Email, s.config.Core.MailFrom, "", "WireGuard VPN Configuration",
-		"Your mail client does not support HTML. Please find the configuration attached to this mail.", tplBuff.String(),
-		[]string{peer.Email}, attachments); err != nil {
+	if err := s.sendPeerConfigMail(peer); err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "Email error", err.Error())
 		return
 	}
@@ -366,4 +315,80 @@ func (s *Server) GetPeerStatus(c *gin.Context) {
 
 	c.JSON(http.StatusOK, isOnline)
 	return
+}
+
+func (s *Server) GetAdminSendEmails(c *gin.Context) {
+	currentSession := GetSessionData(c)
+	if !currentSession.IsAdmin {
+		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
+		return
+	}
+
+	peers := s.peers.GetActivePeers(currentSession.DeviceName)
+	for _, peer := range peers {
+		if err := s.sendPeerConfigMail(peer); err != nil {
+			s.GetHandleError(c, http.StatusInternalServerError, "Email error", err.Error())
+			return
+		}
+	}
+
+	SetFlashMessage(c, "emails sent successfully", "success")
+	c.Redirect(http.StatusSeeOther, "/admin")
+}
+
+func (s *Server) sendPeerConfigMail(peer wireguard.Peer) error {
+	user := s.users.GetUser(peer.Email)
+
+	cfg, err := peer.GetConfigFile(s.peers.GetDevice(peer.DeviceName))
+	if err != nil {
+		return errors.Wrap(err, "failed to get config file")
+	}
+	png, err := peer.GetQRCode()
+	if err != nil {
+		return errors.Wrap(err, "failed to get qr-code")
+	}
+	// Apply mail template
+	qrcodeFileName := "wireguard-qrcode.png"
+	var tplBuff bytes.Buffer
+	if err := s.mailTpl.Execute(&tplBuff, struct {
+		Peer          wireguard.Peer
+		User          *users.User
+		QrcodePngName string
+		PortalUrl     string
+	}{
+		Peer:          peer,
+		User:          user,
+		QrcodePngName: qrcodeFileName,
+		PortalUrl:     s.config.Core.ExternalUrl,
+	}); err != nil {
+		return errors.Wrap(err, "failed to execute mail template")
+	}
+
+	// Send mail
+	attachments := []common.MailAttachment{
+		{
+			Name:        peer.GetConfigFileName(),
+			ContentType: "application/config",
+			Data:        bytes.NewReader(cfg),
+		},
+		{
+			Name:        qrcodeFileName,
+			ContentType: "image/png",
+			Data:        bytes.NewReader(png),
+			Embedded:    true,
+		},
+		{
+			Name:        qrcodeFileName,
+			ContentType: "image/png",
+			Data:        bytes.NewReader(png),
+		},
+	}
+
+	if err := common.SendEmailWithAttachments(s.config.Email, s.config.Core.MailFrom, "", "WireGuard VPN Configuration",
+		"Your mail client does not support HTML. Please find the configuration attached to this mail.", tplBuff.String(),
+		[]string{peer.Email}, attachments); err != nil {
+		return errors.Wrap(err, "failed to send email")
+	}
+
+	return nil
 }

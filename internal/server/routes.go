@@ -58,6 +58,7 @@ func SetupRoutes(s *Server) {
 	admin.GET("/peer/delete", s.GetAdminDeletePeer)
 	admin.GET("/peer/download", s.GetPeerConfig)
 	admin.GET("/peer/email", s.GetPeerConfigMail)
+	admin.GET("/peer/emailall", s.GetAdminSendEmails)
 
 	admin.GET("/users/", s.GetAdminUsersIndex)
 	admin.GET("/users/create", s.GetAdminUsersCreate)

@@ -30,6 +30,10 @@
             this.form.submit();
         });
     });
+    $('[data-toggle=confirmation]').confirmation({
+        rootSelector: '[data-toggle=confirmation]',
+        // other options
+    });
 })(jQuery); // End of use strict
 
 

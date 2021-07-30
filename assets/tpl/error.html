@@ -11,21 +11,23 @@
 </head>
 
 <body id="page-top">
-{{template "prt_nav.html" .}}
-<div class="container">
-    <div class="text-center mt-5">
-        <div class="error mx-auto" data-text="{{.Data.Code}}">
-            <p class="m-0">{{.Data.Code}}</p>
+    {{template "prt_nav.html" .}}
+    <div class="container">
+        <div class="text-center mt-5">
+            <div class="error mx-auto" data-text="{{.Data.Code}}">
+                <p class="m-0">{{.Data.Code}}</p>
+            </div>
+            <p class="text-dark mb-5 lead">{{.Data.Message}}</p>
+            <p class="text-black-50 mb-0">{{.Data.Details}}</p><a href="/">← Back to Dashboard</a>
         </div>
-        <p class="text-dark mb-5 lead">{{.Data.Message}}</p>
-        <p class="text-black-50 mb-0">{{.Data.Details}}</p><a href="/">← Back to Dashboard</a>
     </div>
-</div>
-{{template "prt_footer.html" .}}
-<script src="/js/jquery.min.js"></script>
-<script src="/js/bootstrap.bundle.min.js"></script>
-<script src="/js/jquery.easing.js"></script>
-<script src="/js/custom.js"></script>
+    {{template "prt_footer.html" .}}
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jquery.easing.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/bootstrap-confirmation.min.js"></script>
+    <script src="/js/custom.js"></script>
 </body>
 
 </html>
