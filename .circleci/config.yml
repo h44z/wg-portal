@@ -30,4 +30,5 @@ jobs:
           name: Build ARM
           command: |
             make ENV_BUILD_IDENTIFIER=$CIRCLE_TAG ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build-cross-plat
-      
+      - store_artifacts:
+          path: ~/repo/dist
