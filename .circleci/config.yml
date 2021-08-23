@@ -43,3 +43,13 @@ jobs:
                go get github.com/tcnksm/ghr
                ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace $CIRCLE_TAG ~/repo/dist
             fi
+
+workflows:
+  build-and-release:
+    jobs:
+      #--------------- BUILD ---------------#
+      - build:
+          name: build
+          filters:
+            tags:
+              only: /^v.*/
