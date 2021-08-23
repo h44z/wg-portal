@@ -1,6 +1,9 @@
 version: 2.1
 jobs:
   build:
+    filters:
+      tags:
+        only: /.*/
     working_directory: ~/repo
     docker:
       - image: circleci/golang:1.16.7
@@ -32,3 +35,8 @@ jobs:
             make ENV_BUILD_IDENTIFIER=$CIRCLE_TAG ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build-cross-plat
       - store_artifacts:
           path: ~/repo/dist
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go get github.com/tcnksm/ghr
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace $CIRCLE_TAG ~/repo/dist
