@@ -54,6 +54,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILD_IDENTIFIER=${GITHUB_REF##*/}
+            BUILD_VERSION=$(echo ${GITHUB_SHA} | cut -c1-7)
 
   build-github:
     name: Push Docker image to Github Container Registry
@@ -101,3 +104,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILD_IDENTIFIER=${GITHUB_REF##*/}
+            BUILD_VERSION=$(echo ${GITHUB_SHA} | cut -c1-7)
