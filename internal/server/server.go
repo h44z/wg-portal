@@ -116,7 +116,16 @@ func (s *Server) Setup(ctx context.Context) error {
 		s.server.Use(ginlogrus.Logger(logrus.StandardLogger()))
 	}
 	s.server.Use(gin.Recovery())
-	s.server.Use(sessions.Sessions("authsession", memstore.NewStore([]byte(s.config.Core.SessionSecret))))
+
+	// Authentication cookies
+	cookieStore := memstore.NewStore([]byte(s.config.Core.SessionSecret))
+	cookieStore.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   86400, // auth session is valid for 1 day
+		Secure:   strings.HasPrefix(s.config.Core.ExternalUrl, "https"),
+		HttpOnly: true,
+	})
+	s.server.Use(sessions.Sessions("authsession", cookieStore))
 	s.server.SetFuncMap(template.FuncMap{
 		"formatBytes": common.ByteCountSI,
 		"urlEncode":   url.QueryEscape,
