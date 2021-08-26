@@ -40,6 +40,9 @@ coverage-html: coverage
 test: dep
 	$(GOCMD) test $(MODULENAME)/... -v -count=1
 
+test-integration: dep
+	$(GOCMD) test -tags=integration $(MODULENAME)/... -v -count=1
+
 clean:
 	$(GOCMD) clean $(GOFILES)
 	rm -rf .testCoverage.txt
