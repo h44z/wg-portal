@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -40,11 +40,14 @@ type Manager interface {
 }
 
 type ManagementUtil struct {
-	configPath string
+	mux sync.RWMutex // mutex to synchronize access to maps
 
 	wg Client
 	nl NetlinkClient
-	cp ConfigPersister
+
+	// config writers and loaders are used to populate the internal config maps
+	cw []ConfigWriter
+	cl []ConfigLoader
 
 	// internal holder of interface configurations
 	interfaces map[DeviceIdentifier]InterfaceConfig
@@ -52,7 +55,7 @@ type ManagementUtil struct {
 	peers map[DeviceIdentifier]map[PeerIdentifier]PeerConfig
 }
 
-func (m ManagementUtil) GetFreshKeypair() (KeyPair, error) {
+func (m *ManagementUtil) GetFreshKeypair() (KeyPair, error) {
 	privateKey, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
 		return KeyPair{}, errors.Wrap(err, "failed to generate private Key")
@@ -64,7 +67,7 @@ func (m ManagementUtil) GetFreshKeypair() (KeyPair, error) {
 	}, nil
 }
 
-func (m ManagementUtil) GetPreSharedKey() (PreSharedKey, error) {
+func (m *ManagementUtil) GetPreSharedKey() (PreSharedKey, error) {
 	preSharedKey, err := wgtypes.GenerateKey()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to generate pre-shared Key")
@@ -74,6 +77,8 @@ func (m ManagementUtil) GetPreSharedKey() (PreSharedKey, error) {
 }
 
 func (m *ManagementUtil) CreateDevice(identifier DeviceIdentifier) error {
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	if m.deviceExists(identifier) {
 		return errors.Errorf("device %s already exists", identifier)
 	}
@@ -92,12 +97,20 @@ func (m *ManagementUtil) CreateDevice(identifier DeviceIdentifier) error {
 		return errors.Wrapf(err, "failed to enable WireGuard interface")
 	}
 
-	m.interfaces[identifier] = InterfaceConfig{DeviceName: identifier}
+	newInterface := InterfaceConfig{DeviceName: identifier}
+	m.interfaces[identifier] = newInterface
+
+	err = m.persistInterface(identifier, false)
+	if err != nil {
+		return errors.Wrapf(err, "failed to persist created interface %s", identifier)
+	}
 
 	return nil
 }
 
 func (m *ManagementUtil) DeleteDevice(identifier DeviceIdentifier) error {
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	if !m.deviceExists(identifier) {
 		return errors.Errorf("device %s does not exist", identifier)
 	}
@@ -111,12 +124,19 @@ func (m *ManagementUtil) DeleteDevice(identifier DeviceIdentifier) error {
 		return errors.Wrapf(err, "failed to delete WireGuard interface")
 	}
 
+	err = m.persistInterface(identifier, true)
+	if err != nil {
+		return errors.Wrapf(err, "failed to persist deleted interface %s", identifier)
+	}
+
 	delete(m.interfaces, identifier)
 
 	return nil
 }
 
 func (m *ManagementUtil) UpdateDevice(identifier DeviceIdentifier, cfg InterfaceConfig) error {
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	if !m.deviceExists(identifier) {
 		return errors.Errorf("device %s does not exist", identifier)
 	}
@@ -171,10 +191,17 @@ func (m *ManagementUtil) UpdateDevice(identifier DeviceIdentifier, cfg Interface
 
 	m.interfaces[identifier] = cfg
 
+	err = m.persistInterface(identifier, false)
+	if err != nil {
+		return errors.Wrapf(err, "failed to persist updated interface %s", identifier)
+	}
+
 	return nil
 }
 
-func (m ManagementUtil) GetPeers(device DeviceIdentifier) ([]PeerConfig, error) {
+func (m *ManagementUtil) GetPeers(device DeviceIdentifier) ([]PeerConfig, error) {
+	m.mux.RLock()
+	defer m.mux.RUnlock()
 	if !m.deviceExists(device) {
 		return nil, errors.Errorf("device %s does not exist", device)
 	}
@@ -187,7 +214,9 @@ func (m ManagementUtil) GetPeers(device DeviceIdentifier) ([]PeerConfig, error) 
 	return peers, nil
 }
 
-func (m ManagementUtil) SavePeers(device DeviceIdentifier, peers ...PeerConfig) error {
+func (m *ManagementUtil) SavePeers(device DeviceIdentifier, peers ...PeerConfig) error {
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	if !m.deviceExists(device) {
 		return errors.Errorf("device %s does not exist", device)
 	}
@@ -206,12 +235,19 @@ func (m ManagementUtil) SavePeers(device DeviceIdentifier, peers ...PeerConfig) 
 		}
 
 		m.peers[device][peer.Uid] = peer
+
+		err = m.persistPeer(peer.Uid, false)
+		if err != nil {
+			return errors.Wrapf(err, "failed to persist updated peer %s", peer.Uid)
+		}
 	}
 
 	return nil
 }
 
-func (m ManagementUtil) RemovePeer(device DeviceIdentifier, peer PeerIdentifier) error {
+func (m *ManagementUtil) RemovePeer(device DeviceIdentifier, peer PeerIdentifier) error {
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	if !m.deviceExists(device) {
 		return errors.Errorf("device %s does not exist", device)
 	}
@@ -234,6 +270,11 @@ func (m ManagementUtil) RemovePeer(device DeviceIdentifier, peer PeerIdentifier)
 	err = m.wg.ConfigureDevice(string(device), wgtypes.Config{Peers: []wgtypes.PeerConfig{wgPeer}})
 	if err != nil {
 		return errors.Wrapf(err, "could not remove peer %s from WireGuard device %s", peer, device)
+	}
+
+	err = m.persistPeer(peer, true)
+	if err != nil {
+		return errors.Wrapf(err, "failed to persist deleted peer %s", peer)
 	}
 
 	delete(m.peers[device], peer)
@@ -308,14 +349,14 @@ func getWireGuardPeerConfig(deviceType InterfaceType, peer PeerConfig) (wgtypes.
 	return wgPeer, nil
 }
 
-func (m ManagementUtil) deviceExists(identifier DeviceIdentifier) bool {
+func (m *ManagementUtil) deviceExists(identifier DeviceIdentifier) bool {
 	if _, ok := m.interfaces[identifier]; ok {
 		return true
 	}
 	return false
 }
 
-func (m ManagementUtil) peerExists(identifier PeerIdentifier) bool {
+func (m *ManagementUtil) peerExists(identifier PeerIdentifier) bool {
 	for _, peers := range m.peers {
 		if _, ok := peers[identifier]; ok {
 			return true
@@ -325,8 +366,58 @@ func (m ManagementUtil) peerExists(identifier PeerIdentifier) bool {
 	return false
 }
 
+func (m *ManagementUtil) persistInterface(identifier DeviceIdentifier, delete bool) error {
+	var err error
+
+	device := m.interfaces[identifier]
+	peers := make([]PeerConfig, 0, len(m.peers[identifier]))
+	for _, config := range m.peers[identifier] {
+		peers = append(peers, config)
+	}
+
+	for _, writer := range m.cw {
+		if delete {
+			err = writer.DeleteInterface(device, peers)
+		} else {
+			err = writer.SaveInterface(device, peers)
+		}
+		if err != nil {
+			return errors.Wrapf(err, "failed to persist interface %s", identifier)
+		}
+	}
+
+	return nil
+}
+
+func (m *ManagementUtil) persistPeer(identifier PeerIdentifier, delete bool) error {
+	var err error
+
+	var device InterfaceConfig
+	var peer PeerConfig
+	for dev, peers := range m.peers {
+		if p, ok := peers[identifier]; ok {
+			device = m.interfaces[dev]
+			peer = p
+			break
+		}
+	}
+
+	for _, writer := range m.cw {
+		if delete {
+			err = writer.DeletePeer(peer, device)
+		} else {
+			err = writer.SavePeer(peer, device)
+		}
+		if err != nil {
+			return errors.Wrapf(err, "failed to persist peer %s", identifier)
+		}
+	}
+
+	return nil
+}
+
 // TODO: fix/implement
-func (m ManagementUtil) loadExistingInterfaces() ([]InterfaceConfig, error) {
+func (m *ManagementUtil) loadExistingInterfaces() ([]InterfaceConfig, error) {
 	devices, err := m.wg.Devices()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get WireGuard device list")
@@ -365,8 +456,8 @@ func (m ManagementUtil) loadExistingInterfaces() ([]InterfaceConfig, error) {
 
 // parseConfigFile parses WireGuard configuration files (INI syntax) and some additional comments in the file
 // TODO: fix/implement
-func (m ManagementUtil) parseConfigFile(interfaceName string) (InterfaceConfig, []PeerConfig, error) {
-	configFile := filepath.Join(m.configPath, interfaceName+".conf")
+func (m *ManagementUtil) parseConfigFile(interfaceName string) (InterfaceConfig, []PeerConfig, error) {
+	configFile := "TODO" //filepath.Join(m.configPath, interfaceName+".conf")
 
 	file, err := os.Open(configFile)
 	if err != nil {

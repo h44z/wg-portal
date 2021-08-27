@@ -19,12 +19,26 @@ func (o StringConfigOption) GetValue() string {
 	return o.Value.(string)
 }
 
+func NewStringConfigOption(value string, overridable bool) StringConfigOption {
+	return StringConfigOption{ConfigOption{
+		Value:       value,
+		Overridable: overridable,
+	}}
+}
+
 type IntConfigOption struct {
 	ConfigOption
 }
 
 func (o IntConfigOption) GetValue() int {
 	return o.Value.(int)
+}
+
+func NewIntConfigOption(value int, overridable bool) IntConfigOption {
+	return IntConfigOption{ConfigOption{
+		Value:       value,
+		Overridable: overridable,
+	}}
 }
 
 type Int32ConfigOption struct {
@@ -35,12 +49,26 @@ func (o Int32ConfigOption) GetValue() int32 {
 	return o.Value.(int32)
 }
 
+func NewInt32ConfigOption(value int32, overridable bool) Int32ConfigOption {
+	return Int32ConfigOption{ConfigOption{
+		Value:       value,
+		Overridable: overridable,
+	}}
+}
+
 type BoolConfigOption struct {
 	ConfigOption
 }
 
 func (o BoolConfigOption) GetValue() bool {
 	return o.Value.(bool)
+}
+
+func NewBoolConfigOption(value bool, overridable bool) BoolConfigOption {
+	return BoolConfigOption{ConfigOption{
+		Value:       value,
+		Overridable: overridable,
+	}}
 }
 
 type InterfaceType string
@@ -135,19 +163,16 @@ type PeerConfig struct {
 	UpdatedAt     time.Time
 }
 
-type InterfaceConfigPersister interface {
-	PersistInterface(cfg InterfaceConfig)
-	LoadInterface(cfg InterfaceConfig)
-	DeleteInterface(cfg InterfaceConfig)
+// ConfigWriter provides methods for updating persistent backends (like a database or a WireGuard configuration file)
+type ConfigWriter interface {
+	SaveInterface(cfg InterfaceConfig, peers []PeerConfig) error
+	SavePeer(peer PeerConfig, cfg InterfaceConfig) error
+	DeleteInterface(cfg InterfaceConfig, peers []PeerConfig) error
+	DeletePeer(peer PeerConfig, cfg InterfaceConfig) error
 }
 
-type PeerConfigPersister interface {
-	PersistPeer(cfg PeerConfig)
-	LoadPeer(cfg PeerConfig)
-	DeletePeer(cfg PeerConfig)
-}
-
-type ConfigPersister interface {
-	InterfaceConfigPersister
-	PeerConfigPersister
+// ConfigLoader provides methods to load interface and peer configurations from a persistent backend.
+type ConfigLoader interface {
+	Load(identifier DeviceIdentifier) (InterfaceConfig, []PeerConfig, error)
+	LoadAll() (map[InterfaceConfig][]PeerConfig, error)
 }
