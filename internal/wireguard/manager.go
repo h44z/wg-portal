@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/h44z/wg-portal/internal/lowlevel"
+
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
@@ -42,8 +44,8 @@ type Manager interface {
 type ManagementUtil struct {
 	mux sync.RWMutex // mutex to synchronize access to maps
 
-	wg Client
-	nl NetlinkClient
+	wg lowlevel.WireGuardClient
+	nl lowlevel.NetlinkClient
 
 	// config writers and loaders are used to populate the internal config maps
 	cw []ConfigWriter
@@ -315,16 +317,16 @@ func getWireGuardPeerConfig(deviceType InterfaceType, peer PeerConfig) (wgtypes.
 	var peerAllowedIPs []*netlink.Addr
 	switch deviceType {
 	case InterfaceTypeClient:
-		peerAllowedIPs, err = parseIpAddressString(peer.AllowedIPsString.GetValue())
+		peerAllowedIPs, err = parseIpAddressString(peer.AllowedIPsStr.GetValue())
 		if err != nil {
 			return wgtypes.PeerConfig{}, errors.Wrapf(err, "failed to parse allowed IP's for peer %s", peer.Uid)
 		}
 	case InterfaceTypeServer:
-		peerAllowedIPs, err = parseIpAddressString(peer.AllowedIPsString.GetValue())
+		peerAllowedIPs, err = parseIpAddressString(peer.AllowedIPsStr.GetValue())
 		if err != nil {
 			return wgtypes.PeerConfig{}, errors.Wrapf(err, "failed to parse allowed IP's for peer %s", peer.Uid)
 		}
-		peerExtraAllowedIPs, err := parseIpAddressString(peer.ExtraAllowedIPsString)
+		peerExtraAllowedIPs, err := parseIpAddressString(peer.ExtraAllowedIPsStr)
 		if err != nil {
 			return wgtypes.PeerConfig{}, errors.Wrapf(err, "failed to parse extra allowed IP's for peer %s", peer.Uid)
 		}
@@ -438,7 +440,7 @@ func (m *ManagementUtil) loadExistingInterfaces() ([]InterfaceConfig, error) {
 		if err != nil {
 			continue
 		}
-		interfaces[i].Dns = parsedInterface.Dns
+		interfaces[i].DnsStr = parsedInterface.DnsStr
 		interfaces[i].DisplayName = parsedInterface.DisplayName
 		interfaces[i].PostDown = parsedInterface.PostDown
 		interfaces[i].PreDown = parsedInterface.PreDown
@@ -528,7 +530,7 @@ func (m *ManagementUtil) parseConfigFile(interfaceName string) (InterfaceConfig,
 				}
 				iface.Mtu = mtu
 			case "dns":
-				iface.Dns = value
+				iface.DnsStr = value
 			case "table":
 				iface.RoutingTable = value
 			case "fwmark":

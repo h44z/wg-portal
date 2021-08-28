@@ -1,4 +1,4 @@
-package wireguard
+package lowlevel
 
 import (
 	"io"
@@ -7,8 +7,8 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
-// A Client is a type which can control a WireGuard device.
-type Client interface {
+// A WireGuardClient is a type which can control a WireGuard device.
+type WireGuardClient interface {
 	io.Closer
 	Devices() ([]*wgtypes.Device, error)
 	Device(name string) (*wgtypes.Device, error)

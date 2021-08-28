@@ -11,6 +11,8 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/h44z/wg-portal/internal/lowlevel"
+
 	"golang.zx2c4.com/wireguard/wgctrl"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +31,7 @@ func prepareTest(dev DeviceIdentifier) {
 func TestManagementUtil_CreateDevice(t *testing.T) {
 	devName := DeviceIdentifier("wg666")
 	prepareTest(devName)
-	m := ManagementUtil{interfaces: make(map[DeviceIdentifier]InterfaceConfig), nl: NetlinkManager{}}
+	m := ManagementUtil{interfaces: make(map[DeviceIdentifier]InterfaceConfig), nl: lowlevel.NetlinkManager{}}
 
 	defer m.DeleteDevice(devName)
 	err := m.CreateDevice(devName)
@@ -44,7 +46,7 @@ func TestManagementUtil_CreateDevice(t *testing.T) {
 func TestManagementUtil_DeleteDevice(t *testing.T) {
 	devName := DeviceIdentifier("wg667")
 	prepareTest(devName)
-	m := ManagementUtil{interfaces: make(map[DeviceIdentifier]InterfaceConfig), nl: NetlinkManager{}}
+	m := ManagementUtil{interfaces: make(map[DeviceIdentifier]InterfaceConfig), nl: lowlevel.NetlinkManager{}}
 
 	err := m.CreateDevice(devName)
 	assert.NoError(t, err)
@@ -72,7 +74,7 @@ func TestManagementUtil_UpdateDevice(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	m := ManagementUtil{interfaces: make(map[DeviceIdentifier]InterfaceConfig), nl: NetlinkManager{}, wg: wg}
+	m := ManagementUtil{interfaces: make(map[DeviceIdentifier]InterfaceConfig), nl: lowlevel.NetlinkManager{}, wg: wg}
 
 	defer m.DeleteDevice(devName)
 	err = m.CreateDevice(devName)

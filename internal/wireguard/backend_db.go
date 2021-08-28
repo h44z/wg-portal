@@ -4,21 +4,35 @@ import (
 	"database/sql"
 	"time"
 
+	"gorm.io/gorm/clause"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
 type DatabaseBackend struct {
-	DB *gorm.DB
+	db *gorm.DB
+}
+
+func NewDatabaseBackend(db *gorm.DB) (*DatabaseBackend, error) {
+	backend := &DatabaseBackend{db: db}
+
+	// Auto-Migrate Gorm models
+	err := db.AutoMigrate(&dbInterfaceConfig{}, &dbDefaultPeerConfig{}, &dbPeerConfig{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to migrate WireGuard database")
+	}
+
+	return backend, nil
 }
 
 func (d DatabaseBackend) SaveInterface(cfg InterfaceConfig, _ []PeerConfig) error {
 	iface, peerDefaults := convertInterface(cfg)
 
-	if err := d.DB.Save(&iface).Error; err != nil {
+	if err := d.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&iface).Error; err != nil {
 		return errors.Wrapf(err, "failed to save interface %s to db", cfg.DeviceName)
 	}
-	if err := d.DB.Save(&peerDefaults).Error; err != nil {
+	if err := d.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&peerDefaults).Error; err != nil {
 		return errors.Wrapf(err, "failed to save peer defaults of %s to db", cfg.DeviceName)
 	}
 
@@ -28,7 +42,7 @@ func (d DatabaseBackend) SaveInterface(cfg InterfaceConfig, _ []PeerConfig) erro
 func (d DatabaseBackend) SavePeer(cfg PeerConfig, iface InterfaceConfig) error {
 	peer := convertPeer(cfg, iface.DeviceName)
 
-	if err := d.DB.Save(&peer).Error; err != nil {
+	if err := d.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&peer).Error; err != nil {
 		return errors.Wrapf(err, "failed to save peer %s to db", cfg.Uid)
 	}
 
@@ -37,22 +51,22 @@ func (d DatabaseBackend) SavePeer(cfg PeerConfig, iface InterfaceConfig) error {
 
 func (d DatabaseBackend) DeleteInterface(cfg InterfaceConfig, _ []PeerConfig) error {
 	// Delete peers
-	if err := d.DB.Where("device_name = ?", cfg.DeviceName).Delete(&dbPeerConfig{}).Error; err != nil {
+	if err := d.db.Where("device_name = ?", cfg.DeviceName).Delete(&dbPeerConfig{}).Error; err != nil {
 		return errors.Wrapf(err, "failed to delete peer for %s from db", cfg.DeviceName)
 	}
 	// Delete peer default settings
-	if err := d.DB.Where("device_name = ?", cfg.DeviceName).Delete(&dbDefaultPeerConfig{}).Error; err != nil {
+	if err := d.db.Where("device_name = ?", cfg.DeviceName).Delete(&dbDefaultPeerConfig{}).Error; err != nil {
 		return errors.Wrapf(err, "failed to delete peer defaults for %s from db", cfg.DeviceName)
 	}
 	// Delete interface config
-	if err := d.DB.Where("device_name = ?", cfg.DeviceName).Delete(&dbInterfaceConfig{}).Error; err != nil {
+	if err := d.db.Where("device_name = ?", cfg.DeviceName).Delete(&dbInterfaceConfig{}).Error; err != nil {
 		return errors.Wrapf(err, "failed to delete interface %s from db", cfg.DeviceName)
 	}
 	return nil
 }
 
 func (d DatabaseBackend) DeletePeer(cfg PeerConfig, iface InterfaceConfig) error {
-	err := d.DB.Where("device_name = ? AND uid = ?", iface.DeviceName, cfg.Uid).Delete(&dbPeerConfig{}).Error
+	err := d.db.Where("device_name = ? AND uid = ?", iface.DeviceName, cfg.Uid).Delete(&dbPeerConfig{}).Error
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete peer %s from db", cfg.Uid)
 	}
@@ -64,13 +78,13 @@ func (d DatabaseBackend) Load(identifier DeviceIdentifier) (InterfaceConfig, []P
 	var peerDefaults dbDefaultPeerConfig
 	var peers []dbPeerConfig
 
-	if err := d.DB.Where("device_name = ?", identifier).First(&iface).Error; err != nil {
+	if err := d.db.Where("device_name = ?", identifier).First(&iface).Error; err != nil {
 		return InterfaceConfig{}, nil, errors.Wrapf(err, "failed to load interface %s from db", identifier)
 	}
-	if err := d.DB.Where("device_name = ?", identifier).First(&peerDefaults).Error; err != nil {
+	if err := d.db.Where("device_name = ?", identifier).First(&peerDefaults).Error; err != nil {
 		return InterfaceConfig{}, nil, errors.Wrapf(err, "failed to load peer defaults for %s from db", identifier)
 	}
-	if err := d.DB.Where("device_name = ?", identifier).Find(&peers).Error; err != nil {
+	if err := d.db.Where("device_name = ?", identifier).Find(&peers).Error; err != nil {
 		return InterfaceConfig{}, nil, errors.Wrapf(err, "failed to load peers for %s from db", identifier)
 	}
 
@@ -79,7 +93,7 @@ func (d DatabaseBackend) Load(identifier DeviceIdentifier) (InterfaceConfig, []P
 		KeyPair:      KeyPair{PrivateKey: iface.PrivateKey, PublicKey: iface.PublicKey},
 		ListenPort:   iface.ListenPort,
 		AddressStr:   iface.AddressStr,
-		Dns:          iface.Dns,
+		DnsStr:       iface.DnsStr,
 		Mtu:          iface.Mtu,
 		FirewallMark: int32(iface.FirewallMark),
 		RoutingTable: iface.RoutingTable,
@@ -94,9 +108,9 @@ func (d DatabaseBackend) Load(identifier DeviceIdentifier) (InterfaceConfig, []P
 		DriverType:   iface.DriverType,
 
 		PeerDefNetworkStr:          peerDefaults.NetworkStr,
-		PeerDefDns:                 peerDefaults.Dns,
+		PeerDefDnsStr:              peerDefaults.DnsStr,
 		PeerDefEndpoint:            peerDefaults.Endpoint,
-		PeerDefAllowedIPsString:    peerDefaults.AllowedIPsString,
+		PeerDefAllowedIPsStr:       peerDefaults.AllowedIPsStr,
 		PeerDefMtu:                 peerDefaults.Mtu,
 		PeerDefPersistentKeepalive: peerDefaults.PersistentKeepalive,
 		PeerDefFirewallMark:        int32(peerDefaults.FirewallMark),
@@ -105,40 +119,58 @@ func (d DatabaseBackend) Load(identifier DeviceIdentifier) (InterfaceConfig, []P
 		PeerDefPostUp:              peerDefaults.PostUp,
 		PeerDefPreDown:             peerDefaults.PreDown,
 		PeerDefPostDown:            peerDefaults.PostDown,
+
+		DisabledAt: nil,
+		BaseConfig: BaseConfig{
+			CreatedAt: iface.CreatedAt,
+			UpdatedAt: iface.UpdatedAt,
+			CreatedBy: iface.CreatedBy,
+			UpdatedBy: iface.UpdatedBy,
+		},
 	}
+	if iface.DisabledAt.Valid {
+		interfaceConfig.DisabledAt = &iface.DisabledAt.Time
+	}
+
 	peerConfigs := make([]PeerConfig, len(peers))
 	for i, peer := range peers {
 		peerConfigs[i] = PeerConfig{
-			Endpoint:              NewStringConfigOption(peer.Endpoint, peer.OvrEndpoint),
-			AllowedIPsString:      NewStringConfigOption(peer.AllowedIPsString, peer.OvrAllowedIPsString),
-			ExtraAllowedIPsString: peer.ExtraAllowedIPsString,
-			KeyPair:               KeyPair{PrivateKey: peer.PrivateKey, PublicKey: peer.PublicKey},
-			PresharedKey:          peer.PresharedKey,
-			PersistentKeepalive:   NewIntConfigOption(peer.PersistentKeepalive, peer.OvrPersistentKeepalive),
-			Identifier:            peer.Identifier,
-			Uid:                   PeerIdentifier(peer.Uid),
-			AddressStr:            NewStringConfigOption(peer.AddressStr, peer.OvrAddressStr),
-			Dns:                   NewStringConfigOption(peer.Dns, peer.OvrDns),
-			Mtu:                   NewIntConfigOption(peer.Mtu, peer.OvrMtu),
-			FirewallMark:          NewInt32ConfigOption(int32(peer.FirewallMark), peer.OvrFirewallMark),
-			RoutingTable:          NewStringConfigOption(peer.RoutingTable, peer.OvrRoutingTable),
-			PreUp:                 NewStringConfigOption(peer.PreUp, peer.OvrPreUp),
-			PostUp:                NewStringConfigOption(peer.PostUp, peer.OvrPostUp),
-			PreDown:               NewStringConfigOption(peer.PreDown, peer.OvrPreDown),
-			PostDown:              NewStringConfigOption(peer.PostDown, peer.OvrPostDown),
+			Endpoint:            NewStringConfigOption(peer.Endpoint, peer.OvrEndpoint),
+			AllowedIPsStr:       NewStringConfigOption(peer.AllowedIPsStr, peer.OvrAllowedIPsStr),
+			ExtraAllowedIPsStr:  peer.ExtraAllowedIPsStr,
+			KeyPair:             KeyPair{PrivateKey: peer.PrivateKey, PublicKey: peer.PublicKey},
+			PresharedKey:        peer.PresharedKey,
+			PersistentKeepalive: NewIntConfigOption(peer.PersistentKeepalive, peer.OvrPersistentKeepalive),
+			Identifier:          peer.Identifier,
+			Uid:                 PeerIdentifier(peer.Uid),
+			AddressStr:          NewStringConfigOption(peer.AddressStr, peer.OvrAddressStr),
+			DnsStr:              NewStringConfigOption(peer.DnsStr, peer.OvrDnsStr),
+			Mtu:                 NewIntConfigOption(peer.Mtu, peer.OvrMtu),
+			FirewallMark:        NewInt32ConfigOption(int32(peer.FirewallMark), peer.OvrFirewallMark),
+			RoutingTable:        NewStringConfigOption(peer.RoutingTable, peer.OvrRoutingTable),
+			PreUp:               NewStringConfigOption(peer.PreUp, peer.OvrPreUp),
+			PostUp:              NewStringConfigOption(peer.PostUp, peer.OvrPostUp),
+			PreDown:             NewStringConfigOption(peer.PreDown, peer.OvrPreDown),
+			PostDown:            NewStringConfigOption(peer.PostDown, peer.OvrPostDown),
 
-			DeactivatedAt: peer.DisabledAt,
-			CreatedBy:     peer.CreatedBy,
-			UpdatedBy:     peer.UpdatedBy,
-			CreatedAt:     peer.CreatedAt,
-			UpdatedAt:     peer.UpdatedAt,
+			DisabledAt: nil,
+			BaseConfig: BaseConfig{
+				CreatedAt: iface.CreatedAt,
+				UpdatedAt: iface.UpdatedAt,
+				CreatedBy: iface.CreatedBy,
+				UpdatedBy: iface.UpdatedBy,
+			},
+		}
+
+		if peer.DisabledAt.Valid {
+			peerConfigs[i].DisabledAt = &peer.DisabledAt.Time
 		}
 	}
 
 	return interfaceConfig, peerConfigs, nil
 }
 
-func (d DatabaseBackend) LoadAll() (map[InterfaceConfig][]PeerConfig, error) {
+func (d DatabaseBackend) LoadAll(ignored ...DeviceIdentifier) (map[InterfaceConfig][]PeerConfig, error) {
 	interfaceIdentifiers := []DeviceIdentifier{} // TODO: fill this ?!
 
 	result := make(map[InterfaceConfig][]PeerConfig)
@@ -176,7 +208,7 @@ type dbInterfaceConfig struct {
 	ListenPort int
 
 	AddressStr string
-	Dns        string
+	DnsStr     string
 
 	Mtu          int
 	FirewallMark int
@@ -211,9 +243,9 @@ type dbDefaultPeerConfig struct {
 	DeviceName string `gorm:"primaryKey"` // Foreign key
 
 	NetworkStr          string // the default subnets from which peers will get their IP addresses, comma seperated
-	Dns                 string // the default dns server for the peer
+	DnsStr              string // the default dns server for the peer
 	Endpoint            string // the default endpoint for the peer
-	AllowedIPsString    string // the default allowed IP string for the peer
+	AllowedIPsStr       string // the default allowed IP string for the peer
 	Mtu                 int    // the default device MTU
 	PersistentKeepalive int    // the default persistent keep-alive Value
 	FirewallMark        int    // default firewall mark
@@ -236,9 +268,9 @@ type dbPeerConfig struct {
 	DeviceName             string `gorm:"primaryKey"`
 	Endpoint               string
 	OvrEndpoint            bool
-	AllowedIPsString       string
-	OvrAllowedIPsString    bool
-	ExtraAllowedIPsString  string
+	AllowedIPsStr          string
+	OvrAllowedIPsStr       bool
+	ExtraAllowedIPsStr     string
 	PrivateKey             string
 	PublicKey              string
 	PresharedKey           string
@@ -254,8 +286,8 @@ type dbPeerConfig struct {
 
 	AddressStr      string
 	OvrAddressStr   bool
-	Dns             string
-	OvrDns          bool
+	DnsStr          string
+	OvrDnsStr       bool
 	Mtu             int
 	OvrMtu          bool
 	FirewallMark    int
@@ -278,13 +310,13 @@ func (d dbPeerConfig) TableName() string {
 }
 
 func convertPeer(peer PeerConfig, devName DeviceIdentifier) dbPeerConfig {
-	return dbPeerConfig{
+	cfg := dbPeerConfig{
 		DeviceName:             string(devName),
 		Endpoint:               peer.Endpoint.GetValue(),
 		OvrEndpoint:            peer.Endpoint.Overridable,
-		AllowedIPsString:       peer.AllowedIPsString.GetValue(),
-		OvrAllowedIPsString:    peer.AllowedIPsString.Overridable,
-		ExtraAllowedIPsString:  peer.ExtraAllowedIPsString,
+		AllowedIPsStr:          peer.AllowedIPsStr.GetValue(),
+		OvrAllowedIPsStr:       peer.AllowedIPsStr.Overridable,
+		ExtraAllowedIPsStr:     peer.ExtraAllowedIPsStr,
 		PrivateKey:             peer.KeyPair.PrivateKey,
 		PublicKey:              peer.KeyPair.PublicKey,
 		PresharedKey:           peer.PresharedKey,
@@ -294,8 +326,8 @@ func convertPeer(peer PeerConfig, devName DeviceIdentifier) dbPeerConfig {
 		Uid:                    string(peer.Uid),
 		AddressStr:             peer.AddressStr.GetValue(),
 		OvrAddressStr:          peer.AddressStr.Overridable,
-		Dns:                    peer.Dns.GetValue(),
-		OvrDns:                 peer.Dns.Overridable,
+		DnsStr:                 peer.DnsStr.GetValue(),
+		OvrDnsStr:              peer.DnsStr.Overridable,
 		Mtu:                    peer.Mtu.GetValue(),
 		OvrMtu:                 peer.Mtu.Overridable,
 		FirewallMark:           int(peer.FirewallMark.GetValue()),
@@ -310,7 +342,13 @@ func convertPeer(peer PeerConfig, devName DeviceIdentifier) dbPeerConfig {
 		OvrPreDown:             peer.PreDown.Overridable,
 		PostDown:               peer.PostDown.GetValue(),
 		OvrPostDown:            peer.PostDown.Overridable,
+		DisabledAt:             sql.NullTime{Time: time.Time{}, Valid: peer.DisabledAt != nil},
 	}
+	if peer.DisabledAt != nil {
+		cfg.DisabledAt.Time = *peer.DisabledAt
+	}
+
+	return cfg
 }
 
 func convertInterface(iface InterfaceConfig) (dbInterfaceConfig, dbDefaultPeerConfig) {
@@ -320,7 +358,7 @@ func convertInterface(iface InterfaceConfig) (dbInterfaceConfig, dbDefaultPeerCo
 		PublicKey:    iface.KeyPair.PublicKey,
 		ListenPort:   iface.ListenPort,
 		AddressStr:   iface.AddressStr,
-		Dns:          iface.Dns,
+		DnsStr:       iface.DnsStr,
 		Mtu:          iface.Mtu,
 		FirewallMark: int(iface.FirewallMark),
 		RoutingTable: iface.RoutingTable,
@@ -333,13 +371,17 @@ func convertInterface(iface InterfaceConfig) (dbInterfaceConfig, dbDefaultPeerCo
 		DisplayName:  iface.DisplayName,
 		Type:         string(iface.Type),
 		DriverType:   iface.DriverType,
+		DisabledAt:   sql.NullTime{Time: time.Time{}, Valid: iface.DisabledAt != nil},
+	}
+	if iface.DisabledAt != nil {
+		cfg.DisabledAt.Time = *iface.DisabledAt
 	}
 	peerDefaults := dbDefaultPeerConfig{
 		DeviceName:          string(iface.DeviceName),
 		NetworkStr:          iface.PeerDefNetworkStr,
-		Dns:                 iface.PeerDefDns,
+		DnsStr:              iface.PeerDefDnsStr,
 		Endpoint:            iface.PeerDefEndpoint,
-		AllowedIPsString:    iface.PeerDefAllowedIPsString,
+		AllowedIPsStr:       iface.PeerDefAllowedIPsStr,
 		Mtu:                 iface.PeerDefMtu,
 		PersistentKeepalive: iface.PeerDefPersistentKeepalive,
 		FirewallMark:        int(iface.PeerDefFirewallMark),
