@@ -10,6 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var DatabaseBackendName = "db"
+
 type DatabaseBackend struct {
 	db *gorm.DB
 }
@@ -24,6 +26,10 @@ func NewDatabaseBackend(db *gorm.DB) (*DatabaseBackend, error) {
 	}
 
 	return backend, nil
+}
+
+func (d DatabaseBackend) Name() string {
+	return DatabaseBackendName
 }
 
 func (d DatabaseBackend) SaveInterface(cfg InterfaceConfig, _ []PeerConfig) error {
@@ -170,9 +176,7 @@ func (d DatabaseBackend) Load(identifier DeviceIdentifier) (InterfaceConfig, []P
 	return interfaceConfig, peerConfigs, nil
 }
 
-func (d DatabaseBackend) LoadAll(ignored ...DeviceIdentifier) (map[InterfaceConfig][]PeerConfig, error) {
-	interfaceIdentifiers := []DeviceIdentifier{} // TODO: fill this ?!
-
+func (d DatabaseBackend) LoadAll(interfaceIdentifiers ...DeviceIdentifier) (map[InterfaceConfig][]PeerConfig, error) {
 	result := make(map[InterfaceConfig][]PeerConfig)
 	for _, identifier := range interfaceIdentifiers {
 		iface, peers, err := d.Load(identifier)
@@ -183,6 +187,20 @@ func (d DatabaseBackend) LoadAll(ignored ...DeviceIdentifier) (map[InterfaceConf
 	}
 
 	return result, nil
+}
+
+func (d DatabaseBackend) GetAvailableInterfaces() ([]DeviceIdentifier, error) {
+	var iface []dbInterfaceConfig
+	if err := d.db.Find(&iface).Error; err != nil {
+		return nil, errors.Wrap(err, "failed to load interfaces from db")
+	}
+
+	interfaces := make([]DeviceIdentifier, len(iface))
+	for i := range iface {
+		interfaces[i] = DeviceIdentifier(iface[i].DeviceName)
+	}
+
+	return interfaces, nil
 }
 
 //

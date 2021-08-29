@@ -18,6 +18,10 @@ func NewFileBackend(configStoragePath string, fileGenerator ConfigFileGenerator)
 	return backend, nil
 }
 
+func (f FileBackend) Name() string {
+	return "file"
+}
+
 func (f FileBackend) SaveInterface(cfg InterfaceConfig, peers []PeerConfig) error {
 	configContents, err := f.fileGenerator.GetInterfaceConfig(cfg, peers)
 	if err != nil {
@@ -58,9 +62,13 @@ func (f FileBackend) DeletePeer(_ PeerConfig, _ InterfaceConfig) error {
 }
 
 func (f FileBackend) Load(identifier DeviceIdentifier) (InterfaceConfig, []PeerConfig, error) {
-	panic("implement me")
+	return InterfaceConfig{}, nil, nil
 }
 
-func (f FileBackend) LoadAll(ignored ...DeviceIdentifier) (map[InterfaceConfig][]PeerConfig, error) {
-	panic("implement me")
+func (f FileBackend) LoadAll(interfaceIdentifiers ...DeviceIdentifier) (map[InterfaceConfig][]PeerConfig, error) {
+	return nil, nil
+}
+
+func (f FileBackend) GetAvailableInterfaces() ([]DeviceIdentifier, error) {
+	return nil, nil
 }

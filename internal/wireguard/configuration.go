@@ -187,8 +187,13 @@ type PeerConfig struct {
 	DisabledAt *time.Time
 }
 
+type Name interface {
+	Name() string
+}
+
 // ConfigWriter provides methods for updating persistent backends (like a database or a WireGuard configuration file)
 type ConfigWriter interface {
+	Name
 	SaveInterface(cfg InterfaceConfig, peers []PeerConfig) error
 	SavePeer(peer PeerConfig, cfg InterfaceConfig) error
 	DeleteInterface(cfg InterfaceConfig, peers []PeerConfig) error
@@ -197,6 +202,8 @@ type ConfigWriter interface {
 
 // ConfigLoader provides methods to load interface and peer configurations from a persistent backend.
 type ConfigLoader interface {
+	Name
 	Load(identifier DeviceIdentifier) (InterfaceConfig, []PeerConfig, error)
-	LoadAll(ignored ...DeviceIdentifier) (map[InterfaceConfig][]PeerConfig, error)
+	LoadAll(interfaceIdentifiers ...DeviceIdentifier) (map[InterfaceConfig][]PeerConfig, error)
+	GetAvailableInterfaces() ([]DeviceIdentifier, error)
 }

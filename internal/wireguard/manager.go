@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -24,6 +25,7 @@ type KeyGenerator interface {
 
 // DeviceManager provides methods to create/update/delete physical WireGuard devices.
 type DeviceManager interface {
+	GetDevices() ([]InterfaceConfig, error)
 	CreateDevice(device DeviceIdentifier) error
 	DeleteDevice(device DeviceIdentifier) error
 	UpdateDevice(device DeviceIdentifier, cfg InterfaceConfig) error
@@ -34,6 +36,8 @@ type PeerManager interface {
 	SavePeers(device DeviceIdentifier, peers ...PeerConfig) error
 	RemovePeer(device DeviceIdentifier, peer PeerIdentifier) error
 }
+
+type Opt func(svc *ManagementUtil)
 
 type Manager interface {
 	KeyGenerator
@@ -47,6 +51,8 @@ type ManagementUtil struct {
 	wg lowlevel.WireGuardClient
 	nl lowlevel.NetlinkClient
 
+	unmanagedInterfaces []DeviceIdentifier // Those interfaces are completely ignored by WireGuard Portal
+
 	// config writers and loaders are used to populate the internal config maps
 	cw []ConfigWriter
 	cl []ConfigLoader
@@ -55,6 +61,44 @@ type ManagementUtil struct {
 	interfaces map[DeviceIdentifier]InterfaceConfig
 	// internal holder of peer configurations
 	peers map[DeviceIdentifier]map[PeerIdentifier]PeerConfig
+}
+
+func NewManagementUtil(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, opts ...Opt) (*ManagementUtil, error) {
+	m := &ManagementUtil{
+		mux: sync.RWMutex{},
+		wg:  wg,
+		nl:  nl,
+	}
+
+	for _, opt := range opts {
+		opt(m)
+	}
+
+	// initialize
+	err := m.initialize()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to initialize WireGuard manager")
+	}
+
+	return m, nil
+}
+
+func IgnoredInterfaces(ignored ...DeviceIdentifier) Opt {
+	return func(m *ManagementUtil) {
+		m.unmanagedInterfaces = ignored
+	}
+}
+
+func ConfigLoaders(cl ...ConfigLoader) Opt {
+	return func(m *ManagementUtil) {
+		m.cl = cl
+	}
+}
+
+func ConfigWriters(cw ...ConfigWriter) Opt {
+	return func(m *ManagementUtil) {
+		m.cw = cw
+	}
 }
 
 func (m *ManagementUtil) GetFreshKeypair() (KeyPair, error) {
@@ -78,25 +122,29 @@ func (m *ManagementUtil) GetPreSharedKey() (PreSharedKey, error) {
 	return PreSharedKey(preSharedKey.String()), nil
 }
 
+func (m *ManagementUtil) GetDevices() ([]InterfaceConfig, error) {
+	interfaces := make([]InterfaceConfig, 0, len(m.interfaces))
+	for _, iface := range interfaces {
+		interfaces = append(interfaces, iface)
+	}
+	// Order the interfaces by device name
+	sort.Slice(interfaces, func(i, j int) bool {
+		return interfaces[i].DeviceName < interfaces[j].DeviceName
+	})
+
+	return interfaces, nil
+}
+
 func (m *ManagementUtil) CreateDevice(identifier DeviceIdentifier) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	if m.deviceExists(identifier) {
 		return errors.Errorf("device %s already exists", identifier)
 	}
-	link := &netlink.GenericLink{
-		LinkAttrs: netlink.LinkAttrs{
-			Name: string(identifier),
-		},
-		LinkType: "wireguard",
-	}
-	err := m.nl.LinkAdd(link)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create WireGuard interface")
-	}
 
-	if err := m.nl.LinkSetUp(link); err != nil {
-		return errors.Wrapf(err, "failed to enable WireGuard interface")
+	err := m.createWgDevice(identifier)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create WireGuard interface %s", identifier)
 	}
 
 	newInterface := InterfaceConfig{DeviceName: identifier}
@@ -105,6 +153,25 @@ func (m *ManagementUtil) CreateDevice(identifier DeviceIdentifier) error {
 	err = m.persistInterface(identifier, false)
 	if err != nil {
 		return errors.Wrapf(err, "failed to persist created interface %s", identifier)
+	}
+
+	return nil
+}
+
+func (m *ManagementUtil) createWgDevice(identifier DeviceIdentifier) error {
+	link := &netlink.GenericLink{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: string(identifier),
+		},
+		LinkType: "wireguard",
+	}
+	err := m.nl.LinkAdd(link)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create WireGuard interface %s", identifier)
+	}
+
+	if err := m.nl.LinkSetUp(link); err != nil {
+		return errors.Wrapf(err, "failed to enable WireGuard interface %s", identifier)
 	}
 
 	return nil
@@ -282,6 +349,154 @@ func (m *ManagementUtil) RemovePeer(device DeviceIdentifier, peer PeerIdentifier
 	delete(m.peers[device], peer)
 
 	return nil
+}
+
+// TODO: implement/think about
+func (m *ManagementUtil) initialize() error {
+	// Load all interfaces from the database
+	backendInterfaces, err := m.getBackendInterfaces(DatabaseBackendName)
+	if err != nil {
+		return errors.Wrap(err, "failed to load backend interfaces")
+	}
+
+	/*// Get a list of available WireGuard interfaces
+	wgInterfaces, err := m.wg.Devices()
+	if err != nil {
+		return errors.Wrap(err, "failed to load WireGuard interfaces")
+	}
+
+	// Create missing WireGuard interfaces
+	for _, backendInterface := range backendInterfaces {
+		exists := false
+		for _, wgInterface := range wgInterfaces {
+			if string(backendInterface) == wgInterface.Name {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			err := m.createWgDevice(backendInterface)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create WireGuard interface %s found in backend", backendInterface)
+			}
+		}
+	}*/
+
+	// Load config options from database backend, populate internal state maps
+	err = m.loadBackendInterfaces(DatabaseBackendName, backendInterfaces...)
+	if err != nil {
+		return errors.Wrap(err, "failed to load interface configurations from backend")
+	}
+
+	// Load missing config options from current interfaces, populate internal state maps
+	err = m.loadWireGuardInterfaces()
+	if err != nil {
+		return errors.Wrap(err, "failed to load interface configurations from WireGuard")
+	}
+
+	// Persists currently loaded configurations
+	// TODO
+
+	// Apply configuration options from internal state maps to current interfaces
+	// TODO
+
+	return nil
+}
+
+func (m *ManagementUtil) getBackendInterfaces(backend string) ([]DeviceIdentifier, error) {
+	// Load all interfaces from the config loader backends
+	uniqueInterfaces := make(map[DeviceIdentifier]struct{})
+	for _, cl := range m.cl {
+		if cl.Name() != backend {
+			continue
+		}
+
+		backendInterfaces, err := cl.GetAvailableInterfaces()
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to load available interfaces from backend %s", cl.Name())
+		}
+		for _, iface := range backendInterfaces {
+			uniqueInterfaces[iface] = struct{}{}
+		}
+	}
+
+	interfaces := make([]DeviceIdentifier, 0, len(uniqueInterfaces))
+	for iface := range uniqueInterfaces {
+		interfaces = append(interfaces, iface)
+	}
+	return interfaces, nil
+}
+
+func (m *ManagementUtil) loadBackendInterfaces(backend string, identifiers ...DeviceIdentifier) error {
+	for _, cl := range m.cl {
+		if cl.Name() != backend {
+			continue
+		}
+		ifaceAndPeers, err := cl.LoadAll(identifiers...)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load interfaces from backend %s", cl.Name())
+		}
+
+		for iface, peers := range ifaceAndPeers {
+			m.interfaces[iface.DeviceName] = iface
+			for _, peer := range peers {
+				m.peers[iface.DeviceName][peer.Uid] = peer
+			}
+		}
+	}
+	return nil
+}
+
+func (m *ManagementUtil) loadWireGuardInterfaces() error {
+	// Get a list of available WireGuard interfaces
+	wgInterfaces, err := m.wg.Devices()
+	if err != nil {
+		return errors.Wrap(err, "failed to load WireGuard interfaces")
+	}
+
+	for _, iface := range wgInterfaces {
+		if m.interfaceIsIgnored(DeviceIdentifier(iface.Name)) {
+			continue
+		}
+
+		devId := DeviceIdentifier(iface.Name)
+		if _, existing := m.interfaces[devId]; !existing {
+			m.interfaces[devId] = m.convertWireGuardInterface(*iface)
+		}
+
+		for _, peer := range iface.Peers {
+			peerPublicKey := peer.PublicKey.String()
+
+			// check if peer exists, compare public keys
+			existing := false
+			for _, existingPeer := range m.peers[devId] {
+				if existingPeer.KeyPair.PublicKey == peerPublicKey {
+					existing = true
+					break
+				}
+			}
+
+			if !existing {
+				// Use the peers public key as UID
+				m.peers[devId][PeerIdentifier(peerPublicKey)] = m.convertWireGuardPeer(peer)
+			}
+
+		}
+	}
+	return nil
+}
+
+func (m *ManagementUtil) restoreBackendInterfaces() error {
+	return nil
+}
+
+func (m *ManagementUtil) interfaceIsIgnored(name DeviceIdentifier) bool {
+	for _, iface := range m.unmanagedInterfaces {
+		if iface == name {
+			return true
+		}
+	}
+	return false
 }
 
 //
@@ -593,4 +808,54 @@ func parseIpAddressString(addrStr string) ([]*netlink.Addr, error) {
 	}
 
 	return addresses, nil
+}
+
+func (m *ManagementUtil) convertWireGuardInterface(device wgtypes.Device) InterfaceConfig {
+	cfg := InterfaceConfig{
+		DeviceName:   DeviceIdentifier(device.Name),
+		KeyPair:      KeyPair{PublicKey: device.PublicKey.String(), PrivateKey: device.PrivateKey.String()},
+		ListenPort:   device.ListenPort,
+		FirewallMark: int32(device.FirewallMark),
+		DriverType:   device.Type.String(),
+	}
+
+	link, err := m.nl.LinkByName(device.Name)
+	if err != nil || link.Attrs() == nil {
+		return cfg
+	}
+	cfg.Mtu = link.Attrs().MTU
+
+	addresses, err := m.nl.AddrList(link)
+	if err != nil {
+		return cfg
+	}
+	addressesStr := make([]string, len(addresses))
+	for i := range addresses {
+		addressesStr[i] = addresses[i].String()
+	}
+	cfg.AddressStr = strings.Join(addressesStr, ",")
+
+	return cfg
+}
+
+func (m *ManagementUtil) convertWireGuardPeer(peer wgtypes.Peer) PeerConfig {
+	cfg := PeerConfig{
+		KeyPair: KeyPair{PublicKey: peer.PublicKey.String()},
+	}
+
+	if peer.Endpoint != nil {
+		cfg.Endpoint.Value = peer.Endpoint.String()
+	}
+
+	if peer.PresharedKey != (wgtypes.Key{}) {
+		cfg.PresharedKey = peer.PresharedKey.String()
+	}
+
+	ipAddresses := make([]string, len(peer.AllowedIPs)) // use allowed IP's as the peer IP's
+	for i, ip := range peer.AllowedIPs {
+		ipAddresses[i] = ip.String()
+	}
+	cfg.AddressStr.Value = strings.Join(ipAddresses, ",")
+
+	return cfg
 }

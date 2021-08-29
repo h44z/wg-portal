@@ -25,6 +25,7 @@ type NetlinkClient interface {
 	LinkSetMTU(link netlink.Link, mtu int) error
 	AddrReplace(link netlink.Link, addr *netlink.Addr) error
 	AddrAdd(link netlink.Link, addr *netlink.Addr) error
+	AddrList(link netlink.Link) ([]netlink.Addr, error)
 }
 
 type NetlinkManager struct {
@@ -52,4 +53,22 @@ func (n NetlinkManager) AddrReplace(link netlink.Link, addr *netlink.Addr) error
 
 func (n NetlinkManager) AddrAdd(link netlink.Link, addr *netlink.Addr) error {
 	return netlink.AddrAdd(link, addr)
+}
+
+func (n NetlinkManager) AddrList(link netlink.Link) ([]netlink.Addr, error) {
+	listIPv4, err := netlink.AddrList(link, netlink.FAMILY_V4)
+	if err != nil {
+		return nil, err
+	}
+
+	listIPv6, err := netlink.AddrList(link, netlink.FAMILY_V6)
+	if err != nil {
+		return nil, err
+	}
+
+	ipAddresses := make([]netlink.Addr, 0, len(listIPv4)+len(listIPv6))
+	ipAddresses = append(ipAddresses, listIPv4...)
+	ipAddresses = append(ipAddresses, listIPv6...)
+
+	return ipAddresses, nil
 }
