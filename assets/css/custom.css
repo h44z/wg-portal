@@ -64,6 +64,11 @@ pre{background:#f7f7f9}iframe{overflow:hidden;border:none}@media (min-width: 768
     padding: 0.5rem 1rem;
 }
 
+.navbar-brand > img {
+    height: 2rem;
+    width: auto;
+}
+
 .disabled-peer {
     color: #d03131;
 }
