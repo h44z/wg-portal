@@ -67,6 +67,7 @@ type Config struct {
 		SelfProvisioningAllowed bool   `yaml:"selfProvisioning" envconfig:"SELF_PROVISIONING"`
 		LdapEnabled             bool   `yaml:"ldapEnabled" envconfig:"LDAP_ENABLED"`
 		SessionSecret           string `yaml:"sessionSecret" envconfig:"SESSION_SECRET"`
+		LogoUrl                 string `yaml:"logoUrl" envconfig:"LOGO_URL"`
 	} `yaml:"core"`
 	Database common.DatabaseConfig `yaml:"database"`
 	Email    common.MailConfig     `yaml:"email"`
@@ -81,6 +82,7 @@ func NewConfig() *Config {
 	cfg.Core.ListeningAddress = ":8123"
 	cfg.Core.Title = "WireGuard VPN"
 	cfg.Core.CompanyName = "WireGuard Portal"
+	cfg.Core.LogoUrl = "/img/header-logo.png"
 	cfg.Core.ExternalUrl = "http://localhost:8123"
 	cfg.Core.MailFrom = "WireGuard VPN <noreply@company.com>"
 	cfg.Core.AdminUser = "admin@wgportal.local"
