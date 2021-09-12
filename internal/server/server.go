@@ -253,7 +253,7 @@ func (s *Server) getExecutableDirectory() string {
 func (s *Server) getStaticData() StaticData {
 	return StaticData{
 		WebsiteTitle: s.config.Core.Title,
-		WebsiteLogo:  "/img/header-logo.png",
+		WebsiteLogo:  s.config.Core.LogoUrl,
 		CompanyName:  s.config.Core.CompanyName,
 		Year:         time.Now().Year(),
 		Version:      Version,
