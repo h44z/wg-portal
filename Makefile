@@ -52,7 +52,7 @@ docker-push:
 	docker push $(IMAGE)
 
 api-docs:
-	cd internal/server; swag init --parseDependency --parseInternal --generalInfo api.go
+	cd internal/server; swag init --propertyStrategy pascalcase --parseDependency --parseInternal --generalInfo api.go
 	$(GOCMD) fmt internal/server/docs/docs.go
 
 $(BUILDDIR)/%-amd64: cmd/%/main.go dep phony
