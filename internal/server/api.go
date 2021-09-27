@@ -50,6 +50,7 @@ type ApiError struct {
 // GetUsers godoc
 // @Tags Users
 // @Summary Retrieves all users
+// @ID getUsers
 // @Produce json
 // @Success 200 {object} []users.User
 // @Failure 401 {object} ApiError
@@ -66,6 +67,7 @@ func (s *ApiServer) GetUsers(c *gin.Context) {
 // GetUser godoc
 // @Tags Users
 // @Summary Retrieves user based on given Email
+// @ID GetUser
 // @Produce json
 // @Param email query string true "User Email"
 // @Success 200 {object} users.User
@@ -93,6 +95,7 @@ func (s *ApiServer) GetUser(c *gin.Context) {
 // PostUser godoc
 // @Tags Users
 // @Summary Creates a new user based on the given user model
+// @ID PostUser
 // @Accept  json
 // @Produce json
 // @Param user body users.User true "User Model"
@@ -132,6 +135,7 @@ func (s *ApiServer) PostUser(c *gin.Context) {
 // PutUser godoc
 // @Tags Users
 // @Summary Updates a user based on the given user model
+// @ID PutUser
 // @Accept  json
 // @Produce json
 // @Param email query string true "User Email"
@@ -184,6 +188,7 @@ func (s *ApiServer) PutUser(c *gin.Context) {
 // PatchUser godoc
 // @Tags Users
 // @Summary Updates a user based on the given partial user model
+// @ID PatchUser
 // @Accept  json
 // @Produce json
 // @Param email query string true "User Email"
@@ -250,6 +255,7 @@ func (s *ApiServer) PatchUser(c *gin.Context) {
 // DeleteUser godoc
 // @Tags Users
 // @Summary Deletes the specified user
+// @ID DeleteUser
 // @Produce json
 // @Param email query string true "User Email"
 // @Success 204 "No content"
@@ -284,6 +290,7 @@ func (s *ApiServer) DeleteUser(c *gin.Context) {
 // GetPeers godoc
 // @Tags Peers
 // @Summary Retrieves all peers for the given interface
+// @ID GetPeers
 // @Produce json
 // @Param device query string true "Device Name"
 // @Success 200 {object} []wireguard.Peer
@@ -312,6 +319,7 @@ func (s *ApiServer) GetPeers(c *gin.Context) {
 // GetPeer godoc
 // @Tags Peers
 // @Summary Retrieves the peer for the given public key
+// @ID GetPeer
 // @Produce json
 // @Param pkey query string true "Public Key (Base 64)"
 // @Success 200 {object} wireguard.Peer
@@ -338,6 +346,7 @@ func (s *ApiServer) GetPeer(c *gin.Context) {
 // PostPeer godoc
 // @Tags Peers
 // @Summary Creates a new peer based on the given peer model
+// @ID PostPeer
 // @Accept  json
 // @Produce json
 // @Param device query string true "Device Name"
@@ -390,6 +399,7 @@ func (s *ApiServer) PostPeer(c *gin.Context) {
 // PutPeer godoc
 // @Tags Peers
 // @Summary Updates the given peer based on the given peer model
+// @ID PutPeer
 // @Accept  json
 // @Produce json
 // @Param pkey query string true "Public Key"
@@ -446,6 +456,7 @@ func (s *ApiServer) PutPeer(c *gin.Context) {
 // PatchPeer godoc
 // @Tags Peers
 // @Summary Updates the given peer based on the given partial peer model
+// @ID PatchPeer
 // @Accept  json
 // @Produce json
 // @Param pkey query string true "Public Key"
@@ -522,6 +533,7 @@ func (s *ApiServer) PatchPeer(c *gin.Context) {
 // DeletePeer godoc
 // @Tags Peers
 // @Summary Updates the given peer based on the given partial peer model
+// @ID DeletePeer
 // @Produce json
 // @Param pkey query string true "Public Key"
 // @Success 202 "No Content"
@@ -556,6 +568,7 @@ func (s *ApiServer) DeletePeer(c *gin.Context) {
 // GetDevices godoc
 // @Tags Interface
 // @Summary Get all devices
+// @ID GetDevices
 // @Produce json
 // @Success 200 {object} []wireguard.Device
 // @Failure 400 {object} ApiError
@@ -580,6 +593,7 @@ func (s *ApiServer) GetDevices(c *gin.Context) {
 // GetDevice godoc
 // @Tags Interface
 // @Summary Get the given device
+// @ID GetDevice
 // @Produce json
 // @Param device query string true "Device Name"
 // @Success 200 {object} wireguard.Device
@@ -614,6 +628,7 @@ func (s *ApiServer) GetDevice(c *gin.Context) {
 // PutDevice godoc
 // @Tags Interface
 // @Summary Updates the given device based on the given device model (UNIMPLEMENTED)
+// @ID PutDevice
 // @Accept  json
 // @Produce json
 // @Param device query string true "Device Name"
@@ -665,6 +680,7 @@ func (s *ApiServer) PutDevice(c *gin.Context) {
 // PatchDevice godoc
 // @Tags Interface
 // @Summary Updates the given device based on the given partial device model (UNIMPLEMENTED)
+// @ID PatchDevice
 // @Accept  json
 // @Produce json
 // @Param device query string true "Device Name"
@@ -742,6 +758,7 @@ type PeerDeploymentInformation struct {
 // GetPeerDeploymentInformation godoc
 // @Tags Provisioning
 // @Summary Retrieves all active peers for the given email address
+// @ID GetPeerDeploymentInformation
 // @Produce json
 // @Param email query string true "Email Address"
 // @Success 200 {object} []PeerDeploymentInformation "All active WireGuard peers"
@@ -792,6 +809,7 @@ func (s *ApiServer) GetPeerDeploymentInformation(c *gin.Context) {
 // GetPeerDeploymentConfig godoc
 // @Tags Provisioning
 // @Summary Retrieves the peer config for the given public key
+// @ID GetPeerDeploymentConfig
 // @Produce plain
 // @Param pkey query string true "Public Key (Base 64)"
 // @Success 200 {object} string "The WireGuard configuration file"
@@ -849,6 +867,7 @@ type ProvisioningRequest struct {
 // PostPeerDeploymentConfig godoc
 // @Tags Provisioning
 // @Summary Creates the requested peer config and returns the config file
+// @ID PostPeerDeploymentConfig
 // @Accept  json
 // @Produce plain
 // @Param body body ProvisioningRequest true "Provisioning Request Model"

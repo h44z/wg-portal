@@ -45,6 +45,7 @@ var doc = `{
                     "Interface"
                 ],
                 "summary": "Get the given device",
+                "operationId": "GetDevice",
                 "parameters": [
                     {
                         "type": "string",
@@ -103,6 +104,7 @@ var doc = `{
                     "Interface"
                 ],
                 "summary": "Updates the given device based on the given device model (UNIMPLEMENTED)",
+                "operationId": "PutDevice",
                 "parameters": [
                     {
                         "type": "string",
@@ -176,6 +178,7 @@ var doc = `{
                     "Interface"
                 ],
                 "summary": "Updates the given device based on the given partial device model (UNIMPLEMENTED)",
+                "operationId": "PatchDevice",
                 "parameters": [
                     {
                         "type": "string",
@@ -248,6 +251,7 @@ var doc = `{
                     "Interface"
                 ],
                 "summary": "Get all devices",
+                "operationId": "GetDevices",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -299,6 +303,7 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Retrieves the peer for the given public key",
+                "operationId": "GetPeer",
                 "parameters": [
                     {
                         "type": "string",
@@ -351,6 +356,7 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Updates the given peer based on the given peer model",
+                "operationId": "PutPeer",
                 "parameters": [
                     {
                         "type": "string",
@@ -421,6 +427,7 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Updates the given peer based on the given partial peer model",
+                "operationId": "DeletePeer",
                 "parameters": [
                     {
                         "type": "string",
@@ -482,6 +489,7 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Updates the given peer based on the given partial peer model",
+                "operationId": "PatchPeer",
                 "parameters": [
                     {
                         "type": "string",
@@ -554,6 +562,7 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Retrieves all peers for the given interface",
+                "operationId": "GetPeers",
                 "parameters": [
                     {
                         "type": "string",
@@ -609,6 +618,7 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Creates a new peer based on the given peer model",
+                "operationId": "PostPeer",
                 "parameters": [
                     {
                         "type": "string",
@@ -681,6 +691,7 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Retrieves user based on given Email",
+                "operationId": "GetUser",
                 "parameters": [
                     {
                         "type": "string",
@@ -739,6 +750,7 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Updates a user based on the given user model",
+                "operationId": "PutUser",
                 "parameters": [
                     {
                         "type": "string",
@@ -809,6 +821,7 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Deletes the specified user",
+                "operationId": "DeleteUser",
                 "parameters": [
                     {
                         "type": "string",
@@ -870,6 +883,7 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Updates a user based on the given partial user model",
+                "operationId": "PatchUser",
                 "parameters": [
                     {
                         "type": "string",
@@ -942,6 +956,7 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Retrieves all users",
+                "operationId": "getUsers",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -988,6 +1003,7 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Creates a new user based on the given user model",
+                "operationId": "PostUser",
                 "parameters": [
                     {
                         "description": "User Model",
@@ -1053,6 +1069,7 @@ var doc = `{
                     "Provisioning"
                 ],
                 "summary": "Retrieves the peer config for the given public key",
+                "operationId": "GetPeerDeploymentConfig",
                 "parameters": [
                     {
                         "type": "string",
@@ -1104,6 +1121,7 @@ var doc = `{
                     "Provisioning"
                 ],
                 "summary": "Retrieves all active peers for the given email address",
+                "operationId": "GetPeerDeploymentInformation",
                 "parameters": [
                     {
                         "type": "string",
@@ -1159,6 +1177,7 @@ var doc = `{
                     "Provisioning"
                 ],
                 "summary": "Creates the requested peer config and returns the config file",
+                "operationId": "PostPeerDeploymentConfig",
                 "parameters": [
                     {
                         "description": "Provisioning Request Model",
