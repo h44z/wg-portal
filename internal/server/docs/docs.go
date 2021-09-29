@@ -1218,18 +1218,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "gorm.DeletedAt": {
-            "type": "object",
-            "properties": {
-                "Time": {
-                    "type": "string"
-                },
-                "Valid": {
-                    "description": "Valid is true if Time is not NULL",
-                    "type": "boolean"
-                }
-            }
-        },
         "server.ApiError": {
             "type": "object",
             "properties": {
@@ -1299,7 +1287,7 @@ var doc = `{
                     "type": "string"
                 },
                 "DeletedAt": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
+                    "type": "string"
                 },
                 "Email": {
                     "description": "required fields",
