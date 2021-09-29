@@ -69,7 +69,7 @@ func (s *ApiServer) GetUsers(c *gin.Context) {
 // @Summary Retrieves user based on given Email
 // @ID GetUser
 // @Produce json
-// @Param email query string true "User Email"
+// @Param Email query string true "User Email"
 // @Success 200 {object} users.User
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -138,8 +138,8 @@ func (s *ApiServer) PostUser(c *gin.Context) {
 // @ID PutUser
 // @Accept  json
 // @Produce json
-// @Param email query string true "User Email"
-// @Param user body users.User true "User Model"
+// @Param Email query string true "User Email"
+// @Param User body users.User true "User Model"
 // @Success 200 {object} users.User
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -191,8 +191,8 @@ func (s *ApiServer) PutUser(c *gin.Context) {
 // @ID PatchUser
 // @Accept  json
 // @Produce json
-// @Param email query string true "User Email"
-// @Param user body users.User true "User Model"
+// @Param Email query string true "User Email"
+// @Param User body users.User true "User Model"
 // @Success 200 {object} users.User
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -202,7 +202,7 @@ func (s *ApiServer) PutUser(c *gin.Context) {
 // @Router /backend/user [patch]
 // @Security ApiBasicAuth
 func (s *ApiServer) PatchUser(c *gin.Context) {
-	email := strings.ToLower(strings.TrimSpace(c.Query("email")))
+	email := strings.ToLower(strings.TrimSpace(c.Query("Email")))
 	if email == "" {
 		c.JSON(http.StatusBadRequest, ApiError{Message: "email parameter must be specified"})
 		return
@@ -257,7 +257,7 @@ func (s *ApiServer) PatchUser(c *gin.Context) {
 // @Summary Deletes the specified user
 // @ID DeleteUser
 // @Produce json
-// @Param email query string true "User Email"
+// @Param Email query string true "User Email"
 // @Success 204 "No content"
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -267,7 +267,7 @@ func (s *ApiServer) PatchUser(c *gin.Context) {
 // @Router /backend/user [delete]
 // @Security ApiBasicAuth
 func (s *ApiServer) DeleteUser(c *gin.Context) {
-	email := strings.ToLower(strings.TrimSpace(c.Query("email")))
+	email := strings.ToLower(strings.TrimSpace(c.Query("Email")))
 	if email == "" {
 		c.JSON(http.StatusBadRequest, ApiError{Message: "email parameter must be specified"})
 		return
@@ -292,7 +292,7 @@ func (s *ApiServer) DeleteUser(c *gin.Context) {
 // @Summary Retrieves all peers for the given interface
 // @ID GetPeers
 // @Produce json
-// @Param device query string true "Device Name"
+// @Param DeviceName query string true "Device Name"
 // @Success 200 {object} []wireguard.Peer
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError
@@ -300,9 +300,9 @@ func (s *ApiServer) DeleteUser(c *gin.Context) {
 // @Router /backend/peers [get]
 // @Security ApiBasicAuth
 func (s *ApiServer) GetPeers(c *gin.Context) {
-	deviceName := strings.ToLower(strings.TrimSpace(c.Query("device")))
+	deviceName := strings.ToLower(strings.TrimSpace(c.Query("DeviceName")))
 	if deviceName == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "device parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "DeviceName parameter must be specified"})
 		return
 	}
 
@@ -321,7 +321,7 @@ func (s *ApiServer) GetPeers(c *gin.Context) {
 // @Summary Retrieves the peer for the given public key
 // @ID GetPeer
 // @Produce json
-// @Param pkey query string true "Public Key (Base 64)"
+// @Param PublicKey query string true "Public Key (Base 64)"
 // @Success 200 {object} wireguard.Peer
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError
@@ -329,9 +329,9 @@ func (s *ApiServer) GetPeers(c *gin.Context) {
 // @Router /backend/peer [get]
 // @Security ApiBasicAuth
 func (s *ApiServer) GetPeer(c *gin.Context) {
-	pkey := c.Query("pkey")
+	pkey := c.Query("PublicKey")
 	if pkey == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "PublicKey parameter must be specified"})
 		return
 	}
 
@@ -349,7 +349,7 @@ func (s *ApiServer) GetPeer(c *gin.Context) {
 // @ID PostPeer
 // @Accept  json
 // @Produce json
-// @Param device query string true "Device Name"
+// @Param DeviceName query string true "Device Name"
 // @Param peer body wireguard.Peer true "Peer Model"
 // @Success 200 {object} wireguard.Peer
 // @Failure 400 {object} ApiError
@@ -360,9 +360,9 @@ func (s *ApiServer) GetPeer(c *gin.Context) {
 // @Router /backend/peers [post]
 // @Security ApiBasicAuth
 func (s *ApiServer) PostPeer(c *gin.Context) {
-	deviceName := strings.ToLower(strings.TrimSpace(c.Query("device")))
+	deviceName := strings.ToLower(strings.TrimSpace(c.Query("DeviceName")))
 	if deviceName == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "device parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "DeviceName parameter must be specified"})
 		return
 	}
 
@@ -402,7 +402,7 @@ func (s *ApiServer) PostPeer(c *gin.Context) {
 // @ID PutPeer
 // @Accept  json
 // @Produce json
-// @Param pkey query string true "Public Key"
+// @Param PublicKey query string true "Public Key"
 // @Param peer body wireguard.Peer true "Peer Model"
 // @Success 200 {object} wireguard.Peer
 // @Failure 400 {object} ApiError
@@ -419,9 +419,9 @@ func (s *ApiServer) PutPeer(c *gin.Context) {
 		return
 	}
 
-	pkey := c.Query("pkey")
+	pkey := c.Query("PublicKey")
 	if pkey == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "PublicKey parameter must be specified"})
 		return
 	}
 
@@ -459,7 +459,7 @@ func (s *ApiServer) PutPeer(c *gin.Context) {
 // @ID PatchPeer
 // @Accept  json
 // @Produce json
-// @Param pkey query string true "Public Key"
+// @Param PublicKey query string true "Public Key"
 // @Param peer body wireguard.Peer true "Peer Model"
 // @Success 200 {object} wireguard.Peer
 // @Failure 400 {object} ApiError
@@ -476,7 +476,7 @@ func (s *ApiServer) PatchPeer(c *gin.Context) {
 		return
 	}
 
-	pkey := c.Query("pkey")
+	pkey := c.Query("PublicKey")
 	if pkey == "" {
 		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
 		return
@@ -509,7 +509,7 @@ func (s *ApiServer) PatchPeer(c *gin.Context) {
 
 	// Changing public key is not allowed
 	if pkey != mergedPeer.PublicKey {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must match the model public key"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "PublicKey parameter must match the model public key"})
 		return
 	}
 
@@ -535,7 +535,7 @@ func (s *ApiServer) PatchPeer(c *gin.Context) {
 // @Summary Updates the given peer based on the given partial peer model
 // @ID DeletePeer
 // @Produce json
-// @Param pkey query string true "Public Key"
+// @Param PublicKey query string true "Public Key"
 // @Success 202 "No Content"
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -545,9 +545,9 @@ func (s *ApiServer) PatchPeer(c *gin.Context) {
 // @Router /backend/peer [delete]
 // @Security ApiBasicAuth
 func (s *ApiServer) DeletePeer(c *gin.Context) {
-	pkey := c.Query("pkey")
+	pkey := c.Query("PublicKey")
 	if pkey == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "PublicKey parameter must be specified"})
 		return
 	}
 
@@ -595,7 +595,7 @@ func (s *ApiServer) GetDevices(c *gin.Context) {
 // @Summary Get the given device
 // @ID GetDevice
 // @Produce json
-// @Param device query string true "Device Name"
+// @Param DeviceName query string true "Device Name"
 // @Success 200 {object} wireguard.Device
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -604,9 +604,9 @@ func (s *ApiServer) GetDevices(c *gin.Context) {
 // @Router /backend/device [get]
 // @Security ApiBasicAuth
 func (s *ApiServer) GetDevice(c *gin.Context) {
-	deviceName := strings.ToLower(strings.TrimSpace(c.Query("device")))
+	deviceName := strings.ToLower(strings.TrimSpace(c.Query("DeviceName")))
 	if deviceName == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "device parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "DeviceName parameter must be specified"})
 		return
 	}
 
@@ -631,7 +631,7 @@ func (s *ApiServer) GetDevice(c *gin.Context) {
 // @ID PutDevice
 // @Accept  json
 // @Produce json
-// @Param device query string true "Device Name"
+// @Param DeviceName query string true "Device Name"
 // @Param body body wireguard.Device true "Device Model"
 // @Success 200 {object} wireguard.Device
 // @Failure 400 {object} ApiError
@@ -648,9 +648,9 @@ func (s *ApiServer) PutDevice(c *gin.Context) {
 		return
 	}
 
-	deviceName := strings.ToLower(strings.TrimSpace(c.Query("device")))
+	deviceName := strings.ToLower(strings.TrimSpace(c.Query("DeviceName")))
 	if deviceName == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "device parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "DeviceName parameter must be specified"})
 		return
 	}
 
@@ -668,7 +668,7 @@ func (s *ApiServer) PutDevice(c *gin.Context) {
 
 	// Changing device name is not allowed
 	if deviceName != updateDevice.DeviceName {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "device parameter must match the model device name"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "DeviceName parameter must match the model device name"})
 		return
 	}
 
@@ -683,7 +683,7 @@ func (s *ApiServer) PutDevice(c *gin.Context) {
 // @ID PatchDevice
 // @Accept  json
 // @Produce json
-// @Param device query string true "Device Name"
+// @Param DeviceName query string true "Device Name"
 // @Param body body wireguard.Device true "Device Model"
 // @Success 200 {object} wireguard.Device
 // @Failure 400 {object} ApiError
@@ -700,9 +700,9 @@ func (s *ApiServer) PatchDevice(c *gin.Context) {
 		return
 	}
 
-	deviceName := strings.ToLower(strings.TrimSpace(c.Query("device")))
+	deviceName := strings.ToLower(strings.TrimSpace(c.Query("DeviceName")))
 	if deviceName == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "device parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "DeviceName parameter must be specified"})
 		return
 	}
 
@@ -739,7 +739,7 @@ func (s *ApiServer) PatchDevice(c *gin.Context) {
 
 	// Changing device name is not allowed
 	if deviceName != mergedDevice.DeviceName {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "device parameter must match the model device name"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "DeviceName parameter must match the model device name"})
 		return
 	}
 
@@ -760,7 +760,7 @@ type PeerDeploymentInformation struct {
 // @Summary Retrieves all active peers for the given email address
 // @ID GetPeerDeploymentInformation
 // @Produce json
-// @Param email query string true "Email Address"
+// @Param Email query string true "Email Address"
 // @Success 200 {object} []PeerDeploymentInformation "All active WireGuard peers"
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError
@@ -768,9 +768,9 @@ type PeerDeploymentInformation struct {
 // @Router /provisioning/peers [get]
 // @Security GeneralBasicAuth
 func (s *ApiServer) GetPeerDeploymentInformation(c *gin.Context) {
-	email := c.Query("email")
+	email := c.Query("Email")
 	if email == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "email parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "Email parameter must be specified"})
 		return
 	}
 
@@ -811,7 +811,7 @@ func (s *ApiServer) GetPeerDeploymentInformation(c *gin.Context) {
 // @Summary Retrieves the peer config for the given public key
 // @ID GetPeerDeploymentConfig
 // @Produce plain
-// @Param pkey query string true "Public Key (Base 64)"
+// @Param PublicKey query string true "Public Key (Base 64)"
 // @Success 200 {object} string "The WireGuard configuration file"
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError
@@ -819,9 +819,9 @@ func (s *ApiServer) GetPeerDeploymentInformation(c *gin.Context) {
 // @Router /provisioning/peer [get]
 // @Security GeneralBasicAuth
 func (s *ApiServer) GetPeerDeploymentConfig(c *gin.Context) {
-	pkey := c.Query("pkey")
+	pkey := c.Query("PublicKey")
 	if pkey == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "PublicKey parameter must be specified"})
 		return
 	}
 
