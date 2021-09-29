@@ -471,3 +471,11 @@ class TestAPI(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, EADDRESSEXHAUSTED):
             self._createPeer()
 
+        # expand network
+        self.NETWORK = ipaddress.ip_network("10.0.0.0/28")
+        addr = ipaddress.ip_address(
+            random.randrange(int(self.NETWORK.network_address) + 1, int(self.NETWORK.broadcast_address) - 1))
+        self.__class__.IFADDR = str(ipaddress.ip_interface(f"{addr}/{self.NETWORK.prefixlen}"))
+        self.finishInstallation()
+        self._createPeer()
+
