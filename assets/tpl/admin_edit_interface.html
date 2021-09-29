@@ -28,7 +28,7 @@
         <div id="configContent" class="tab-content">
             <!-- server mode -->
             <div class="tab-pane fade {{if eq .Device.Type "server"}}active show{{end}}" id="server">
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" name="server">
                     <input type="hidden" name="_csrf" value="{{.Csrf}}">
                     <input type="hidden" name="device" value="{{.Device.DeviceName}}">
                     <input type="hidden" name="devicetype" value="server">
@@ -162,7 +162,7 @@
 
             <!-- client mode -->
             <div class="tab-pane fade {{if eq .Device.Type "client"}}active show{{end}}" id="client">
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" name="client">
                     <input type="hidden" name="_csrf" value="{{.Csrf}}">
                     <input type="hidden" name="device" value="{{.Device.DeviceName}}">
                     <input type="hidden" name="devicetype" value="client">
