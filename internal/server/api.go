@@ -50,7 +50,7 @@ type ApiError struct {
 // GetUsers godoc
 // @Tags Users
 // @Summary Retrieves all users
-// @ID getUsers
+// @ID GetUsers
 // @Produce json
 // @Success 200 {object} []users.User
 // @Failure 401 {object} ApiError
@@ -78,9 +78,9 @@ func (s *ApiServer) GetUsers(c *gin.Context) {
 // @Router /backend/user [get]
 // @Security ApiBasicAuth
 func (s *ApiServer) GetUser(c *gin.Context) {
-	email := strings.ToLower(strings.TrimSpace(c.Query("email")))
+	email := strings.ToLower(strings.TrimSpace(c.Query("Email")))
 	if email == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "email parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "Email parameter must be specified"})
 		return
 	}
 
@@ -98,7 +98,7 @@ func (s *ApiServer) GetUser(c *gin.Context) {
 // @ID PostUser
 // @Accept  json
 // @Produce json
-// @Param user body users.User true "User Model"
+// @Param User body users.User true "User Model"
 // @Success 200 {object} users.User
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -149,9 +149,9 @@ func (s *ApiServer) PostUser(c *gin.Context) {
 // @Router /backend/user [put]
 // @Security ApiBasicAuth
 func (s *ApiServer) PutUser(c *gin.Context) {
-	email := strings.ToLower(strings.TrimSpace(c.Query("email")))
+	email := strings.ToLower(strings.TrimSpace(c.Query("Email")))
 	if email == "" {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "email parameter must be specified"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "Email parameter must be specified"})
 		return
 	}
 
@@ -163,7 +163,7 @@ func (s *ApiServer) PutUser(c *gin.Context) {
 
 	// Changing email address is not allowed
 	if email != updateUser.Email {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "email parameter must match the model email address"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "Email parameter must match the model email address"})
 		return
 	}
 
@@ -350,7 +350,7 @@ func (s *ApiServer) GetPeer(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Param DeviceName query string true "Device Name"
-// @Param peer body wireguard.Peer true "Peer Model"
+// @Param Peer body wireguard.Peer true "Peer Model"
 // @Success 200 {object} wireguard.Peer
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -403,7 +403,7 @@ func (s *ApiServer) PostPeer(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Param PublicKey query string true "Public Key"
-// @Param peer body wireguard.Peer true "Peer Model"
+// @Param Peer body wireguard.Peer true "Peer Model"
 // @Success 200 {object} wireguard.Peer
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -460,7 +460,7 @@ func (s *ApiServer) PutPeer(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Param PublicKey query string true "Public Key"
-// @Param peer body wireguard.Peer true "Peer Model"
+// @Param Peer body wireguard.Peer true "Peer Model"
 // @Success 200 {object} wireguard.Peer
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -632,7 +632,7 @@ func (s *ApiServer) GetDevice(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Param DeviceName query string true "Device Name"
-// @Param body body wireguard.Device true "Device Model"
+// @Param Device body wireguard.Device true "Device Model"
 // @Success 200 {object} wireguard.Device
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -684,7 +684,7 @@ func (s *ApiServer) PutDevice(c *gin.Context) {
 // @Accept  json
 // @Produce json
 // @Param DeviceName query string true "Device Name"
-// @Param body body wireguard.Device true "Device Model"
+// @Param Device body wireguard.Device true "Device Model"
 // @Success 200 {object} wireguard.Device
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
@@ -870,7 +870,7 @@ type ProvisioningRequest struct {
 // @ID PostPeerDeploymentConfig
 // @Accept  json
 // @Produce plain
-// @Param body body ProvisioningRequest true "Provisioning Request Model"
+// @Param ProvisioningRequest body ProvisioningRequest true "Provisioning Request Model"
 // @Success 200 {object} string "The WireGuard configuration file"
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError

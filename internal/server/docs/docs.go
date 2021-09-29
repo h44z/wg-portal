@@ -114,7 +114,7 @@ var doc = `{
                     },
                     {
                         "description": "Device Model",
-                        "name": "body",
+                        "name": "Device",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -188,7 +188,7 @@ var doc = `{
                     },
                     {
                         "description": "Device Model",
-                        "name": "body",
+                        "name": "Device",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -366,7 +366,7 @@ var doc = `{
                     },
                     {
                         "description": "Peer Model",
-                        "name": "peer",
+                        "name": "Peer",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -499,7 +499,7 @@ var doc = `{
                     },
                     {
                         "description": "Peer Model",
-                        "name": "peer",
+                        "name": "Peer",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -628,7 +628,7 @@ var doc = `{
                     },
                     {
                         "description": "Peer Model",
-                        "name": "peer",
+                        "name": "Peer",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -955,7 +955,7 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Retrieves all users",
-                "operationId": "getUsers",
+                "operationId": "GetUsers",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1006,7 +1006,7 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "User Model",
-                        "name": "user",
+                        "name": "User",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1180,7 +1180,7 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "Provisioning Request Model",
-                        "name": "body",
+                        "name": "ProvisioningRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
