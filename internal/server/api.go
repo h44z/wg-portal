@@ -432,7 +432,7 @@ func (s *ApiServer) PutPeer(c *gin.Context) {
 
 	// Changing public key is not allowed
 	if pkey != updatePeer.PublicKey {
-		c.JSON(http.StatusBadRequest, ApiError{Message: "pkey parameter must match the model public key"})
+		c.JSON(http.StatusBadRequest, ApiError{Message: "PublicKey parameter must match the model public key"})
 		return
 	}
 
