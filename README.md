@@ -200,7 +200,9 @@ wg:
 ### RESTful API
 WireGuard Portal offers a RESTful API to interact with. 
 The API is documented using OpenAPI 2.0, the Swagger UI can be found 
-under the URL `http://<your wg-portal ip/domain>/swagger/index.html`.
+under the URL `http://<your wg-portal ip/domain>/swagger/index.html?displayOperationId=true`.
+
+The [API's unittesting](tests/test_API.py) may serve as an example how to make use of the API with python3 & pyswagger.
 
 ## What is out of scope
  * Creating or removing WireGuard (wgX) interfaces.

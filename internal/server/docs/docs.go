@@ -44,11 +44,12 @@ var doc = `{
                     "Interface"
                 ],
                 "summary": "Get the given device",
+                "operationId": "GetDevice",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     }
@@ -102,17 +103,18 @@ var doc = `{
                     "Interface"
                 ],
                 "summary": "Updates the given device based on the given device model (UNIMPLEMENTED)",
+                "operationId": "PutDevice",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     },
                     {
                         "description": "Device Model",
-                        "name": "body",
+                        "name": "Device",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -175,17 +177,18 @@ var doc = `{
                     "Interface"
                 ],
                 "summary": "Updates the given device based on the given partial device model (UNIMPLEMENTED)",
+                "operationId": "PatchDevice",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     },
                     {
                         "description": "Device Model",
-                        "name": "body",
+                        "name": "Device",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -247,6 +250,7 @@ var doc = `{
                     "Interface"
                 ],
                 "summary": "Get all devices",
+                "operationId": "GetDevices",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -298,11 +302,12 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Retrieves the peer for the given public key",
+                "operationId": "GetPeer",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Public Key (Base 64)",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     }
@@ -350,17 +355,18 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Updates the given peer based on the given peer model",
+                "operationId": "PutPeer",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Public Key",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     },
                     {
                         "description": "Peer Model",
-                        "name": "peer",
+                        "name": "Peer",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -420,11 +426,12 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Updates the given peer based on the given partial peer model",
+                "operationId": "DeletePeer",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Public Key",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     }
@@ -481,17 +488,18 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Updates the given peer based on the given partial peer model",
+                "operationId": "PatchPeer",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Public Key",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     },
                     {
                         "description": "Peer Model",
-                        "name": "peer",
+                        "name": "Peer",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -553,11 +561,12 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Retrieves all peers for the given interface",
+                "operationId": "GetPeers",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     }
@@ -608,17 +617,18 @@ var doc = `{
                     "Peers"
                 ],
                 "summary": "Creates a new peer based on the given peer model",
+                "operationId": "PostPeer",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     },
                     {
                         "description": "Peer Model",
-                        "name": "peer",
+                        "name": "Peer",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -680,11 +690,12 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Retrieves user based on given Email",
+                "operationId": "GetUser",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "User Email",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     }
@@ -738,17 +749,18 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Updates a user based on the given user model",
+                "operationId": "PutUser",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "User Email",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     },
                     {
                         "description": "User Model",
-                        "name": "user",
+                        "name": "User",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -808,11 +820,12 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Deletes the specified user",
+                "operationId": "DeleteUser",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "User Email",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     }
@@ -869,17 +882,18 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Updates a user based on the given partial user model",
+                "operationId": "PatchUser",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "User Email",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     },
                     {
                         "description": "User Model",
-                        "name": "user",
+                        "name": "User",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -941,6 +955,7 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Retrieves all users",
+                "operationId": "GetUsers",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -987,10 +1002,11 @@ var doc = `{
                     "Users"
                 ],
                 "summary": "Creates a new user based on the given user model",
+                "operationId": "PostUser",
                 "parameters": [
                     {
                         "description": "User Model",
-                        "name": "user",
+                        "name": "User",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1052,11 +1068,12 @@ var doc = `{
                     "Provisioning"
                 ],
                 "summary": "Retrieves the peer config for the given public key",
+                "operationId": "GetPeerDeploymentConfig",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Public Key (Base 64)",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     }
@@ -1103,11 +1120,12 @@ var doc = `{
                     "Provisioning"
                 ],
                 "summary": "Retrieves all active peers for the given email address",
+                "operationId": "GetPeerDeploymentInformation",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Email Address",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     }
@@ -1158,10 +1176,11 @@ var doc = `{
                     "Provisioning"
                 ],
                 "summary": "Creates the requested peer config and returns the config file",
+                "operationId": "PostPeerDeploymentConfig",
                 "parameters": [
                     {
                         "description": "Provisioning Request Model",
-                        "name": "body",
+                        "name": "ProvisioningRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1199,18 +1218,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "gorm.DeletedAt": {
-            "type": "object",
-            "properties": {
-                "Time": {
-                    "type": "string"
-                },
-                "Valid": {
-                    "description": "Valid is true if Time is not NULL",
-                    "type": "boolean"
-                }
-            }
-        },
         "server.ApiError": {
             "type": "object",
             "properties": {
@@ -1280,7 +1287,7 @@ var doc = `{
                     "type": "string"
                 },
                 "DeletedAt": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
+                    "type": "string"
                 },
                 "Email": {
                     "description": "required fields",
@@ -1403,9 +1410,11 @@ var doc = `{
             "type": "object",
             "required": [
                 "DeviceName",
+                "DeviceType",
                 "Email",
                 "Identifier",
-                "PublicKey"
+                "PublicKey",
+                "UID"
             ],
             "properties": {
                 "AllowedIPsSrvStr": {
@@ -1430,6 +1439,9 @@ var doc = `{
                     "type": "string"
                 },
                 "DeviceName": {
+                    "type": "string"
+                },
+                "DeviceType": {
                     "type": "string"
                 },
                 "Email": {
@@ -1465,6 +1477,10 @@ var doc = `{
                 },
                 "PublicKey": {
                     "description": "Core WireGuard Settings",
+                    "type": "string"
+                },
+                "UID": {
+                    "description": "uid for html identification",
                     "type": "string"
                 },
                 "UpdatedAt": {
