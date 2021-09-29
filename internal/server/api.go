@@ -109,7 +109,7 @@ func (s *ApiServer) GetUser(c *gin.Context) {
 // @Security ApiBasicAuth
 func (s *ApiServer) PostUser(c *gin.Context) {
 	newUser := users.User{}
-	if err := c.BindJSON(&newUser); err != nil {
+	if err := c.ShouldBindJSON(&newUser); err != nil {
 		c.JSON(http.StatusBadRequest, ApiError{Message: err.Error()})
 		return
 	}
@@ -156,7 +156,7 @@ func (s *ApiServer) PutUser(c *gin.Context) {
 	}
 
 	updateUser := users.User{}
-	if err := c.BindJSON(&updateUser); err != nil {
+	if err := c.ShouldBindJSON(&updateUser); err != nil {
 		c.JSON(http.StatusBadRequest, ApiError{Message: err.Error()})
 		return
 	}
@@ -373,7 +373,7 @@ func (s *ApiServer) PostPeer(c *gin.Context) {
 	}
 
 	newPeer := wireguard.Peer{}
-	if err := c.BindJSON(&newPeer); err != nil {
+	if err := c.ShouldBindJSON(&newPeer); err != nil {
 		c.JSON(http.StatusBadRequest, ApiError{Message: err.Error()})
 		return
 	}
@@ -414,7 +414,7 @@ func (s *ApiServer) PostPeer(c *gin.Context) {
 // @Security ApiBasicAuth
 func (s *ApiServer) PutPeer(c *gin.Context) {
 	updatePeer := wireguard.Peer{}
-	if err := c.BindJSON(&updatePeer); err != nil {
+	if err := c.ShouldBindJSON(&updatePeer); err != nil {
 		c.JSON(http.StatusBadRequest, ApiError{Message: err.Error()})
 		return
 	}
@@ -643,7 +643,7 @@ func (s *ApiServer) GetDevice(c *gin.Context) {
 // @Security ApiBasicAuth
 func (s *ApiServer) PutDevice(c *gin.Context) {
 	updateDevice := wireguard.Device{}
-	if err := c.BindJSON(&updateDevice); err != nil {
+	if err := c.ShouldBindJSON(&updateDevice); err != nil {
 		c.JSON(http.StatusBadRequest, ApiError{Message: err.Error()})
 		return
 	}
@@ -879,7 +879,7 @@ type ProvisioningRequest struct {
 // @Security GeneralBasicAuth
 func (s *ApiServer) PostPeerDeploymentConfig(c *gin.Context) {
 	req := ProvisioningRequest{}
-	if err := c.BindJSON(&req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ApiError{Message: err.Error()})
 		return
 	}
