@@ -66,9 +66,9 @@ type Peer struct {
 	Peer   *wgtypes.Peer `gorm:"-" json:"-"` // WireGuard peer
 	Config string        `gorm:"-" json:"-"`
 
-	UID                  string     `form:"uid" binding:"required,alphanum" json:"-"` // uid for html identification
+	UID                  string     `form:"uid" binding:"required,alphanum"` // uid for html identification
 	DeviceName           string     `gorm:"index" form:"device" binding:"required"`
-	DeviceType           DeviceType `gorm:"-" form:"devicetype" binding:"required,oneof=client server" json:"-"`
+	DeviceType           DeviceType `gorm:"-" form:"devicetype" binding:"required,oneof=client server"`
 	Identifier           string     `form:"identifier" binding:"required,max=64"` // Identifier AND Email make a WireGuard peer unique
 	Email                string     `gorm:"index" form:"mail" binding:"required,email"`
 	IgnoreGlobalSettings bool       `form:"ignoreglobalsettings"`

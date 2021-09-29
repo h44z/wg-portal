@@ -1410,9 +1410,11 @@ var doc = `{
             "type": "object",
             "required": [
                 "DeviceName",
+                "DeviceType",
                 "Email",
                 "Identifier",
-                "PublicKey"
+                "PublicKey",
+                "UID"
             ],
             "properties": {
                 "AllowedIPsSrvStr": {
@@ -1437,6 +1439,9 @@ var doc = `{
                     "type": "string"
                 },
                 "DeviceName": {
+                    "type": "string"
+                },
+                "DeviceType": {
                     "type": "string"
                 },
                 "Email": {
@@ -1472,6 +1477,10 @@ var doc = `{
                 },
                 "PublicKey": {
                     "description": "Core WireGuard Settings",
+                    "type": "string"
+                },
+                "UID": {
+                    "description": "uid for html identification",
                     "type": "string"
                 },
                 "UpdatedAt": {
