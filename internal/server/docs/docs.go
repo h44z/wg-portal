@@ -49,7 +49,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     }
@@ -108,7 +108,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     },
@@ -182,7 +182,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     },
@@ -307,7 +307,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Public Key (Base 64)",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     }
@@ -360,7 +360,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Public Key",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     },
@@ -431,7 +431,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Public Key",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     }
@@ -493,7 +493,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Public Key",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     },
@@ -566,7 +566,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     }
@@ -622,7 +622,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Device Name",
-                        "name": "device",
+                        "name": "DeviceName",
                         "in": "query",
                         "required": true
                     },
@@ -695,7 +695,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "User Email",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     }
@@ -754,13 +754,13 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "User Email",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     },
                     {
                         "description": "User Model",
-                        "name": "user",
+                        "name": "User",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -825,7 +825,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "User Email",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     }
@@ -887,13 +887,13 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "User Email",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     },
                     {
                         "description": "User Model",
-                        "name": "user",
+                        "name": "User",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1073,7 +1073,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Public Key (Base 64)",
-                        "name": "pkey",
+                        "name": "PublicKey",
                         "in": "query",
                         "required": true
                     }
@@ -1125,7 +1125,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Email Address",
-                        "name": "email",
+                        "name": "Email",
                         "in": "query",
                         "required": true
                     }
