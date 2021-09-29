@@ -131,8 +131,10 @@ class WGPClient:
             pass
         elif 400 <= resp.status <= 499:
             raise ApiError(resp.data["Message"])
-        elif resp.status == 500:
-            pass
+        elif 500 == resp.status:
+            raise ValueError(resp.data["Message"])
+        elif 501 == resp.status:
+            raise NotImplementedError(resp.data["Message"])
         elif 502 <= resp.status <= 599:
             raise ApiError(resp.data["Message"])
         return resp
@@ -216,6 +218,10 @@ class TestAPI(unittest.TestCase):
         "api": ('ApiBasicAuth', ("wg@example.org", "abadchoice")),
         "general": ('GeneralBasicAuth', ("wg@example.org", "abadchoice"))
     }
+    DEVICE = "wg-example0"
+    IFADDR = "10.17.0.0/24"
+    log = logging.getLogger("TestAPI")
+
 
     def _client(self, *auth):
         auth = ["general"] if auth is None else auth
@@ -269,21 +275,19 @@ class TestAPI(unittest.TestCase):
         values = {
             "displayname": "example0",
             "endpoint": "wg.example.org:51280",
-            "ip": "10.17.0.0/24"
+            "ip": cls.IFADDR
         }
         for k, v in values.items():
             b.form.set_value(v, k)
 
         b.submit()
 
+        b.select_form("server")
+#        cls.log.debug(b.form.get_value("ip"))
+
     def setUp(self) -> None:
         self._client('api')
         self.user = self.randmail
-
-        self.NETWORK = ipaddress.ip_network("10.0.0.0/28")
-        addr = ipaddress.ip_address(
-            random.randrange(int(self.NETWORK.network_address) + 1, int(self.NETWORK.broadcast_address) - 1))
-        self.ifaddr = ipaddress.ip_interface(f"{addr}/{self.NETWORK.prefixlen}")
 
         # create a user …
         self.c.PostUser(User={"Firstname": "Test", "Lastname": "User", "Email": self.user})
@@ -342,23 +346,23 @@ class TestAPI(unittest.TestCase):
         privkey, pubkey = generate_wireguard_keys()
         peer = {"UID": uuid.uuid4().hex,
                 "Identifier": uuid.uuid4().hex,
-                "DeviceName": "wg-example0",
+                "DeviceName": self.DEVICE,
                 "PublicKey": pubkey,
                 "DeviceType": "client",
-                "IPsStr": str(self.ifaddr),
+                "IPsStr": str(self.IFADDR),
                 "Email": self.user}
 
         # keypair is created server side if private key is not submitted
         with self.assertRaisesRegex(ApiError, "peer not found"):
-            self.c.PostPeer(DeviceName="wg-example0", Peer=peer)
+            self.c.PostPeer(DeviceName=self.DEVICE, Peer=peer)
 
         # create
         peer["PrivateKey"] = privkey
-        p = self.c.PostPeer(DeviceName="wg-example0", Peer=peer)
+        p = self.c.PostPeer(DeviceName=self.DEVICE, Peer=peer)
         self.assertListEqual([p.PrivateKey, p.PublicKey], [privkey, pubkey])
 
         # lookup created peer
-        for p in self.c.GetPeers(DeviceName="wg-example0"):
+        for p in self.c.GetPeers(DeviceName=self.DEVICE):
             if pubkey == p.PublicKey:
                 break
         else:
@@ -415,3 +419,55 @@ class TestAPI(unittest.TestCase):
 
         for i in self.c.GetUsers():
             break
+
+
+    def _clear_peers(self):
+        for p in self.c.GetPeers(DeviceName=self.DEVICE):
+            self.c.DeletePeer(PublicKey=p.PublicKey)
+
+    def _clear_users(self):
+        for p in self.c.GetUsers():
+            if p.Email == self.AUTH['api'][1][0]:
+                continue
+            self.c.DeleteUser(Email=p.Email)
+
+
+    def _createPeer(self):
+        privkey, pubkey = generate_wireguard_keys()
+        peer = {"UID": uuid.uuid4().hex,
+                "Identifier": uuid.uuid4().hex,
+                "DeviceName": self.DEVICE,
+                "PublicKey": pubkey,
+                "PrivateKey": privkey,
+                "DeviceType": "client",
+                #                    "IPsStr": str(self.ifaddr),
+                "Email": self.user}
+        self.c.PostPeer(DeviceName=self.DEVICE, Peer=peer)
+        return pubkey
+
+    def test_address_exhaustion(self):
+        global log
+        self._clear_peers()
+        self._clear_users()
+
+        self.NETWORK = ipaddress.ip_network("10.0.0.0/29")
+        addr = ipaddress.ip_address(
+            random.randrange(int(self.NETWORK.network_address) + 1, int(self.NETWORK.broadcast_address) - 1))
+        self.__class__.IFADDR = str(ipaddress.ip_interface(f"{addr}/{self.NETWORK.prefixlen}"))
+
+        # reconfigure via web ui - set the ifaddr with less addrs in pool
+        self.finishInstallation()
+
+        keys = set()
+        EADDRESSEXHAUSTED = "failed to get available IP addresses: no more available address from cidr"
+        with self.assertRaisesRegex(ValueError, EADDRESSEXHAUSTED):
+            for i in range(self.NETWORK.num_addresses + 1):
+                keys.add(self._createPeer())
+
+        n = keys.pop()
+        self.c.DeletePeer(PublicKey=n)
+        self._createPeer()
+
+        with self.assertRaisesRegex(ValueError, EADDRESSEXHAUSTED):
+            self._createPeer()
+
