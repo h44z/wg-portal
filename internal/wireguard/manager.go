@@ -1,12 +1,8 @@
 package wireguard
 
 import (
-	"bufio"
-	"fmt"
 	"net"
-	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -45,29 +41,27 @@ type Manager interface {
 	PeerManager
 }
 
+// ManagementUtil is a persistent management util for WireGuard configurations.
 type ManagementUtil struct {
 	mux sync.RWMutex // mutex to synchronize access to maps
 
-	wg lowlevel.WireGuardClient
-	nl lowlevel.NetlinkClient
-
-	unmanagedInterfaces []DeviceIdentifier // Those interfaces are completely ignored by WireGuard Portal
-
-	// config writers and loaders are used to populate the internal config maps
-	cw []ConfigWriter
-	cl []ConfigLoader
+	wg lowlevel.WireGuardClient // WireGuard interface handler
+	nl lowlevel.NetlinkClient   // Network interface handler
+	cs ConfigStore              // Persistent backend
 
 	// internal holder of interface configurations
 	interfaces map[DeviceIdentifier]InterfaceConfig
+
 	// internal holder of peer configurations
 	peers map[DeviceIdentifier]map[PeerIdentifier]PeerConfig
 }
 
-func NewManagementUtil(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, opts ...Opt) (*ManagementUtil, error) {
+func NewManagementUtil(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, cs ConfigStore, opts ...Opt) (*ManagementUtil, error) {
 	m := &ManagementUtil{
 		mux: sync.RWMutex{},
 		wg:  wg,
 		nl:  nl,
+		cs:  cs,
 	}
 
 	for _, opt := range opts {
@@ -86,18 +80,6 @@ func NewManagementUtil(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, o
 func IgnoredInterfaces(ignored ...DeviceIdentifier) Opt {
 	return func(m *ManagementUtil) {
 		m.unmanagedInterfaces = ignored
-	}
-}
-
-func ConfigLoaders(cl ...ConfigLoader) Opt {
-	return func(m *ManagementUtil) {
-		m.cl = cl
-	}
-}
-
-func ConfigWriters(cw ...ConfigWriter) Opt {
-	return func(m *ManagementUtil) {
-		m.cw = cw
 	}
 }
 
@@ -352,9 +334,9 @@ func (m *ManagementUtil) RemovePeer(device DeviceIdentifier, peer PeerIdentifier
 }
 
 // TODO: implement/think about
-func (m *ManagementUtil) initialize() error {
+func (m *ManagementUtil) loadFromBackend() error {
 	// Load all interfaces from the database
-	backendInterfaces, err := m.getBackendInterfaces(DatabaseBackendName)
+	backendInterfaces, err := m.cs.GetAvailableInterfaces()
 	if err != nil {
 		return errors.Wrap(err, "failed to load backend interfaces")
 	}
@@ -401,30 +383,6 @@ func (m *ManagementUtil) initialize() error {
 	// TODO
 
 	return nil
-}
-
-func (m *ManagementUtil) getBackendInterfaces(backend string) ([]DeviceIdentifier, error) {
-	// Load all interfaces from the config loader backends
-	uniqueInterfaces := make(map[DeviceIdentifier]struct{})
-	for _, cl := range m.cl {
-		if cl.Name() != backend {
-			continue
-		}
-
-		backendInterfaces, err := cl.GetAvailableInterfaces()
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to load available interfaces from backend %s", cl.Name())
-		}
-		for _, iface := range backendInterfaces {
-			uniqueInterfaces[iface] = struct{}{}
-		}
-	}
-
-	interfaces := make([]DeviceIdentifier, 0, len(uniqueInterfaces))
-	for iface := range uniqueInterfaces {
-		interfaces = append(interfaces, iface)
-	}
-	return interfaces, nil
 }
 
 func (m *ManagementUtil) loadBackendInterfaces(backend string, identifiers ...DeviceIdentifier) error {
@@ -592,15 +550,14 @@ func (m *ManagementUtil) persistInterface(identifier DeviceIdentifier, delete bo
 		peers = append(peers, config)
 	}
 
-	for _, writer := range m.cw {
-		if delete {
-			err = writer.DeleteInterface(device, peers)
-		} else {
-			err = writer.SaveInterface(device, peers)
-		}
-		if err != nil {
-			return errors.Wrapf(err, "failed to persist interface %s", identifier)
-		}
+	if !delete {
+		err = m.cs.SaveInterface(device, peers)
+	} else {
+		err = m.cs.DeleteInterface(device.DeviceName)
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to persist interface %s", identifier)
 	}
 
 	return nil
@@ -619,177 +576,17 @@ func (m *ManagementUtil) persistPeer(identifier PeerIdentifier, delete bool) err
 		}
 	}
 
-	for _, writer := range m.cw {
-		if delete {
-			err = writer.DeletePeer(peer, device)
-		} else {
-			err = writer.SavePeer(peer, device)
-		}
-		if err != nil {
-			return errors.Wrapf(err, "failed to persist peer %s", identifier)
-		}
+	if !delete {
+		err = m.cs.SavePeer(peer, device.DeviceName)
+	} else {
+		err = m.cs.DeletePeer(peer.Uid, device.DeviceName)
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to persist peer %s", identifier)
 	}
 
 	return nil
-}
-
-// TODO: fix/implement
-func (m *ManagementUtil) loadExistingInterfaces() ([]InterfaceConfig, error) {
-	devices, err := m.wg.Devices()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get WireGuard device list")
-	}
-
-	interfaces := make([]InterfaceConfig, len(devices))
-	for i, device := range devices {
-		interfaces[i].DeviceName = DeviceIdentifier(device.Name)
-		interfaces[i].FirewallMark = int32(device.FirewallMark)
-		interfaces[i].KeyPair = KeyPair{
-			PrivateKey: device.PrivateKey.String(),
-			PublicKey:  device.PublicKey.String(),
-		}
-		interfaces[i].ListenPort = device.ListenPort
-		interfaces[i].DriverType = device.Type.String()
-
-		parsedInterface, _, err := m.parseConfigFile(device.Name)
-		if err != nil {
-			continue
-		}
-		interfaces[i].DnsStr = parsedInterface.DnsStr
-		interfaces[i].DisplayName = parsedInterface.DisplayName
-		interfaces[i].PostDown = parsedInterface.PostDown
-		interfaces[i].PreDown = parsedInterface.PreDown
-		interfaces[i].PostUp = parsedInterface.PostUp
-		interfaces[i].PreUp = parsedInterface.PreUp
-		interfaces[i].AddressStr = parsedInterface.AddressStr
-		interfaces[i].RoutingTable = parsedInterface.RoutingTable
-		interfaces[i].Mtu = parsedInterface.Mtu
-
-		fmt.Println(interfaces[i])
-	}
-
-	return interfaces, nil
-}
-
-// parseConfigFile parses WireGuard configuration files (INI syntax) and some additional comments in the file
-// TODO: fix/implement
-func (m *ManagementUtil) parseConfigFile(interfaceName string) (InterfaceConfig, []PeerConfig, error) {
-	configFile := "TODO" //filepath.Join(m.configPath, interfaceName+".conf")
-
-	file, err := os.Open(configFile)
-	if err != nil {
-		return InterfaceConfig{}, nil, errors.Wrapf(err, "unable to open config file for interface %s", interfaceName)
-	}
-	scanner := bufio.NewScanner(file)
-
-	peerSection := false
-	iface := InterfaceConfig{}
-	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.TrimSpace(line)
-
-		switch {
-		case strings.HasPrefix(line, "#"): // A comment line
-			line = line[1:]
-			commentParts := strings.SplitN(line, "=", 1)
-			fmt.Println(commentParts, peerSection)
-		case strings.HasPrefix(line, "["): // Config section
-			line = strings.ToLower(line[1 : len(line)-1])
-			switch line {
-			case "peer":
-				peerSection = true
-			case "interface":
-				peerSection = false
-			default:
-				return InterfaceConfig{}, nil, errors.Errorf("configuration file contains unsupported section %s", line)
-			}
-		default: //Config option
-			optionParts := strings.SplitN(line, "=", 1)
-			if len(optionParts) != 2 {
-				return InterfaceConfig{}, nil, errors.Errorf("configuration file contains invalid line %s", line)
-			}
-			option := strings.ToLower(strings.TrimSpace(optionParts[0]))
-			value := strings.TrimSpace(optionParts[1])
-			peerOption := false
-			switch option {
-			// Interface
-			case "privatekey":
-				key, err := wgtypes.ParseKey(value)
-				if err != nil {
-					return InterfaceConfig{}, nil, errors.Wrapf(err, "interface section has no valid private Key")
-				}
-				iface.KeyPair = KeyPair{
-					PrivateKey: key.String(),
-					PublicKey:  key.PublicKey().String(),
-				}
-			case "address":
-				iface.AddressStr = value
-			case "listenport":
-				port, err := strconv.Atoi(value)
-				if err != nil {
-					return InterfaceConfig{}, nil, errors.Wrapf(err, "interface section has invalid listen port Value")
-				}
-				iface.ListenPort = port
-			case "postup":
-				iface.PostUp = value
-			case "postdown":
-				iface.PostDown = value
-			case "preup":
-				iface.PreUp = value
-			case "predown":
-				iface.PreDown = value
-			case "mtu":
-				mtu, err := strconv.Atoi(value)
-				if err != nil {
-					return InterfaceConfig{}, nil, errors.Wrapf(err, "interface section has invalid MTU Value")
-				}
-				iface.Mtu = mtu
-			case "dns":
-				iface.DnsStr = value
-			case "table":
-				iface.RoutingTable = value
-			case "fwmark":
-				fwMark, err := strconv.Atoi(value)
-				if err != nil {
-					return InterfaceConfig{}, nil, errors.Wrapf(err, "interface section has invalid fwmark Value")
-				}
-				iface.FirewallMark = int32(fwMark)
-			case "saveconfig":
-				saveConfig, err := strconv.ParseBool(value)
-				if err != nil {
-					return InterfaceConfig{}, nil, errors.Wrapf(err, "interface section has invalid save-config Value")
-				}
-				iface.SaveConfig = saveConfig
-			// Peer
-			case "endpoint":
-				peerOption = true
-			case "publickey":
-				peerOption = true
-			case "allowedips":
-				peerOption = true
-			case "persistentkeepalive":
-				peerOption = true
-			case "presharedkey":
-				peerOption = true
-			}
-
-			if peerSection != peerOption {
-				return InterfaceConfig{}, nil, errors.Errorf("config section contains invalid option %s", option)
-			}
-
-			fmt.Println(value)
-		}
-		if strings.HasPrefix(line, "#") {
-			fmt.Println("comment")
-		}
-		fmt.Println(line)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return InterfaceConfig{}, nil, errors.Wrapf(err, "unable to scan config file for interface %s", interfaceName)
-	}
-
-	return InterfaceConfig{}, nil, nil
 }
 
 func parseIpAddressString(addrStr string) ([]*netlink.Addr, error) {

@@ -60,15 +60,3 @@ func (f FileBackend) DeleteInterface(cfg InterfaceConfig, _ []PeerConfig) error 
 func (f FileBackend) DeletePeer(_ PeerConfig, _ InterfaceConfig) error {
 	return nil // the file backend will only store changed interfaces
 }
-
-func (f FileBackend) Load(identifier DeviceIdentifier) (InterfaceConfig, []PeerConfig, error) {
-	return InterfaceConfig{}, nil, nil
-}
-
-func (f FileBackend) LoadAll(interfaceIdentifiers ...DeviceIdentifier) (map[InterfaceConfig][]PeerConfig, error) {
-	return nil, nil
-}
-
-func (f FileBackend) GetAvailableInterfaces() ([]DeviceIdentifier, error) {
-	return nil, nil
-}
