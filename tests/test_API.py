@@ -134,7 +134,7 @@ class WGPClient:
         elif 500 == resp.status:
             raise ValueError(resp.data["Message"])
         elif 501 == resp.status:
-            raise NotImplementedError(resp.data["Message"])
+            raise NotImplementedError(name)
         elif 502 <= resp.status <= 599:
             raise ApiError(resp.data["Message"])
         return resp
@@ -317,22 +317,25 @@ class TestAPI(unittest.TestCase):
 
         for device in devices:
             dev = self.c.GetDevice(DeviceName=device.DeviceName)
-            new = self.c.PutDevice(DeviceName=dev.DeviceName,
-                                   Device={
-                                       "DeviceName": dev.DeviceName,
-                                       "IPsStr": dev.IPsStr,
-                                       "PrivateKey": dev.PrivateKey,
-                                       "Type": "client",
-                                       "PublicKey": dev.PublicKey}
-                                   )
-            new = self.c.PatchDevice(DeviceName=dev.DeviceName,
-                                     Device={
-                                         "DeviceName": dev.DeviceName,
-                                         "IPsStr": dev.IPsStr,
-                                         "PrivateKey": dev.PrivateKey,
-                                         "Type": "client",
-                                         "PublicKey": dev.PublicKey}
-                                     )
+            with self.assertRaises(NotImplementedError):
+                new = self.c.PutDevice(DeviceName=dev.DeviceName,
+                                       Device={
+                                           "DeviceName": dev.DeviceName,
+                                           "IPsStr": dev.IPsStr,
+                                           "PrivateKey": dev.PrivateKey,
+                                           "Type": "client",
+                                           "PublicKey": dev.PublicKey}
+                                       )
+            with self.assertRaises(NotImplementedError):
+                new = self.c.PatchDevice(DeviceName=dev.DeviceName,
+                                         Device={
+                                             "DeviceName": dev.DeviceName,
+                                             "IPsStr": dev.IPsStr,
+                                             "PrivateKey": dev.PrivateKey,
+                                             "Type": "client",
+                                             "PublicKey": dev.PublicKey}
+                                         )
+            break
 
     def easy_peer(self):
         data = self.c.PostPeerDeploymentConfig(ProvisioningRequest={"Email": self.user, "Identifier": "debug"})
