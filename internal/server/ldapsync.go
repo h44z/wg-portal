@@ -8,6 +8,8 @@ import (
 	"github.com/h44z/wg-portal/internal/users"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	gldap "github.com/go-ldap/ldap/v3"
 )
 
 func (s *Server) SyncLdapWithUserDatabase() {
@@ -42,6 +44,19 @@ func (s *Server) SyncLdapWithUserDatabase() {
 	logrus.Info("ldap user synchronization stopped")
 }
 
+func (s Server)userIsInAdminGroup(ldapData *ldap.RawLdapData) bool {
+	if s.config.LDAP.AdminLdapGroup_ == nil {
+			return false
+	}
+	for _, group := range ldapData.RawAttributes[s.config.LDAP.GroupMemberAttribute] {
+		var dn,_ = gldap.ParseDN(string(group))
+		if s.config.LDAP.AdminLdapGroup_.Equal(dn) {
+            return true
+		}
+	}
+	return false
+}
+
 func (s Server) userChangedInLdap(user *users.User, ldapData *ldap.RawLdapData) bool {
 	if user.Firstname != ldapData.Attributes[s.config.LDAP.FirstNameAttribute] {
 		return true
@@ -62,20 +77,8 @@ func (s Server) userChangedInLdap(user *users.User, ldapData *ldap.RawLdapData) 
 	if user.DeletedAt.Valid {
 		return true
 	}
-	ldapAdmin := false
-	var adminGroup, err = gldap.ParseDN(s.config.LDAP.AdminLdapGroup)
-	if err != nil {
-		logrus.Info("AdminLdapGroup ParseDN failed")
-		return false
-	}
-	for _, group := range ldapData.RawAttributes[s.config.LDAP.GroupMemberAttribute] {
-		var dn,_ = gldap.ParseDN(string(group))
-		if adminGroup.Equal(dn) {
-			ldapAdmin = true
-			break
-		}
-	}
-	if user.IsAdmin != ldapAdmin {
+
+	if user.IsAdmin != s.userIsInAdminGroup(ldapData) {
 		return true
 	}
 
@@ -148,16 +151,9 @@ func (s *Server) updateLdapUsers(ldapUsers []ldap.RawLdapData) {
 			user.Lastname = ldapUsers[i].Attributes[s.config.LDAP.LastNameAttribute]
 			user.Email = ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute]
 			user.Phone = ldapUsers[i].Attributes[s.config.LDAP.PhoneAttribute]
-			user.IsAdmin = false
+			user.IsAdmin = s.userIsInAdminGroup(&ldapUsers[i])
 			user.Source = users.UserSourceLdap
 			user.DeletedAt = gorm.DeletedAt{} // Not deleted
-
-			for _, group := range ldapUsers[i].RawAttributes[s.config.LDAP.GroupMemberAttribute] {
-				if string(group) == s.config.LDAP.AdminLdapGroup {
-					user.IsAdmin = true
-					break
-				}
-			}
 
 			if err = s.users.UpdateUser(user); err != nil {
 				logrus.Errorf("failed to update ldap user %s in database: %v", user.Email, err)
