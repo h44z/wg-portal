@@ -62,10 +62,15 @@ func (s Server) userChangedInLdap(user *users.User, ldapData *ldap.RawLdapData) 
 	if user.DeletedAt.Valid {
 		return true
 	}
-
 	ldapAdmin := false
+	var adminGroup, err = gldap.ParseDN(s.config.LDAP.AdminLdapGroup)
+	if err != nil {
+		logrus.Info("AdminLdapGroup ParseDN failed")
+		return false
+	}
 	for _, group := range ldapData.RawAttributes[s.config.LDAP.GroupMemberAttribute] {
-		if string(group) == s.config.LDAP.AdminLdapGroup {
+		var dn,_ = gldap.ParseDN(string(group))
+		if adminGroup.Equal(dn) {
 			ldapAdmin = true
 			break
 		}
