@@ -81,11 +81,12 @@ type InterfaceConfig struct {
 }
 
 type PeerInterfaceConfig struct {
-	AddressStr   StringConfigOption // the interface ip addresses, comma separated
-	DnsStr       StringConfigOption // the dns server that should be set if the interface is up, comma separated
-	Mtu          IntConfigOption    // the device MTU
-	FirewallMark Int32ConfigOption  // a firewall mark
-	RoutingTable StringConfigOption // the routing table
+	Identifier   InterfaceIdentifier // the interface identifier
+	AddressStr   StringConfigOption  // the interface ip addresses, comma separated
+	DnsStr       StringConfigOption  // the dns server that should be set if the interface is up, comma separated
+	Mtu          IntConfigOption     // the device MTU
+	FirewallMark Int32ConfigOption   // a firewall mark
+	RoutingTable StringConfigOption  // the routing table
 
 	PreUp    StringConfigOption // action that is executed before the device is up
 	PostUp   StringConfigOption // action that is executed after the device is up

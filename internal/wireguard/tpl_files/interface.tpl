@@ -5,7 +5,7 @@
 # Lines starting with the -WGP- tag are used by the WireGuard Portal configuration parser.
 
 [Interface]
-# -WGP- Interface: {{ .Interface.DeviceName }} | Updated: {{ .Interface.UpdatedAt }} | Created: {{ .Interface.CreatedAt }}
+# -WGP- Interface: {{ .Interface.Identifier }} | Updated: {{ .Interface.UpdatedAt }} | Created: {{ .Interface.CreatedAt }}
 # -WGP- Display name: {{ .Interface.DisplayName }}
 # -WGP- Interface mode: {{ .Interface.Type }}
 # -WGP- PublicKey = {{ .Interface.KeyPair.PublicKey }}

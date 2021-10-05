@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/h44z/wg-portal/internal/persistence"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,8 +19,8 @@ func TestNewTemplateHandler(t *testing.T) {
 
 func TestTemplateHandler_GetInterfaceConfig(t *testing.T) {
 	type args struct {
-		cfg   InterfaceConfig
-		peers []PeerConfig
+		cfg   persistence.InterfaceConfig
+		peers []persistence.PeerConfig
 	}
 	tests := []struct {
 		name    string
@@ -75,8 +77,8 @@ Address =
 
 func TestTemplateHandler_GetPeerConfig(t *testing.T) {
 	type args struct {
-		peer  PeerConfig
-		iface InterfaceConfig
+		peer  persistence.PeerConfig
+		iface persistence.InterfaceConfig
 	}
 	tests := []struct {
 		name    string
@@ -116,7 +118,7 @@ Endpoint = `)),
 	c, _ := NewTemplateHandler()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.GetPeerConfig(tt.args.peer, tt.args.iface)
+			got, err := c.GetPeerConfig(tt.args.peer)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetPeerConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return

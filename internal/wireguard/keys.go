@@ -1,24 +1,47 @@
 package wireguard
 
-import "encoding/base64"
+import (
+	"encoding/base64"
 
-type KeyPair struct {
-	PrivateKey string
-	PublicKey  string
-}
+	"github.com/h44z/wg-portal/internal/persistence"
 
-type PreSharedKey string
+	"github.com/pkg/errors"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+)
 
-func (p KeyPair) GetPrivateKeyBytes() []byte {
+func GetPrivateKeyBytes(p persistence.KeyPair) []byte {
 	data, _ := base64.StdEncoding.DecodeString(p.PrivateKey)
 	return data
 }
 
-func (p KeyPair) GetPublicKeyBytes() []byte {
+func GetPublicKeyBytes(p persistence.KeyPair) []byte {
 	data, _ := base64.StdEncoding.DecodeString(p.PublicKey)
 	return data
 }
 
 func KeyBytesToString(key []byte) string {
 	return base64.StdEncoding.EncodeToString(key)
+}
+
+type WgCtrlKeyGenerator struct{}
+
+func (k WgCtrlKeyGenerator) GetFreshKeypair() (persistence.KeyPair, error) {
+	privateKey, err := wgtypes.GeneratePrivateKey()
+	if err != nil {
+		return persistence.KeyPair{}, errors.Wrap(err, "failed to generate private Key")
+	}
+
+	return persistence.KeyPair{
+		PrivateKey: privateKey.String(),
+		PublicKey:  privateKey.PublicKey().String(),
+	}, nil
+}
+
+func (k WgCtrlKeyGenerator) GetPreSharedKey() (persistence.PreSharedKey, error) {
+	preSharedKey, err := wgtypes.GenerateKey()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to generate pre-shared Key")
+	}
+
+	return persistence.PreSharedKey(preSharedKey.String()), nil
 }

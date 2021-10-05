@@ -3,29 +3,46 @@ package wireguard
 import (
 	"testing"
 
+	"github.com/h44z/wg-portal/internal/persistence"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func TestKeyPair_GetPrivateKeyBytes(t *testing.T) {
-	kp := KeyPair{
+func TestGetPrivateKeyBytes(t *testing.T) {
+	kp := persistence.KeyPair{
 		PrivateKey: "aGVsbG8=",
 		PublicKey:  "d29ybGQ=",
 	}
 
-	got := kp.GetPrivateKeyBytes()
+	got := GetPrivateKeyBytes(kp)
 	assert.Equal(t, []byte("hello"), got)
 }
 
-func TestKeyPair_GetPublicKeyBytes(t *testing.T) {
-	kp := KeyPair{
+func TestGetPublicKeyBytes(t *testing.T) {
+	kp := persistence.KeyPair{
 		PrivateKey: "aGVsbG8=",
 		PublicKey:  "d29ybGQ=",
 	}
 
-	got := kp.GetPublicKeyBytes()
+	got := GetPublicKeyBytes(kp)
 	assert.Equal(t, []byte("world"), got)
 }
 
 func TestKeyBytesToString(t *testing.T) {
 	assert.Equal(t, "aGVsbG8=", KeyBytesToString([]byte("hello")))
+}
+
+func TestWgCtrlKeyGenerator_GetFreshKeypair(t *testing.T) {
+	m := WgCtrlKeyGenerator{}
+	kp, err := m.GetFreshKeypair()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, kp.PrivateKey)
+	assert.NotEmpty(t, kp.PublicKey)
+}
+
+func TestWgCtrlKeyGenerator_GetPreSharedKey(t *testing.T) {
+	m := WgCtrlKeyGenerator{}
+	psk, err := m.GetPreSharedKey()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, psk)
 }

@@ -1,14 +1,18 @@
 package wireguard
 
-// ConfigStore provides an interface for interacting with different configuration storage repositories.
-type ConfigStore interface {
-	GetAvailableInterfaces() ([]DeviceIdentifier, error)
-	GetAllInterfaces(interfaceIdentifiers ...DeviceIdentifier) (map[InterfaceConfig][]PeerConfig, error)
-	GetInterface(identifier DeviceIdentifier) (InterfaceConfig, []PeerConfig, error)
+import (
+	"github.com/h44z/wg-portal/internal/persistence"
+)
 
-	SaveInterface(cfg InterfaceConfig, peers []PeerConfig) error
-	SavePeer(peer PeerConfig, interfaceIdentifier DeviceIdentifier) error
+type store interface {
+	GetAvailableInterfaces() ([]persistence.InterfaceIdentifier, error)
 
-	DeleteInterface(identifier DeviceIdentifier) error
-	DeletePeer(peer PeerIdentifier, interfaceIdentifier DeviceIdentifier) error
+	GetAllInterfaces(interfaceIdentifiers ...persistence.InterfaceIdentifier) (map[persistence.InterfaceConfig][]persistence.PeerConfig, error)
+	GetInterface(identifier persistence.InterfaceIdentifier) (persistence.InterfaceConfig, []persistence.PeerConfig, error)
+
+	SaveInterface(cfg persistence.InterfaceConfig, peers []persistence.PeerConfig) error
+	SavePeer(peer persistence.PeerConfig, interfaceIdentifier persistence.InterfaceIdentifier) error
+
+	DeleteInterface(identifier persistence.InterfaceIdentifier) error
+	DeletePeer(peer persistence.PeerIdentifier, interfaceIdentifier persistence.InterfaceIdentifier) error
 }

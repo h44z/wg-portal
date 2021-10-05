@@ -5,8 +5,8 @@
 # Lines starting with the -WGP- tag are used by the WireGuard Portal configuration parser.
 
 [Interface]
-# -WGP- Peer: {{.Peer.Uid}} | Updated: {{.Peer.UpdatedAt}} | Created: {{.Peer.CreatedAt}}
-# -WGP- Display name: {{ .Peer.Identifier }}
+# -WGP- Peer: {{.Peer.Identifier}} | Updated: {{.Peer.UpdatedAt}} | Created: {{.Peer.CreatedAt}}
+# -WGP- Display name: {{ .Peer.DisplayName }}
 # -WGP- PublicKey: {{ .Peer.KeyPair.PublicKey }}
 {{- if eq $.Interface.Type "server"}}
 # -WGP- Peer type: client
