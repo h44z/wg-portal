@@ -2,7 +2,6 @@ package wireguard
 
 import (
 	"io"
-	"sync"
 
 	"github.com/h44z/wg-portal/internal/lowlevel"
 
@@ -30,7 +29,7 @@ type ImportableInterface struct {
 
 type ImportManager interface {
 	GetImportableInterfaces() (map[ImportableInterface][]persistence.PeerConfig, error)
-	ImportInterface(cfg ImportableInterface, peers []persistence.PeerConfig)
+	ImportInterface(cfg ImportableInterface, peers []persistence.PeerConfig) error
 }
 
 type ConfigFileGenerator interface {
@@ -59,28 +58,11 @@ type Manager interface {
 type PersistentManager struct {
 	WgCtrlKeyGenerator
 	TemplateHandler
-
-	mux sync.RWMutex // mutex to synchronize access to maps
-
-	// external api clients
-	wg lowlevel.WireGuardClient
-	nl lowlevel.NetlinkClient
-
-	// persistent backend
-	store store
-
-	// internal holder of interface configurations
-	interfaces map[persistence.InterfaceIdentifier]persistence.InterfaceConfig
-	// internal holder of peer configurations
-	peers map[persistence.InterfaceIdentifier]map[persistence.PeerIdentifier]persistence.PeerConfig
+	WgCtrlManager
 }
 
 func NewPersistentManager(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, store store) (*PersistentManager, error) {
-	m := &PersistentManager{
-		mux: sync.RWMutex{},
-		wg:  wg,
-		nl:  nl,
-	}
+	m := &PersistentManager{}
 
 	return m, nil
 }

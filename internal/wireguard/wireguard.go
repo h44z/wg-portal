@@ -275,6 +275,51 @@ func (m *WgCtrlManager) RemovePeer(id persistence.PeerIdentifier) error {
 	return nil
 }
 
+func (m *WgCtrlManager) GetImportableInterfaces() (map[ImportableInterface][]persistence.PeerConfig, error) {
+	devices, err := m.wg.Devices()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get WireGuard device list")
+	}
+
+	m.mux.RLock()
+	defer m.mux.RUnlock()
+
+	interfaces := make(map[ImportableInterface][]persistence.PeerConfig, len(devices))
+	for d, device := range devices {
+		if _, exists := m.interfaces[persistence.InterfaceIdentifier(device.Name)]; exists {
+			continue // interface already managed, skip
+		}
+
+		cfg, err := m.convertWireGuardInterface(devices[d])
+		if err != nil {
+			return nil, errors.WithMessagef(err, "failed to convert WireGuard interface %s", device.Name)
+		}
+
+		interfaces[cfg] = make([]persistence.PeerConfig, len(device.Peers))
+
+		for p, peer := range device.Peers {
+			peerCfg, err := m.convertWireGuardPeer(&device.Peers[p], cfg)
+			if err != nil {
+				return nil, errors.WithMessagef(err, "failed to convert WireGuard peer %s from %s",
+					peer.PublicKey.String(), device.Name)
+			}
+
+			interfaces[cfg][p] = peerCfg
+		}
+	}
+
+	return interfaces, nil
+}
+
+func (m *WgCtrlManager) ImportInterface(cfg ImportableInterface, peers []persistence.PeerConfig) error {
+	m.mux.Lock()
+	defer m.mux.Unlock()
+
+	// TODO: implement
+
+	return nil
+}
+
 //
 // -- Helpers
 //
@@ -403,6 +448,62 @@ func (m *WgCtrlManager) getPeer(id persistence.PeerIdentifier) (persistence.Peer
 	return persistence.PeerConfig{}, errors.New("peer not found")
 }
 
+func (m *WgCtrlManager) convertWireGuardInterface(device *wgtypes.Device) (ImportableInterface, error) {
+	cfg := ImportableInterface{}
+
+	cfg.Identifier = persistence.InterfaceIdentifier(device.Name)
+	cfg.FirewallMark = int32(device.FirewallMark)
+	cfg.KeyPair = persistence.KeyPair{
+		PrivateKey: device.PrivateKey.String(),
+		PublicKey:  device.PublicKey.String(),
+	}
+	cfg.ListenPort = device.ListenPort
+	cfg.DriverType = device.Type.String()
+
+	lowLevelInterface, err := m.nl.LinkByName(device.Name)
+	if err != nil {
+		return ImportableInterface{}, errors.WithMessagef(err, "failed to get low level interface for %s", device.Name)
+	}
+	cfg.Mtu = lowLevelInterface.Attrs().MTU
+	ipAddresses, err := m.nl.AddrList(lowLevelInterface)
+	if err != nil {
+		return ImportableInterface{}, errors.WithMessagef(err, "failed to get low level addresses for %s", device.Name)
+	}
+	cfg.AddressStr = ipAddressesToString(ipAddresses)
+
+	return cfg, nil
+}
+
+func (m *WgCtrlManager) convertWireGuardPeer(peer *wgtypes.Peer, dev ImportableInterface) (persistence.PeerConfig, error) {
+	peerCfg := persistence.PeerConfig{}
+	peerCfg.Identifier = persistence.PeerIdentifier(peer.PublicKey.String())
+	peerCfg.KeyPair = persistence.KeyPair{
+		PublicKey: peer.PublicKey.String(),
+	}
+	peerCfg.DisplayName = "Autodetected Peer (" + peer.PublicKey.String()[0:8] + ")"
+	if peer.Endpoint != nil {
+		peerCfg.Endpoint = persistence.NewStringConfigOption(peer.Endpoint.String(), true)
+	}
+	if peer.PresharedKey != (wgtypes.Key{}) {
+		peerCfg.PresharedKey = peer.PresharedKey.String()
+	}
+	allowedIPs := make([]string, len(peer.AllowedIPs)) // use allowed IP's as the peer IP's
+	for i, ip := range peer.AllowedIPs {
+		allowedIPs[i] = ip.String()
+	}
+	peerCfg.AllowedIPsStr = persistence.NewStringConfigOption(strings.Join(allowedIPs, ","), true)
+	peerCfg.PersistentKeepalive = persistence.NewIntConfigOption(int(peer.PersistentKeepaliveInterval.Seconds()), true)
+
+	peerCfg.PeerInterfaceConfig = persistence.PeerInterfaceConfig{
+		Identifier: dev.Identifier,
+		AddressStr: persistence.NewStringConfigOption(dev.AddressStr, true), // todo: correct?
+		DnsStr:     persistence.NewStringConfigOption(dev.DnsStr, true),
+		Mtu:        persistence.NewIntConfigOption(dev.Mtu, true),
+	}
+
+	return peerCfg, nil
+}
+
 func parseIpAddressString(addrStr string) ([]*netlink.Addr, error) {
 	rawAddresses := strings.Split(addrStr, ",")
 	addresses := make([]*netlink.Addr, 0, len(rawAddresses))
@@ -419,6 +520,15 @@ func parseIpAddressString(addrStr string) ([]*netlink.Addr, error) {
 	}
 
 	return addresses, nil
+}
+
+func ipAddressesToString(addresses []netlink.Addr) string {
+	addressesStr := make([]string, len(addresses))
+	for i := range addresses {
+		addressesStr[i] = addresses[i].String()
+	}
+
+	return strings.Join(addressesStr, ",")
 }
 
 func getWireGuardPeerConfig(devType persistence.InterfaceType, cfg persistence.PeerConfig) (wgtypes.PeerConfig, error) {
