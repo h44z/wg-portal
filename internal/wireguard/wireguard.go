@@ -7,13 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
-
-	"github.com/vishvananda/netlink"
-
 	"github.com/h44z/wg-portal/internal/lowlevel"
 	"github.com/h44z/wg-portal/internal/persistence"
 	"github.com/pkg/errors"
+	"github.com/vishvananda/netlink"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 type WgCtrlManager struct {
@@ -30,6 +28,23 @@ type WgCtrlManager struct {
 	interfaces map[persistence.InterfaceIdentifier]persistence.InterfaceConfig
 	// internal holder of peer configurations
 	peers map[persistence.InterfaceIdentifier]map[persistence.PeerIdentifier]persistence.PeerConfig
+}
+
+func NewWgCtrlManager(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, store store) (*WgCtrlManager, error) {
+	m := &WgCtrlManager{
+		mux:        sync.RWMutex{},
+		wg:         wg,
+		nl:         nl,
+		store:      store,
+		interfaces: make(map[persistence.InterfaceIdentifier]persistence.InterfaceConfig),
+		peers:      make(map[persistence.InterfaceIdentifier]map[persistence.PeerIdentifier]persistence.PeerConfig),
+	}
+
+	if err := m.initializeFromStore(); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize manager from store")
+	}
+
+	return m, nil
 }
 
 func (m *WgCtrlManager) GetInterfaces() ([]persistence.InterfaceConfig, error) {
@@ -61,6 +76,7 @@ func (m *WgCtrlManager) CreateInterface(id persistence.InterfaceIdentifier) erro
 
 	newInterface := persistence.InterfaceConfig{Identifier: id}
 	m.interfaces[id] = newInterface
+	m.peers[id] = make(map[persistence.PeerIdentifier]persistence.PeerConfig)
 
 	err = m.persistInterface(id, false)
 	if err != nil {
@@ -93,7 +109,15 @@ func (m *WgCtrlManager) DeleteInterface(id persistence.InterfaceIdentifier) erro
 		return errors.WithMessage(err, "failed to persist deleted interface")
 	}
 
+	for peerId := range m.peers[id] {
+		err = m.persistPeer(peerId, true)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to persist deleted peer %s", peerId)
+		}
+	}
+
 	delete(m.interfaces, id)
+	delete(m.peers, id)
 
 	return nil
 }
@@ -254,6 +278,34 @@ func (m *WgCtrlManager) RemovePeer(id persistence.PeerIdentifier) error {
 //
 // -- Helpers
 //
+
+func (m *WgCtrlManager) initializeFromStore() error {
+	if m.store == nil {
+		return nil // no store, nothing to do
+	}
+
+	interfaceIds, err := m.store.GetAvailableInterfaces()
+	if err != nil {
+		return errors.WithMessage(err, "failed to get available interfaces")
+	}
+
+	interfaces, err := m.store.GetAllInterfaces(interfaceIds...)
+	if err != nil {
+		return errors.WithMessage(err, "failed to get all interfaces")
+	}
+
+	for cfg, peers := range interfaces {
+		m.interfaces[cfg.Identifier] = cfg
+		if _, ok := m.peers[cfg.Identifier]; !ok {
+			m.peers[cfg.Identifier] = make(map[persistence.PeerIdentifier]persistence.PeerConfig)
+		}
+		for _, peer := range peers {
+			m.peers[cfg.Identifier][peer.Identifier] = peer
+		}
+	}
+
+	return nil
+}
 
 func (m *WgCtrlManager) createLowLevelInterface(id persistence.InterfaceIdentifier) error {
 	link := &netlink.GenericLink{

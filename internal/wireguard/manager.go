@@ -40,8 +40,8 @@ type ConfigFileGenerator interface {
 
 type PeerManager interface {
 	GetPeers(device persistence.InterfaceIdentifier) ([]persistence.PeerConfig, error)
-	SavePeers(device persistence.InterfaceIdentifier, peers ...persistence.PeerConfig) error
-	RemovePeer(device persistence.InterfaceIdentifier, peer persistence.PeerIdentifier) error
+	SavePeers(peers ...persistence.PeerConfig) error
+	RemovePeer(peer persistence.PeerIdentifier) error
 }
 
 type Manager interface {
