@@ -14,7 +14,7 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
-type WgCtrlManager struct {
+type wgCtrlManager struct {
 	mux sync.RWMutex // mutex to synchronize access to maps and external api clients
 
 	// external api clients
@@ -30,8 +30,8 @@ type WgCtrlManager struct {
 	peers map[persistence.InterfaceIdentifier]map[persistence.PeerIdentifier]persistence.PeerConfig
 }
 
-func NewWgCtrlManager(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, store store) (*WgCtrlManager, error) {
-	m := &WgCtrlManager{
+func newWgCtrlManager(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, store store) (*wgCtrlManager, error) {
+	m := &wgCtrlManager{
 		mux:        sync.RWMutex{},
 		wg:         wg,
 		nl:         nl,
@@ -47,7 +47,7 @@ func NewWgCtrlManager(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, st
 	return m, nil
 }
 
-func (m *WgCtrlManager) GetInterfaces() ([]persistence.InterfaceConfig, error) {
+func (m *wgCtrlManager) GetInterfaces() ([]persistence.InterfaceConfig, error) {
 	m.mux.RLock()
 	defer m.mux.RUnlock()
 	interfaces := make([]persistence.InterfaceConfig, 0, len(m.interfaces))
@@ -62,7 +62,7 @@ func (m *WgCtrlManager) GetInterfaces() ([]persistence.InterfaceConfig, error) {
 	return interfaces, nil
 }
 
-func (m *WgCtrlManager) CreateInterface(id persistence.InterfaceIdentifier) error {
+func (m *wgCtrlManager) CreateInterface(id persistence.InterfaceIdentifier) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	if m.deviceExists(id) {
@@ -86,7 +86,7 @@ func (m *WgCtrlManager) CreateInterface(id persistence.InterfaceIdentifier) erro
 	return nil
 }
 
-func (m *WgCtrlManager) DeleteInterface(id persistence.InterfaceIdentifier) error {
+func (m *wgCtrlManager) DeleteInterface(id persistence.InterfaceIdentifier) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
@@ -122,7 +122,7 @@ func (m *WgCtrlManager) DeleteInterface(id persistence.InterfaceIdentifier) erro
 	return nil
 }
 
-func (m *WgCtrlManager) UpdateInterface(id persistence.InterfaceIdentifier, cfg persistence.InterfaceConfig) error {
+func (m *wgCtrlManager) UpdateInterface(id persistence.InterfaceIdentifier, cfg persistence.InterfaceConfig) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	if !m.deviceExists(id) {
@@ -192,7 +192,7 @@ func (m *WgCtrlManager) UpdateInterface(id persistence.InterfaceIdentifier, cfg 
 	return nil
 }
 
-func (m *WgCtrlManager) GetPeers(interfaceId persistence.InterfaceIdentifier) ([]persistence.PeerConfig, error) {
+func (m *wgCtrlManager) GetPeers(interfaceId persistence.InterfaceIdentifier) ([]persistence.PeerConfig, error) {
 	m.mux.RLock()
 	defer m.mux.RUnlock()
 	if !m.deviceExists(interfaceId) {
@@ -207,7 +207,7 @@ func (m *WgCtrlManager) GetPeers(interfaceId persistence.InterfaceIdentifier) ([
 	return peers, nil
 }
 
-func (m *WgCtrlManager) SavePeers(peers ...persistence.PeerConfig) error {
+func (m *wgCtrlManager) SavePeers(peers ...persistence.PeerConfig) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
@@ -239,7 +239,7 @@ func (m *WgCtrlManager) SavePeers(peers ...persistence.PeerConfig) error {
 	return nil
 }
 
-func (m *WgCtrlManager) RemovePeer(id persistence.PeerIdentifier) error {
+func (m *wgCtrlManager) RemovePeer(id persistence.PeerIdentifier) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
@@ -275,7 +275,7 @@ func (m *WgCtrlManager) RemovePeer(id persistence.PeerIdentifier) error {
 	return nil
 }
 
-func (m *WgCtrlManager) GetImportableInterfaces() (map[ImportableInterface][]persistence.PeerConfig, error) {
+func (m *wgCtrlManager) GetImportableInterfaces() (map[ImportableInterface][]persistence.PeerConfig, error) {
 	devices, err := m.wg.Devices()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get WireGuard device list")
@@ -311,7 +311,7 @@ func (m *WgCtrlManager) GetImportableInterfaces() (map[ImportableInterface][]per
 	return interfaces, nil
 }
 
-func (m *WgCtrlManager) ImportInterface(cfg ImportableInterface, peers []persistence.PeerConfig) error {
+func (m *wgCtrlManager) ImportInterface(cfg ImportableInterface, peers []persistence.PeerConfig) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
@@ -324,7 +324,7 @@ func (m *WgCtrlManager) ImportInterface(cfg ImportableInterface, peers []persist
 // -- Helpers
 //
 
-func (m *WgCtrlManager) initializeFromStore() error {
+func (m *wgCtrlManager) initializeFromStore() error {
 	if m.store == nil {
 		return nil // no store, nothing to do
 	}
@@ -352,7 +352,7 @@ func (m *WgCtrlManager) initializeFromStore() error {
 	return nil
 }
 
-func (m *WgCtrlManager) createLowLevelInterface(id persistence.InterfaceIdentifier) error {
+func (m *wgCtrlManager) createLowLevelInterface(id persistence.InterfaceIdentifier) error {
 	link := &netlink.GenericLink{
 		LinkAttrs: netlink.LinkAttrs{
 			Name: string(id),
@@ -371,14 +371,14 @@ func (m *WgCtrlManager) createLowLevelInterface(id persistence.InterfaceIdentifi
 	return nil
 }
 
-func (m *WgCtrlManager) deviceExists(id persistence.InterfaceIdentifier) bool {
+func (m *wgCtrlManager) deviceExists(id persistence.InterfaceIdentifier) bool {
 	if _, ok := m.interfaces[id]; ok {
 		return true
 	}
 	return false
 }
 
-func (m *WgCtrlManager) persistInterface(id persistence.InterfaceIdentifier, delete bool) error {
+func (m *wgCtrlManager) persistInterface(id persistence.InterfaceIdentifier, delete bool) error {
 	if m.store == nil {
 		return nil // nothing to do
 	}
@@ -402,7 +402,7 @@ func (m *WgCtrlManager) persistInterface(id persistence.InterfaceIdentifier, del
 	return nil
 }
 
-func (m *WgCtrlManager) peerExists(id persistence.PeerIdentifier) bool {
+func (m *wgCtrlManager) peerExists(id persistence.PeerIdentifier) bool {
 	for _, peers := range m.peers {
 		if _, ok := peers[id]; ok {
 			return true
@@ -412,7 +412,7 @@ func (m *WgCtrlManager) peerExists(id persistence.PeerIdentifier) bool {
 	return false
 }
 
-func (m *WgCtrlManager) persistPeer(id persistence.PeerIdentifier, delete bool) error {
+func (m *wgCtrlManager) persistPeer(id persistence.PeerIdentifier, delete bool) error {
 	if m.store == nil {
 		return nil // nothing to do
 	}
@@ -438,7 +438,7 @@ func (m *WgCtrlManager) persistPeer(id persistence.PeerIdentifier, delete bool) 
 	return nil
 }
 
-func (m *WgCtrlManager) getPeer(id persistence.PeerIdentifier) (persistence.PeerConfig, error) {
+func (m *wgCtrlManager) getPeer(id persistence.PeerIdentifier) (persistence.PeerConfig, error) {
 	for _, peers := range m.peers {
 		if _, ok := peers[id]; ok {
 			return peers[id], nil
@@ -448,7 +448,7 @@ func (m *WgCtrlManager) getPeer(id persistence.PeerIdentifier) (persistence.Peer
 	return persistence.PeerConfig{}, errors.New("peer not found")
 }
 
-func (m *WgCtrlManager) convertWireGuardInterface(device *wgtypes.Device) (ImportableInterface, error) {
+func (m *wgCtrlManager) convertWireGuardInterface(device *wgtypes.Device) (ImportableInterface, error) {
 	cfg := ImportableInterface{}
 
 	cfg.Identifier = persistence.InterfaceIdentifier(device.Name)
@@ -474,7 +474,7 @@ func (m *WgCtrlManager) convertWireGuardInterface(device *wgtypes.Device) (Impor
 	return cfg, nil
 }
 
-func (m *WgCtrlManager) convertWireGuardPeer(peer *wgtypes.Peer, dev ImportableInterface) (persistence.PeerConfig, error) {
+func (m *wgCtrlManager) convertWireGuardPeer(peer *wgtypes.Peer, dev ImportableInterface) (persistence.PeerConfig, error) {
 	peerCfg := persistence.PeerConfig{}
 	peerCfg.Identifier = persistence.PeerIdentifier(peer.PublicKey.String())
 	peerCfg.KeyPair = persistence.KeyPair{

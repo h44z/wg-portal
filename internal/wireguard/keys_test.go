@@ -33,7 +33,7 @@ func TestKeyBytesToString(t *testing.T) {
 }
 
 func TestWgCtrlKeyGenerator_GetFreshKeypair(t *testing.T) {
-	m := WgCtrlKeyGenerator{}
+	m := wgCtrlKeyGenerator{}
 	kp, err := m.GetFreshKeypair()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, kp.PrivateKey)
@@ -41,7 +41,7 @@ func TestWgCtrlKeyGenerator_GetFreshKeypair(t *testing.T) {
 }
 
 func TestWgCtrlKeyGenerator_GetPreSharedKey(t *testing.T) {
-	m := WgCtrlKeyGenerator{}
+	m := wgCtrlKeyGenerator{}
 	psk, err := m.GetPreSharedKey()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, psk)

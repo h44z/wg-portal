@@ -23,9 +23,9 @@ func KeyBytesToString(key []byte) string {
 	return base64.StdEncoding.EncodeToString(key)
 }
 
-type WgCtrlKeyGenerator struct{}
+type wgCtrlKeyGenerator struct{}
 
-func (k WgCtrlKeyGenerator) GetFreshKeypair() (persistence.KeyPair, error) {
+func (k wgCtrlKeyGenerator) GetFreshKeypair() (persistence.KeyPair, error) {
 	privateKey, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
 		return persistence.KeyPair{}, errors.Wrap(err, "failed to generate private Key")
@@ -37,7 +37,7 @@ func (k WgCtrlKeyGenerator) GetFreshKeypair() (persistence.KeyPair, error) {
 	}, nil
 }
 
-func (k WgCtrlKeyGenerator) GetPreSharedKey() (persistence.PreSharedKey, error) {
+func (k wgCtrlKeyGenerator) GetPreSharedKey() (persistence.PreSharedKey, error) {
 	preSharedKey, err := wgtypes.GenerateKey()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to generate pre-shared Key")

@@ -3,6 +3,8 @@ package wireguard
 import (
 	"io"
 
+	"github.com/pkg/errors"
+
 	"github.com/h44z/wg-portal/internal/lowlevel"
 
 	"github.com/h44z/wg-portal/internal/persistence"
@@ -56,13 +58,27 @@ type Manager interface {
 //
 
 type PersistentManager struct {
-	WgCtrlKeyGenerator
-	TemplateHandler
-	WgCtrlManager
+	wgCtrlKeyGenerator
+	*templateHandler
+	*wgCtrlManager
 }
 
 func NewPersistentManager(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient, store store) (*PersistentManager, error) {
-	m := &PersistentManager{}
+	wgManager, err := newWgCtrlManager(wg, nl, store)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize WireGuard manager")
+	}
+
+	tplManager, err := newTemplateHandler()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize template manager")
+	}
+
+	m := &PersistentManager{
+		wgCtrlKeyGenerator: wgCtrlKeyGenerator{},
+		wgCtrlManager:      wgManager,
+		templateHandler:    tplManager,
+	}
 
 	return m, nil
 }

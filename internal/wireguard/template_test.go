@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewTemplateHandler(t *testing.T) {
-	got, err := NewTemplateHandler()
+	got, err := newTemplateHandler()
 	assert.NoError(t, err)
 	assert.NotNil(t, got)
 }
@@ -60,7 +60,7 @@ Address =
 		},
 	}
 
-	c, _ := NewTemplateHandler()
+	c, _ := newTemplateHandler()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := c.GetInterfaceConfig(tt.args.cfg, tt.args.peers)
@@ -115,7 +115,7 @@ Endpoint = `)),
 			wantErr: false,
 		},
 	}
-	c, _ := NewTemplateHandler()
+	c, _ := newTemplateHandler()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := c.GetPeerConfig(tt.args.peer)

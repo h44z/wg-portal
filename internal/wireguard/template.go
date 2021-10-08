@@ -13,24 +13,24 @@ import (
 //go:embed tpl_files/*
 var TemplateFiles embed.FS
 
-type TemplateHandler struct {
+type templateHandler struct {
 	templates *template.Template
 }
 
-func NewTemplateHandler() (*TemplateHandler, error) {
+func newTemplateHandler() (*templateHandler, error) {
 	templateCache, err := template.New("WireGuard").ParseFS(TemplateFiles, "tpl_files/*.tpl")
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse template files")
 	}
 
-	handler := &TemplateHandler{
+	handler := &templateHandler{
 		templates: templateCache,
 	}
 
 	return handler, nil
 }
 
-func (c TemplateHandler) GetInterfaceConfig(cfg persistence.InterfaceConfig, peers []persistence.PeerConfig) (io.Reader, error) {
+func (c templateHandler) GetInterfaceConfig(cfg persistence.InterfaceConfig, peers []persistence.PeerConfig) (io.Reader, error) {
 	var tplBuff bytes.Buffer
 
 	err := c.templates.ExecuteTemplate(&tplBuff, "interface.tpl", map[string]interface{}{
@@ -47,7 +47,7 @@ func (c TemplateHandler) GetInterfaceConfig(cfg persistence.InterfaceConfig, pee
 	return &tplBuff, nil
 }
 
-func (c TemplateHandler) GetPeerConfig(peer persistence.PeerConfig) (io.Reader, error) {
+func (c templateHandler) GetPeerConfig(peer persistence.PeerConfig) (io.Reader, error) {
 	var tplBuff bytes.Buffer
 
 	err := c.templates.ExecuteTemplate(&tplBuff, "peer.tpl", map[string]interface{}{

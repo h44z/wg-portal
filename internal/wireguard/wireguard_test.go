@@ -18,14 +18,14 @@ import (
 func TestWgCtrlManager_CreateInterface(t *testing.T) {
 	tests := []struct {
 		name      string
-		manager   *WgCtrlManager
+		manager   *wgCtrlManager
 		mockSetup func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore)
 		args      persistence.InterfaceIdentifier
 		wantErr   bool
 	}{
 		{
 			name: "AlreadyExisting",
-			manager: &WgCtrlManager{
+			manager: &wgCtrlManager{
 				mux:        sync.RWMutex{},
 				wg:         &MockWireGuardClient{},
 				nl:         &MockNetlinkClient{},
@@ -39,7 +39,7 @@ func TestWgCtrlManager_CreateInterface(t *testing.T) {
 		},
 		{
 			name: "LinkAddFailure",
-			manager: &WgCtrlManager{
+			manager: &wgCtrlManager{
 				mux:        sync.RWMutex{},
 				wg:         &MockWireGuardClient{},
 				nl:         &MockNetlinkClient{},
@@ -55,7 +55,7 @@ func TestWgCtrlManager_CreateInterface(t *testing.T) {
 		},
 		{
 			name: "LinkSetupFailure",
-			manager: &WgCtrlManager{
+			manager: &wgCtrlManager{
 				mux:        sync.RWMutex{},
 				wg:         &MockWireGuardClient{},
 				nl:         &MockNetlinkClient{},
@@ -72,7 +72,7 @@ func TestWgCtrlManager_CreateInterface(t *testing.T) {
 		},
 		{
 			name: "PersistenceFailure",
-			manager: &WgCtrlManager{
+			manager: &wgCtrlManager{
 				mux:        sync.RWMutex{},
 				wg:         &MockWireGuardClient{},
 				nl:         &MockNetlinkClient{},
@@ -90,7 +90,7 @@ func TestWgCtrlManager_CreateInterface(t *testing.T) {
 		},
 		{
 			name: "Success",
-			manager: &WgCtrlManager{
+			manager: &wgCtrlManager{
 				mux:        sync.RWMutex{},
 				wg:         &MockWireGuardClient{},
 				nl:         &MockNetlinkClient{},
@@ -127,7 +127,7 @@ func TestWgCtrlManager_CreateInterface(t *testing.T) {
 func TestWgCtrlManager_DeleteInterface(t *testing.T) {
 	tests := []struct {
 		name      string
-		manager   *WgCtrlManager
+		manager   *wgCtrlManager
 		mockSetup func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore)
 		args      persistence.InterfaceIdentifier
 		wantErr   bool
@@ -154,7 +154,7 @@ func TestWgCtrlManager_DeleteInterface(t *testing.T) {
 func TestWgCtrlManager_GetInterfaces(t *testing.T) {
 	tests := []struct {
 		name      string
-		manager   *WgCtrlManager
+		manager   *wgCtrlManager
 		mockSetup func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore)
 		want      []persistence.InterfaceConfig
 		wantErr   bool
@@ -190,7 +190,7 @@ func TestWgCtrlManager_UpdateInterface(t *testing.T) {
 	}
 	tests := []struct {
 		name      string
-		manager   *WgCtrlManager
+		manager   *wgCtrlManager
 		mockSetup func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore)
 		args      args
 		wantErr   bool
