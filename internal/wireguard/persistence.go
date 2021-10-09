@@ -10,7 +10,7 @@ type store interface {
 	GetAllInterfaces(interfaceIdentifiers ...persistence.InterfaceIdentifier) (map[persistence.InterfaceConfig][]persistence.PeerConfig, error)
 	GetInterface(identifier persistence.InterfaceIdentifier) (persistence.InterfaceConfig, []persistence.PeerConfig, error)
 
-	SaveInterface(cfg persistence.InterfaceConfig, peers []persistence.PeerConfig) error
+	SaveInterface(cfg persistence.InterfaceConfig) error
 	SavePeer(peer persistence.PeerConfig, interfaceIdentifier persistence.InterfaceIdentifier) error
 
 	DeleteInterface(identifier persistence.InterfaceIdentifier) error

@@ -383,17 +383,11 @@ func (m *wgCtrlManager) persistInterface(id persistence.InterfaceIdentifier, del
 		return nil // nothing to do
 	}
 
-	device := m.interfaces[id]
-	peers := make([]persistence.PeerConfig, 0, len(m.peers[id]))
-	for _, config := range m.peers[id] {
-		peers = append(peers, config)
-	}
-
 	var err error
 	if delete {
 		err = m.store.DeleteInterface(id)
 	} else {
-		err = m.store.SaveInterface(device, peers)
+		err = m.store.SaveInterface(m.interfaces[id])
 	}
 	if err != nil {
 		return errors.Wrapf(err, "failed to persist interface")

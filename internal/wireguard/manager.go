@@ -51,6 +51,8 @@ type Manager interface {
 	PeerManager
 	ImportManager
 	ConfigFileGenerator
+
+	ApplyDefaultConfigs(device persistence.InterfaceIdentifier) error
 }
 
 //
@@ -81,4 +83,9 @@ func NewPersistentManager(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient
 	}
 
 	return m, nil
+}
+
+func (p *PersistentManager) ApplyDefaultConfigs(device persistence.InterfaceIdentifier) error {
+	// TODO: implement
+	return nil
 }

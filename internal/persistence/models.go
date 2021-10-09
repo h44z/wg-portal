@@ -154,5 +154,5 @@ type User struct {
 	// database internal fields
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index" json:",omitempty" swaggertype:"string"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:",omitempty"`
 }

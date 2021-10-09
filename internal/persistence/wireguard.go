@@ -1,14 +1,71 @@
 package persistence
 
-type WireGuard interface {
-	GetAvailableInterfaces() ([]InterfaceIdentifier, error)
+import (
+	"github.com/pkg/errors"
+	"gorm.io/gorm/clause"
+)
 
-	GetAllInterfaces(interfaceIdentifiers ...InterfaceIdentifier) (map[InterfaceConfig][]PeerConfig, error)
-	GetInterface(identifier InterfaceIdentifier) (InterfaceConfig, []PeerConfig, error)
+func (d *Database) GetAvailableInterfaces() ([]InterfaceIdentifier, error) {
+	var interfaces []InterfaceConfig
+	if err := d.db.Select("identifier").Find(&interfaces).Error; err != nil {
+		return nil, errors.WithMessagef(err, "unable to find interfaces")
+	}
 
-	SaveInterface(cfg InterfaceConfig, peers []PeerConfig) error
-	SavePeer(peer PeerConfig, interfaceIdentifier InterfaceIdentifier) error
+	interfaceIds := make([]InterfaceIdentifier, len(interfaces))
+	for i := range interfaces {
+		interfaceIds[i] = interfaces[i].Identifier
+	}
 
-	DeleteInterface(identifier InterfaceIdentifier) error
-	DeletePeer(peer PeerIdentifier, interfaceIdentifier InterfaceIdentifier) error
+	return interfaceIds, nil
+}
+
+func (d *Database) GetAllInterfaces(ids ...InterfaceIdentifier) (map[InterfaceConfig][]PeerConfig, error) {
+	var interfaces []InterfaceConfig
+	if err := d.db.Where("interface IN ?", ids).Find(&interfaces).Error; err != nil {
+		return nil, errors.WithMessagef(err, "unable to find interfaces")
+	}
+
+	interfaceMap := make(map[InterfaceConfig][]PeerConfig, len(interfaces))
+	for i := range interfaces {
+		var peers []PeerConfig
+		if err := d.db.Where("interface = ?", interfaces[i].Identifier).Find(&peers).Error; err != nil {
+			return nil, errors.WithMessagef(err, "unable to find peers for %s", interfaces[i].Identifier)
+		}
+		interfaceMap[interfaces[i]] = peers
+	}
+
+	return interfaceMap, nil
+}
+
+func (d *Database) GetInterface(id InterfaceIdentifier) (InterfaceConfig, []PeerConfig, error) {
+	var iface InterfaceConfig
+	if err := d.db.First(&iface, id).Error; err != nil {
+		return InterfaceConfig{}, nil, errors.WithMessagef(err, "unable to find interface %s", id)
+	}
+
+	var peers []PeerConfig
+	if err := d.db.Where("interface = ?", id).Find(&peers).Error; err != nil {
+		return InterfaceConfig{}, nil, errors.WithMessagef(err, "unable to find peers for %s", id)
+	}
+
+	return iface, peers, nil
+}
+
+func (d *Database) SaveInterface(cfg InterfaceConfig) error {
+	d.db.Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Create(&cfg)
+	return nil
+}
+
+func (d *Database) SavePeer(peer PeerConfig, id InterfaceIdentifier) error {
+	return nil
+}
+
+func (d *Database) DeleteInterface(id InterfaceIdentifier) error {
+	return nil
+}
+
+func (d *Database) DeletePeer(peerId PeerIdentifier, id InterfaceIdentifier) error {
+	return nil
 }
