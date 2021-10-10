@@ -717,3 +717,34 @@ func Test_parseIpAddressString(t *testing.T) {
 		})
 	}
 }
+
+func Test_ipAddressesToString(t *testing.T) {
+	tests := []struct {
+		name      string
+		addresses []netlink.Addr
+		want      string
+	}{
+		{
+			name:      "Single",
+			addresses: []netlink.Addr{*ignoreNetlinkError(parseCIDR("10.0.0.2/24"))},
+			want:      "10.0.0.2/24",
+		},
+		{
+			name: "Multiple",
+			addresses: []netlink.Addr{
+				*ignoreNetlinkError(parseCIDR("10.0.0.3/24")),
+				*ignoreNetlinkError(parseCIDR("10.0.0.2/24")),
+				*ignoreNetlinkError(parseCIDR("8.8.8.8/32")),
+				*ignoreNetlinkError(parseCIDR("fe80::/64")),
+			},
+			want: "10.0.0.3/24,10.0.0.2/24,8.8.8.8/32,fe80::/64",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ipAddressesToString(tt.addresses); got != tt.want {
+				t.Errorf("ipAddressesToString() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
