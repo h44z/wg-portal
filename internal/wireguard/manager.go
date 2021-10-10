@@ -3,6 +3,8 @@ package wireguard
 import (
 	"io"
 
+	"github.com/vishvananda/netlink"
+
 	"github.com/pkg/errors"
 
 	"github.com/h44z/wg-portal/internal/lowlevel"
@@ -17,10 +19,11 @@ type KeyGenerator interface {
 
 // InterfaceManager provides methods to create/update/delete physical WireGuard devices.
 type InterfaceManager interface {
-	GetInterfaces() ([]persistence.InterfaceConfig, error)
+	GetInterfaces() ([]*persistence.InterfaceConfig, error)
 	CreateInterface(id persistence.InterfaceIdentifier) error
 	DeleteInterface(id persistence.InterfaceIdentifier) error
-	UpdateInterface(id persistence.InterfaceIdentifier, cfg persistence.InterfaceConfig) error
+	UpdateInterface(id persistence.InterfaceIdentifier, cfg *persistence.InterfaceConfig) error
+	ApplyDefaultConfigs(id persistence.InterfaceIdentifier) error
 }
 
 type ImportableInterface struct {
@@ -30,29 +33,34 @@ type ImportableInterface struct {
 }
 
 type ImportManager interface {
-	GetImportableInterfaces() (map[ImportableInterface][]persistence.PeerConfig, error)
-	ImportInterface(cfg ImportableInterface, peers []persistence.PeerConfig) error
+	GetImportableInterfaces() (map[*ImportableInterface][]*persistence.PeerConfig, error)
+	ImportInterface(cfg *ImportableInterface, peers []*persistence.PeerConfig) error
 }
 
 type ConfigFileGenerator interface {
-	GetInterfaceConfig(cfg persistence.InterfaceConfig, peers []persistence.PeerConfig) (io.Reader, error)
-	GetPeerConfig(peer persistence.PeerConfig) (io.Reader, error)
+	GetInterfaceConfig(cfg *persistence.InterfaceConfig, peers []*persistence.PeerConfig) (io.Reader, error)
+	GetPeerConfig(peer *persistence.PeerConfig) (io.Reader, error)
 }
 
 type PeerManager interface {
-	GetPeers(device persistence.InterfaceIdentifier) ([]persistence.PeerConfig, error)
-	SavePeers(peers ...persistence.PeerConfig) error
+	GetPeers(device persistence.InterfaceIdentifier) ([]*persistence.PeerConfig, error)
+	SavePeers(peers ...*persistence.PeerConfig) error
 	RemovePeer(peer persistence.PeerIdentifier) error
+}
+
+type IpManager interface {
+	GetAllUsedIPs(device persistence.InterfaceIdentifier) ([]*netlink.Addr, error)
+	GetUsedIPs(device persistence.InterfaceIdentifier, subnetCidr string) ([]*netlink.Addr, error)
+	GetFreshIp(device persistence.InterfaceIdentifier, subnetCidr string, increment ...bool) (*netlink.Addr, error)
 }
 
 type Manager interface {
 	KeyGenerator
 	InterfaceManager
 	PeerManager
+	IpManager
 	ImportManager
 	ConfigFileGenerator
-
-	ApplyDefaultConfigs(device persistence.InterfaceIdentifier) error
 }
 
 //
@@ -83,9 +91,4 @@ func NewPersistentManager(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient
 	}
 
 	return m, nil
-}
-
-func (p *PersistentManager) ApplyDefaultConfigs(device persistence.InterfaceIdentifier) error {
-	// TODO: implement
-	return nil
 }

@@ -111,8 +111,8 @@ func (w *MockWireGuardStore) GetInterface(identifier persistence.InterfaceIdenti
 	return args.Get(0).(persistence.InterfaceConfig), args.Get(1).([]persistence.PeerConfig), args.Error(2)
 }
 
-func (w *MockWireGuardStore) SaveInterface(cfg persistence.InterfaceConfig, peers []persistence.PeerConfig) error {
-	args := w.Called(cfg, peers)
+func (w *MockWireGuardStore) SaveInterface(cfg persistence.InterfaceConfig) error {
+	args := w.Called(cfg)
 	return args.Error(0)
 }
 

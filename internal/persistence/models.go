@@ -81,12 +81,15 @@ type InterfaceConfig struct {
 }
 
 type PeerInterfaceConfig struct {
-	Identifier   InterfaceIdentifier // the interface identifier
-	AddressStr   StringConfigOption  // the interface ip addresses, comma separated
-	DnsStr       StringConfigOption  // the dns server that should be set if the interface is up, comma separated
-	Mtu          IntConfigOption     // the device MTU
-	FirewallMark Int32ConfigOption   // a firewall mark
-	RoutingTable StringConfigOption  // the routing table
+	Identifier InterfaceIdentifier // the interface identifier
+	Type       InterfaceType       // the interface type
+	PublicKey  string              // the interface public key
+
+	AddressStr   StringConfigOption // the interface ip addresses, comma separated
+	DnsStr       StringConfigOption // the dns server that should be set if the interface is up, comma separated
+	Mtu          IntConfigOption    // the device MTU
+	FirewallMark Int32ConfigOption  // a firewall mark
+	RoutingTable StringConfigOption // the routing table
 
 	PreUp    StringConfigOption // action that is executed before the device is up
 	PostUp   StringConfigOption // action that is executed after the device is up
@@ -113,7 +116,7 @@ type PeerConfig struct {
 	UserIdentifier UserIdentifier // the owner
 
 	// Interface settings for the peer, used to generate the [interface] section in the peer config file
-	PeerInterfaceConfig
+	Interface *PeerInterfaceConfig
 }
 
 type UserSource string

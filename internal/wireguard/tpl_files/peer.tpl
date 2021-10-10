@@ -8,7 +8,7 @@
 # -WGP- Peer: {{.Peer.Identifier}} | Updated: {{.Peer.UpdatedAt}} | Created: {{.Peer.CreatedAt}}
 # -WGP- Display name: {{ .Peer.DisplayName }}
 # -WGP- PublicKey: {{ .Peer.KeyPair.PublicKey }}
-{{- if eq $.Interface.Type "server"}}
+{{- if eq .Peer.Interface.Type "server"}}
 # -WGP- Peer type: client
 {{else}}
 # -WGP- Peer type: server
@@ -16,38 +16,38 @@
 
 # Core settings
 PrivateKey = {{ .Peer.KeyPair.PrivateKey }}
-Address = {{ .Peer.AddressStr.GetValue }}
+Address = {{ .Peer.Interface.AddressStr.GetValue }}
 
 # Misc. settings (optional)
-{{- if .Peer.DnsStr.GetValue}}
-DNS = {{ .Peer.DnsStr.GetValue }}
+{{- if .Peer.Interface.DnsStr.GetValue}}
+DNS = {{ .Peer.Interface.DnsStr.GetValue }}
 {{- end}}
-{{- if ne .Peer.Mtu.GetValue 0}}
-MTU = {{ .Peer.Mtu.GetValue }}
+{{- if ne .Peer.Interface.Mtu.GetValue 0}}
+MTU = {{ .Peer.Interface.Mtu.GetValue }}
 {{- end}}
-{{- if ne .Peer.FirewallMark.GetValue 0}}
-FwMark = {{ .Peer.FirewallMark.GetValue }}
+{{- if ne .Peer.Interface.FirewallMark.GetValue 0}}
+FwMark = {{ .Peer.Interface.FirewallMark.GetValue }}
 {{- end}}
-{{- if ne .Peer.RoutingTable.GetValue ""}}
-Table = {{ .Peer.RoutingTable.GetValue }}
+{{- if ne .Peer.Interface.RoutingTable.GetValue ""}}
+Table = {{ .Peer.Interface.RoutingTable.GetValue }}
 {{- end}}
 
 # Interface hooks (optional)
-{{- if .Peer.PreUp.GetValue}}
-PreUp = {{ .Peer.PreUp.GetValue }}
+{{- if .Peer.Interface.PreUp.GetValue}}
+PreUp = {{ .Peer.Interface.PreUp.GetValue }}
 {{- end}}
-{{- if .Peer.PostUp.GetValue}}
-PostUp = {{ .Peer.PostUp.GetValue }}
+{{- if .Peer.Interface.PostUp.GetValue}}
+PostUp = {{ .Peer.Interface.PostUp.GetValue }}
 {{- end}}
-{{- if .Peer.PreDown.GetValue}}
-PreDown = {{ .Peer.PreDown.GetValue }}
+{{- if .Peer.Interface.PreDown.GetValue}}
+PreDown = {{ .Peer.Interface.PreDown.GetValue }}
 {{- end}}
-{{- if .Peer.PostDown.GetValue}}
-PostDown = {{ .Peer.PostDown.GetValue }}
+{{- if .Peer.Interface.PostDown.GetValue}}
+PostDown = {{ .Peer.Interface.PostDown.GetValue }}
 {{- end}}
 
 [Peer]
-PublicKey = {{ .Interface.KeyPair.PublicKey }}
+PublicKey = {{ .Peer.Interface.PublicKey }}
 Endpoint = {{ .Peer.Endpoint.GetValue }}
 {{- if .Peer.AllowedIPsStr.GetValue}}
 AllowedIPs = {{ .Peer.AllowedIPsStr.GetValue }}

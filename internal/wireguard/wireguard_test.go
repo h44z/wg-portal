@@ -4,7 +4,6 @@
 package wireguard
 
 import (
-	"net"
 	"reflect"
 	"sync"
 	"testing"
@@ -12,7 +11,6 @@ import (
 	"github.com/h44z/wg-portal/internal/persistence"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
-	"github.com/vishvananda/netlink"
 )
 
 func TestWgCtrlManager_CreateInterface(t *testing.T) {
@@ -30,7 +28,7 @@ func TestWgCtrlManager_CreateInterface(t *testing.T) {
 				wg:         &MockWireGuardClient{},
 				nl:         &MockNetlinkClient{},
 				store:      &MockWireGuardStore{},
-				interfaces: map[persistence.InterfaceIdentifier]persistence.InterfaceConfig{"wg0": {}},
+				interfaces: map[persistence.InterfaceIdentifier]*persistence.InterfaceConfig{"wg0": {}},
 				peers:      nil,
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {},
@@ -77,8 +75,8 @@ func TestWgCtrlManager_CreateInterface(t *testing.T) {
 				wg:         &MockWireGuardClient{},
 				nl:         &MockNetlinkClient{},
 				store:      &MockWireGuardStore{},
-				interfaces: make(map[persistence.InterfaceIdentifier]persistence.InterfaceConfig),
-				peers:      nil,
+				interfaces: make(map[persistence.InterfaceIdentifier]*persistence.InterfaceConfig),
+				peers:      make(map[persistence.InterfaceIdentifier]map[persistence.PeerIdentifier]*persistence.PeerConfig),
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
 				nl.On("LinkAdd", mock.Anything).Return(nil)
@@ -95,8 +93,8 @@ func TestWgCtrlManager_CreateInterface(t *testing.T) {
 				wg:         &MockWireGuardClient{},
 				nl:         &MockNetlinkClient{},
 				store:      &MockWireGuardStore{},
-				interfaces: make(map[persistence.InterfaceIdentifier]persistence.InterfaceConfig),
-				peers:      nil,
+				interfaces: make(map[persistence.InterfaceIdentifier]*persistence.InterfaceConfig),
+				peers:      make(map[persistence.InterfaceIdentifier]map[persistence.PeerIdentifier]*persistence.PeerConfig),
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
 				nl.On("LinkAdd", mock.Anything).Return(nil)
@@ -186,7 +184,7 @@ func TestWgCtrlManager_GetInterfaces(t *testing.T) {
 func TestWgCtrlManager_UpdateInterface(t *testing.T) {
 	type args struct {
 		id  persistence.InterfaceIdentifier
-		cfg persistence.InterfaceConfig
+		cfg *persistence.InterfaceConfig
 	}
 	tests := []struct {
 		name      string
@@ -210,119 +208,6 @@ func TestWgCtrlManager_UpdateInterface(t *testing.T) {
 			tt.manager.wg.(*MockWireGuardClient).AssertExpectations(t)
 			tt.manager.nl.(*MockNetlinkClient).AssertExpectations(t)
 			tt.manager.store.(*MockWireGuardStore).AssertExpectations(t)
-		})
-	}
-}
-
-func Test_parseIpAddressString(t *testing.T) {
-	type args struct {
-		addrStr string
-	}
-	var tests = []struct {
-		name    string
-		args    args
-		want    []*netlink.Addr
-		wantErr bool
-	}{
-		{
-			name:    "Empty String",
-			args:    args{},
-			want:    []*netlink.Addr{},
-			wantErr: false,
-		},
-		{
-			name:    "Single IPv4",
-			args:    args{addrStr: "123.123.123.123"},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name:    "Malformed",
-			args:    args{addrStr: "hello world"},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "Single IPv4 CIDR",
-			args: args{addrStr: "123.123.123.123/24"},
-			want: []*netlink.Addr{{
-				IPNet: &net.IPNet{
-					IP:   net.IPv4(123, 123, 123, 123),
-					Mask: net.IPv4Mask(255, 255, 255, 0),
-				},
-			}},
-			wantErr: false,
-		},
-		{
-			name: "Multiple IPv4 CIDR",
-			args: args{addrStr: "123.123.123.123/24, 200.201.202.203/16"},
-			want: []*netlink.Addr{{
-				IPNet: &net.IPNet{
-					IP:   net.IPv4(123, 123, 123, 123),
-					Mask: net.IPv4Mask(255, 255, 255, 0),
-				},
-			}, {
-				IPNet: &net.IPNet{
-					IP:   net.IPv4(200, 201, 202, 203),
-					Mask: net.IPv4Mask(255, 255, 0, 0),
-				},
-			}},
-			wantErr: false,
-		},
-		{
-			name: "Single IPv6 CIDR",
-			args: args{addrStr: "fe80::1/64"},
-			want: []*netlink.Addr{{
-				IPNet: &net.IPNet{
-					IP:   net.IP{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x01},
-					Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0},
-				},
-			}},
-			wantErr: false,
-		},
-		{
-			name: "Multiple IPv6 CIDR",
-			args: args{addrStr: "fe80::1/64 , 2130:d3ad::b33f/128"},
-			want: []*netlink.Addr{{
-				IPNet: &net.IPNet{
-					IP:   net.IP{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x01},
-					Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0},
-				},
-			}, {
-				IPNet: &net.IPNet{
-					IP:   net.IP{0x21, 0x30, 0xd3, 0xad, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb3, 0x3f},
-					Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-				},
-			}},
-			wantErr: false,
-		},
-		{
-			name: "Mixed IPv4 and IPv6 CIDR",
-			args: args{addrStr: "200.201.202.203/16,2130:d3ad::b33f/128"},
-			want: []*netlink.Addr{{
-				IPNet: &net.IPNet{
-					IP:   net.IPv4(200, 201, 202, 203),
-					Mask: net.IPv4Mask(255, 255, 0, 0),
-				},
-			}, {
-				IPNet: &net.IPNet{
-					IP:   net.IP{0x21, 0x30, 0xd3, 0xad, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb3, 0x3f},
-					Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-				},
-			}},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseIpAddressString(tt.args.addrStr)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parseIpAddressString() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("parseIpAddressString() got = %v, want %v", got, tt.want)
-			}
 		})
 	}
 }

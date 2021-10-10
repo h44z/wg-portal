@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 
 	"github.com/h44z/wg-portal/internal/persistence"
-
 	"github.com/pkg/errors"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )

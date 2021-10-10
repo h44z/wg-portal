@@ -9,7 +9,7 @@ type Loader interface {
 	GetUser(id persistence.UserIdentifier) (persistence.User, error)
 	GetActiveUsers() ([]persistence.User, error)
 	GetAllUsers() ([]persistence.User, error)
-	GetFilteredUsers(filter ...filterCondition) ([]persistence.User, error)
+	GetFilteredUsers(filter ...persistence.DatabaseFilterCondition) ([]persistence.User, error)
 }
 
 type Updater interface {
@@ -72,7 +72,7 @@ func (p *PersistentManager) GetAllUsers() ([]persistence.User, error) {
 	return p.store.GetUsersUnscoped()
 }
 
-func (p *PersistentManager) GetFilteredUsers(filter ...filterCondition) ([]persistence.User, error) {
+func (p *PersistentManager) GetFilteredUsers(filter ...persistence.DatabaseFilterCondition) ([]persistence.User, error) {
 	return p.store.GetUsersFiltered(filter...)
 }
 

@@ -30,7 +30,7 @@ func newTemplateHandler() (*templateHandler, error) {
 	return handler, nil
 }
 
-func (c templateHandler) GetInterfaceConfig(cfg persistence.InterfaceConfig, peers []persistence.PeerConfig) (io.Reader, error) {
+func (c templateHandler) GetInterfaceConfig(cfg *persistence.InterfaceConfig, peers []*persistence.PeerConfig) (io.Reader, error) {
 	var tplBuff bytes.Buffer
 
 	err := c.templates.ExecuteTemplate(&tplBuff, "interface.tpl", map[string]interface{}{
@@ -47,12 +47,11 @@ func (c templateHandler) GetInterfaceConfig(cfg persistence.InterfaceConfig, pee
 	return &tplBuff, nil
 }
 
-func (c templateHandler) GetPeerConfig(peer persistence.PeerConfig) (io.Reader, error) {
+func (c templateHandler) GetPeerConfig(peer *persistence.PeerConfig) (io.Reader, error) {
 	var tplBuff bytes.Buffer
 
 	err := c.templates.ExecuteTemplate(&tplBuff, "peer.tpl", map[string]interface{}{
-		"Peer":      peer,
-		"Interface": peer.PeerInterfaceConfig,
+		"Peer": peer,
 		"Portal": map[string]interface{}{
 			"Version": "unknown",
 		},
