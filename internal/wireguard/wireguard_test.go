@@ -532,15 +532,15 @@ func TestWgCtrlManager_GetPeers(t *testing.T) {
 				interfaces: map[persistence.InterfaceIdentifier]*persistence.InterfaceConfig{"wg0": {}},
 				peers: map[persistence.InterfaceIdentifier]map[persistence.PeerIdentifier]*persistence.PeerConfig{
 					"wg0": {
-						"peer0": &persistence.PeerConfig{Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"}},
-						"peer1": &persistence.PeerConfig{Interface: &persistence.PeerInterfaceConfig{Identifier: "wg1"}},
+						"peer0": &persistence.PeerConfig{Identifier: "peer0", Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"}},
+						"peer1": &persistence.PeerConfig{Identifier: "peer1", Interface: &persistence.PeerInterfaceConfig{Identifier: "wg1"}},
 					},
 				},
 			},
 			interfaceId: "wg0",
 			want: []*persistence.PeerConfig{
-				{Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"}},
-				{Interface: &persistence.PeerInterfaceConfig{Identifier: "wg1"}},
+				{Identifier: "peer0", Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"}},
+				{Identifier: "peer1", Interface: &persistence.PeerInterfaceConfig{Identifier: "wg1"}},
 			},
 			wantErr: false,
 		},

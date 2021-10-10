@@ -136,8 +136,10 @@ func (m *wgCtrlManager) UpdateInterface(id persistence.InterfaceIdentifier, cfg 
 	if err != nil {
 		return errors.WithMessage(err, "failed to open low level interface")
 	}
-	if err := m.nl.LinkSetMTU(link, cfg.Mtu); err != nil {
-		return errors.WithMessage(err, "failed to set MTU")
+	if cfg.Mtu != 0 {
+		if err := m.nl.LinkSetMTU(link, cfg.Mtu); err != nil {
+			return errors.WithMessage(err, "failed to set MTU")
+		}
 	}
 	addresses, err := parseIpAddressString(cfg.AddressStr)
 	if err != nil {
