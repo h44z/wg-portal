@@ -245,6 +245,10 @@ func (m *wgCtrlManager) GetPeers(interfaceId persistence.InterfaceIdentifier) ([
 		peers = append(peers, config)
 	}
 
+	sort.Slice(peers, func(i, j int) bool {
+		return peers[i].Identifier < peers[j].Identifier
+	})
+
 	return peers, nil
 }
 
