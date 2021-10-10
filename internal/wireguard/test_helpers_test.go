@@ -55,7 +55,11 @@ func (m *MockNetlinkClient) LinkDel(link netlink.Link) error {
 
 func (m *MockNetlinkClient) LinkByName(name string) (netlink.Link, error) {
 	args := m.Called(name)
-	return args.Get(0).(netlink.Link), args.Error(1)
+	if args.Get(0) != nil {
+		return args.Get(0).(netlink.Link), args.Error(1)
+	} else {
+		return nil, args.Error(1)
+	}
 }
 
 func (m *MockNetlinkClient) LinkSetUp(link netlink.Link) error {

@@ -140,6 +140,9 @@ func (m *wgCtrlManager) UpdateInterface(id persistence.InterfaceIdentifier, cfg 
 		return errors.WithMessage(err, "failed to set MTU")
 	}
 	addresses, err := parseIpAddressString(cfg.AddressStr)
+	if err != nil {
+		return errors.WithMessage(err, "failed to parse ip address")
+	}
 	for i := 0; i < len(addresses); i++ {
 		var err error
 		if i == 0 {
@@ -558,8 +561,8 @@ func getWireGuardPeerConfig(devType persistence.InterfaceType, cfg *persistence.
 	}
 
 	var keepAlive *time.Duration
-	if cfg.PersistentKeepalive.Value != 0 {
-		keepAliveDuration := time.Duration(cfg.PersistentKeepalive.Value.(int)) * time.Second
+	if cfg.PersistentKeepalive.GetValue() != 0 {
+		keepAliveDuration := time.Duration(cfg.PersistentKeepalive.GetValue()) * time.Second
 		keepAlive = &keepAliveDuration
 	}
 
