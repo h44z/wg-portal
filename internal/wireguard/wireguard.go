@@ -74,7 +74,7 @@ func (m *wgCtrlManager) CreateInterface(id persistence.InterfaceIdentifier) erro
 		return errors.WithMessage(err, "failed to create low level interface")
 	}
 
-	newInterface := &persistence.InterfaceConfig{Identifier: id}
+	newInterface := &persistence.InterfaceConfig{Identifier: id, Type: persistence.InterfaceTypeServer}
 	m.interfaces[id] = newInterface
 	m.peers[id] = make(map[persistence.PeerIdentifier]*persistence.PeerConfig)
 
@@ -122,17 +122,20 @@ func (m *wgCtrlManager) DeleteInterface(id persistence.InterfaceIdentifier) erro
 	return nil
 }
 
-func (m *wgCtrlManager) UpdateInterface(id persistence.InterfaceIdentifier, cfg *persistence.InterfaceConfig) error {
+func (m *wgCtrlManager) UpdateInterface(cfg *persistence.InterfaceConfig) error {
+	if err := m.checkInterface(cfg); err != nil {
+		return errors.WithMessage(err, "interface validation failed")
+	}
+
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
-	if !m.deviceExists(id) {
+	if !m.deviceExists(cfg.Identifier) {
 		return errors.New("interface does not exist")
 	}
-	cfg.Identifier = id // ensure that the same device name is set
 
 	// Update net-link attributes
-	link, err := m.nl.LinkByName(string(id))
+	link, err := m.nl.LinkByName(string(cfg.Identifier))
 	if err != nil {
 		return errors.WithMessage(err, "failed to open low level interface")
 	}
@@ -167,7 +170,7 @@ func (m *wgCtrlManager) UpdateInterface(id persistence.InterfaceIdentifier, cfg 
 	if cfg.FirewallMark != 0 {
 		*fwMark = int(cfg.FirewallMark)
 	}
-	err = m.wg.ConfigureDevice(string(id), wgtypes.Config{
+	err = m.wg.ConfigureDevice(string(cfg.Identifier), wgtypes.Config{
 		PrivateKey:   &pKey,
 		ListenPort:   &cfg.ListenPort,
 		FirewallMark: fwMark,
@@ -188,9 +191,9 @@ func (m *wgCtrlManager) UpdateInterface(id persistence.InterfaceIdentifier, cfg 
 	}
 
 	// update internal map
-	m.interfaces[id] = cfg
+	m.interfaces[cfg.Identifier] = cfg
 
-	err = m.persistInterface(id, false)
+	err = m.persistInterface(cfg.Identifier, false)
 	if err != nil {
 		return errors.WithMessage(err, "failed to persist updated interface")
 	}
@@ -259,6 +262,10 @@ func (m *wgCtrlManager) SavePeers(peers ...*persistence.PeerConfig) error {
 	defer m.mux.Unlock()
 
 	for _, peer := range peers {
+		if err := m.checkPeer(peer); err != nil {
+			return errors.WithMessage(err, "peer validation failed")
+		}
+
 		deviceId := peer.Interface.Identifier
 		if !m.deviceExists(deviceId) {
 			return errors.Errorf("device does not exist")
@@ -362,7 +369,31 @@ func (m *wgCtrlManager) ImportInterface(cfg *ImportableInterface, peers []*persi
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
-	// TODO: implement
+	newInterface := &cfg.InterfaceConfig
+	if err := m.checkInterface(newInterface); err != nil {
+		return errors.WithMessage(err, "interface validation failed")
+	}
+
+	m.interfaces[newInterface.Identifier] = newInterface
+	m.peers[newInterface.Identifier] = make(map[persistence.PeerIdentifier]*persistence.PeerConfig)
+
+	err := m.persistInterface(newInterface.Identifier, false)
+	if err != nil {
+		return errors.WithMessage(err, "failed to persist imported interface")
+	}
+
+	for _, peer := range peers {
+		if err := m.checkPeer(peer); err != nil {
+			return errors.WithMessage(err, "peer validation failed")
+		}
+
+		m.peers[newInterface.Identifier][peer.Identifier] = peer
+
+		err = m.persistPeer(peer.Identifier, false)
+		if err != nil {
+			return errors.Wrapf(err, "failed to persist imported peer %s", peer.Identifier)
+		}
+	}
 
 	return nil
 }
@@ -470,9 +501,9 @@ func (m *wgCtrlManager) persistPeer(id persistence.PeerIdentifier, delete bool) 
 
 	var err error
 	if delete {
-		err = m.store.DeletePeer(id, peer.Interface.Identifier)
+		err = m.store.DeletePeer(id)
 	} else {
-		err = m.store.SavePeer(*peer, peer.Interface.Identifier)
+		err = m.store.SavePeer(*peer)
 	}
 	if err != nil {
 		return errors.Wrapf(err, "failed to persist peer %s", id)
@@ -495,6 +526,7 @@ func (m *wgCtrlManager) convertWireGuardInterface(device *wgtypes.Device) (*Impo
 	cfg := &ImportableInterface{}
 
 	cfg.Identifier = persistence.InterfaceIdentifier(device.Name)
+	cfg.Type = persistence.InterfaceTypeServer // default assume that the imported device is a server device
 	cfg.FirewallMark = int32(device.FirewallMark)
 	cfg.KeyPair = persistence.KeyPair{
 		PrivateKey: device.PrivateKey.String(),
@@ -545,6 +577,37 @@ func (m *wgCtrlManager) convertWireGuardPeer(peer *wgtypes.Peer, dev *Importable
 	}
 
 	return peerCfg, nil
+}
+
+func (m *wgCtrlManager) checkInterface(cfg *persistence.InterfaceConfig) error {
+	if cfg == nil {
+		return errors.New("interface config must not be nil")
+	}
+	if cfg.Identifier == "" {
+		return errors.New("missing interface identifier")
+	}
+	if cfg.Type == "" {
+		return errors.New("missing interface type")
+	}
+
+	return nil
+}
+
+func (m *wgCtrlManager) checkPeer(cfg *persistence.PeerConfig) error {
+	if cfg == nil {
+		return errors.New("peer config must not be nil")
+	}
+	if cfg.Identifier == "" {
+		return errors.New("missing peer identifier")
+	}
+	if cfg.Interface == nil {
+		return errors.New("missing peer interface")
+	}
+	if cfg.Interface.Identifier == "" {
+		return errors.New("missing peer interface identifier")
+	}
+
+	return nil
 }
 
 func getWireGuardPeerConfig(devType persistence.InterfaceType, cfg *persistence.PeerConfig) (wgtypes.PeerConfig, error) {

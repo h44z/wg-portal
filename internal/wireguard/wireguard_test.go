@@ -244,7 +244,7 @@ func TestWgCtrlManager_DeleteInterface(t *testing.T) {
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
 				nl.On("LinkDel", mock.Anything).Return(nil)
 				st.On("DeleteInterface", persistence.InterfaceIdentifier("wg0")).Return(nil)
-				st.On("DeletePeer", persistence.PeerIdentifier("peer0"), persistence.InterfaceIdentifier("wg0")).Return(errors.New("failure"))
+				st.On("DeletePeer", persistence.PeerIdentifier("peer0")).Return(errors.New("failure"))
 			},
 			args:    "wg0",
 			wantErr: true,
@@ -264,7 +264,7 @@ func TestWgCtrlManager_DeleteInterface(t *testing.T) {
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
 				nl.On("LinkDel", mock.Anything).Return(nil)
 				st.On("DeleteInterface", persistence.InterfaceIdentifier("wg0")).Return(nil)
-				st.On("DeletePeer", persistence.PeerIdentifier("peer0"), persistence.InterfaceIdentifier("wg0")).Return(nil)
+				st.On("DeletePeer", persistence.PeerIdentifier("peer0")).Return(nil)
 			},
 			args:    "wg0",
 			wantErr: false,
@@ -289,7 +289,6 @@ func TestWgCtrlManager_DeleteInterface(t *testing.T) {
 
 func TestWgCtrlManager_UpdateInterface(t *testing.T) {
 	type args struct {
-		id  persistence.InterfaceIdentifier
 		cfg *persistence.InterfaceConfig
 	}
 	tests := []struct {
@@ -310,10 +309,7 @@ func TestWgCtrlManager_UpdateInterface(t *testing.T) {
 				peers:      nil,
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {},
-			args: args{
-				id: "wg0",
-			},
-			wantErr: true,
+			wantErr:   true,
 		},
 		{
 			name: "NonExistentLowLevel",
@@ -329,8 +325,7 @@ func TestWgCtrlManager_UpdateInterface(t *testing.T) {
 				nl.On("LinkByName", "wg0").Return(nil, errors.New("failure"))
 			},
 			args: args{
-				id:  "wg0",
-				cfg: &persistence.InterfaceConfig{},
+				cfg: &persistence.InterfaceConfig{Identifier: "wg0", Type: persistence.InterfaceTypeServer},
 			},
 			wantErr: true,
 		},
@@ -359,8 +354,8 @@ func TestWgCtrlManager_UpdateInterface(t *testing.T) {
 				st.On("SaveInterface", mock.Anything).Return(nil)
 			},
 			args: args{
-				id: "wg0",
 				cfg: &persistence.InterfaceConfig{
+					Identifier: "wg0", Type: persistence.InterfaceTypeServer,
 					Mtu: 234, AddressStr: "10.0.0.2/24,1.2.3.4/24", Enabled: true,
 					KeyPair: persistence.KeyPair{PrivateKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI="},
 				},
@@ -392,8 +387,8 @@ func TestWgCtrlManager_UpdateInterface(t *testing.T) {
 				st.On("SaveInterface", mock.Anything).Return(nil)
 			},
 			args: args{
-				id: "wg0",
 				cfg: &persistence.InterfaceConfig{
+					Identifier: "wg0", Type: persistence.InterfaceTypeServer,
 					Mtu: 234, AddressStr: "10.0.0.2/24,1.2.3.4/24", Enabled: false,
 					KeyPair: persistence.KeyPair{PrivateKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI="},
 				},
@@ -408,7 +403,7 @@ func TestWgCtrlManager_UpdateInterface(t *testing.T) {
 				tt.manager.nl.(*MockNetlinkClient),
 				tt.manager.store.(*MockWireGuardStore),
 			)
-			if err := tt.manager.UpdateInterface(tt.args.id, tt.args.cfg); (err != nil) != tt.wantErr {
+			if err := tt.manager.UpdateInterface(tt.args.cfg); (err != nil) != tt.wantErr {
 				t.Errorf("UpdateInterface() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			tt.manager.wg.(*MockWireGuardClient).AssertExpectations(t)
@@ -460,7 +455,7 @@ func TestWgCtrlManager_ApplyDefaultConfigs(t *testing.T) {
 				},
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
-				st.On("SavePeer", mock.Anything, persistence.InterfaceIdentifier("wg0")).Return(errors.New("failure"))
+				st.On("SavePeer", mock.Anything).Return(errors.New("failure"))
 			},
 			args: args{
 				id: "wg0",
@@ -482,7 +477,7 @@ func TestWgCtrlManager_ApplyDefaultConfigs(t *testing.T) {
 				},
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
-				st.On("SavePeer", mock.Anything, persistence.InterfaceIdentifier("wg0")).Return(nil)
+				st.On("SavePeer", mock.Anything).Return(nil)
 			},
 			args: args{
 				id: "wg0",
@@ -578,7 +573,7 @@ func TestWgCtrlManager_SavePeers(t *testing.T) {
 				peers:      nil,
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {},
-			args:      []*persistence.PeerConfig{{Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"}}},
+			args:      []*persistence.PeerConfig{{Identifier: "peer0", Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"}}},
 			wantErr:   true,
 		},
 		{
@@ -592,7 +587,7 @@ func TestWgCtrlManager_SavePeers(t *testing.T) {
 				peers:      nil,
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {},
-			args:      []*persistence.PeerConfig{{Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"}}},
+			args:      []*persistence.PeerConfig{{Identifier: "peer0", Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"}}},
 			wantErr:   true,
 		},
 		{
@@ -610,8 +605,9 @@ func TestWgCtrlManager_SavePeers(t *testing.T) {
 			},
 			args: []*persistence.PeerConfig{
 				{
-					KeyPair:   persistence.KeyPair{PublicKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI=", PrivateKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI="},
-					Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"},
+					Identifier: "peer0",
+					KeyPair:    persistence.KeyPair{PublicKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI=", PrivateKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI="},
+					Interface:  &persistence.PeerInterfaceConfig{Identifier: "wg0"},
 				},
 			},
 			wantErr: true,
@@ -630,12 +626,13 @@ func TestWgCtrlManager_SavePeers(t *testing.T) {
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
 				wg.On("ConfigureDevice", "wg0", mock.Anything).Return(nil)
-				st.On("SavePeer", mock.Anything, persistence.InterfaceIdentifier("wg0")).Return(errors.New("failure"))
+				st.On("SavePeer", mock.Anything).Return(errors.New("failure"))
 			},
 			args: []*persistence.PeerConfig{
 				{
-					KeyPair:   persistence.KeyPair{PublicKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI=", PrivateKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI="},
-					Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"},
+					Identifier: "peer0",
+					KeyPair:    persistence.KeyPair{PublicKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI=", PrivateKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI="},
+					Interface:  &persistence.PeerInterfaceConfig{Identifier: "wg0"},
 				},
 			},
 			wantErr: true,
@@ -654,12 +651,13 @@ func TestWgCtrlManager_SavePeers(t *testing.T) {
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
 				wg.On("ConfigureDevice", "wg0", mock.Anything).Return(nil)
-				st.On("SavePeer", mock.Anything, persistence.InterfaceIdentifier("wg0")).Return(nil)
+				st.On("SavePeer", mock.Anything).Return(nil)
 			},
 			args: []*persistence.PeerConfig{
 				{
-					KeyPair:   persistence.KeyPair{PublicKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI=", PrivateKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI="},
-					Interface: &persistence.PeerInterfaceConfig{Identifier: "wg0"},
+					Identifier: "peer0",
+					KeyPair:    persistence.KeyPair{PublicKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI=", PrivateKey: "pcDxSxSZp5x87cNoRJaHdAOzxrxDfDUn7pGmrY/AmzI="},
+					Interface:  &persistence.PeerInterfaceConfig{Identifier: "wg0"},
 				},
 			},
 			wantErr: false,
@@ -748,7 +746,7 @@ func TestWgCtrlManager_RemovePeer(t *testing.T) {
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
 				wg.On("ConfigureDevice", "wg0", mock.Anything).Return(nil)
-				st.On("DeletePeer", persistence.PeerIdentifier("peer0"), persistence.InterfaceIdentifier("wg0")).Return(errors.New("failure"))
+				st.On("DeletePeer", persistence.PeerIdentifier("peer0")).Return(errors.New("failure"))
 			},
 			args:    "peer0",
 			wantErr: true,
@@ -773,7 +771,7 @@ func TestWgCtrlManager_RemovePeer(t *testing.T) {
 			},
 			mockSetup: func(wg *MockWireGuardClient, nl *MockNetlinkClient, st *MockWireGuardStore) {
 				wg.On("ConfigureDevice", "wg0", mock.Anything).Return(nil)
-				st.On("DeletePeer", persistence.PeerIdentifier("peer0"), persistence.InterfaceIdentifier("wg0")).Return(nil)
+				st.On("DeletePeer", persistence.PeerIdentifier("peer0")).Return(nil)
 			},
 			args:    "peer0",
 			wantErr: false,

@@ -22,7 +22,7 @@ type InterfaceManager interface {
 	GetInterfaces() ([]*persistence.InterfaceConfig, error)
 	CreateInterface(id persistence.InterfaceIdentifier) error
 	DeleteInterface(id persistence.InterfaceIdentifier) error
-	UpdateInterface(id persistence.InterfaceIdentifier, cfg *persistence.InterfaceConfig) error
+	UpdateInterface(cfg *persistence.InterfaceConfig) error
 	ApplyDefaultConfigs(id persistence.InterfaceIdentifier) error
 }
 

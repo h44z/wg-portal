@@ -157,5 +157,5 @@ type User struct {
 	// database internal fields
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index" json:",omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:",omitempty"` // used as a "deactivated" flag
 }

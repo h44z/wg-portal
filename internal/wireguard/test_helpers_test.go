@@ -120,8 +120,8 @@ func (w *MockWireGuardStore) SaveInterface(cfg persistence.InterfaceConfig) erro
 	return args.Error(0)
 }
 
-func (w *MockWireGuardStore) SavePeer(peer persistence.PeerConfig, interfaceIdentifier persistence.InterfaceIdentifier) error {
-	args := w.Called(peer, interfaceIdentifier)
+func (w *MockWireGuardStore) SavePeer(peer persistence.PeerConfig) error {
+	args := w.Called(peer)
 	return args.Error(0)
 }
 
@@ -130,7 +130,7 @@ func (w *MockWireGuardStore) DeleteInterface(identifier persistence.InterfaceIde
 	return args.Error(0)
 }
 
-func (w *MockWireGuardStore) DeletePeer(peer persistence.PeerIdentifier, interfaceIdentifier persistence.InterfaceIdentifier) error {
-	args := w.Called(peer, interfaceIdentifier)
+func (w *MockWireGuardStore) DeletePeer(peer persistence.PeerIdentifier) error {
+	args := w.Called(peer)
 	return args.Error(0)
 }

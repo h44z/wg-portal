@@ -11,8 +11,8 @@ type store interface {
 	GetInterface(identifier persistence.InterfaceIdentifier) (persistence.InterfaceConfig, []persistence.PeerConfig, error)
 
 	SaveInterface(cfg persistence.InterfaceConfig) error
-	SavePeer(peer persistence.PeerConfig, interfaceIdentifier persistence.InterfaceIdentifier) error
+	SavePeer(peer persistence.PeerConfig) error
 
 	DeleteInterface(identifier persistence.InterfaceIdentifier) error
-	DeletePeer(peer persistence.PeerIdentifier, interfaceIdentifier persistence.InterfaceIdentifier) error
+	DeletePeer(peer persistence.PeerIdentifier) error
 }
