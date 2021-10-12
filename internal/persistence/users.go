@@ -15,7 +15,7 @@ func (d *Database) GetUsersUnscoped() ([]User, error) {
 }
 
 func (d *Database) SaveUser(user User) error {
-	create := user.Uid == ""
+	create := user.Identifier == ""
 	now := time.Now()
 
 	user.UpdatedAt = now
@@ -27,7 +27,7 @@ func (d *Database) SaveUser(user User) error {
 		}
 	} else {
 		if err := d.db.Save(&user).Error; err != nil {
-			return errors.WithMessagef(err, "unable to update user %s", user.Uid)
+			return errors.WithMessagef(err, "unable to update user %s", user.Identifier)
 		}
 	}
 	return nil

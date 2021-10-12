@@ -99,7 +99,7 @@ func TestWireGuardUpdateInterface(t *testing.T) {
 		AddressStr: "10.98.87.76/24",
 		Enabled:    true,
 	}
-	err = mgr.UpdateInterface(interfaceName, cfg)
+	err = mgr.UpdateInterface(cfg)
 	assert.NoError(t, err)
 
 	// Validate that the interface has been updated
@@ -128,7 +128,7 @@ func TestWireGuardDisableInterface(t *testing.T) {
 		AddressStr: "10.98.87.76/24",
 		Enabled:    false,
 	}
-	err = mgr.UpdateInterface(interfaceName, cfg)
+	err = mgr.UpdateInterface(cfg)
 	assert.NoError(t, err)
 
 	// Validate that the interface has been updated
@@ -158,11 +158,11 @@ func TestWireGuardEnableInterface(t *testing.T) {
 		AddressStr: "10.98.87.76/24",
 		Enabled:    false,
 	}
-	err = mgr.UpdateInterface(interfaceName, cfg)
+	err = mgr.UpdateInterface(cfg)
 	assert.NoError(t, err)
 
 	cfg.Enabled = true
-	err = mgr.UpdateInterface(interfaceName, cfg)
+	err = mgr.UpdateInterface(cfg)
 	assert.NoError(t, err)
 
 	// Validate that the interface has been updated

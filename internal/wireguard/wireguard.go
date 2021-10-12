@@ -62,6 +62,17 @@ func (m *wgCtrlManager) GetInterfaces() ([]*persistence.InterfaceConfig, error) 
 	return interfaces, nil
 }
 
+func (m *wgCtrlManager) GetInterface(id persistence.InterfaceIdentifier) (*persistence.InterfaceConfig, error) {
+	m.mux.RLock()
+	defer m.mux.RUnlock()
+
+	if !m.deviceExists(id) {
+		return nil, errors.New("device does not exist")
+	}
+
+	return m.interfaces[id], nil
+}
+
 func (m *wgCtrlManager) CreateInterface(id persistence.InterfaceIdentifier) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
@@ -246,8 +257,8 @@ func (m *wgCtrlManager) GetPeers(interfaceId persistence.InterfaceIdentifier) ([
 	}
 
 	peers := make([]*persistence.PeerConfig, 0, len(m.peers[interfaceId]))
-	for _, config := range m.peers[interfaceId] {
-		peers = append(peers, config)
+	for i := range m.peers[interfaceId] {
+		peers = append(peers, m.peers[interfaceId][i])
 	}
 
 	sort.Slice(peers, func(i, j int) bool {
@@ -424,8 +435,8 @@ func (m *wgCtrlManager) initializeFromStore() error {
 		if _, ok := m.peers[cfg.Identifier]; !ok {
 			m.peers[cfg.Identifier] = make(map[persistence.PeerIdentifier]*persistence.PeerConfig)
 		}
-		for _, peer := range peers {
-			m.peers[cfg.Identifier][peer.Identifier] = &peer
+		for p, peer := range peers {
+			m.peers[cfg.Identifier][peer.Identifier] = &peers[p]
 		}
 	}
 
@@ -623,7 +634,7 @@ func getWireGuardPeerConfig(devType persistence.InterfaceType, cfg *persistence.
 
 	var endpoint *net.UDPAddr
 	if cfg.Endpoint.Value != "" && devType == persistence.InterfaceTypeClient {
-		addr, err := net.ResolveUDPAddr("udp", cfg.Endpoint.Value.(string))
+		addr, err := net.ResolveUDPAddr("udp", cfg.Endpoint.GetValue())
 		if err == nil {
 			endpoint = addr
 		}

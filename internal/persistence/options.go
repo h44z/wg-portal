@@ -1,20 +1,12 @@
 package persistence
 
-// ConfigOption is an Overridable configuration option
-type ConfigOption struct {
-	Value       interface{}
-	Overridable bool
-}
-
 type StringConfigOption struct {
-	ConfigOption
+	Value       string `gorm:"column:v"`
+	Overridable bool   `gorm:"column:o"`
 }
 
 func (o StringConfigOption) GetValue() string {
-	if o.Value == nil {
-		return ""
-	}
-	return o.Value.(string)
+	return o.Value
 }
 
 func (o *StringConfigOption) SetValue(value string) {
@@ -30,21 +22,19 @@ func (o *StringConfigOption) TrySetValue(value string) bool {
 }
 
 func NewStringConfigOption(value string, overridable bool) StringConfigOption {
-	return StringConfigOption{ConfigOption{
+	return StringConfigOption{
 		Value:       value,
 		Overridable: overridable,
-	}}
+	}
 }
 
 type IntConfigOption struct {
-	ConfigOption
+	Value       int  `gorm:"column:v"`
+	Overridable bool `gorm:"column:o"`
 }
 
 func (o IntConfigOption) GetValue() int {
-	if o.Value == nil {
-		return 0
-	}
-	return o.Value.(int)
+	return o.Value
 }
 
 func (o *IntConfigOption) SetValue(value int) {
@@ -60,22 +50,19 @@ func (o *IntConfigOption) TrySetValue(value int) bool {
 }
 
 func NewIntConfigOption(value int, overridable bool) IntConfigOption {
-	return IntConfigOption{ConfigOption{
+	return IntConfigOption{
 		Value:       value,
 		Overridable: overridable,
-	}}
+	}
 }
 
 type Int32ConfigOption struct {
-	ConfigOption
+	Value       int32 `gorm:"column:v"`
+	Overridable bool  `gorm:"column:o"`
 }
 
 func (o Int32ConfigOption) GetValue() int32 {
-	if o.Value == nil {
-		return 0
-	}
-
-	return o.Value.(int32)
+	return o.Value
 }
 
 func (o *Int32ConfigOption) SetValue(value int32) {
@@ -91,22 +78,19 @@ func (o *Int32ConfigOption) TrySetValue(value int32) bool {
 }
 
 func NewInt32ConfigOption(value int32, overridable bool) Int32ConfigOption {
-	return Int32ConfigOption{ConfigOption{
+	return Int32ConfigOption{
 		Value:       value,
 		Overridable: overridable,
-	}}
+	}
 }
 
 type BoolConfigOption struct {
-	ConfigOption
+	Value       bool `gorm:"column:v"`
+	Overridable bool `gorm:"column:o"`
 }
 
 func (o BoolConfigOption) GetValue() bool {
-	if o.Value == nil {
-		return false
-	}
-
-	return o.Value.(bool)
+	return o.Value
 }
 
 func (o *BoolConfigOption) SetValue(value bool) {
@@ -122,8 +106,8 @@ func (o *BoolConfigOption) TrySetValue(value bool) bool {
 }
 
 func NewBoolConfigOption(value bool, overridable bool) BoolConfigOption {
-	return BoolConfigOption{ConfigOption{
+	return BoolConfigOption{
 		Value:       value,
 		Overridable: overridable,
-	}}
+	}
 }

@@ -20,6 +20,7 @@ type KeyGenerator interface {
 // InterfaceManager provides methods to create/update/delete physical WireGuard devices.
 type InterfaceManager interface {
 	GetInterfaces() ([]*persistence.InterfaceConfig, error)
+	GetInterface(id persistence.InterfaceIdentifier) (*persistence.InterfaceConfig, error)
 	CreateInterface(id persistence.InterfaceIdentifier) error
 	DeleteInterface(id persistence.InterfaceIdentifier) error
 	UpdateInterface(cfg *persistence.InterfaceConfig) error
@@ -68,7 +69,7 @@ type Manager interface {
 //
 
 type PersistentManager struct {
-	wgCtrlKeyGenerator
+	*wgCtrlKeyGenerator
 	*templateHandler
 	*wgCtrlManager
 }
@@ -85,7 +86,7 @@ func NewPersistentManager(wg lowlevel.WireGuardClient, nl lowlevel.NetlinkClient
 	}
 
 	m := &PersistentManager{
-		wgCtrlKeyGenerator: wgCtrlKeyGenerator{},
+		wgCtrlKeyGenerator: &wgCtrlKeyGenerator{},
 		wgCtrlManager:      wgManager,
 		templateHandler:    tplManager,
 	}

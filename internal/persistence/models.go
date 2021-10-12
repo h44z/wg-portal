@@ -38,8 +38,8 @@ type InterfaceConfig struct {
 
 	// WireGuard specific (for the [interface] section of the config file)
 
-	Identifier InterfaceIdentifier // device name, for example: wg0
-	KeyPair    KeyPair             // private/public Key of the server interface
+	Identifier InterfaceIdentifier `gorm:"primaryKey"` // device name, for example: wg0
+	KeyPair                        // private/public Key of the server interface
 	ListenPort int                 // the listening port, for example: 51820
 
 	AddressStr string // the interface ip addresses, comma separated
@@ -81,20 +81,20 @@ type InterfaceConfig struct {
 }
 
 type PeerInterfaceConfig struct {
-	Identifier InterfaceIdentifier // the interface identifier
-	Type       InterfaceType       // the interface type
-	PublicKey  string              // the interface public key
+	Identifier InterfaceIdentifier `gorm:"index;column:iface_identifier"` // the interface identifier
+	Type       InterfaceType       `gorm:"column:iface_type"`             // the interface type
+	PublicKey  string              `gorm:"column:iface_pubkey"`           // the interface public key
 
-	AddressStr   StringConfigOption // the interface ip addresses, comma separated
-	DnsStr       StringConfigOption // the dns server that should be set if the interface is up, comma separated
-	Mtu          IntConfigOption    // the device MTU
-	FirewallMark Int32ConfigOption  // a firewall mark
-	RoutingTable StringConfigOption // the routing table
+	AddressStr   StringConfigOption `gorm:"embedded;embeddedPrefix:iface_address_str_"`   // the interface ip addresses, comma separated
+	DnsStr       StringConfigOption `gorm:"embedded;embeddedPrefix:iface_dns_str_"`       // the dns server that should be set if the interface is up, comma separated
+	Mtu          IntConfigOption    `gorm:"embedded;embeddedPrefix:iface_mtu_"`           // the device MTU
+	FirewallMark Int32ConfigOption  `gorm:"embedded;embeddedPrefix:iface_firewall_mark_"` // a firewall mark
+	RoutingTable StringConfigOption `gorm:"embedded;embeddedPrefix:iface_routing_table_"` // the routing table
 
-	PreUp    StringConfigOption // action that is executed before the device is up
-	PostUp   StringConfigOption // action that is executed after the device is up
-	PreDown  StringConfigOption // action that is executed before the device is down
-	PostDown StringConfigOption // action that is executed after the device is down
+	PreUp    StringConfigOption `gorm:"embedded;embeddedPrefix:iface_pre_up_"`    // action that is executed before the device is up
+	PostUp   StringConfigOption `gorm:"embedded;embeddedPrefix:iface_post_up_"`   // action that is executed after the device is up
+	PreDown  StringConfigOption `gorm:"embedded;embeddedPrefix:iface_pre_down_"`  // action that is executed before the device is down
+	PostDown StringConfigOption `gorm:"embedded;embeddedPrefix:iface_post_down_"` // action that is executed after the device is down
 }
 
 type PeerConfig struct {
@@ -102,21 +102,21 @@ type PeerConfig struct {
 
 	// WireGuard specific (for the [peer] section of the config file)
 
-	Endpoint            StringConfigOption // the endpoint address
-	AllowedIPsStr       StringConfigOption // all allowed ip subnets, comma seperated
+	Endpoint            StringConfigOption `gorm:"embedded;embeddedPrefix:endpoint_"`        // the endpoint address
+	AllowedIPsStr       StringConfigOption `gorm:"embedded;embeddedPrefix:allowed_ips_str_"` // all allowed ip subnets, comma seperated
 	ExtraAllowedIPsStr  string             // all allowed ip subnets on the server side, comma seperated
-	KeyPair             KeyPair            // private/public Key of the peer
+	KeyPair                                // private/public Key of the peer
 	PresharedKey        string             // the pre-shared Key of the peer
-	PersistentKeepalive IntConfigOption    // the persistent keep-alive interval
+	PersistentKeepalive IntConfigOption    `gorm:"embedded;embeddedPrefix:persistent_keep_alive_"` // the persistent keep-alive interval
 
 	// WG Portal specific
 
 	DisplayName    string         // a nice display name/ description for the peer
-	Identifier     PeerIdentifier // peer unique identifier
-	UserIdentifier UserIdentifier // the owner
+	Identifier     PeerIdentifier `gorm:"primaryKey"` // peer unique identifier
+	UserIdentifier UserIdentifier `gorm:"index"`      // the owner
 
 	// Interface settings for the peer, used to generate the [interface] section in the peer config file
-	Interface *PeerInterfaceConfig
+	Interface *PeerInterfaceConfig `gorm:"embedded"`
 }
 
 type UserSource string
@@ -140,10 +140,10 @@ func (PrivateString) String() string {
 // User is the user model that gets linked to peer entries, by default an empty user model with only the email address is created
 type User struct {
 	// required fields
-	Uid     UserIdentifier `gorm:"primaryKey"`
-	Email   string         `form:"email" binding:"required,email"`
-	Source  UserSource
-	IsAdmin bool
+	Identifier UserIdentifier `gorm:"primaryKey"`
+	Email      string         `form:"email" binding:"required,email"`
+	Source     UserSource
+	IsAdmin    bool
 
 	// optional fields
 	Firstname  string `form:"firstname" binding:"omitempty"`

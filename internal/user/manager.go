@@ -50,10 +50,6 @@ type PersistentManager struct {
 }
 
 func NewPersistentManager(store store) (*PersistentManager, error) {
-	if store == nil {
-		return nil, errors.New("user manager requires a valid store object")
-	}
-
 	mgr := &PersistentManager{
 		store: store,
 
@@ -91,7 +87,7 @@ func (p *PersistentManager) GetActiveUsers() ([]*persistence.User, error) {
 
 	// Order the users by uid
 	sort.Slice(users, func(i, j int) bool {
-		return users[i].Uid < users[j].Uid
+		return users[i].Identifier < users[j].Identifier
 	})
 
 	return users, nil
@@ -108,7 +104,7 @@ func (p *PersistentManager) GetAllUsers() ([]*persistence.User, error) {
 
 	// Order the users by uid
 	sort.Slice(users, func(i, j int) bool {
-		return users[i].Uid < users[j].Uid
+		return users[i].Identifier < users[j].Identifier
 	})
 
 	return users, nil
@@ -127,7 +123,7 @@ func (p *PersistentManager) GetFilteredUsers(filter Filter) ([]*persistence.User
 
 	// Order the users by uid
 	sort.Slice(users, func(i, j int) bool {
-		return users[i].Uid < users[j].Uid
+		return users[i].Identifier < users[j].Identifier
 	})
 
 	return users, nil
@@ -141,13 +137,13 @@ func (p *PersistentManager) CreateUser(user *persistence.User) error {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
-	if p.userExists(user.Uid) {
+	if p.userExists(user.Identifier) {
 		return errors.New("user already exists")
 	}
 
-	p.users[user.Uid] = user
+	p.users[user.Identifier] = user
 
-	err := p.persistUser(user.Uid, false)
+	err := p.persistUser(user.Identifier, false)
 	if err != nil {
 		return errors.WithMessage(err, "failed to persist created user")
 	}
@@ -163,13 +159,13 @@ func (p *PersistentManager) UpdateUser(user *persistence.User) error {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
-	if !p.userExists(user.Uid) {
+	if !p.userExists(user.Identifier) {
 		return errors.New("user does not exists")
 	}
 
-	p.users[user.Uid] = user
+	p.users[user.Identifier] = user
 
-	err := p.persistUser(user.Uid, false)
+	err := p.persistUser(user.Identifier, false)
 	if err != nil {
 		return errors.WithMessage(err, "failed to persist updated user")
 	}
@@ -210,7 +206,7 @@ func (p *PersistentManager) initializeFromStore() error {
 
 	for _, tmpUser := range users {
 		user := tmpUser
-		p.users[user.Uid] = &user
+		p.users[user.Identifier] = &user
 	}
 
 	return nil
@@ -252,7 +248,7 @@ func (p *PersistentManager) checkUser(user *persistence.User) error {
 	if user == nil {
 		return errors.New("user must not be nil")
 	}
-	if user.Uid == "" {
+	if user.Identifier == "" {
 		return errors.New("missing user identifier")
 	}
 	if user.Source == "" {

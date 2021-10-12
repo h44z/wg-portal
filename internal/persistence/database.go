@@ -78,5 +78,5 @@ func NewDatabase(cfg DatabaseConfig) (*Database, error) {
 
 	d.db = gormDb
 
-	return d, nil
+	return d, d.Migrate()
 }

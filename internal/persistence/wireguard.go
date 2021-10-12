@@ -21,14 +21,14 @@ func (d *Database) GetAvailableInterfaces() ([]InterfaceIdentifier, error) {
 
 func (d *Database) GetAllInterfaces(ids ...InterfaceIdentifier) (map[InterfaceConfig][]PeerConfig, error) {
 	var interfaces []InterfaceConfig
-	if err := d.db.Where("interface IN ?", ids).Find(&interfaces).Error; err != nil {
+	if err := d.db.Where("identifier IN ?", ids).Find(&interfaces).Error; err != nil {
 		return nil, errors.WithMessage(err, "unable to find interfaces")
 	}
 
 	interfaceMap := make(map[InterfaceConfig][]PeerConfig, len(interfaces))
 	for i := range interfaces {
 		var peers []PeerConfig
-		if err := d.db.Where("interface = ?", interfaces[i].Identifier).Find(&peers).Error; err != nil {
+		if err := d.db.Where("iface_identifier = ?", interfaces[i].Identifier).Find(&peers).Error; err != nil {
 			return nil, errors.WithMessagef(err, "unable to find peers for %s", interfaces[i].Identifier)
 		}
 		interfaceMap[interfaces[i]] = peers
@@ -44,7 +44,7 @@ func (d *Database) GetInterface(id InterfaceIdentifier) (InterfaceConfig, []Peer
 	}
 
 	var peers []PeerConfig
-	if err := d.db.Where("interface = ?", id).Find(&peers).Error; err != nil {
+	if err := d.db.Where("identifier = ?", id).Find(&peers).Error; err != nil {
 		return InterfaceConfig{}, nil, errors.WithMessage(err, "unable to find peers")
 	}
 
