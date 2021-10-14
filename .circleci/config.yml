@@ -6,13 +6,13 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - go-mod-v4-{{ checksum "go.sum" }}
+            - go-mod-latest-v4-{{ checksum "go.sum" }}
       - run:
           name: Install Dependencies
           command: |
             make dep
       - save_cache:
-          key: go-mod-v4-{{ checksum "go.sum" }}
+          key: go-mod-latest-v4-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
       - run:
@@ -49,13 +49,13 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - go-mod-v4-{{ checksum "go.sum" }}
+            - go-mod-116-v4-{{ checksum "go.sum" }}
       - run:
           name: Install Dependencies
           command: |
             make dep
       - save_cache:
-          key: go-mod-v4-{{ checksum "go.sum" }}
+          key: go-mod-116-v4-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
       - run:
@@ -72,13 +72,13 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - go-mod-v4-{{ checksum "go.sum" }}
+            - go-mod-legacy-v4-{{ checksum "go.sum" }}
       - run:
           name: Install Dependencies
           command: |
             make dep
       - save_cache:
-          key: go-mod-v4-{{ checksum "go.sum" }}
+          key: go-mod-legacy-v4-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
       - run:
