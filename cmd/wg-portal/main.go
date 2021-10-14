@@ -1,5 +1,53 @@
 package main
 
-func main() {
+import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/h44z/wg-portal/cmd/wg-portal/common"
+
+	"github.com/sirupsen/logrus"
+)
+
+func main() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	logrus.Info("starting WireGuard Portal...")
+
+	// Context for clean shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Attach signal handlers to context
+	go func() {
+		osCall := <-c
+		logrus.Tracef("received system call: %v", osCall)
+		cancel() // cancel the context
+	}()
+
+	go entrypoint(ctx, cancel) // main entry point
+
+	<-ctx.Done() // Wait until the context gets canceled
+
+	logrus.Info("stopped WireGuard Portal")
+	logrus.Exit(0)
+}
+
+func entrypoint(ctx context.Context, cancel context.CancelFunc) {
+	defer cancel() // quit program if main entrypoint ends
+
+	cfg := &common.Config{} // TODO: load config
+
+	srv, err := NewServer(cfg)
+	if err != nil {
+		logrus.Errorf("failed to setup server: %v", err)
+		return
+	}
+	defer srv.Shutdown()
+
+	// Run is blocking
+	srv.Run(ctx)
 }

@@ -42,8 +42,9 @@ type InterfaceConfig struct {
 	KeyPair                        // private/public Key of the server interface
 	ListenPort int                 // the listening port, for example: 51820
 
-	AddressStr string // the interface ip addresses, comma separated
-	DnsStr     string // the dns server that should be set if the interface is up, comma separated
+	AddressStr   string // the interface ip addresses, comma separated
+	DnsStr       string // the dns server that should be set if the interface is up, comma separated
+	DnsSearchStr string // the dns search option string that should be set if the interface is up, will be appended to DnsStr
 
 	Mtu          int    // the device MTU
 	FirewallMark int32  // a firewall mark
@@ -67,6 +68,7 @@ type InterfaceConfig struct {
 
 	PeerDefNetworkStr          string // the default subnets from which peers will get their IP addresses, comma seperated
 	PeerDefDnsStr              string // the default dns server for the peer
+	PeerDefDnsSearchStr        string // the default dns search options for the peer
 	PeerDefEndpoint            string // the default endpoint for the peer
 	PeerDefAllowedIPsStr       string // the default allowed IP string for the peer
 	PeerDefMtu                 int    // the default device MTU
@@ -85,11 +87,12 @@ type PeerInterfaceConfig struct {
 	Type       InterfaceType       `gorm:"column:iface_type"`             // the interface type
 	PublicKey  string              `gorm:"column:iface_pubkey"`           // the interface public key
 
-	AddressStr   StringConfigOption `gorm:"embedded;embeddedPrefix:iface_address_str_"`   // the interface ip addresses, comma separated
-	DnsStr       StringConfigOption `gorm:"embedded;embeddedPrefix:iface_dns_str_"`       // the dns server that should be set if the interface is up, comma separated
-	Mtu          IntConfigOption    `gorm:"embedded;embeddedPrefix:iface_mtu_"`           // the device MTU
-	FirewallMark Int32ConfigOption  `gorm:"embedded;embeddedPrefix:iface_firewall_mark_"` // a firewall mark
-	RoutingTable StringConfigOption `gorm:"embedded;embeddedPrefix:iface_routing_table_"` // the routing table
+	AddressStr   StringConfigOption `gorm:"embedded;embeddedPrefix:iface_address_str_"`    // the interface ip addresses, comma separated
+	DnsStr       StringConfigOption `gorm:"embedded;embeddedPrefix:iface_dns_str_"`        // the dns server that should be set if the interface is up, comma separated
+	DnsSearchStr StringConfigOption `gorm:"embedded;embeddedPrefix:iface_dns_search_str_"` // the dns search option string that should be set if the interface is up, will be appended to DnsStr
+	Mtu          IntConfigOption    `gorm:"embedded;embeddedPrefix:iface_mtu_"`            // the device MTU
+	FirewallMark Int32ConfigOption  `gorm:"embedded;embeddedPrefix:iface_firewall_mark_"`  // a firewall mark
+	RoutingTable StringConfigOption `gorm:"embedded;embeddedPrefix:iface_routing_table_"`  // the routing table
 
 	PreUp    StringConfigOption `gorm:"embedded;embeddedPrefix:iface_pre_up_"`    // action that is executed before the device is up
 	PostUp   StringConfigOption `gorm:"embedded;embeddedPrefix:iface_post_up_"`   // action that is executed after the device is up

@@ -1,4 +1,4 @@
-package wg_portal
+package main
 
 import "embed"
 

@@ -9,16 +9,26 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl"
 )
 
+// Backend combines the user manager and WireGuard manager. It also provides some additional functions.
+type Backend interface {
+	user.Manager
+	wireguard.Manager
+
+	ImportInterfaceById(identifier persistence.InterfaceIdentifier) error
+	PrepareFreshPeer(identifier persistence.InterfaceIdentifier) (*persistence.PeerConfig, error)
+	GetPeersForUser(identifier persistence.UserIdentifier) ([]*persistence.PeerConfig, error)
+}
+
 // type alias
 type UserManager = user.Manager
 type WireGuardManager = wireguard.Manager
 
-type Backend struct {
+type PersistentBackend struct {
 	UserManager
 	WireGuardManager
 }
 
-func NewBackend(db *persistence.Database) (*Backend, error) {
+func NewPersistentBackend(db *persistence.Database) (*PersistentBackend, error) {
 	wg, err := wgctrl.New()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get wgctrl handle")
@@ -36,7 +46,7 @@ func NewBackend(db *persistence.Database) (*Backend, error) {
 		return nil, errors.WithMessage(err, "failed to setup user manager")
 	}
 
-	b := &Backend{
+	b := &PersistentBackend{
 		UserManager:      um,
 		WireGuardManager: wgm,
 	}
@@ -44,7 +54,8 @@ func NewBackend(db *persistence.Database) (*Backend, error) {
 	return b, nil
 }
 
-func (b *Backend) ImportInterface(identifier persistence.InterfaceIdentifier) error {
+// ImportInterface imports an interface. The given interface identifier must be available as importable interface.
+func (b *PersistentBackend) ImportInterfaceById(identifier persistence.InterfaceIdentifier) error {
 	importable, err := b.GetImportableInterfaces()
 	if err != nil {
 		return errors.WithMessage(err, "failed to get importable interfaces")
@@ -70,4 +81,14 @@ func (b *Backend) ImportInterface(identifier persistence.InterfaceIdentifier) er
 	}
 
 	return nil
+}
+
+// PrepareFreshPeer creates a new persistence.PeerConfig with prefilled keys and IP addresses.
+func (b *PersistentBackend) PrepareFreshPeer(identifier persistence.InterfaceIdentifier) (*persistence.PeerConfig, error) {
+	return nil, nil // TODO: implement
+}
+
+// GetPeersForUser returns all peers for the given user.
+func (b *PersistentBackend) GetPeersForUser(identifier persistence.UserIdentifier) ([]*persistence.PeerConfig, error) {
+	return nil, nil // TODO: implement
 }

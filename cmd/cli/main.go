@@ -19,7 +19,7 @@ const (
 	interfaceFlag = "interface"
 )
 
-var backend *portal.Backend
+var backend portal.Backend
 
 var globalFlags = []cli.Flag{
 	&cli.StringFlag{
@@ -137,7 +137,7 @@ var commands = []*cli.Command{
 			}
 			importIdentifier := strings.TrimSpace(c.Args().Get(0))
 
-			err := backend.ImportInterface(persistence.InterfaceIdentifier(importIdentifier))
+			err := backend.ImportInterfaceById(persistence.InterfaceIdentifier(importIdentifier))
 			if err != nil {
 				return err
 			}
@@ -167,7 +167,7 @@ func main() {
 			return errors.WithMessagef(err, "failed to initialize persistent store")
 		}
 
-		backend, err = portal.NewBackend(database)
+		backend, err = portal.NewPersistentBackend(database)
 		if err != nil {
 			return errors.WithMessagef(err, "backend failed to initialize")
 		}

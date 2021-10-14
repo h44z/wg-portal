@@ -25,8 +25,8 @@ const (
 type DatabaseFilterCondition func(tx *gorm.DB) *gorm.DB
 
 type DatabaseConfig struct {
-	Type SupportedDatabase
-	DSN  string // On SQLite: the database file-path, otherwise the dsn (see: https://gorm.io/docs/connecting_to_the_database.html)
+	Type SupportedDatabase `yaml:"type" envconfig:"DB_TYPE"`
+	DSN  string            `yaml:"dsn" envconfig:"DB_DSN"` // On SQLite: the database file-path, otherwise the dsn (see: https://gorm.io/docs/connecting_to_the_database.html)
 }
 
 type Database struct {

@@ -3,10 +3,14 @@ module github.com/h44z/wg-portal
 go 1.16
 
 require (
+	github.com/gin-contrib/sessions v0.0.3
+	github.com/gin-gonic/gin v1.7.4
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.7.0
+	github.com/toorop/gin-logrus v0.0.0-20210225092905-2c785434f26f
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/vishvananda/netlink v1.1.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
