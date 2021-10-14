@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+
+	gldap "github.com/go-ldap/ldap/v3"
 )
 
 var ErrInvalidSpecification = errors.New("specification must be a struct pointer")
@@ -129,6 +131,10 @@ func NewConfig() *Config {
 	err = loadConfigEnv(cfg)
 	if err != nil {
 		logrus.Warnf("unable to load environment config: %v", err)
+	}
+	cfg.LDAP.AdminLdapGroup_, err = gldap.ParseDN(cfg.LDAP.AdminLdapGroup)
+	if err != nil {
+		logrus.Warnf("Parsing AdminLDAPGroup failed: %v", err)
 	}
 
 	if cfg.WG.ManageIPAddresses && runtime.GOOS != "linux" {
