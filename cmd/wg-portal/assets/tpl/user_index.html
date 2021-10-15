@@ -30,7 +30,7 @@
                 </thead>
                 <tbody>
                 {{range $i, $p :=.Peers}}
-                    {{$peerUser:=(userForEmail $.Users $p.Email)}}
+                    {{$peerUser:=$p.Email}}
                     <tr id="user-pos-{{$i}}" {{if $p.DeactivatedAt}}class="disabled-peer"{{end}}>
                         <th scope="row" class="list-image-cell">
                             <a href="#{{$p.UID}}" data-toggle="collapse" class="collapse-indicator collapsed"></a>

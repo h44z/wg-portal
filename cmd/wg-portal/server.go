@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"io/ioutil"
@@ -92,12 +93,16 @@ func (s *server) setupGin() error {
 	})
 	s.server.Use(sessions.Sessions("authsession", cookieStore))
 	s.server.SetFuncMap(template.FuncMap{
-		"urlEncode":  url.QueryEscape,
-		"startsWith": strings.HasPrefix,
+		"formatBytes": byteCountSI,
+		"urlEncode":   url.QueryEscape,
+		"startsWith":  strings.HasPrefix,
 	})
 
 	// Setup templates
-	templates := template.Must(template.New("").Funcs(s.server.FuncMap).ParseFS(Templates, "assets/tpl/*.html"))
+	templates, err := template.New("").Funcs(s.server.FuncMap).ParseFS(Templates, "assets/tpl/*.html")
+	if err != nil {
+		return errors.WithMessage(err, "failed to parse templates")
+	}
 	s.server.SetHTMLTemplate(templates)
 
 	// Serve static files
@@ -105,6 +110,7 @@ func (s *server) setupGin() error {
 	s.server.StaticFS("/js", http.FS(fsMust(fs.Sub(Statics, "assets/js"))))
 	s.server.StaticFS("/img", http.FS(fsMust(fs.Sub(Statics, "assets/img"))))
 	s.server.StaticFS("/fonts", http.FS(fsMust(fs.Sub(Statics, "assets/fonts"))))
+	//s.server.StaticFS("/tpl", http.FS(fsMust(fs.Sub(Templates, "assets/tpl")))) // TODO: remove, just for debugging...
 
 	return nil
 }
@@ -145,4 +151,19 @@ func fsMust(f fs.FS, err error) fs.FS {
 		panic(err)
 	}
 	return f
+}
+
+// https://yourbasic.org/golang/formatting-byte-size-to-human-readable-format/
+func byteCountSI(b int64) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "kMGTPE"[exp])
 }

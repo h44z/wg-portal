@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/h44z/wg-portal/internal/persistence"
+
 	"github.com/h44z/wg-portal/cmd/wg-portal/common"
 
 	"github.com/sirupsen/logrus"
@@ -39,7 +41,18 @@ func main() {
 func entrypoint(ctx context.Context, cancel context.CancelFunc) {
 	defer cancel() // quit program if main entrypoint ends
 
-	cfg := &common.Config{} // TODO: load config
+	cfg := &common.Config{
+		Database: persistence.DatabaseConfig{
+			Type: "sqlite",
+			DSN:  "sqlite.db",
+		},
+	}
+	cfg.Core.ListeningAddress = ":8080"
+	cfg.Core.GinDebug = true
+	cfg.Core.LogLevel = "trace"
+	cfg.Core.CompanyName = "Test Company"
+	cfg.Core.LogoUrl = "/img/header-logo.png"
+	// TODO: load config
 
 	srv, err := NewServer(cfg)
 	if err != nil {

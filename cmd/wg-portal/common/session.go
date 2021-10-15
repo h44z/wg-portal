@@ -12,13 +12,13 @@ func init() {
 }
 
 type SessionData struct {
-	LoggedIn       bool
-	IsAdmin        bool
-	UserIdentifier persistence.UserIdentifier
-	Firstname      string
-	Lastname       string
-	Email          string
-	DeviceName     string
+	LoggedIn            bool
+	IsAdmin             bool
+	UserIdentifier      persistence.UserIdentifier
+	Firstname           string
+	Lastname            string
+	Email               string
+	InterfaceIdentifier persistence.InterfaceIdentifier
 
 	SortedBy      map[string]string
 	SortDirection map[string]string
