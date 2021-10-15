@@ -12,6 +12,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/toorop/gin-logrus v0.0.0-20210225092905-2c785434f26f
 	github.com/urfave/cli/v2 v2.3.0
+	github.com/utrack/gin-csrf v0.0.0-20190424104817-40fb8d2c8fca
 	github.com/vishvananda/netlink v1.1.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect

@@ -6,6 +6,7 @@ import (
 	"github.com/h44z/wg-portal/cmd/wg-portal/common"
 	"github.com/h44z/wg-portal/internal/portal"
 	"github.com/sirupsen/logrus"
+	csrf "github.com/utrack/gin-csrf"
 )
 
 type Handler struct {
@@ -23,7 +24,27 @@ func NewHandler(config *common.Config, backend portal.Backend) (*Handler, error)
 }
 
 func (h *Handler) RegisterRoutes(g *gin.Engine) {
+	csrfMiddleware := csrf.Middleware(csrf.Options{
+		Secret: h.config.Core.SessionSecret,
+		ErrorFunc: func(c *gin.Context) {
+			c.String(400, "CSRF token mismatch")
+			c.Abort()
+		},
+	})
+
+	// Entrypoint
 	g.GET("/", h.GetIndex)
+
+	// Auth routes
+	auth := g.Group("/auth")
+	auth.Use(csrfMiddleware)
+	auth.GET("/login", h.GetLogin)
+	//auth.POST("/login", s.PostLogin)
+	//auth.GET("/logout", s.GetLogout)
+
+	// Admin routes
+
+	// User routes
 }
 
 //
@@ -48,6 +69,7 @@ func GetSessionData(c *gin.Context) common.SessionData {
 	if rawSessionData != nil {
 		sessionData = rawSessionData.(common.SessionData)
 	} else {
+		// init a new default session
 		sessionData = common.SessionData{
 			Search:              map[string]string{"peers": "", "userpeers": "", "users": ""},
 			SortedBy:            map[string]string{"peers": "handshake", "userpeers": "id", "users": "email"},

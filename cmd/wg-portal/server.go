@@ -112,6 +112,15 @@ func (s *server) setupGin() error {
 	s.server.StaticFS("/fonts", http.FS(fsMust(fs.Sub(Statics, "assets/fonts"))))
 	//s.server.StaticFS("/tpl", http.FS(fsMust(fs.Sub(Templates, "assets/tpl")))) // TODO: remove, just for debugging...
 
+	s.server.GET("/favicon.ico", func(c *gin.Context) {
+		file, _ := Statics.ReadFile("assets/img/favicon.ico")
+		c.Data(
+			http.StatusOK,
+			"image/x-icon",
+			file,
+		)
+	})
+
 	return nil
 }
 
