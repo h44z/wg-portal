@@ -52,6 +52,14 @@ func entrypoint(ctx context.Context, cancel context.CancelFunc) {
 	cfg.Core.LogLevel = "trace"
 	cfg.Core.CompanyName = "Test Company"
 	cfg.Core.LogoUrl = "/img/header-logo.png"
+
+	cfg.Auth.OpenIDConnect = []common.OpenIDConnectProvider{
+		{
+			ProviderName: "google",
+			DisplayName:  "Login with</br>Google",
+			BaseUrl:      "https://accounts.google.com",
+		},
+	}
 	// TODO: load config
 
 	srv, err := NewServer(cfg)

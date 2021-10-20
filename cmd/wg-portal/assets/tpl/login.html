@@ -21,38 +21,60 @@
         </div><!--/.container-fluid -->
     </nav>
     <div class="container-sm mt-5 flex-shrink-0">
-        <div class="card mt-5">
-            <div class="card-header">Please sign in</div>
-            <div class="card-body">
-                <form method="post">
-                    <fieldset>
-                        <input type="hidden" name="_csrf" value="{{.Csrf}}">
-                        <input type="hidden" name="_dl" value="{{.DeepLink}}">
-                        <div class="form-group">
-                            <label for="inputUsername" class="form-label">Username</label>
-                            <input type="text" name="username" class="form-control" id="inputUsername" aria-describedby="usernameHelp" placeholder="Enter username">
-                            <small id="usernameHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPassword" class="form-label">Password</label>
-                            <input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password">
-                        </div>
-                        <button class="btn btn-lg btn-primary btn-block mt-5" type="submit">Sign in</button>
+        <div class="row">
+            <div class="col-lg-3"></div>
+            <div class="col-lg-6">
+                <div class="card mt-6">
+                    <div class="card-header">Please sign in <div class="float-end"><a href="/" title="Open Landing-Page"><i class="fas fa-times-circle"></i></a></div></div>
+                    <div class="card-body">
+                        <form method="post">
+                            <fieldset>
+                                <input type="hidden" name="_csrf" value="{{.Csrf}}">
+                                <input type="hidden" name="_dl" value="{{.DeepLink}}">
+                                <div class="form-group">
+                                    <label for="inputUsername" class="form-label">Username</label>
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text"><span class="far fa-user p-2"></span></span>
+                                        <input type="text" name="username" class="form-control" id="inputUsername" aria-describedby="usernameHelp" placeholder="Enter username">
+                                    </div>
+                                    <!--small id="usernameHelp" class="form-text text-muted">We'll never share your email with anyone else.</small-->
+                                </div>
+                                <div class="form-group">
+                                    <label for="inputPassword" class="form-label">Password</label>
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text"><span class="fas fa-lock p-2"></span></span>
+                                        <input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password">
+                                    </div>
+                                </div>
 
-                        {{ if eq .HasError true }}
-                            <div class="alert alert-danger mt-3" role="alert">
-                                {{.Message}}
-                            </div>
-                        {{end}}
-                    </fieldset>
-                </form>
+                                <div class="row mt-5 d-flex">
+                                    <div class="col-lg-4 d-flex mb-2">
+                                        <button class="btn btn-primary flex-fill" type="submit">Sign in</button>
+                                    </div>
+                                    <div class="col-lg-8 d-flex mb-2">
+                                        <!-- OpenIdConnect / OAUTH providers -->
+                                        {{range $idx, $prov := $.LoginProviders}}
+                                        {{with ne $idx 0}}
+                                        <div class="m-1"></div>
+                                        {{end}}
+                                        <a href="{{$prov.Url}}" class="btn btn-outline-primary flex-fill" title="Login with: {{$prov.Name}}">{{$prov.Name}}</a>
+                                        {{end}}
+                                    </div>
+                                </div>
 
-                <div class="card o-hidden border-0 my-5">
-                    <div class="card-body p-0">
-                        <a href="/" class="btn btn-white btn-block text-primary btn-user">Go Home</a>
+                                {{ if eq .HasError true }}
+                                <div class="alert alert-danger mt-3" role="alert">
+                                    {{.Message}}
+                                </div>
+                                {{end}}
+                            </fieldset>
+                        </form>
+
+
                     </div>
                 </div>
             </div>
+            <div class="col-lg-4"></div>
         </div>
         {{template "prt_flashes.html" .}}
     </div>

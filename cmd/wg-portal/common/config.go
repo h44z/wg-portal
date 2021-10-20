@@ -5,6 +5,51 @@ import (
 	"github.com/h44z/wg-portal/internal/portal"
 )
 
+type OpenIDConnectProvider struct {
+	// ProviderName is an internal name that is used to distinguish oauth endpoints. It must not contain spaces or special characters.
+	ProviderName string
+
+	// DisplayName is shown to the user on the login page. If it is empty, ProviderName will be displayed.
+	DisplayName string
+
+	BaseUrl string
+
+	// ClientID is the application's ID.
+	ClientID string
+
+	// ClientSecret is the application's secret.
+	ClientSecret string
+
+	Scopes []string
+}
+
+type OAuthProvider struct {
+	// ProviderName is an internal name that is used to distinguish oauth endpoints. It must not contain spaces or special characters.
+	ProviderName string
+
+	// DisplayName is shown to the user on the login page. If it is empty, ProviderName will be displayed.
+	DisplayName string
+
+	BaseUrl string
+
+	// ClientID is the application's ID.
+	ClientID string
+
+	// ClientSecret is the application's secret.
+	ClientSecret string
+
+	AuthURL     string
+	TokenURL    string
+	UserInfoURL string
+
+	// RedirectURL is the URL to redirect users going through
+	// the OAuth flow, after the resource owner's URLs.
+	RedirectURL string
+
+	// Scope specifies optional requested permissions.
+	Scopes []string
+}
+
 type Config struct {
 	Core struct {
 		GinDebug bool   `yaml:"ginDebug" envconfig:"GIN_DEBUG"`
@@ -27,6 +72,11 @@ type Config struct {
 		LdapEnabled             bool   `yaml:"ldapEnabled" envconfig:"LDAP_ENABLED"`
 		LogoUrl                 string `yaml:"logoUrl" envconfig:"LOGO_URL"`
 	} `yaml:"core"`
+
+	Auth struct {
+		OpenIDConnect []OpenIDConnectProvider `yaml:"openIdCconnect"`
+		OAuth         []OAuthProvider         `yaml:"oauth"`
+	} `yaml:"auth"`
 
 	Mail     portal.MailConfig          `yaml:"email"`
 	Database persistence.DatabaseConfig `yaml:"database"`
