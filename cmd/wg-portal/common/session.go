@@ -12,6 +12,8 @@ func init() {
 }
 
 type SessionData struct {
+	OauthState          string // oauth state
+	OidcNonce           string // oidc id token nonce
 	LoggedIn            bool
 	IsAdmin             bool
 	UserIdentifier      persistence.UserIdentifier

@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/coreos/go-oidc"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/cmd/wg-portal/common"
@@ -30,7 +30,8 @@ type Handler struct {
 	backend           portal.Backend
 	authProviderNames map[string]AuthProviderType
 	oidcProviders     map[string]*oidc.Provider
-	oauthConfigs      map[string]oauth2.Config
+	oidcVerifiers     map[string]*oidc.IDTokenVerifier
+	oauthConfigs      map[string]*oauth2.Config
 }
 
 func NewHandler(config *common.Config, backend portal.Backend) (*Handler, error) {
@@ -39,48 +40,61 @@ func NewHandler(config *common.Config, backend portal.Backend) (*Handler, error)
 		backend:           backend,
 		authProviderNames: make(map[string]AuthProviderType),
 		oidcProviders:     make(map[string]*oidc.Provider),
-		oauthConfigs:      make(map[string]oauth2.Config),
+		oidcVerifiers:     make(map[string]*oidc.IDTokenVerifier),
+		oauthConfigs:      make(map[string]*oauth2.Config),
 	}
 
-	extUrl, err := url.Parse(config.Core.ExternalUrl)
+	err := h.setupAuthProviders()
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to parse external url")
+		return nil, errors.WithMessage(err, "failed to setup authentication providers")
+	}
+
+	return h, nil
+}
+
+func (h *Handler) setupAuthProviders() error {
+	extUrl, err := url.Parse(h.config.Core.ExternalUrl)
+	if err != nil {
+		return errors.WithMessage(err, "failed to parse external url")
 	}
 
 	for _, provider := range h.config.Auth.OpenIDConnect {
 		if _, exists := h.authProviderNames[provider.ProviderName]; exists {
-			return nil, errors.Errorf("auth provider with name %s is already registerd", provider.ProviderName)
+			return errors.Errorf("auth provider with name %s is already registerd", provider.ProviderName)
 		}
 		h.authProviderNames[provider.ProviderName] = AuthProviderTypeOpenIDConnect
 
 		var err error
 		h.oidcProviders[provider.ProviderName], err = oidc.NewProvider(context.Background(), provider.BaseUrl)
 		if err != nil {
-			return nil, errors.WithMessagef(err, "failed to setup oidc provider %s", provider.ProviderName)
+			return errors.WithMessagef(err, "failed to setup oidc provider %s", provider.ProviderName)
 		}
+		h.oidcVerifiers[provider.ProviderName] = h.oidcProviders[provider.ProviderName].Verifier(&oidc.Config{
+			ClientID: provider.ClientID,
+		})
 
-		redirecUrl := *extUrl
-		redirecUrl.Path = path.Join(redirecUrl.Path, "/auth/login/", provider.ProviderName, "/callback")
+		redirectUrl := *extUrl
+		redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", provider.ProviderName, "/callback")
 		scopes := []string{oidc.ScopeOpenID}
 		scopes = append(scopes, provider.Scopes...)
-		h.oauthConfigs[provider.ProviderName] = oauth2.Config{
+		h.oauthConfigs[provider.ProviderName] = &oauth2.Config{
 			ClientID:     provider.ClientID,
 			ClientSecret: provider.ClientSecret,
 			Endpoint:     h.oidcProviders[provider.ProviderName].Endpoint(),
-			RedirectURL:  redirecUrl.String(),
+			RedirectURL:  redirectUrl.String(),
 			Scopes:       scopes,
 		}
 	}
 	for _, provider := range h.config.Auth.OAuth {
 		if _, exists := h.authProviderNames[provider.ProviderName]; exists {
-			return nil, errors.Errorf("auth provider with name %s is already registerd", provider.ProviderName)
+			return errors.Errorf("auth provider with name %s is already registerd", provider.ProviderName)
 		}
 		h.authProviderNames[provider.ProviderName] = AuthProviderTypeOAuth
 
 		// TODO
 	}
 
-	return h, nil
+	return nil
 }
 
 func (h *Handler) RegisterRoutes(g *gin.Engine) {

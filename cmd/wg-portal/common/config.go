@@ -5,6 +5,14 @@ import (
 	"github.com/h44z/wg-portal/internal/portal"
 )
 
+type OauthFields struct {
+	UserIdentifier string
+	Email          string
+	Firstname      string
+	Lastname       string
+	IsAdmin        string
+}
+
 type OpenIDConnectProvider struct {
 	// ProviderName is an internal name that is used to distinguish oauth endpoints. It must not contain spaces or special characters.
 	ProviderName string
@@ -21,6 +29,8 @@ type OpenIDConnectProvider struct {
 	ClientSecret string
 
 	Scopes []string
+
+	FieldMap OauthFields
 }
 
 type OAuthProvider struct {
@@ -48,6 +58,9 @@ type OAuthProvider struct {
 
 	// Scope specifies optional requested permissions.
 	Scopes []string
+
+	// Fielmap contains
+	FieldMap OauthFields
 }
 
 type Config struct {

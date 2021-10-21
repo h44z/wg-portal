@@ -1,10 +1,17 @@
 package ui
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"html/template"
+	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/h44z/wg-portal/internal/persistence"
+
+	"github.com/coreos/go-oidc/v3/oidc"
 
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal"
@@ -119,23 +126,102 @@ func (h *Handler) PostLogin(c *gin.Context) {
 }
 
 func (h *Handler) GetLoginOauth(c *gin.Context) {
-	currentSession := GetSessionData(c)
-	if currentSession.LoggedIn {
-		c.Redirect(http.StatusSeeOther, "/") // already logged in
-	}
-
 	provider := c.Param("provider")
 	if _, ok := h.authProviderNames[provider]; !ok {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=invalidprovider")
 		return
 	}
 
+	currentSession := GetSessionData(c)
+	if currentSession.LoggedIn {
+		c.Redirect(http.StatusSeeOther, "/") // already logged in
+	}
+
+	// Prepare authentication flow, set state cookies
+	state, err := randString(16)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/auth/login?err=randsrcunavailable")
+		return
+	}
+	currentSession.OauthState = state
+
 	switch h.authProviderNames[provider] {
 	case AuthProviderTypeOAuth:
+		c.Redirect(http.StatusFound, h.oauthConfigs[provider].AuthCodeURL(state))
+		return
 	case AuthProviderTypeOpenIDConnect:
+		nonce, err := randString(16)
+		if err != nil {
+			c.Redirect(http.StatusSeeOther, "/auth/login?err=randsrcunavailable")
+			return
+		}
+		currentSession.OidcNonce = nonce
+
+		c.Redirect(http.StatusFound, h.oauthConfigs[provider].AuthCodeURL(state, oidc.Nonce(nonce)))
+		return
 	}
 }
 
 func (h *Handler) GetLoginOauthCallback(c *gin.Context) {
-	//code := c.PostForm("code")
+	provider := c.Param("provider")
+	if _, ok := h.authProviderNames[provider]; !ok {
+		c.Redirect(http.StatusSeeOther, "/auth/login?err=invalidprovider")
+		return
+	}
+
+	currentSession := GetSessionData(c)
+	ctx := c.Request.Context()
+
+	if state := c.Query("state"); state != currentSession.OauthState {
+		c.Redirect(http.StatusSeeOther, "/auth/login?err=invalidstate")
+		return
+	}
+
+	oauth2Token, err := h.oauthConfigs[provider].Exchange(ctx, c.Query("code"))
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/auth/login?err=tokenexchange")
+		return
+	}
+
+	switch h.authProviderNames[provider] {
+	case AuthProviderTypeOAuth:
+		// TODO
+	case AuthProviderTypeOpenIDConnect:
+		rawIDToken, ok := oauth2Token.Extra("id_token").(string)
+		if !ok {
+			c.Redirect(http.StatusSeeOther, "/auth/login?err=missingidtoken")
+			return
+		}
+		idToken, err := h.oidcVerifiers[provider].Verify(ctx, rawIDToken)
+		if err != nil {
+			c.Redirect(http.StatusSeeOther, "/auth/login?err=idtokeninvalid")
+			return
+		}
+		if idToken.Nonce != currentSession.OidcNonce {
+			c.Redirect(http.StatusSeeOther, "/auth/login?err=idtokennonce")
+			return
+		}
+
+		// TODO: check if user exists in db, if not, maybe create? (if registration is allowed)
+
+		currentSession.LoggedIn = true
+		currentSession.UserIdentifier = persistence.UserIdentifier(idToken.Subject)
+
+		var extraFields map[string]interface{}
+		if err = idToken.Claims(&extraFields); err != nil {
+			c.Redirect(http.StatusSeeOther, "/auth/login?err=claimsparsing")
+			return
+		}
+
+		// TODO: use FieldMap to get extra fields
+		//currentSession.Email = extraFields[mappedName]
+	}
+}
+
+func randString(nByte int) (string, error) {
+	b := make([]byte, nByte)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
