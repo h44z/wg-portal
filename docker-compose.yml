@@ -4,6 +4,10 @@ services:
     image: h44z/wg-portal:1.0.6
     container_name: wg-portal
     restart: unless-stopped
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     cap_add:
       - NET_ADMIN
     network_mode: "host"
