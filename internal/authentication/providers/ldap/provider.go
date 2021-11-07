@@ -157,20 +157,20 @@ func (provider Provider) open() (*ldap.Conn, error) {
 	tlsConfig := &tls.Config{InsecureSkipVerify: !provider.config.CertValidation}
 	conn, err := ldap.DialURL(provider.config.URL, ldap.DialWithTLSConfig(tlsConfig))
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "failed to connect to LDAP")
 	}
 
 	if provider.config.StartTLS {
 		// Reconnect with TLS
 		err = conn.StartTLS(tlsConfig)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithMessage(err, "failed to start TLS session")
 		}
 	}
 
 	err = conn.Bind(provider.config.BindUser, provider.config.BindPass)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "failed to bind user")
 	}
 
 	return conn, nil
