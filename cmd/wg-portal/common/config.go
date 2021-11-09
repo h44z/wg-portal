@@ -13,6 +13,9 @@ type OauthFields struct {
 	IsAdmin        string
 }
 
+type LdapAuthProvider struct {
+}
+
 type OpenIDConnectProvider struct {
 	// ProviderName is an internal name that is used to distinguish oauth endpoints. It must not contain spaces or special characters.
 	ProviderName string
@@ -28,7 +31,7 @@ type OpenIDConnectProvider struct {
 	// ClientSecret is the application's secret.
 	ClientSecret string
 
-	Scopes []string
+	ExtraScopes []string
 
 	FieldMap OauthFields
 }
@@ -89,6 +92,7 @@ type Config struct {
 	Auth struct {
 		OpenIDConnect []OpenIDConnectProvider `yaml:"openIdCconnect"`
 		OAuth         []OAuthProvider         `yaml:"oauth"`
+		Ldap          []LdapAuthProvider      `yaml:"ldap"`
 	} `yaml:"auth"`
 
 	Mail     portal.MailConfig          `yaml:"email"`

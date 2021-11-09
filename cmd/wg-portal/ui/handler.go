@@ -4,10 +4,9 @@ import (
 	"context"
 	"net/url"
 	"path"
+	"strings"
+	"time"
 
-	"golang.org/x/oauth2"
-
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/cmd/wg-portal/common"
@@ -17,34 +16,23 @@ import (
 	csrf "github.com/utrack/gin-csrf"
 )
 
-type AuthProviderType string
-
-const (
-	AuthProviderTypeOAuth         = "oauth"
-	AuthProviderTypeOpenIDConnect = "oidc"
-)
-
 type Handler struct {
 	config *common.Config
 
-	backend           portal.Backend
-	authProviderNames map[string]AuthProviderType
-	oidcProviders     map[string]*oidc.Provider
-	oidcVerifiers     map[string]*oidc.IDTokenVerifier
-	oauthConfigs      map[string]*oauth2.Config
+	backend             portal.Backend
+	oauthAuthenticators map[string]common.Authenticator
 }
 
 func NewHandler(config *common.Config, backend portal.Backend) (*Handler, error) {
 	h := &Handler{
-		config:            config,
-		backend:           backend,
-		authProviderNames: make(map[string]AuthProviderType),
-		oidcProviders:     make(map[string]*oidc.Provider),
-		oidcVerifiers:     make(map[string]*oidc.IDTokenVerifier),
-		oauthConfigs:      make(map[string]*oauth2.Config),
+		config:              config,
+		backend:             backend,
+		oauthAuthenticators: make(map[string]common.Authenticator),
 	}
 
-	err := h.setupAuthProviders()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := h.setupAuthProviders(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to setup authentication providers")
 	}
@@ -52,46 +40,45 @@ func NewHandler(config *common.Config, backend portal.Backend) (*Handler, error)
 	return h, nil
 }
 
-func (h *Handler) setupAuthProviders() error {
+func (h *Handler) setupAuthProviders(ctx context.Context) error {
 	extUrl, err := url.Parse(h.config.Core.ExternalUrl)
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse external url")
 	}
 
-	for _, provider := range h.config.Auth.OpenIDConnect {
-		if _, exists := h.authProviderNames[provider.ProviderName]; exists {
-			return errors.Errorf("auth provider with name %s is already registerd", provider.ProviderName)
-		}
-		h.authProviderNames[provider.ProviderName] = AuthProviderTypeOpenIDConnect
+	for i := range h.config.Auth.OpenIDConnect {
+		providerCfg := &h.config.Auth.OpenIDConnect[i]
+		providerId := strings.ToLower(providerCfg.ProviderName)
 
-		var err error
-		h.oidcProviders[provider.ProviderName], err = oidc.NewProvider(context.Background(), provider.BaseUrl)
-		if err != nil {
-			return errors.WithMessagef(err, "failed to setup oidc provider %s", provider.ProviderName)
+		if _, exists := h.oauthAuthenticators[providerId]; exists {
+			return errors.Errorf("auth provider with name %s is already registerd", providerId)
 		}
-		h.oidcVerifiers[provider.ProviderName] = h.oidcProviders[provider.ProviderName].Verifier(&oidc.Config{
-			ClientID: provider.ClientID,
-		})
 
 		redirectUrl := *extUrl
-		redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", provider.ProviderName, "/callback")
-		scopes := []string{oidc.ScopeOpenID}
-		scopes = append(scopes, provider.Scopes...)
-		h.oauthConfigs[provider.ProviderName] = &oauth2.Config{
-			ClientID:     provider.ClientID,
-			ClientSecret: provider.ClientSecret,
-			Endpoint:     h.oidcProviders[provider.ProviderName].Endpoint(),
-			RedirectURL:  redirectUrl.String(),
-			Scopes:       scopes,
-		}
-	}
-	for _, provider := range h.config.Auth.OAuth {
-		if _, exists := h.authProviderNames[provider.ProviderName]; exists {
-			return errors.Errorf("auth provider with name %s is already registerd", provider.ProviderName)
-		}
-		h.authProviderNames[provider.ProviderName] = AuthProviderTypeOAuth
+		redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", providerId, "/callback")
 
-		// TODO
+		authenticator, err := common.NewOidcAuthenticator(ctx, redirectUrl.String(), providerCfg)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to setup oidc authentication provider %s", providerCfg.ProviderName)
+		}
+		h.oauthAuthenticators[providerId] = authenticator
+	}
+	for i := range h.config.Auth.OAuth {
+		providerCfg := &h.config.Auth.OAuth[i]
+		providerId := strings.ToLower(providerCfg.ProviderName)
+
+		if _, exists := h.oauthAuthenticators[providerId]; exists {
+			return errors.Errorf("auth provider with name %s is already registerd", providerId)
+		}
+
+		redirectUrl := *extUrl
+		redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", providerId, "/callback")
+
+		authenticator, err := common.NewPlainOauthAuthenticator(ctx, redirectUrl.String(), providerCfg)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to setup oauth authentication provider %s", providerId)
+		}
+		h.oauthAuthenticators[providerId] = authenticator
 	}
 
 	return nil
@@ -179,4 +166,24 @@ func GetFlashes(c *gin.Context) []common.FlashData {
 	}
 
 	return flashData
+}
+
+func UpdateSessionData(c *gin.Context, data common.SessionData) error {
+	session := sessions.Default(c)
+	session.Set(SessionIdentifier, data)
+	if err := session.Save(); err != nil {
+		logrus.Errorf("failed to store session: %v", err)
+		return errors.Wrap(err, "failed to store session")
+	}
+	return nil
+}
+
+func DestroySessionData(c *gin.Context) error {
+	session := sessions.Default(c)
+	session.Delete(SessionIdentifier)
+	if err := session.Save(); err != nil {
+		logrus.Errorf("failed to destroy session: %v", err)
+		return errors.Wrap(err, "failed to destroy session")
+	}
+	return nil
 }

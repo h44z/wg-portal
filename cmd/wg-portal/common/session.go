@@ -12,6 +12,7 @@ func init() {
 }
 
 type SessionData struct {
+	AuthBackend         string
 	OauthState          string // oauth state
 	OidcNonce           string // oidc id token nonce
 	LoggedIn            bool

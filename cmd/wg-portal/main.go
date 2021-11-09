@@ -41,6 +41,7 @@ func main() {
 func entrypoint(ctx context.Context, cancel context.CancelFunc) {
 	defer cancel() // quit program if main entrypoint ends
 
+	// default config, TODO: implement
 	cfg := &common.Config{
 		Database: persistence.DatabaseConfig{
 			Type: "sqlite",
@@ -48,6 +49,7 @@ func entrypoint(ctx context.Context, cancel context.CancelFunc) {
 		},
 	}
 	cfg.Core.ListeningAddress = ":8080"
+	cfg.Core.ExternalUrl = "http://localhost:8080"
 	cfg.Core.GinDebug = true
 	cfg.Core.LogLevel = "trace"
 	cfg.Core.CompanyName = "Test Company"
@@ -58,6 +60,9 @@ func entrypoint(ctx context.Context, cancel context.CancelFunc) {
 			ProviderName: "google",
 			DisplayName:  "Login with</br>Google",
 			BaseUrl:      "https://accounts.google.com",
+			ClientID:     "XXXX.apps.googleusercontent.com",
+			ClientSecret: "XXXX",
+			ExtraScopes:  []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
 		},
 	}
 	// TODO: load config
