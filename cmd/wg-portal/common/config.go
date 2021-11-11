@@ -10,6 +10,8 @@ type OauthFields struct {
 	Email          string
 	Firstname      string
 	Lastname       string
+	Phone          string
+	Department     string
 	IsAdmin        string
 }
 

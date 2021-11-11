@@ -52,7 +52,7 @@ func NewServer(config *common.Config) (*server, error) {
 		return nil, errors.WithMessagef(err, "backend failed to initialize")
 	}
 
-	// Web Handler
+	// Web handler
 	err = s.setupGin()
 	if err != nil {
 		return nil, errors.WithMessagef(err, "backend failed to initialize")
@@ -75,7 +75,7 @@ func NewServer(config *common.Config) (*server, error) {
 }
 
 func (s *server) setupGin() error {
-	// Web Handler
+	// Web handler
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = ioutil.Discard
 	s.server = gin.New()

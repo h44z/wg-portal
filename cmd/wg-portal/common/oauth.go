@@ -3,13 +3,15 @@ package common
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/h44z/wg-portal/internal/persistence"
 	"github.com/pkg/errors"
-
 	"golang.org/x/oauth2"
 )
 
@@ -21,6 +23,13 @@ const (
 )
 
 type AuthenticatorUserInfo struct {
+	Identifier persistence.UserIdentifier
+	Email      string
+	Firstname  string
+	Lastname   string
+	Phone      string
+	Department string
+	IsAdmin    bool
 }
 
 type Authenticator interface {
@@ -36,7 +45,7 @@ type plainOauthAuthenticator struct {
 	cfg              *oauth2.Config
 	userInfoEndpoint string
 	client           *http.Client
-	userInfoMapping  map[string]string
+	userInfoMapping  OauthFields
 }
 
 func NewPlainOauthAuthenticator(_ context.Context, callbackUrl string, cfg *OAuthProvider) (*plainOauthAuthenticator, error) {
@@ -58,6 +67,7 @@ func NewPlainOauthAuthenticator(_ context.Context, callbackUrl string, cfg *OAut
 		Scopes:      cfg.Scopes,
 	}
 	authenticator.userInfoEndpoint = cfg.UserInfoURL
+	authenticator.userInfoMapping = getOauthFieldMapping(cfg.FieldMap)
 
 	return authenticator, nil
 }
@@ -102,7 +112,18 @@ func (p plainOauthAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.
 }
 
 func (p plainOauthAuthenticator) ParseUserInfo(raw map[string]interface{}) (*AuthenticatorUserInfo, error) {
-	return nil, nil // TODO: implement
+	isAdmin, _ := strconv.ParseBool(mapDefaultString(raw, p.userInfoMapping.IsAdmin, ""))
+	userInfo := &AuthenticatorUserInfo{
+		Identifier: persistence.UserIdentifier(mapDefaultString(raw, p.userInfoMapping.UserIdentifier, "")),
+		Email:      mapDefaultString(raw, p.userInfoMapping.Email, ""),
+		Firstname:  mapDefaultString(raw, p.userInfoMapping.Firstname, ""),
+		Lastname:   mapDefaultString(raw, p.userInfoMapping.Lastname, ""),
+		Phone:      mapDefaultString(raw, p.userInfoMapping.Phone, ""),
+		Department: mapDefaultString(raw, p.userInfoMapping.Department, ""),
+		IsAdmin:    isAdmin,
+	}
+
+	return userInfo, nil
 }
 
 type oidcAuthenticator struct {
@@ -110,7 +131,7 @@ type oidcAuthenticator struct {
 	provider        *oidc.Provider
 	verifier        *oidc.IDTokenVerifier
 	cfg             *oauth2.Config
-	userInfoMapping map[string]string
+	userInfoMapping OauthFields
 }
 
 func NewOidcAuthenticator(ctx context.Context, callbackUrl string, cfg *OpenIDConnectProvider) (*oidcAuthenticator, error) {
@@ -135,6 +156,7 @@ func NewOidcAuthenticator(ctx context.Context, callbackUrl string, cfg *OpenIDCo
 		RedirectURL:  callbackUrl,
 		Scopes:       scopes,
 	}
+	authenticator.userInfoMapping = getOauthFieldMapping(cfg.FieldMap)
 
 	return authenticator, nil
 }
@@ -173,5 +195,59 @@ func (o oidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 }
 
 func (o oidcAuthenticator) ParseUserInfo(raw map[string]interface{}) (*AuthenticatorUserInfo, error) {
-	return nil, nil // TODO: implement
+	isAdmin, _ := strconv.ParseBool(mapDefaultString(raw, o.userInfoMapping.IsAdmin, ""))
+	userInfo := &AuthenticatorUserInfo{
+		Identifier: persistence.UserIdentifier(mapDefaultString(raw, o.userInfoMapping.UserIdentifier, "")),
+		Email:      mapDefaultString(raw, o.userInfoMapping.Email, ""),
+		Firstname:  mapDefaultString(raw, o.userInfoMapping.Firstname, ""),
+		Lastname:   mapDefaultString(raw, o.userInfoMapping.Lastname, ""),
+		Phone:      mapDefaultString(raw, o.userInfoMapping.Phone, ""),
+		Department: mapDefaultString(raw, o.userInfoMapping.Department, ""),
+		IsAdmin:    isAdmin,
+	}
+
+	return userInfo, nil
+}
+
+func getOauthFieldMapping(f OauthFields) OauthFields {
+	defaultMap := OauthFields{
+		UserIdentifier: "sub",
+		Email:          "email",
+		Firstname:      "given_name",
+		Lastname:       "family_name",
+		Phone:          "phone",
+		Department:     "department",
+		IsAdmin:        "admin_flag",
+	}
+	switch {
+	case f.UserIdentifier != "":
+		defaultMap.UserIdentifier = f.UserIdentifier
+	case f.Email != "":
+		defaultMap.Email = f.Email
+	case f.Firstname != "":
+		defaultMap.Firstname = f.Firstname
+	case f.Lastname != "":
+		defaultMap.Lastname = f.Lastname
+	case f.Phone != "":
+		defaultMap.Phone = f.Phone
+	case f.Department != "":
+		defaultMap.Department = f.Department
+	case f.IsAdmin != "":
+		defaultMap.IsAdmin = f.IsAdmin
+	}
+
+	return defaultMap
+}
+
+func mapDefaultString(m map[string]interface{}, key string, dflt string) string {
+	if tmp, ok := m[key]; !ok {
+		return dflt
+	} else {
+		switch v := tmp.(type) {
+		case string:
+			return v
+		default:
+			return fmt.Sprintf("%v", v)
+		}
+	}
 }
