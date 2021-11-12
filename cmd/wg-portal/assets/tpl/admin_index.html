@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Theme: https://bootswatch.com/lux/ -->
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ .Static.WebsiteTitle }} - Admin</title>
     <meta name="description" content="{{ .Static.WebsiteTitle }}">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -11,119 +12,125 @@
 </head>
 
 <body id="page-top" class="d-flex flex-column min-vh-100">
-    {{template "prt_nav.html" .}}
-    <div class="container mt-5">
-        <h1>WireGuard VPN Administration</h1>
+{{template "prt_nav.html" .}}
+    <div class="container mt-5 flex-shrink-0">
+        <div class="page-header">
+            <h1>WireGuard VPN Administration</h1>
+        </div>
         {{template "prt_flashes.html" .}}
-        <div class="card">
-            <div class="card-header">
-                <div class="d-flex align-items-center">
-                    <span class="mr-auto">Interface status for <strong>{{.Device.DeviceName}}</strong> {{if eq $.Device.Type "server"}}(server mode){{end}}{{if eq $.Device.Type "client"}}(client mode){{end}}</span>
-                    <a href="/admin/device/write?dev={{.Device.DeviceName}}" title="Write interface configuration"><i class="fas fa-save"></i></a>
-                    &nbsp;&nbsp;&nbsp;
-                    <a href="/admin/device/download?dev={{.Device.DeviceName}}" title="Download interface configuration"><i class="fas fa-download"></i></a>
-                    &nbsp;&nbsp;&nbsp;
-                    <a href="/admin/device/edit?dev={{.Device.DeviceName}}" title="Edit interface settings"><i class="fas fa-cog"></i></a>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card border-secondary mb-4" style="min-height: 15rem;">
+                    <div class="card-header">
+                        Interface status for <strong>{{.Device.DeviceName}}</strong> {{if eq $.Device.Type "server"}}(server mode){{end}}{{if eq $.Device.Type "client"}}(client mode){{end}}
+                        <div class="float-end">
+                            <a href="/admin/device/write?dev={{.Device.DeviceName}}" title="Write interface configuration"><i class="fas fa-save"></i></a>
+                            &nbsp;&nbsp;&nbsp;
+                            <a href="/admin/device/download?dev={{.Device.DeviceName}}" title="Download interface configuration"><i class="fas fa-download"></i></a>
+                            &nbsp;&nbsp;&nbsp;
+                            <a href="/admin/device/edit?dev={{.Device.DeviceName}}" title="Edit interface settings"><i class="fas fa-cog"></i></a>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="row">
+                            {{if eq $.Device.Type "server"}}
+                            <div class="col-sm-6">
+                                <table class="table table-sm table-borderless device-status-table">
+                                    <tbody>
+                                    <tr>
+                                        <td>Public Key:</td>
+                                        <td>{{.Device.PublicKey}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Public Endpoint:</td>
+                                        <td>{{.Device.DefaultEndpoint}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Listening Port:</td>
+                                        <td>{{.Device.ListenPort}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Enabled Peers:</td>
+                                        <td>{{len .Device.Interface.Peers}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total Peers:</td>
+                                        <td>{{.TotalPeers}}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-sm-6">
+                                <table class="table table-sm table-borderless device-status-table">
+                                    <tbody>
+                                    <tr>
+                                        <td>IP Address:</td>
+                                        <td>{{.Device.IPsStr}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Default allowed IP's:</td>
+                                        <td>{{.Device.DefaultAllowedIPsStr}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Default DNS servers:</td>
+                                        <td>{{.Device.DNSStr}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Default MTU:</td>
+                                        <td>{{.Device.Mtu}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Default Keepalive Interval:</td>
+                                        <td>{{.Device.DefaultPersistentKeepalive}}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{end}}
+                            {{if eq $.Device.Type "client"}}
+                            <div class="col-sm-6">
+                                <table class="table table-sm table-borderless device-status-table">
+                                    <tbody>
+                                    <tr>
+                                        <td>Public Key:</td>
+                                        <td>{{.Device.PublicKey}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Enabled Endpoints:</td>
+                                        <td>{{len .Device.Interface.Peers}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total Endpoints:</td>
+                                        <td>{{.TotalPeers}}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-sm-6">
+                                <table class="table table-sm table-borderless device-status-table">
+                                    <tbody>
+                                    <tr>
+                                        <td>IP Address:</td>
+                                        <td>{{.Device.IPsStr}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>DNS servers:</td>
+                                        <td>{{.Device.DNSStr}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Default MTU:</td>
+                                        <td>{{.Device.Mtu}}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {{if eq $.Device.Type "server"}}
-                    <div class="col-sm-6">
-                        <table class="table table-sm table-borderless device-status-table">
-                            <tbody>
-                            <tr>
-                                <td>Public Key:</td>
-                                <td>{{.Device.PublicKey}}</td>
-                            </tr>
-                            <tr>
-                                <td>Public Endpoint:</td>
-                                <td>{{.Device.DefaultEndpoint}}</td>
-                            </tr>
-                            <tr>
-                                <td>Listening Port:</td>
-                                <td>{{.Device.ListenPort}}</td>
-                            </tr>
-                            <tr>
-                                <td>Enabled Peers:</td>
-                                <td>{{len .Device.Interface.Peers}}</td>
-                            </tr>
-                            <tr>
-                                <td>Total Peers:</td>
-                                <td>{{.TotalPeers}}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="col-sm-6">
-                        <table class="table table-sm table-borderless device-status-table">
-                            <tbody>
-                            <tr>
-                                <td>IP Address:</td>
-                                <td>{{.Device.IPsStr}}</td>
-                            </tr>
-                            <tr>
-                                <td>Default allowed IP's:</td>
-                                <td>{{.Device.DefaultAllowedIPsStr}}</td>
-                            </tr>
-                            <tr>
-                                <td>Default DNS servers:</td>
-                                <td>{{.Device.DNSStr}}</td>
-                            </tr>
-                            <tr>
-                                <td>Default MTU:</td>
-                                <td>{{.Device.Mtu}}</td>
-                            </tr>
-                            <tr>
-                                <td>Default Keepalive Interval:</td>
-                                <td>{{.Device.DefaultPersistentKeepalive}}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    {{end}}
-                    {{if eq $.Device.Type "client"}}
-                    <div class="col-sm-6">
-                        <table class="table table-sm table-borderless device-status-table">
-                            <tbody>
-                            <tr>
-                                <td>Public Key:</td>
-                                <td>{{.Device.PublicKey}}</td>
-                            </tr>
-                            <tr>
-                                <td>Enabled Endpoints:</td>
-                                <td>{{len .Device.Interface.Peers}}</td>
-                            </tr>
-                            <tr>
-                                <td>Total Endpoints:</td>
-                                <td>{{.TotalPeers}}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="col-sm-6">
-                        <table class="table table-sm table-borderless device-status-table">
-                            <tbody>
-                            <tr>
-                                <td>IP Address:</td>
-                                <td>{{.Device.IPsStr}}</td>
-                            </tr>
-                            <tr>
-                                <td>DNS servers:</td>
-                                <td>{{.Device.DNSStr}}</td>
-                            </tr>
-                            <tr>
-                                <td>Default MTU:</td>
-                                <td>{{.Device.Mtu}}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    {{end}}
-                </div>
-
             </div>
         </div>
+
         <div class="mt-4 row">
             <div class="col-sm-8 col-12">
                 {{if eq $.Device.Type "server"}}
@@ -262,11 +269,7 @@
     </div>
     {{template "prt_footer.html" .}}
     <script src="/js/jquery.min.js"></script>
-    <script src="/js/jquery.easing.js"></script>
-    <script src="/js/popper.min.js"></script>
     <script src="/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/bootstrap-confirmation.min.js"></script>
-    <script src="/js/custom.js"></script>
 </body>
 
 </html>

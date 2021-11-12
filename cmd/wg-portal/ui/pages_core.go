@@ -29,7 +29,7 @@ func (h *handler) getStaticData() StaticData {
 	}
 }
 
-func (h *handler) GetIndex() gin.HandlerFunc {
+func (h *handler) handleIndexGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		currentSession := h.session.GetData(c)
 

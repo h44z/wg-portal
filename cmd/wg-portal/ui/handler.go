@@ -2,10 +2,13 @@ package ui
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/h44z/wg-portal/internal/persistence"
 
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/cmd/wg-portal/common"
@@ -100,6 +103,55 @@ func (h *handler) setupAuthProviders(ctx context.Context) error {
 	return nil
 }
 
+func (h *handler) authenticationMiddleware(scope string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := h.session.GetData(c)
+
+		if !session.LoggedIn {
+			session.DeepLink = c.Request.RequestURI
+			h.session.SetData(c, session)
+
+			// Abort the request with the appropriate error code
+			c.Abort()
+			c.Redirect(http.StatusSeeOther, "/auth/login")
+			return
+		}
+
+		if scope == "admin" && !session.IsAdmin {
+			// Abort the request with the appropriate error code
+			c.Abort()
+			c.String(http.StatusUnauthorized, "unauthorized: not enough permissions")
+			return
+		}
+
+		// default case if some random scope was set...
+		if scope != "" && !session.IsAdmin {
+			// Abort the request with the appropriate error code
+			c.Abort()
+			c.String(http.StatusUnauthorized, "unauthorized: not enough permissions")
+			return
+		}
+
+		// Check if logged-in user is still valid
+		if !h.isUserStillValid(session.UserIdentifier) {
+			h.session.DestroyData(c)
+			c.Abort()
+			c.String(http.StatusUnauthorized, "unauthorized: session no longer available")
+			return
+		}
+
+		// Continue down the chain to handler etc
+		c.Next()
+	}
+}
+
+func (h *handler) isUserStillValid(id persistence.UserIdentifier) bool {
+	if _, err := h.backend.GetActiveUser(id); err != nil {
+		return false
+	}
+	return true
+}
+
 func (h *handler) RegisterRoutes(g *gin.Engine) {
 	csrfMiddleware := csrf.Middleware(csrf.Options{
 		Secret: h.config.Core.SessionSecret,
@@ -110,7 +162,7 @@ func (h *handler) RegisterRoutes(g *gin.Engine) {
 	})
 
 	// Entrypoint
-	g.GET("/", h.GetIndex())
+	g.GET("/", h.handleIndexGet())
 
 	// Auth routes
 	auth := g.Group("/auth")
@@ -122,6 +174,11 @@ func (h *handler) RegisterRoutes(g *gin.Engine) {
 	auth.GET("/logout", h.handleLogoutGet())
 
 	// Admin routes
+	admin := g.Group("/admin")
+	admin.Use(csrfMiddleware)
+	admin.Use(h.authenticationMiddleware("admin"))
+	admin.GET("/", h.handleAdminIndexGet())
+	admin.GET("/users", h.handleAdminUserIndexGet())
 
 	// User routes
 }
