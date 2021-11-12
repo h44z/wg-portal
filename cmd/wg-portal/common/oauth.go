@@ -3,7 +3,6 @@ package common
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -257,17 +256,4 @@ func getOauthFieldMapping(f OauthFields) OauthFields {
 	}
 
 	return defaultMap
-}
-
-func mapDefaultString(m map[string]interface{}, key string, dflt string) string {
-	if tmp, ok := m[key]; !ok {
-		return dflt
-	} else {
-		switch v := tmp.(type) {
-		case string:
-			return v
-		default:
-			return fmt.Sprintf("%v", v)
-		}
-	}
 }

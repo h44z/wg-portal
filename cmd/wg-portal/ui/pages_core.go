@@ -135,8 +135,8 @@ func (h *handler) handleLoginPost() gin.HandlerFunc {
 		h.session.SetData(c, authSession)
 
 		nextUrl := "/"
-		if currentSession.DeeplLink != "" {
-			nextUrl = currentSession.DeeplLink
+		if currentSession.DeepLink != "" {
+			nextUrl = currentSession.DeepLink
 		}
 
 		c.Redirect(http.StatusSeeOther, nextUrl)
@@ -233,8 +233,8 @@ func (h *handler) handleLoginGetOauthCallback() gin.HandlerFunc {
 		h.session.SetData(c, sessionData)
 
 		nextUrl := "/"
-		if currentSession.DeeplLink != "" {
-			nextUrl = currentSession.DeeplLink
+		if currentSession.DeepLink != "" {
+			nextUrl = currentSession.DeepLink
 		}
 
 		c.Redirect(http.StatusSeeOther, nextUrl)
@@ -265,7 +265,7 @@ func (h *handler) passwordAuthentication(identifier persistence.UserIdentifier, 
 				Identifier: userInfo.Identifier,
 				Email:      userInfo.Email,
 				Source:     persistence.UserSourceLdap,
-				IsAdmin:    false,
+				IsAdmin:    userInfo.IsAdmin,
 				Firstname:  userInfo.Firstname,
 				Lastname:   userInfo.Lastname,
 				Phone:      userInfo.Phone,

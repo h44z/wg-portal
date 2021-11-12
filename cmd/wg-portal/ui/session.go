@@ -15,7 +15,7 @@ func init() {
 }
 
 type SessionData struct {
-	DeeplLink string // deep link, used to redirect after a successful login
+	DeepLink string // deep link, used to redirect after a successful login
 
 	OauthState string // oauth state
 	OidcNonce  string // oidc id token nonce
@@ -27,15 +27,20 @@ type SessionData struct {
 	Lastname       string
 	Email          string
 
+	// currently selected interface
 	InterfaceIdentifier persistence.InterfaceIdentifier
 
+	// current table sorting
 	SortedBy      map[string]string
 	SortDirection map[string]string
 	Search        map[string]string
 
+	// alert that is printed on top of the page
 	AlertData string
 	AlertType string
-	FormData  interface{}
+
+	// currently filled form data
+	FormData interface{}
 }
 
 type FlashData struct {

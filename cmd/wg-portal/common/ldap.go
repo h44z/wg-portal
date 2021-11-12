@@ -241,6 +241,7 @@ func (l *ldapAuthenticator) disconnect(conn *ldap.Conn) {
 	}
 }
 
+// userIsInAdminGroup checks if the groupData array contains the admin group DN
 func userIsInAdminGroup(groupData [][]byte, adminGroupDN *ldap.DN) (bool, error) {
 	for _, group := range groupData {
 		dn, err := ldap.ParseDN(string(group))
@@ -290,17 +291,4 @@ func getLdapFieldMapping(f LdapFields) LdapFields {
 	}
 
 	return defaultMap
-}
-
-// uniqueStringSlice removes duplicates in the given string slice
-func uniqueStringSlice(slice []string) []string {
-	keys := make(map[string]struct{})
-	uniqueSlice := make([]string, 0, len(slice))
-	for _, entry := range slice {
-		if _, exists := keys[entry]; !exists {
-			keys[entry] = struct{}{}
-			uniqueSlice = append(uniqueSlice, entry)
-		}
-	}
-	return uniqueSlice
 }

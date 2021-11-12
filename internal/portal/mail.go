@@ -17,13 +17,13 @@ const (
 )
 
 type MailConfig struct {
-	Host                 string         `yaml:"host" envconfig:"EMAIL_HOST"`
-	Port                 int            `yaml:"port" envconfig:"EMAIL_PORT"`
-	Encryption           MailEncryption `yaml:"encryption" envconfig:"EMAIL_ENCRYPTION"`
-	CertValidation       bool           `yaml:"certCheck" envconfig:"EMAIL_CERT_VALIDATION"`
-	Username             string         `yaml:"user" envconfig:"EMAIL_USERNAME"`
-	Password             string         `yaml:"pass" envconfig:"EMAIL_PASSWORD"`
-	AuthType             MailAuthType   `yaml:"auth" envconfig:"EMAIL_AUTHTYPE"`
-	MailFrom             string         `yaml:"mailFrom" envconfig:"MAIL_FROM"`
-	IncludeSensitiveData bool           `yaml:"withSensitiveData" envconfig:"EMAIL_INCLUDE_SENSITIVE_DATA"`
+	Host                 string         `yaml:"host"`
+	Port                 int            `yaml:"port"`
+	Encryption           MailEncryption `yaml:"encryption"`
+	CertValidation       bool           `yaml:"cert_validation"`
+	Username             string         `yaml:"user"`
+	Password             string         `yaml:"pass"`
+	AuthType             MailAuthType   `yaml:"auth"`
+	MailFrom             string         `yaml:"mail_from"`
+	IncludeSensitiveData bool           `yaml:"include_sensitive_data"`
 }

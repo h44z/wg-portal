@@ -3,6 +3,8 @@ package common
 import (
 	"os"
 
+	"github.com/pkg/errors"
+
 	"github.com/go-ldap/ldap/v3"
 	"github.com/h44z/wg-portal/internal/persistence"
 	"github.com/h44z/wg-portal/internal/portal"
@@ -42,10 +44,14 @@ type LdapProvider struct {
 	AdminGroupDN string   `yaml:"admin_group"`  // Members of this group receive admin rights in WG-Portal
 	adminGroupDN *ldap.DN `yaml:"-"`
 
-	Synchronize         bool   `yaml:"synchronize"`
-	DeleteMissing       bool   `yaml:"delete_missing"` // if DeleteMissing is false, missing users will be deactivated
-	SyncFilter          string `yaml:"sync_filter"`
-	RegistrationEnabled bool   `yaml:"registration_enabled"`
+	Synchronize bool `yaml:"synchronize"`
+
+	// If DeleteMissing is false, missing users will be deactivated
+	DeleteMissing bool   `yaml:"delete_missing"`
+	SyncFilter    string `yaml:"sync_filter"`
+
+	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.
+	RegistrationEnabled bool `yaml:"registration_enabled"`
 }
 
 type OpenIDConnectProvider struct {
@@ -63,10 +69,13 @@ type OpenIDConnectProvider struct {
 	// ClientSecret is the application's secret.
 	ClientSecret string `yaml:"client_secret"`
 
+	// ExtraScopes specifies optional requested permissions.
 	ExtraScopes []string `yaml:"extra_scopes"`
 
+	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`
 
+	// If RegistrationEnabled is set to true, missing users will be created in the database
 	RegistrationEnabled bool `yaml:"registration_enabled"`
 }
 
@@ -96,7 +105,7 @@ type OAuthProvider struct {
 	// Scope specifies optional requested permissions.
 	Scopes []string `yaml:"scopes"`
 
-	// Fieldmap contains
+	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`
 
 	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.
@@ -105,29 +114,29 @@ type OAuthProvider struct {
 
 type Config struct {
 	Core struct {
-		GinDebug bool   `yaml:"ginDebug"`
-		LogLevel string `yaml:"logLevel"`
+		GinDebug bool   `yaml:"gin_debug"`
+		LogLevel string `yaml:"log_level"`
 
-		ListeningAddress string `yaml:"listeningAddress"`
-		SessionSecret    string `yaml:"sessionSecret"`
+		ListeningAddress string `yaml:"listening_address"`
+		SessionSecret    string `yaml:"session_secret"`
 
-		ExternalUrl string `yaml:"externalUrl"`
+		ExternalUrl string `yaml:"external_url"`
 		Title       string `yaml:"title"`
 		CompanyName string `yaml:"company"`
 
-		// TODO: check...
-		AdminUser     string `yaml:"adminUser"` // must be an email address
-		AdminPassword string `yaml:"adminPass"`
+		// AdminUser defines the default administrator account that will be created
+		AdminUser     string `yaml:"admin_user"` // must be an email address
+		AdminPassword string `yaml:"admin_password"`
 
-		EditableKeys            bool   `yaml:"editableKeys"`
-		CreateDefaultPeer       bool   `yaml:"createDefaultPeer"`
-		SelfProvisioningAllowed bool   `yaml:"selfProvisioning"`
-		LdapEnabled             bool   `yaml:"ldapEnabled"`
-		LogoUrl                 string `yaml:"logoUrl"`
+		EditableKeys            bool   `yaml:"editable_keys"`
+		CreateDefaultPeer       bool   `yaml:"create_default_peer"`
+		SelfProvisioningAllowed bool   `yaml:"self_provisioning_allowed"`
+		LdapEnabled             bool   `yaml:"ldap_enabled"`
+		LogoUrl                 string `yaml:"logo_url"`
 	} `yaml:"core"`
 
 	Auth struct {
-		OpenIDConnect []OpenIDConnectProvider `yaml:"openIdCconnect"`
+		OpenIDConnect []OpenIDConnectProvider `yaml:"oidc"`
 		OAuth         []OAuthProvider         `yaml:"oauth"`
 		Ldap          []LdapProvider          `yaml:"ldap"`
 	} `yaml:"auth"`
@@ -139,14 +148,14 @@ type Config struct {
 func LoadConfigFile(cfg interface{}, filename string) error {
 	f, err := os.Open(filename)
 	if err != nil {
-		return err
+		return errors.WithMessage(err, "failed to open file")
 	}
 	defer f.Close()
 
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(cfg)
 	if err != nil {
-		return err
+		return errors.WithMessage(err, "failed to decode config file")
 	}
 
 	return nil
