@@ -3,7 +3,6 @@ package ui
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -49,25 +48,25 @@ type LoginProviderInfo struct {
 	Url  string
 }
 
+func (h *handler) handleLogoutGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		currentSession := h.session.GetData(c)
+
+		if !currentSession.LoggedIn { // Not logged in
+			c.Redirect(http.StatusSeeOther, "/")
+			return
+		}
+
+		h.session.DestroyData(c)
+		c.Redirect(http.StatusSeeOther, "/")
+	}
+}
+
 func (h *handler) handleLoginGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		currentSession := h.session.GetData(c)
 		if currentSession.LoggedIn {
 			c.Redirect(http.StatusSeeOther, "/") // already logged in
-		}
-
-		deepLink := c.DefaultQuery("dl", "")
-		authError := c.DefaultQuery("err", "")
-		errMsg := "Unknown error occurred, try again!"
-		switch authError {
-		case "missingdata":
-			errMsg = "Invalid login data retrieved, please fill out all fields and try again!"
-		case "authfail":
-			errMsg = "Authentication failed!"
-		case "loginreq":
-			errMsg = "Login required!"
-		case "tokenexchange":
-			errMsg = "Invalid OAuth token!"
 		}
 
 		authProviders := make([]LoginProviderInfo, 0, len(h.config.Auth.OAuth)+len(h.config.Auth.OpenIDConnect))
@@ -95,9 +94,7 @@ func (h *handler) handleLoginGet() gin.HandlerFunc {
 		}
 
 		c.HTML(http.StatusOK, "login.html", gin.H{
-			"HasError":       authError != "",
-			"Message":        errMsg,
-			"DeepLink":       deepLink,
+			"Alerts":         h.session.GetFlashes(c),
 			"Static":         h.getStaticData(),
 			"Csrf":           csrf.GetToken(c),
 			"LoginProviders": authProviders,
@@ -114,7 +111,6 @@ func (h *handler) handleLoginPost() gin.HandlerFunc {
 
 		username := strings.ToLower(c.PostForm("username"))
 		password := c.PostForm("password")
-		deepLink := c.PostForm("_dl")
 
 		// Validate form input
 		if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {
@@ -131,7 +127,12 @@ func (h *handler) handleLoginPost() gin.HandlerFunc {
 			"Csrf":     csrf.GetToken(c),
 		})*/
 
-		c.Redirect(http.StatusSeeOther, deepLink)
+		nextUrl := "/"
+		if currentSession.DeeplLink != "" {
+			nextUrl = currentSession.DeeplLink
+		}
+
+		c.Redirect(http.StatusSeeOther, nextUrl)
 	}
 }
 
@@ -140,7 +141,7 @@ func (h *handler) handleLoginGetOauth() gin.HandlerFunc {
 
 		providerId := c.Param("provider")
 		if _, ok := h.oauthAuthenticators[providerId]; !ok {
-			c.Redirect(http.StatusSeeOther, "/auth/login?err=invalidprovider")
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: "Invalid login provider", Type: "danger"})
 			return
 		}
 
@@ -152,7 +153,7 @@ func (h *handler) handleLoginGetOauth() gin.HandlerFunc {
 		// Prepare authentication flow, set state cookies
 		state, err := randString(16)
 		if err != nil {
-			c.Redirect(http.StatusSeeOther, "/auth/login?err=randsrcunavailable")
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: err.Error(), Type: "danger"})
 			return
 		}
 		currentSession.OauthState = state
@@ -166,7 +167,7 @@ func (h *handler) handleLoginGetOauth() gin.HandlerFunc {
 		case common.AuthenticatorTypeOidc:
 			nonce, err := randString(16)
 			if err != nil {
-				c.Redirect(http.StatusSeeOther, "/auth/login?err=randsrcunavailable")
+				h.redirectWithFlash(c, "/auth/login", FlashData{Message: err.Error(), Type: "danger"})
 				return
 			}
 			currentSession.OidcNonce = nonce
@@ -184,7 +185,7 @@ func (h *handler) handleLoginGetOauthCallback() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		providerId := c.Param("provider")
 		if _, ok := h.oauthAuthenticators[providerId]; !ok {
-			c.Redirect(http.StatusSeeOther, "/auth/login?err=invalidprovider")
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: "Invalid login provider", Type: "danger"})
 			return
 		}
 
@@ -192,7 +193,7 @@ func (h *handler) handleLoginGetOauthCallback() gin.HandlerFunc {
 		ctx := c.Request.Context()
 
 		if state := c.Query("state"); state != currentSession.OauthState {
-			c.Redirect(http.StatusSeeOther, "/auth/login?err=invalidstate")
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: "Invalid OAuth state", Type: "danger"})
 			return
 		}
 
@@ -200,19 +201,36 @@ func (h *handler) handleLoginGetOauthCallback() gin.HandlerFunc {
 		oauthCode := c.Query("code")
 		oauth2Token, err := authenticator.Exchange(ctx, oauthCode)
 		if err != nil {
-			c.Redirect(http.StatusSeeOther, "/auth/login?err=tokenexchange")
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: err.Error(), Type: "danger"})
 			return
 		}
 
 		rawUserInfo, err := authenticator.GetUserInfo(c.Request.Context(), oauth2Token, currentSession.OidcNonce)
 		if err != nil {
-			c.Redirect(http.StatusSeeOther, "/auth/login?err=userinfofetch")
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: err.Error(), Type: "danger"})
 			return
 		}
 
 		userInfo, err := authenticator.ParseUserInfo(rawUserInfo)
+		if err != nil {
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: err.Error(), Type: "danger"})
+			return
+		}
 
-		fmt.Println(userInfo) // TODO: implement login/registration process
+		sessionData, err := h.prepareUserSession(userInfo, providerId)
+		if err != nil {
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: err.Error(), Type: "danger"})
+			return
+		}
+
+		h.session.SetData(c, sessionData)
+
+		nextUrl := "/"
+		if currentSession.DeeplLink != "" {
+			nextUrl = currentSession.DeeplLink
+		}
+
+		c.Redirect(http.StatusSeeOther, nextUrl)
 	}
 }
 
@@ -226,10 +244,89 @@ func (h *handler) passwordAuthentication(username, password string) (*persistenc
 	return nil, nil
 }
 
+func (h *handler) getAuthenticatorConfig(id string) (interface{}, error) {
+	for i := range h.config.Auth.OpenIDConnect {
+		if h.config.Auth.OpenIDConnect[i].ProviderName == id {
+			return h.config.Auth.OpenIDConnect[i], nil
+		}
+	}
+
+	for i := range h.config.Auth.OAuth {
+		if h.config.Auth.OAuth[i].ProviderName == id {
+			return h.config.Auth.OAuth[i], nil
+		}
+	}
+
+	return nil, errors.Errorf("no configuration for authenticator id %s", id)
+}
+
+func (h *handler) prepareUserSession(userInfo *common.AuthenticatorUserInfo, providerId string) (SessionData, error) {
+	session := h.session.DefaultSessionData()
+	authenticatorCfg, err := h.getAuthenticatorConfig(providerId)
+	if err != nil {
+		return session, errors.WithMessagef(err, "failed to find auth provider config for %s", providerId)
+	}
+	registrationEnabled := false
+	switch cfg := authenticatorCfg.(type) {
+	case common.OAuthProvider:
+		registrationEnabled = cfg.RegistrationEnabled
+	case common.OpenIDConnectProvider:
+		registrationEnabled = cfg.RegistrationEnabled
+	}
+
+	// Search user in backend
+	user, err := h.backend.GetUser(userInfo.Identifier)
+	switch {
+	case err != nil && registrationEnabled:
+		user, err = h.registerOauthUser(userInfo)
+		if err != nil {
+			return session, errors.WithMessage(err, "failed to register user")
+		}
+	case err != nil:
+		return session, errors.WithMessage(err, "registration disabled, cannot create missing user")
+	}
+
+	// Set session data for user
+	session.LoggedIn = true
+	session.UserIdentifier = user.Identifier
+	session.IsAdmin = user.IsAdmin
+	session.Firstname = user.Firstname
+	session.Lastname = user.Lastname
+	session.Email = user.Email
+
+	return session, nil
+}
+
+func (h *handler) registerOauthUser(userInfo *common.AuthenticatorUserInfo) (*persistence.User, error) {
+	user := &persistence.User{
+		Identifier: userInfo.Identifier,
+		Email:      userInfo.Email,
+		Source:     persistence.UserSourceOauth,
+		IsAdmin:    userInfo.IsAdmin,
+		Firstname:  userInfo.Firstname,
+		Lastname:   userInfo.Lastname,
+		Phone:      userInfo.Phone,
+		Department: userInfo.Department,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+	err := h.backend.CreateUser(user)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to create new user")
+	}
+
+	return user, nil
+}
+
 func randString(nByte int) (string, error) {
 	b := make([]byte, nByte)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func (h *handler) redirectWithFlash(c *gin.Context, url string, flash FlashData) {
+	h.session.SetFlashes(c, flash)
+	c.Redirect(http.StatusSeeOther, url)
 }

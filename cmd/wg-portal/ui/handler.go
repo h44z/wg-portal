@@ -103,7 +103,7 @@ func (h *handler) RegisterRoutes(g *gin.Engine) {
 	auth.POST("/login", h.handleLoginPost())
 	auth.GET("/login/:provider", h.handleLoginGetOauth())
 	auth.GET("/login/:provider/callback", h.handleLoginGetOauthCallback())
-	//auth.GET("/logout", s.GetLogout)
+	auth.GET("/logout", h.handleLogoutGet())
 
 	// Admin routes
 

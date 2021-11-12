@@ -55,17 +55,11 @@ func entrypoint(ctx context.Context, cancel context.CancelFunc) {
 	cfg.Core.CompanyName = "Test Company"
 	cfg.Core.LogoUrl = "/img/header-logo.png"
 
-	cfg.Auth.OpenIDConnect = []common.OpenIDConnectProvider{
-		{
-			ProviderName: "google",
-			DisplayName:  "Login with</br>Google",
-			BaseUrl:      "https://accounts.google.com",
-			ClientID:     "XXXX.apps.googleusercontent.com",
-			ClientSecret: "XXXX",
-			ExtraScopes:  []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
-		},
+	err := common.LoadConfigFile(&cfg, "config.yml")
+	if err != nil {
+		logrus.Errorf("failed to load config file: %v", err)
+		return
 	}
-	// TODO: load config
 
 	srv, err := NewServer(cfg)
 	if err != nil {

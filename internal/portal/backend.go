@@ -54,7 +54,7 @@ func NewPersistentBackend(db *persistence.Database) (*PersistentBackend, error) 
 	return b, nil
 }
 
-// ImportInterface imports an interface. The given interface identifier must be available as importable interface.
+// ImportInterfaceById imports an interface. The given interface identifier must be available as importable interface.
 func (b *PersistentBackend) ImportInterfaceById(identifier persistence.InterfaceIdentifier) error {
 	importable, err := b.GetImportableInterfaces()
 	if err != nil {

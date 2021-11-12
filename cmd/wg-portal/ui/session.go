@@ -15,15 +15,18 @@ func init() {
 }
 
 type SessionData struct {
-	AuthBackend         string
-	OauthState          string // oauth state
-	OidcNonce           string // oidc id token nonce
-	LoggedIn            bool
-	IsAdmin             bool
-	UserIdentifier      persistence.UserIdentifier
-	Firstname           string
-	Lastname            string
-	Email               string
+	DeeplLink string // deep link, used to redirect after a successful login
+
+	OauthState string // oauth state
+	OidcNonce  string // oidc id token nonce
+
+	LoggedIn       bool
+	IsAdmin        bool
+	UserIdentifier persistence.UserIdentifier
+	Firstname      string
+	Lastname       string
+	Email          string
+
 	InterfaceIdentifier persistence.InterfaceIdentifier
 
 	SortedBy      map[string]string
@@ -36,19 +39,20 @@ type SessionData struct {
 }
 
 type FlashData struct {
-	HasAlert bool
-	Message  string
-	Type     string
+	Message string
+	Type    string // flash type, for example: danger, success, warning, info, primary
 }
 
 type SessionStore interface {
+	DefaultSessionData() SessionData
+
 	GetData(c *gin.Context) SessionData
 	SetData(c *gin.Context, data SessionData)
 
 	GetFlashes(c *gin.Context) []FlashData
 	SetFlashes(c *gin.Context, flashes ...FlashData)
 
-	RemoveData(c *gin.Context)
+	DestroyData(c *gin.Context)
 	RemoveFlashes(c *gin.Context)
 }
 
@@ -65,17 +69,7 @@ func (g GinSessionStore) GetData(c *gin.Context) SessionData {
 		sessionData = rawSessionData.(SessionData)
 	} else {
 		// init a new default session
-		sessionData = SessionData{
-			Search:              map[string]string{"peers": "", "userpeers": "", "users": ""},
-			SortedBy:            map[string]string{"peers": "handshake", "userpeers": "id", "users": "email"},
-			SortDirection:       map[string]string{"peers": "desc", "userpeers": "asc", "users": "asc"},
-			Email:               "",
-			Firstname:           "",
-			Lastname:            "",
-			InterfaceIdentifier: "",
-			IsAdmin:             false,
-			LoggedIn:            false,
-		}
+		sessionData = g.DefaultSessionData()
 		session.Set(g.sessionIdentifier, sessionData)
 		if err := session.Save(); err != nil {
 			panic(fmt.Sprintf("failed to store session: %v", err))
@@ -83,6 +77,20 @@ func (g GinSessionStore) GetData(c *gin.Context) SessionData {
 	}
 
 	return sessionData
+}
+
+func (g GinSessionStore) DefaultSessionData() SessionData {
+	return SessionData{
+		Search:              map[string]string{"peers": "", "userpeers": "", "users": ""},
+		SortedBy:            map[string]string{"peers": "handshake", "userpeers": "id", "users": "email"},
+		SortDirection:       map[string]string{"peers": "desc", "userpeers": "asc", "users": "asc"},
+		Email:               "",
+		Firstname:           "",
+		Lastname:            "",
+		InterfaceIdentifier: "",
+		IsAdmin:             false,
+		LoggedIn:            false,
+	}
 }
 
 func (g GinSessionStore) SetData(c *gin.Context, data SessionData) {
@@ -118,7 +126,7 @@ func (g GinSessionStore) SetFlashes(c *gin.Context, flashes ...FlashData) {
 	}
 }
 
-func (g GinSessionStore) RemoveData(c *gin.Context) {
+func (g GinSessionStore) DestroyData(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Delete(g.sessionIdentifier)
 	if err := session.Save(); err != nil {

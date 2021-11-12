@@ -9,6 +9,7 @@ import (
 )
 
 type Loader interface {
+	GetActiveUser(id persistence.UserIdentifier) (*persistence.User, error)
 	GetUser(id persistence.UserIdentifier) (*persistence.User, error)
 	GetActiveUsers() ([]*persistence.User, error)
 	GetAllUsers() ([]*persistence.User, error)
@@ -56,10 +57,25 @@ func NewPersistentManager(store store) (*PersistentManager, error) {
 		users: make(map[persistence.UserIdentifier]*persistence.User),
 	}
 
+	if err := mgr.initializeFromStore(); err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize manager from store")
+	}
+
 	return mgr, nil
 }
 
 func (p *PersistentManager) GetUser(id persistence.UserIdentifier) (*persistence.User, error) {
+	p.mux.RLock()
+	defer p.mux.RUnlock()
+
+	if !p.userExists(id) {
+		return nil, errors.New("no such user exists")
+	}
+
+	return p.users[id], nil
+}
+
+func (p *PersistentManager) GetActiveUser(id persistence.UserIdentifier) (*persistence.User, error) {
 	p.mux.RLock()
 	defer p.mux.RUnlock()
 

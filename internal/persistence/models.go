@@ -125,9 +125,9 @@ type PeerConfig struct {
 type UserSource string
 
 const (
-	UserSourceLdap     UserSource = "ldap" // LDAP / ActiveDirectory
-	UserSourceDatabase UserSource = "db"   // sqlite / mysql database
-	UserSourceOIDC     UserSource = "oidc" // open id connect, TODO: implement
+	UserSourceLdap     UserSource = "ldap"  // LDAP / ActiveDirectory
+	UserSourceDatabase UserSource = "db"    // sqlite / mysql database
+	UserSourceOauth    UserSource = "oauth" // oauth / open id connect
 )
 
 type PrivateString string

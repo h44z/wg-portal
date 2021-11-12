@@ -31,6 +31,7 @@ data/
 ssh.key
 .testCoverage.txt
 wg_portal.db
+sqlite.db
 go.sum
 swagger.json
 swagger.yaml

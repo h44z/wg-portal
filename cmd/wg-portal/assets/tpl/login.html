@@ -30,7 +30,6 @@
                         <form method="post">
                             <fieldset>
                                 <input type="hidden" name="_csrf" value="{{.Csrf}}">
-                                <input type="hidden" name="_dl" value="{{.DeepLink}}">
                                 <div class="form-group">
                                     <label for="inputUsername" class="form-label">Username</label>
                                     <div class="input-group mb-3">
@@ -62,11 +61,9 @@
                                     </div>
                                 </div>
 
-                                {{ if eq .HasError true }}
-                                <div class="alert alert-danger mt-3" role="alert">
-                                    {{.Message}}
+                                <div class="mt-3">
+                                {{template "prt_flashes.html" .}}
                                 </div>
-                                {{end}}
                             </fieldset>
                         </form>
 
@@ -76,7 +73,6 @@
             </div>
             <div class="col-lg-4"></div>
         </div>
-        {{template "prt_flashes.html" .}}
     </div>
     {{template "prt_footer.html" .}}
     <script src="/js/jquery.min.js"></script>
