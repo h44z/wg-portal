@@ -3,22 +3,49 @@ package common
 import (
 	"os"
 
+	"github.com/go-ldap/ldap/v3"
 	"github.com/h44z/wg-portal/internal/persistence"
 	"github.com/h44z/wg-portal/internal/portal"
 	"gopkg.in/yaml.v3"
 )
 
-type OauthFields struct {
+type BaseFields struct {
 	UserIdentifier string `yaml:"user_identifier"`
 	Email          string `yaml:"email"`
 	Firstname      string `yaml:"firstname"`
 	Lastname       string `yaml:"lastname"`
 	Phone          string `yaml:"phone"`
 	Department     string `yaml:"department"`
-	IsAdmin        string `yaml:"is_admin"`
 }
 
-type LdapAuthProvider struct {
+type OauthFields struct {
+	BaseFields `yaml:",inline"`
+	IsAdmin    string `yaml:"is_admin"`
+}
+
+type LdapFields struct {
+	BaseFields      `yaml:",inline"`
+	GroupMembership string `yaml:"memberof"`
+}
+
+type LdapProvider struct {
+	URL            string `yaml:"url"`
+	StartTLS       bool   `yaml:"start_tls"`
+	CertValidation bool   `yaml:"cert_validation"`
+	BaseDN         string `yaml:"base_dn"`
+	BindUser       string `yaml:"bind_user"`
+	BindPass       string `yaml:"bind_pass"`
+
+	FieldMap LdapFields `yaml:"field_map"`
+
+	LoginFilter  string   `yaml:"login_filter"` // {{login_identifier}} gets replaced with the login email address
+	AdminGroupDN string   `yaml:"admin_group"`  // Members of this group receive admin rights in WG-Portal
+	adminGroupDN *ldap.DN `yaml:"-"`
+
+	Synchronize         bool   `yaml:"synchronize"`
+	DeleteMissing       bool   `yaml:"delete_missing"` // if DeleteMissing is false, missing users will be deactivated
+	SyncFilter          string `yaml:"sync_filter"`
+	RegistrationEnabled bool   `yaml:"registration_enabled"`
 }
 
 type OpenIDConnectProvider struct {
@@ -69,7 +96,7 @@ type OAuthProvider struct {
 	// Scope specifies optional requested permissions.
 	Scopes []string `yaml:"scopes"`
 
-	// Fielmap contains
+	// Fieldmap contains
 	FieldMap OauthFields `yaml:"field_map"`
 
 	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.
@@ -102,7 +129,7 @@ type Config struct {
 	Auth struct {
 		OpenIDConnect []OpenIDConnectProvider `yaml:"openIdCconnect"`
 		OAuth         []OAuthProvider         `yaml:"oauth"`
-		Ldap          []LdapAuthProvider      `yaml:"ldap"`
+		Ldap          []LdapProvider          `yaml:"ldap"`
 	} `yaml:"auth"`
 
 	Mail     portal.MailConfig          `yaml:"email"`

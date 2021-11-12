@@ -38,14 +38,16 @@ type Authenticator interface {
 	Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
 	GetUserInfo(ctx context.Context, token *oauth2.Token, nonce string) (map[string]interface{}, error)
 	ParseUserInfo(raw map[string]interface{}) (*AuthenticatorUserInfo, error)
+	RegistrationEnabled() bool
 }
 
 type plainOauthAuthenticator struct {
-	name             string
-	cfg              *oauth2.Config
-	userInfoEndpoint string
-	client           *http.Client
-	userInfoMapping  OauthFields
+	name                string
+	cfg                 *oauth2.Config
+	userInfoEndpoint    string
+	client              *http.Client
+	userInfoMapping     OauthFields
+	registrationEnabled bool
 }
 
 func NewPlainOauthAuthenticator(_ context.Context, callbackUrl string, cfg *OAuthProvider) (*plainOauthAuthenticator, error) {
@@ -68,8 +70,13 @@ func NewPlainOauthAuthenticator(_ context.Context, callbackUrl string, cfg *OAut
 	}
 	authenticator.userInfoEndpoint = cfg.UserInfoURL
 	authenticator.userInfoMapping = getOauthFieldMapping(cfg.FieldMap)
+	authenticator.registrationEnabled = cfg.RegistrationEnabled
 
 	return authenticator, nil
+}
+
+func (p plainOauthAuthenticator) RegistrationEnabled() bool {
+	return p.registrationEnabled
 }
 
 func (p plainOauthAuthenticator) GetType() AuthenticatorType {
@@ -127,11 +134,12 @@ func (p plainOauthAuthenticator) ParseUserInfo(raw map[string]interface{}) (*Aut
 }
 
 type oidcAuthenticator struct {
-	name            string
-	provider        *oidc.Provider
-	verifier        *oidc.IDTokenVerifier
-	cfg             *oauth2.Config
-	userInfoMapping OauthFields
+	name                string
+	provider            *oidc.Provider
+	verifier            *oidc.IDTokenVerifier
+	cfg                 *oauth2.Config
+	userInfoMapping     OauthFields
+	registrationEnabled bool
 }
 
 func NewOidcAuthenticator(ctx context.Context, callbackUrl string, cfg *OpenIDConnectProvider) (*oidcAuthenticator, error) {
@@ -157,8 +165,13 @@ func NewOidcAuthenticator(ctx context.Context, callbackUrl string, cfg *OpenIDCo
 		Scopes:       scopes,
 	}
 	authenticator.userInfoMapping = getOauthFieldMapping(cfg.FieldMap)
+	authenticator.registrationEnabled = cfg.RegistrationEnabled
 
 	return authenticator, nil
+}
+
+func (o oidcAuthenticator) RegistrationEnabled() bool {
+	return o.registrationEnabled
 }
 
 func (o oidcAuthenticator) GetType() AuthenticatorType {
@@ -211,28 +224,35 @@ func (o oidcAuthenticator) ParseUserInfo(raw map[string]interface{}) (*Authentic
 
 func getOauthFieldMapping(f OauthFields) OauthFields {
 	defaultMap := OauthFields{
-		UserIdentifier: "sub",
-		Email:          "email",
-		Firstname:      "given_name",
-		Lastname:       "family_name",
-		Phone:          "phone",
-		Department:     "department",
-		IsAdmin:        "admin_flag",
+		BaseFields: BaseFields{
+			UserIdentifier: "sub",
+			Email:          "email",
+			Firstname:      "given_name",
+			Lastname:       "family_name",
+			Phone:          "phone",
+			Department:     "department",
+		},
+		IsAdmin: "admin_flag",
 	}
-	switch {
-	case f.UserIdentifier != "":
+	if f.UserIdentifier != "" {
 		defaultMap.UserIdentifier = f.UserIdentifier
-	case f.Email != "":
+	}
+	if f.Email != "" {
 		defaultMap.Email = f.Email
-	case f.Firstname != "":
+	}
+	if f.Firstname != "" {
 		defaultMap.Firstname = f.Firstname
-	case f.Lastname != "":
+	}
+	if f.Lastname != "" {
 		defaultMap.Lastname = f.Lastname
-	case f.Phone != "":
+	}
+	if f.Phone != "" {
 		defaultMap.Phone = f.Phone
-	case f.Department != "":
+	}
+	if f.Department != "" {
 		defaultMap.Department = f.Department
-	case f.IsAdmin != "":
+	}
+	if f.IsAdmin != "" {
 		defaultMap.IsAdmin = f.IsAdmin
 	}
 

@@ -20,6 +20,7 @@ type handler struct {
 	session             SessionStore
 	backend             portal.Backend
 	oauthAuthenticators map[string]common.Authenticator
+	ldapAuthenticators  map[string]common.LdapAuthenticator
 }
 
 func NewHandler(config *common.Config, backend portal.Backend) (*handler, error) {
@@ -28,6 +29,7 @@ func NewHandler(config *common.Config, backend portal.Backend) (*handler, error)
 		backend:             backend,
 		session:             GinSessionStore{sessionIdentifier: "wgPortalSession"},
 		oauthAuthenticators: make(map[string]common.Authenticator),
+		ldapAuthenticators:  make(map[string]common.LdapAuthenticator),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -79,6 +81,20 @@ func (h *handler) setupAuthProviders(ctx context.Context) error {
 			return errors.WithMessagef(err, "failed to setup oauth authentication provider %s", providerId)
 		}
 		h.oauthAuthenticators[providerId] = authenticator
+	}
+	for i := range h.config.Auth.Ldap {
+		providerCfg := &h.config.Auth.Ldap[i]
+		providerId := strings.ToLower(providerCfg.URL)
+
+		if _, exists := h.ldapAuthenticators[providerId]; exists {
+			return errors.Errorf("auth provider with name %s is already registerd", providerId)
+		}
+
+		authenticator, err := common.NewLdapAuthenticator(ctx, providerCfg)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to setup ldap authentication provider %s", providerId)
+		}
+		h.ldapAuthenticators[providerId] = authenticator
 	}
 
 	return nil

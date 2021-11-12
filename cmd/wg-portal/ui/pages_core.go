@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"html/template"
@@ -242,13 +243,68 @@ func (h *handler) handleLoginGetOauthCallback() gin.HandlerFunc {
 
 func (h *handler) passwordAuthentication(identifier persistence.UserIdentifier, password string) (*persistence.User, error) {
 	user, err := h.backend.GetUser(identifier)
-	if err != nil {
-		return nil, errors.WithMessage(err, "user not found")
+	userInDatabase := false
+	if err == nil {
+		userInDatabase = true
+	} else {
+		// search user in ldap if registration is enabled
+		for _, authenticator := range h.ldapAuthenticators {
+			if !authenticator.RegistrationEnabled() {
+				continue
+			}
+			rawUserInfo, err := authenticator.GetUserInfo(context.Background(), identifier)
+			if err != nil {
+				continue
+			}
+			userInfo, err := authenticator.ParseUserInfo(rawUserInfo)
+			if err != nil {
+				continue
+			}
+
+			user = &persistence.User{
+				Identifier: userInfo.Identifier,
+				Email:      userInfo.Email,
+				Source:     persistence.UserSourceLdap,
+				IsAdmin:    false,
+				Firstname:  userInfo.Firstname,
+				Lastname:   userInfo.Lastname,
+				Phone:      userInfo.Phone,
+				Department: userInfo.Department,
+				// TODO: also store pw for registered user?
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+
+			break
+		}
 	}
 
-	err = h.backend.PlaintextAuthentication(identifier, password)
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	switch user.Source {
+	case persistence.UserSourceDatabase:
+		err = h.backend.PlaintextAuthentication(identifier, password)
+	case persistence.UserSourceLdap:
+		for _, authenticator := range h.ldapAuthenticators {
+			err = authenticator.PlaintextAuthentication(identifier, password)
+			if err == nil {
+				break // auth succeeded
+			}
+		}
+	default:
+		err = errors.New("no authentication backend available")
+	}
+
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to authenticate")
+	}
+
+	if !userInDatabase {
+		if err := h.backend.CreateUser(user); err != nil {
+			return nil, errors.WithMessage(err, "failed to create new ldap user")
+		}
 	}
 
 	return user, nil
