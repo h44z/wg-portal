@@ -14,6 +14,14 @@ func (p *PersistentManager) PlaintextAuthentication(userId persistence.UserIdent
 		return errors.WithMessagef(err, "unable to load user %s", userId)
 	}
 
+	if user.Source == persistence.UserSourceOauth {
+		return errors.New("password authentication unavailable")
+	}
+
+	if user.Password == "" {
+		return errors.New("password authentication unavailable")
+	}
+
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(plainPassword)); err != nil {
 		return errors.WithMessage(err, "invalid password")
 	}
@@ -25,6 +33,14 @@ func (p *PersistentManager) HashedAuthentication(userId persistence.UserIdentifi
 	user, err := p.GetUser(userId)
 	if err != nil {
 		return errors.WithMessagef(err, "unable to load user %s", userId)
+	}
+
+	if user.Source == persistence.UserSourceOauth {
+		return errors.New("password authentication unavailable")
+	}
+
+	if user.Password == "" {
+		return errors.New("password authentication unavailable")
 	}
 
 	if subtle.ConstantTimeCompare([]byte(user.Password), []byte(hashedPassword)) != 1 {

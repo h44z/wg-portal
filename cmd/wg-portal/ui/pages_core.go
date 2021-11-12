@@ -114,18 +114,24 @@ func (h *handler) handleLoginPost() gin.HandlerFunc {
 
 		// Validate form input
 		if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {
-			c.Redirect(http.StatusSeeOther, "/auth/login?err=missingdata")
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: "Please fill out all fields", Type: "danger"})
 			return
 		}
 
-		// TODO: implement db authentication
-		/*c.HTML(http.StatusOK, "login.html", gin.H{
-			"HasError": authError != "",
-			"Message":  errMsg,
-			"DeepLink": deepLink,
-			"Static":   h.getStaticData(),
-			"Csrf":     csrf.GetToken(c),
-		})*/
+		user, err := h.passwordAuthentication(persistence.UserIdentifier(username), password)
+		if err != nil {
+			h.redirectWithFlash(c, "/auth/login", FlashData{Message: "Login failed", Type: "danger"})
+			return
+		}
+
+		authSession := h.session.DefaultSessionData()
+		authSession.LoggedIn = true
+		authSession.UserIdentifier = user.Identifier
+		authSession.IsAdmin = user.IsAdmin
+		authSession.Firstname = user.Firstname
+		authSession.Lastname = user.Lastname
+		authSession.Email = user.Email
+		h.session.SetData(c, authSession)
 
 		nextUrl := "/"
 		if currentSession.DeeplLink != "" {
@@ -234,14 +240,18 @@ func (h *handler) handleLoginGetOauthCallback() gin.HandlerFunc {
 	}
 }
 
-func (h *handler) passwordAuthentication(username, password string) (*persistence.User, error) {
-	err := h.backend.PlaintextAuthentication(persistence.UserIdentifier(username), password)
+func (h *handler) passwordAuthentication(identifier persistence.UserIdentifier, password string) (*persistence.User, error) {
+	user, err := h.backend.GetUser(identifier)
+	if err != nil {
+		return nil, errors.WithMessage(err, "user not found")
+	}
+
+	err = h.backend.PlaintextAuthentication(identifier, password)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to authenticate")
 	}
 
-	// TODO
-	return nil, nil
+	return user, nil
 }
 
 func (h *handler) getAuthenticatorConfig(id string) (interface{}, error) {
