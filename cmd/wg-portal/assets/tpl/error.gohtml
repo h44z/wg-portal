@@ -11,7 +11,7 @@
 </head>
 
 <body id="page-top">
-    {{template "prt_nav.html" .}}
+    {{template "prt_nav.gohtml" .}}
     <div class="container">
         <div class="text-center mt-5">
             <div class="error mx-auto" data-text="{{.Data.Code}}">
@@ -21,7 +21,7 @@
             <p class="text-black-50 mb-0">{{.Data.Details}}</p><a href="/">← Back to Dashboard</a>
         </div>
     </div>
-    {{template "prt_footer.html" .}}
+    {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>
     <script src="/js/jquery.easing.js"></script>
     <script src="/js/popper.min.js"></script>

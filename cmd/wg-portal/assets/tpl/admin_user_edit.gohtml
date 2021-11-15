@@ -11,7 +11,7 @@
 </head>
 
 <body id="page-top" class="d-flex flex-column min-vh-100">
-    {{template "prt_nav.html" .}}
+    {{template "prt_nav.gohtml" .}}
     <div class="container mt-5">
         {{if eq .User.CreatedAt .Epoch}}
         <h1>Create a new user</h1>
@@ -19,7 +19,7 @@
         <h1>Edit user <strong>{{.User.Email}}</strong></h1>
         {{end}}
 
-        {{template "prt_flashes.html" .}}
+        {{template "prt_flashes.gohtml" .}}
 
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="{{.Csrf}}">
@@ -78,7 +78,7 @@
             <a href="/admin/users/" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
-    {{template "prt_footer.html" .}}
+    {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>
     <script src="/js/jquery.easing.js"></script>
     <script src="/js/popper.min.js"></script>

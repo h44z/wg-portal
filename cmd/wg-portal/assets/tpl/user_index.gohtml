@@ -11,7 +11,7 @@
 </head>
 
 <body id="page-top" class="d-flex flex-column min-vh-100">
-    {{template "prt_nav.html" .}}
+    {{template "prt_nav.gohtml" .}}
     <div class="container mt-5">
         <h1>WireGuard VPN User-Portal</h1>
 
@@ -100,7 +100,7 @@
             <p>Currently listed peers: <strong>{{len .Peers}}</strong></p>
         </div>
     </div>
-    {{template "prt_footer.html" .}}
+    {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>
     <script src="/js/jquery.easing.js"></script>
     <script src="/js/popper.min.js"></script>

@@ -15,7 +15,7 @@
                     <button class="btn btn-outline-success my-2 my-sm-0" type="submit"><i class="fa fa-search"></i></button>
                 </form>
                 {{end}}
-                {{with eq $.Route "/admin/users/"}}
+                {{with eq $.Route "/admin/users"}}
                 <form class="d-flex" method="get">
                     <input class="form-control me-sm-2" name="search" type="search" placeholder="Search" value="{{index $.Session.Search "users"}}">
                     <button class="btn btn-outline-success my-2 my-sm-0" type="submit"><i class="fa fa-search"></i></button>
@@ -59,7 +59,7 @@
         </div><!--/.navbar-collapse -->
     </div><!--/.container-fluid -->
 </nav>
-{{if $.Interface}}{{if not $.Interface.IsValid}}
+{{if $.Interface}}{{if not (isConfigValid $.Interface)}}
 <div class="container">
     <div class="alert alert-danger">Warning: WireGuard Interface {{$.Interface.Identifier}} is not fully configured! Configurations may be incomplete and non functional!</div>
 </div>

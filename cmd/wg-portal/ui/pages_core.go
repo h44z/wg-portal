@@ -33,7 +33,7 @@ func (h *handler) handleIndexGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		currentSession := h.session.GetData(c)
 
-		c.HTML(http.StatusOK, "index.html", gin.H{
+		c.HTML(http.StatusOK, "index.gohtml", gin.H{
 			"Route":          c.Request.URL.Path,
 			"Alerts":         h.session.GetFlashes(c),
 			"Session":        currentSession,
@@ -94,7 +94,7 @@ func (h *handler) handleLoginGet() gin.HandlerFunc {
 			})
 		}
 
-		c.HTML(http.StatusOK, "login.html", gin.H{
+		c.HTML(http.StatusOK, "login.gohtml", gin.H{
 			"Alerts":         h.session.GetFlashes(c),
 			"Static":         h.getStaticData(),
 			"Csrf":           csrf.GetToken(c),

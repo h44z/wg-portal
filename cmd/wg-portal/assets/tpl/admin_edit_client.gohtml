@@ -11,9 +11,9 @@
 </head>
 
 <body id="page-top" class="d-flex flex-column min-vh-100">
-    {{template "prt_nav.html" .}}
+    {{template "prt_nav.gohtml" .}}
     <div class="container mt-5">
-        {{template "prt_flashes.html" .}}
+        {{template "prt_flashes.gohtml" .}}
 
         <!-- server mode -->
         {{if eq .Device.Type "server"}}
@@ -201,7 +201,7 @@
         </form>
         {{end}}
     </div>
-    {{template "prt_footer.html" .}}
+    {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>
     <script src="/js/jquery.easing.js"></script>
     <script src="/js/popper.min.js"></script>

@@ -82,6 +82,10 @@ type InterfaceConfig struct {
 	PeerDefPostDown string // default action that is executed after the device is down
 }
 
+func (i *InterfaceConfig) IsValid() bool {
+	return true // TODO: implement check
+}
+
 type PeerInterfaceConfig struct {
 	Identifier InterfaceIdentifier `gorm:"index;column:iface_identifier"` // the interface identifier
 	Type       InterfaceType       `gorm:"column:iface_type"`             // the interface type

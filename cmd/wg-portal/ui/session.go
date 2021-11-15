@@ -30,10 +30,11 @@ type SessionData struct {
 	// currently selected interface
 	InterfaceIdentifier persistence.InterfaceIdentifier
 
-	// current table sorting
+	// table sorting and paging
 	SortedBy      map[string]string
 	SortDirection map[string]string
 	Search        map[string]string
+	CurrentPage   map[string]int
 
 	// alert that is printed on top of the page
 	AlertData string

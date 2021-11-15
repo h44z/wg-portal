@@ -11,10 +11,10 @@
 </head>
 
 <body id="page-top" class="d-flex flex-column min-vh-100">
-    {{template "prt_nav.html" .}}
+    {{template "prt_nav.gohtml" .}}
     <div class="container mt-5 main-app">
         <h1>Edit interface <strong>{{.Device.DeviceName}}</strong></h1>
-        {{template "prt_flashes.html" .}}
+        {{template "prt_flashes.gohtml" .}}
 
         <ul class="nav nav-tabs">
             <li class="nav-item">
@@ -251,7 +251,7 @@
             </div>
         </div>
     </div>
-    {{template "prt_footer.html" .}}
+    {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>
     <script src="/js/jquery.easing.js"></script>
     <script src="/js/popper.min.js"></script>

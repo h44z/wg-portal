@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Theme: https://bootswatch.com/lux/ -->
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ .Static.WebsiteTitle }} - Users</title>
     <meta name="description" content="{{ .Static.WebsiteTitle }}">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -11,10 +12,12 @@
 </head>
 
 <body id="page-top" class="d-flex flex-column min-vh-100">
-    {{template "prt_nav.html" .}}
-    <div class="container mt-5">
-        <h1>WireGuard VPN Users</h1>
-        {{template "prt_flashes.html" .}}
+    {{template "prt_nav.gohtml" .}}
+    <div class="container mt-5 flex-shrink-0">
+        <div class="page-header">
+            <h1>WireGuard VPN Portal Users</h1>
+        </div>
+        {{template "prt_flashes.gohtml" .}}
         <div class="mt-4 row">
             <div class="col-sm-10 col-12">
                 <h2 class="mt-2">All Users</h2>
@@ -57,7 +60,7 @@
             <p>Currently listed users: <strong>{{len .Users}}</strong></p>
         </div>
     </div>
-    {{template "prt_footer.html" .}}
+    {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>
     <script src="/js/jquery.easing.js"></script>
     <script src="/js/popper.min.js"></script>

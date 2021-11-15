@@ -12,46 +12,48 @@
 </head>
 
 <body id="page-top" class="d-flex flex-column min-vh-100">
-{{template "prt_nav.html" .}}
+{{template "prt_nav.gohtml" .}}
     <div class="container mt-5 flex-shrink-0">
         <div class="page-header">
             <h1>WireGuard VPN Administration</h1>
         </div>
-        {{template "prt_flashes.html" .}}
+        {{template "prt_flashes.gohtml" .}}
         <div class="row">
             <div class="col-lg-12">
                 <div class="card border-secondary mb-4" style="min-height: 15rem;">
                     <div class="card-header">
-                        Interface status for <strong>{{.Device.DeviceName}}</strong> {{if eq $.Device.Type "server"}}(server mode){{end}}{{if eq $.Device.Type "client"}}(client mode){{end}}
+                        Interface status for <strong>{{.Interface.Identifier}}</strong> {{if eq $.Interface.Type "server"}}(server mode){{end}}{{if eq $.Interface.Type "client"}}(client mode){{end}}
                         <div class="float-end">
-                            <a href="/admin/device/write?dev={{.Device.DeviceName}}" title="Write interface configuration"><i class="fas fa-save"></i></a>
+                            <a href="/admin/interface/show?dev={{.Interface.Identifier}}" title="Show interface configuration"><i class="fas fa-eye"></i></a>
                             &nbsp;&nbsp;&nbsp;
-                            <a href="/admin/device/download?dev={{.Device.DeviceName}}" title="Download interface configuration"><i class="fas fa-download"></i></a>
+                            <a href="/admin/interface/download?dev={{.Interface.Identifier}}" title="Download interface configuration"><i class="fas fa-download"></i></a>
                             &nbsp;&nbsp;&nbsp;
-                            <a href="/admin/device/edit?dev={{.Device.DeviceName}}" title="Edit interface settings"><i class="fas fa-cog"></i></a>
+                            <a href="/admin/interface/write?dev={{.Interface.Identifier}}" title="Write interface configuration"><i class="fas fa-save"></i></a>
+                            &nbsp;&nbsp;&nbsp;
+                            <a href="/admin/interface/edit?dev={{.Interface.Identifier}}" title="Edit interface settings"><i class="fas fa-cog"></i></a>
                         </div>
                     </div>
                     <div class="card-body d-flex flex-column">
                         <div class="row">
-                            {{if eq $.Device.Type "server"}}
+                            {{if eq $.Interface.Type "server"}}
                             <div class="col-sm-6">
                                 <table class="table table-sm table-borderless device-status-table">
                                     <tbody>
                                     <tr>
                                         <td>Public Key:</td>
-                                        <td>{{.Device.PublicKey}}</td>
+                                        <td>{{.Interface.PublicKey}}</td>
                                     </tr>
                                     <tr>
                                         <td>Public Endpoint:</td>
-                                        <td>{{.Device.DefaultEndpoint}}</td>
+                                        <td>{{.Interface.PeerDefEndpoint}}</td>
                                     </tr>
                                     <tr>
                                         <td>Listening Port:</td>
-                                        <td>{{.Device.ListenPort}}</td>
+                                        <td>{{.Interface.ListenPort}}</td>
                                     </tr>
                                     <tr>
                                         <td>Enabled Peers:</td>
-                                        <td>{{len .Device.Interface.Peers}}</td>
+                                        <td>{{len .InterfacePeers}}</td>
                                     </tr>
                                     <tr>
                                         <td>Total Peers:</td>
@@ -65,39 +67,39 @@
                                     <tbody>
                                     <tr>
                                         <td>IP Address:</td>
-                                        <td>{{.Device.IPsStr}}</td>
+                                        <td>{{.Interface.AddressStr}}</td>
                                     </tr>
                                     <tr>
                                         <td>Default allowed IP's:</td>
-                                        <td>{{.Device.DefaultAllowedIPsStr}}</td>
+                                        <td>{{.Interface.PeerDefAllowedIPsStr}}</td>
                                     </tr>
                                     <tr>
                                         <td>Default DNS servers:</td>
-                                        <td>{{.Device.DNSStr}}</td>
+                                        <td>{{.Interface.PeerDefDnsStr}}</td>
                                     </tr>
                                     <tr>
                                         <td>Default MTU:</td>
-                                        <td>{{.Device.Mtu}}</td>
+                                        <td>{{.Interface.Mtu}}</td>
                                     </tr>
                                     <tr>
                                         <td>Default Keepalive Interval:</td>
-                                        <td>{{.Device.DefaultPersistentKeepalive}}</td>
+                                        <td>{{.Interface.PeerDefPersistentKeepalive}}</td>
                                     </tr>
                                     </tbody>
                                 </table>
                             </div>
                             {{end}}
-                            {{if eq $.Device.Type "client"}}
+                            {{if eq $.Interface.Type "client"}}
                             <div class="col-sm-6">
                                 <table class="table table-sm table-borderless device-status-table">
                                     <tbody>
                                     <tr>
                                         <td>Public Key:</td>
-                                        <td>{{.Device.PublicKey}}</td>
+                                        <td>{{.Interface.PublicKey}}</td>
                                     </tr>
                                     <tr>
                                         <td>Enabled Endpoints:</td>
-                                        <td>{{len .Device.Interface.Peers}}</td>
+                                        <td>{{len .InterfacePeers}}</td>
                                     </tr>
                                     <tr>
                                         <td>Total Endpoints:</td>
@@ -111,15 +113,15 @@
                                     <tbody>
                                     <tr>
                                         <td>IP Address:</td>
-                                        <td>{{.Device.IPsStr}}</td>
+                                        <td>{{.Interface.AddressStr}}</td>
                                     </tr>
                                     <tr>
                                         <td>DNS servers:</td>
-                                        <td>{{.Device.DNSStr}}</td>
+                                        <td>{{.Interface.DnsStr}}</td>
                                     </tr>
                                     <tr>
                                         <td>Default MTU:</td>
-                                        <td>{{.Device.Mtu}}</td>
+                                        <td>{{.Interface.Mtu}}</td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -132,17 +134,17 @@
         </div>
 
         <div class="mt-4 row">
-            <div class="col-sm-8 col-12">
-                {{if eq $.Device.Type "server"}}
+            <div class="col-sm-6 col-12">
+                {{if eq $.Interface.Type "server"}}
                 <h2 class="mt-2">Current VPN Peers</h2>
                 {{end}}
-                {{if eq $.Device.Type "client"}}
+                {{if eq $.Interface.Type "client"}}
                 <h2 class="mt-2">Current VPN Endpoints</h2>
                 {{end}}
             </div>
-            <div class="col-sm-4 col-12 text-right">
+            <div class="col-sm-6 col-12 text-end">
                 <a href="/admin/peer/emailall" data-toggle="confirmation" data-title="Send mail to all peers?" title="Send mail to all peers" class="btn btn-light"><i class="fa fa-fw fa-paper-plane"></i></a>
-                {{if eq $.Device.Type "server"}}
+                {{if eq $.Interface.Type "server"}}
                 <a href="/admin/peer/createldap" title="Add multiple peers" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i><i class="fa fa-fw fa-users"></i></a>
                 {{end}}
                 <a href="/admin/peer/create" title="Add a peer" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i><i class="fa fa-fw fa-user"></i></a>
@@ -153,23 +155,23 @@
                 <thead>
                 <tr>
                     <th scope="col" class="list-image-cell"></th><!-- Status and expand -->
-                    <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{.Session.GetSortIcon "peers" "id"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "peers" "pubKey"}}"></i></a></th>
-                    {{if eq $.Device.Type "server"}}
-                    <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "peers" "mail"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{getSortIcon $.Session "peers" "id"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{getSortIcon $.Session "peers" "pubKey"}}"></i></a></th>
+                    {{if eq $.Interface.Type "server"}}
+                    <th scope="col"><a href="?sort=user">User <i class="fa fa-fw {{getSortIcon $.Session "peers" "user"}}"></i></a></th>
                     {{end}}
-                    {{if eq $.Device.Type "server"}}
-                    <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "peers" "ip"}}"></i></a></th>
+                    {{if eq $.Interface.Type "server"}}
+                    <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{getSortIcon $.Session "peers" "ip"}}"></i></a></th>
                     {{end}}
-                    {{if eq $.Device.Type "client"}}
-                    <th scope="col"><a href="?sort=endpoint">Endpoint <i class="fa fa-fw {{.Session.GetSortIcon "peers" "endpoint"}}"></i></a></th>
+                    {{if eq $.Interface.Type "client"}}
+                    <th scope="col"><a href="?sort=endpoint">Endpoint <i class="fa fa-fw {{getSortIcon $.Session "peers" "endpoint"}}"></i></a></th>
                     {{end}}
-                    <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{.Session.GetSortIcon "peers" "handshake"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{getSortIcon $.Session "peers" "handshake"}}"></i></a></th>
                     <th scope="col"></th><!-- Actions -->
                 </tr>
                 </thead>
                 <tbody>
-                {{range $i, $p :=.Peers}}
+                {{range $i, $p :=$.PagedInterfacePeers}}
                     {{$peerUser:= $p.Email}}
                     <tr id="user-pos-{{$i}}" {{if $p.DeactivatedAt}}class="disabled-peer"{{end}}>
                         <th scope="row" class="list-image-cell">
@@ -264,10 +266,10 @@
                 {{end}}
                 </tbody>
             </table>
-            <p>Currently listed peers: <strong>{{len .Peers}}</strong></p>
+            <p>Currently listed peers: <strong>{{len $.PagedInterfacePeers}}</strong></p>
         </div>
     </div>
-    {{template "prt_footer.html" .}}
+    {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>
     <script src="/js/bootstrap.bundle.min.js"></script>
 </body>

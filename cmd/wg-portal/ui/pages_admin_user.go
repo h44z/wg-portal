@@ -10,7 +10,7 @@ func (h *handler) handleAdminUserIndexGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		currentSession := h.session.GetData(c)
 
-		c.HTML(http.StatusOK, "admin_user_index.html", gin.H{
+		c.HTML(http.StatusOK, "admin_user_index.gohtml", gin.H{
 			"Route":          c.Request.URL.Path,
 			"Alerts":         h.session.GetFlashes(c),
 			"Session":        currentSession,

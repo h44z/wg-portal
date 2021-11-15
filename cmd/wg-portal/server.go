@@ -93,13 +93,15 @@ func (s *server) setupGin() error {
 	})
 	s.server.Use(sessions.Sessions("authsession", cookieStore))
 	s.server.SetFuncMap(template.FuncMap{
-		"formatBytes": byteCountSI,
-		"urlEncode":   url.QueryEscape,
-		"startsWith":  strings.HasPrefix,
+		"formatBytes":   byteCountSI,
+		"urlEncode":     url.QueryEscape,
+		"startsWith":    strings.HasPrefix,
+		"isConfigValid": isConfigValid,
+		"getSortIcon":   getSortIcon,
 	})
 
 	// Setup templates
-	templates, err := template.New("").Funcs(s.server.FuncMap).ParseFS(Templates, "assets/tpl/*.html")
+	templates, err := template.New("").Funcs(s.server.FuncMap).ParseFS(Templates, "assets/tpl/*.gohtml")
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse templates")
 	}
@@ -175,4 +177,24 @@ func byteCountSI(b int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB",
 		float64(b)/float64(div), "kMGTPE"[exp])
+}
+
+func isConfigValid(cfg interface{}) bool {
+	switch v := cfg.(type) {
+	case persistence.InterfaceConfig:
+		return v.IsValid()
+	default:
+		return false
+	}
+}
+
+func getSortIcon(s ui.SessionData, table, field string) string {
+	if s.SortedBy[table] != field {
+		return "fa-sort"
+	}
+	if s.SortDirection[table] == "asc" {
+		return "fa-sort-alpha-down"
+	} else {
+		return "fa-sort-alpha-up"
+	}
 }
