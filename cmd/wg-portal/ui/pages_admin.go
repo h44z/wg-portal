@@ -51,10 +51,50 @@ func (h *handler) handleAdminIndexGet() gin.HandlerFunc {
 				PeerDefPreDown:             "",
 				PeerDefPostDown:            "",
 			},
-			"InterfacePeers":      []persistence.PeerConfig{},
-			"PagedInterfacePeers": []persistence.PeerConfig{},
-			"InterfaceNames":      map[string]string{"wgX": "wgX descr"},
-			"TotalPeers":          12,
+			"InterfacePeers": []persistence.PeerConfig{},
+			"PagedInterfacePeers": []persistence.PeerConfig{
+				{
+					Endpoint: persistence.StringConfigOption{
+						Value:       "vpn.test.net",
+						Overridable: false,
+					},
+					AllowedIPsStr: persistence.StringConfigOption{
+						Value:       "10.0.0.0/8,192.168.1.0/24",
+						Overridable: false,
+					},
+					KeyPair: persistence.KeyPair{
+						PrivateKey: "privkey",
+						PublicKey:  "pubkey",
+					},
+					PresharedKey: "psk",
+					PersistentKeepalive: persistence.IntConfigOption{
+						Value:       16,
+						Overridable: true,
+					},
+					DisplayName:    "Display Name",
+					Identifier:     "abc123",
+					UserIdentifier: "nouser",
+					Interface: &persistence.PeerInterfaceConfig{
+						Identifier: "wg0",
+						Type:       persistence.InterfaceTypeServer,
+						PublicKey:  "srvpub",
+						AddressStr: persistence.StringConfigOption{
+							Value: "10.0.0.1/32,192.168.1.1/32",
+						},
+						DnsStr:       persistence.StringConfigOption{},
+						DnsSearchStr: persistence.StringConfigOption{},
+						Mtu:          persistence.IntConfigOption{},
+						FirewallMark: persistence.Int32ConfigOption{},
+						RoutingTable: persistence.StringConfigOption{},
+						PreUp:        persistence.StringConfigOption{},
+						PostUp:       persistence.StringConfigOption{},
+						PreDown:      persistence.StringConfigOption{},
+						PostDown:     persistence.StringConfigOption{},
+					},
+				},
+			},
+			"InterfaceNames": map[string]string{"wgX": "wgX descr"},
+			"TotalPeers":     12,
 		})
 	}
 }
