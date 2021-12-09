@@ -56,6 +56,7 @@ PostDown = {{ .Interface.PostDown }}
 # -WGP- PrivateKey: {{.PrivateKey}}
 {{- end}}
 [Peer]
+# friendly_name = {{ .Identifier }}
 PublicKey = {{ .PublicKey }}
 {{- if .PresharedKey}}
 PresharedKey = {{ .PresharedKey }}
