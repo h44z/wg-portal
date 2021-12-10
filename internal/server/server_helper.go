@@ -103,16 +103,21 @@ func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 		}
 		peer.SetIPAddresses(peerIPs...)
 	}
-	if peer.PrivateKey == "" && dev.Type == wireguard.DeviceTypeServer { // if private key is empty create a new one
+	if peer.PresharedKey == "" && dev.Type == wireguard.DeviceTypeServer { // if preshared key is empty create a new one
+
 		psk, err := wgtypes.GenerateKey()
 		if err != nil {
 			return errors.Wrap(err, "failed to generate key")
 		}
+		peer.PresharedKey = psk.String()
+	}
+
+	if peer.PrivateKey == "" &&  peer.PublicKey == "" && dev.Type == wireguard.DeviceTypeServer { // if private key is empty create a new one
+
 		key, err := wgtypes.GeneratePrivateKey()
 		if err != nil {
 			return errors.Wrap(err, "failed to generate private key")
 		}
-		peer.PresharedKey = psk.String()
 		peer.PrivateKey = key.String()
 		peer.PublicKey = key.PublicKey().String()
 	}
