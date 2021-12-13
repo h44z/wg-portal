@@ -67,6 +67,7 @@ type Config struct {
 		EditableKeys            bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
 		CreateDefaultPeer       bool   `yaml:"createDefaultPeer" envconfig:"CREATE_DEFAULT_PEER"`
 		SelfProvisioningAllowed bool   `yaml:"selfProvisioning" envconfig:"SELF_PROVISIONING"`
+		WGExoprterFriendlyNames bool   `yaml:"wgExporterFriendlyNames" envconfig:"WG_EXPORTER_FRIENDLY_NAMES"`
 		LdapEnabled             bool   `yaml:"ldapEnabled" envconfig:"LDAP_ENABLED"`
 		SessionSecret           string `yaml:"sessionSecret" envconfig:"SESSION_SECRET"`
 		LogoUrl                 string `yaml:"logoUrl" envconfig:"LOGO_URL"`
@@ -91,6 +92,7 @@ func NewConfig() *Config {
 	cfg.Core.AdminPassword = "wgportal"
 	cfg.Core.LdapEnabled = false
 	cfg.Core.EditableKeys = true
+	cfg.Core.WGExoprterFriendlyNames = false
 	cfg.Core.SessionSecret = "secret"
 
 	cfg.Database.Typ = "sqlite"
