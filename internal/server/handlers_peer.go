@@ -236,7 +236,7 @@ func (s *Server) GetPeerConfig(c *gin.Context) {
 		return
 	}
 
-	cfg, err := peer.GetConfigFile(s.peers.GetDevice(currentSession.DeviceName))
+	cfg, err := peer.GetConfigFile(s.peers.GetDevice(peer.DeviceName))
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return
