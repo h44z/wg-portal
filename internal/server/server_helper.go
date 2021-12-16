@@ -209,7 +209,7 @@ func (s *Server) WriteWireGuardConfigFile(device string) error {
 	}
 
 	dev := s.peers.GetDevice(device)
-	cfg, err := dev.GetConfigFile(s.peers.GetActivePeers(device))
+	cfg, err := dev.GetConfigFile(s.peers.GetActivePeers(device), s.config.Core.WGExoprterFriendlyNames)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get config file")
 	}

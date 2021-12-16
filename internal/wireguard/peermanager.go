@@ -338,12 +338,13 @@ func (d Device) GetConfig() wgtypes.Config {
 	return cfg
 }
 
-func (d Device) GetConfigFile(peers []Peer) ([]byte, error) {
+func (d Device) GetConfigFile(peers []Peer, friendlyNames bool) ([]byte, error) {
 	var tplBuff bytes.Buffer
 
 	err := templateCache.ExecuteTemplate(&tplBuff, "interface.tpl", gin.H{
-		"Peers":     peers,
-		"Interface": d,
+		"Peers":         peers,
+		"Interface":     d,
+		"FriendlyNames": friendlyNames,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute server template")
