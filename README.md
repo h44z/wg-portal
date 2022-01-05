@@ -156,6 +156,19 @@ The following configuration options are available:
 | LDAP_ATTR_LASTNAME         | attrLastname            | ldap        | sn                                              | User lastname attribute.                                                                                 |
 | LDAP_ATTR_PHONE            | attrPhone               | ldap        | telephoneNumber                                 | User phone number attribute.                                                                                 |
 | LDAP_ATTR_GROUPS           | attrGroups              | ldap        | memberOf                                        | User groups attribute.                                                                                 |
+| OAUTH_REDIRECT_URL         | redirectURL             | oauth       | /callback                                       | Redirect URL for all the OAuth2 and OpenID login services.                                             |
+| OAUTH_GITHUB_CLIENT_ID     | github.clientID         | oauth       | clientid                                        | ClientID for OAuth2 authentication with GitHub.                                                        |
+| OAUTH_GITHUB_CLIENT_SECRET | github.clientSecret     | oauth       | supersecret                                     | ClientSecret for OAuth2 authentication with GitHub.                                                    |
+| OAUTH_GITHUB_CREATE_USERS  | github.createUsers      | oauth       | false                                           | A user logged in with Google OAuth2 should be created automatically when it doesn't exist before.      |
+| OAUTH_GITHUB_ENABLED       | github.enabled          | oauth       | false                                           | Enable GitHub OAuth2 authentication.                                                                   |
+| OAUTH_GOOGLE_CLIENT_ID     | google.clientID         | oauth       | clientid                                        | ClientID for OAuth2 authentication with Google.                                                        |
+| OAUTH_GOOGLE_CLIENT_SECRET | google.clientSecret     | oauth       | supersecret                                     | ClientSecret for OAuth2 authentication with Google.                                                    |
+| OAUTH_GOOGLE_CREATE_USERS  | google.createUsers      | oauth       | false                                           | A user logged in with Google OAuth2 should be created automatically when it doesn't exist before.      |
+| OAUTH_GOOGLE_ENABLED       | google.enabled          | oauth       | false                                           | Enable Google OAuth2 authentication.                                                                   |
+| OAUTH_GITLAB_CLIENT_ID     | gitlab.clientID         | oauth       | clientid                                        | ClientID for OAuth2 authentication with Gitlab.                                                        |
+| OAUTH_GITLAB_CLIENT_SECRET | gitlab.clientSecret     | oauth       | supersecret                                     | ClientSecret for OAuth2 authentication with Gitlab.                                                    |
+| OAUTH_GITLAB_CREATE_USERS  | gitlab.createUsers      | oauth       | false                                           | A user logged in with Gitlab OAuth2 should be created automatically when it doesn't exist before.      |
+| OAUTH_GITLAB_ENABLED       | gitlab.enabled          | oauth       | false                                           | Enable Gitlab OAuth2 authentication.                                                                   |
 | LOG_LEVEL                  |                         |             | debug                                           | Specify log level, one of: trace, debug, info, off.                                                                                       |
 | LOG_JSON                   |                         |             | false                                           | Format log output as JSON.                                                                                      |
 | LOG_COLOR                  |                         |             | true                                            | Colorize log output.                                                                                    |
@@ -183,6 +196,40 @@ ldap:
 database:
   typ: sqlite
   database: data/wg_portal.db
+oauth:
+  redirectURL: /callback
+  github:
+    enabled: false
+    createUsers: false
+    clientID: clientid
+    clientSecret: supersecret
+  google:
+    enabled: false
+    createUsers: false
+    clientID: clientid
+    clientSecret: supersecret
+  gitlab:
+    enabled: false
+    createUsers: false
+    clientID: clientid
+    clientSecret: supersecret
+oidc:
+  # example for Keycloak as OIDC provider
+  - discoveryURL: https://keycloakserver/auth/realms/realmname
+    createUsers: true
+    clientID: clientid
+    clientSecret: supersecret
+    button:
+      icon: keycloak
+      label: Sign In with Keycloak
+  # example for Google as OIDC provider
+  - discoveryURL: https://accounts.google.com
+    createUsers: false
+    clientID: clientid
+    clientSecret: supersecret
+    button:
+      icon: openid
+      label: Sign In with Google
 email:
   host: smtp.gmail.com
   port: 587
@@ -197,6 +244,15 @@ wg:
   configDirectory: /etc/wireguard
   manageIPAddresses: true
 ```
+
+### OAuth2 and OpenID Connect (OIDC) authentication
+
+When you activate OAuth2 or an OpenID service, you must provide a valid `redirectURL` in the authentication server configuration.
+
+The redirect URL is the same for all the login service you want to support (OAuth2 and OpenID): `${externalUrl}/oauth/callback`
+
+You can customize the value changing the `/callback` part at the end.
+To do so you must use the configuration parameter `oauth.redirectURL`, or the environment variable `OAUTH_REDIRECT_URL`. 
 
 ### RESTful API
 WireGuard Portal offers a RESTful API to interact with. 

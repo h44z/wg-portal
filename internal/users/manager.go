@@ -56,7 +56,7 @@ func (m Manager) GetUser(email string) *User {
 	user := User{}
 	m.db.Where("email = ?", email).First(&user)
 
-	if user.Email != email {
+	if user.Email == "" || user.Email != email {
 		return nil
 	}
 

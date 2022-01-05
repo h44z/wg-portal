@@ -1,12 +1,16 @@
 package server
 
 import (
+	"crypto/md5"
+	"fmt"
 	"os"
 	"reflect"
 	"runtime"
 
 	"github.com/h44z/wg-portal/internal/common"
 	"github.com/h44z/wg-portal/internal/ldap"
+	"github.com/h44z/wg-portal/internal/oauth"
+	"github.com/h44z/wg-portal/internal/oidc"
 	"github.com/h44z/wg-portal/internal/wireguard"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
@@ -75,6 +79,8 @@ type Config struct {
 	Database common.DatabaseConfig `yaml:"database"`
 	Email    common.MailConfig     `yaml:"email"`
 	LDAP     ldap.Config           `yaml:"ldap"`
+	OAUTH    oauth.Config          `yaml:"oauth"`
+	OIDC     oidc.Config           `yaml:"oidc"`
 	WG       wireguard.Config      `yaml:"wg"`
 }
 
@@ -112,6 +118,20 @@ func NewConfig() *Config {
 	cfg.LDAP.LoginFilter = "(&(objectClass=organizationalPerson)(mail={{login_identifier}})(!userAccountControl:1.2.840.113556.1.4.803:=2))"
 	cfg.LDAP.SyncFilter = "(&(objectClass=organizationalPerson)(!userAccountControl:1.2.840.113556.1.4.803:=2)(mail=*))"
 
+	cfg.OAUTH.Github.ClientID = "clientid"
+	cfg.OAUTH.Github.ClientSecret = "supersecret"
+	cfg.OAUTH.Github.Enabled = false
+	cfg.OAUTH.Github.CreateUsers = false
+	cfg.OAUTH.Google.ClientID = "clientid"
+	cfg.OAUTH.Google.ClientSecret = "supersecret"
+	cfg.OAUTH.Google.Enabled = false
+	cfg.OAUTH.Google.CreateUsers = false
+	cfg.OAUTH.Gitlab.ClientID = "clientid"
+	cfg.OAUTH.Gitlab.ClientSecret = "supersecret"
+	cfg.OAUTH.Gitlab.Enabled = false
+	cfg.OAUTH.Gitlab.CreateUsers = false
+	cfg.OAUTH.RedirectURL = "/callback"
+
 	cfg.WG.DeviceNames = []string{"wg0"}
 	cfg.WG.DefaultDeviceName = "wg0"
 	cfg.WG.ConfigDirectoryPath = "/etc/wireguard"
@@ -142,6 +162,13 @@ func NewConfig() *Config {
 	if cfg.WG.ManageIPAddresses && runtime.GOOS != "linux" {
 		logrus.Warnf("managing IP addresses only works on linux, feature disabled...")
 		cfg.WG.ManageIPAddresses = false
+	}
+
+	// generate the login URLs used in frontend OIDC buttons
+	for i := range cfg.OIDC {
+		// md5(item_index + discovery_url)
+		urlID := fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%d%s", i, cfg.OIDC[i].DiscoveryURL))))
+		cfg.OIDC[i].LoginURL = fmt.Sprintf("/%s/login", urlID)
 	}
 
 	return cfg

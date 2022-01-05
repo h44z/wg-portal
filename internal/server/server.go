@@ -19,6 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 	wgportal "github.com/h44z/wg-portal"
 	ldapprovider "github.com/h44z/wg-portal/internal/authentication/providers/ldap"
+	oauthprovider "github.com/h44z/wg-portal/internal/authentication/providers/oauth"
 	passwordprovider "github.com/h44z/wg-portal/internal/authentication/providers/password"
 	"github.com/h44z/wg-portal/internal/common"
 	"github.com/h44z/wg-portal/internal/users"
@@ -178,6 +179,14 @@ func (s *Server) Setup(ctx context.Context) error {
 			logrus.Warnf("failed to setup LDAP connection, LDAP features disabled")
 		}
 		s.auth.RegisterProviderWithoutError(ldapProvider, err)
+	}
+
+	if s.config.OAUTH.IsEnabled() || s.config.OIDC.IsEnabled() {
+		oauthProvider, err := oauthprovider.New(&s.config.Database)
+		if err != nil {
+			logrus.Warnf("failed to setup DB connection for OIDC")
+		}
+		s.auth.RegisterProviderWithoutError(oauthProvider, err)
 	}
 
 	// Setup WireGuard stuff

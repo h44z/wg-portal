@@ -6,3 +6,42 @@
     height: 2rem;
     width: auto;
 }
+
+.login-container {
+    -ms-flex-direction: column !important;
+    flex-direction: column !important
+}
+
+@media (min-width: 576px) {
+    .login-container {
+        -ms-flex-direction: row !important;
+        flex-direction: row !important
+    }
+}
+
+.btn-social.btn-sm>:first-child {
+    width: 32px;
+    line-height: 34px;
+    font-size: 1.6em;
+}
+
+.btn-openid {
+    background: #f2f2f2;
+    color: #000;
+}
+.btn-openid:hover {
+    background: #e7e7e7;
+    color: #000;
+}
+
+.logo-keycloak {
+    background: url('/img/keycloak-logo.svg') no-repeat 6px 8px;
+    background-size: 18px 18px;
+    color: #000;
+}
+
+.logo-openid {
+    background: url('/img/openid-logo.svg') no-repeat 6px 8px;
+    background-size: 16px 16px;
+    color: #000;
+}

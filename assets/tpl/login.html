@@ -7,6 +7,7 @@
     <title>{{ .static.WebsiteTitle }} - Login</title>
     <meta name="description" content="{{ .static.WebsiteTitle }}">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-social.min.css">
     <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
     <link rel="stylesheet" href="/fonts/font-awesome.min.css">
     <link rel="stylesheet" href="/fonts/fontawesome5-overrides.min.css">
@@ -24,33 +25,73 @@
         </div><!--/.navbar-collapse -->
     </nav>
     <div class="container mt-1">
-        <div class="card mt-5">
-            <div class="card-header">Please sign in</div>
-            <div class="card-body">
-                <form class="form-signin" method="post" name="login">
-                    <input type="hidden" name="_csrf" value="{{.Csrf}}">
-                    <div class="form-group">
-                        <label for="inputUsername">Username</label>
-                        <input type="text" name="username" class="form-control" id="inputUsername" aria-describedby="usernameHelp" placeholder="Enter username or email">
-                    </div>
-                    <div class="form-group">
-                        <label for="inputPassword">Password</label>
-                        <input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password">
-                    </div>
-                    <button class="btn btn-lg btn-primary btn-block mt-5" type="submit">Sign in</button>
-
-                    {{ if eq .error true }}
-                        <div class="alert alert-danger mt-3" role="alert">
-                            {{.message}}
+        {{ if eq .error true }}
+        <div class="alert alert-danger mt-3" role="alert">
+            {{.message}}
+        </div>
+        {{end}}
+        <div class="mt-1 d-flex login-container">
+            <div class="card p-2 mt-3 flex-grow-1">
+                <div class="card-header">Please sign in</div>
+                <div class="card-body">
+                    <form class="form-signin" method="post" name="login">
+                        <input type="hidden" name="_csrf" value="{{.Csrf}}">
+                        <div class="form-group">
+                            <label for="inputUsername">Username</label>
+                            <input type="text" name="username" class="form-control" id="inputUsername" aria-describedby="usernameHelp" placeholder="Enter username or email">
                         </div>
-                    {{end}}
-                </form>
-
-                <div class="card o-hidden border-0 my-5">
-                    <div class="card-body p-0">
-                        <a href="/" class="btn btn-white btn-block text-primary btn-user">Go Home</a>
-                    </div>
+                        <div class="form-group">
+                            <label for="inputPassword">Password</label>
+                            <input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password">
+                        </div>
+                        <button class="btn btn-lg btn-primary btn-block mt-5" type="submit">Sign in</button>
+                    </form>
                 </div>
+            </div>
+            {{ if eq .socialEnabled true }}
+            <div class="p-1"></div>
+            <div class="card p-2 mt-3">
+                <div class="card-header">Social login</div>
+                <div class="card-body">
+                    {{ if eq .oauthGithubEnabled true }}
+                    <div class="mt-3">
+                        <form action="/oauth/github/login" method="post">
+                            <input type="hidden" name="_csrf" value="{{.Csrf}}">
+                            <button class="btn btn-block btn-social btn-sm btn-github" type="submit"><span class="fab fa-github"></span> Sign in with GitHub</button>
+                        </form>
+                    </div>
+                    {{end}}
+                    {{ if eq .oauthGoogleEnabled true }}
+                    <div class="mt-3">
+                        <form action="/oauth/google/login" method="post">
+                            <input type="hidden" name="_csrf" value="{{.Csrf}}">
+                            <button class="btn btn-block btn-social btn-sm btn-google" type="submit"><span class="fa fa-google"></span> Sign in with Google</button>
+                        </form>
+                    </div>
+                    {{end}}
+                    {{ if eq .oauthGitlabEnabled true }}
+                    <div class="mt-3">
+                        <form action="/oauth/gitlab/login" method="post">
+                            <input type="hidden" name="_csrf" value="{{.Csrf}}">
+                            <button class="btn btn-block btn-social btn-sm btn-gitlab" type="submit"><span class="fa fa-gitlab"></span> Sign in with Gitlab</button>
+                        </form>
+                    </div>
+                    {{end}}
+                    {{ range $oidc := .oidc }}
+                    <div class="mt-3">
+                        <form action="/oidc{{$oidc.LoginURL}}" method="post">
+                            <input type="hidden" name="_csrf" value="{{$.Csrf}}">
+                            <button class="btn btn-block btn-social btn-sm btn-openid" type="submit"><span class="fa {{$oidc.Style}}"></span> {{$oidc.Label}}</button>
+                        </form>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+        </div>
+        <div class="card o-hidden border-0 my-5">
+            <div class="card-body p-0">
+                <a href="/" class="btn btn-white btn-block text-primary btn-user">Go Home</a>
             </div>
         </div>
         {{template "prt_flashes.html" .}}
