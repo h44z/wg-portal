@@ -216,7 +216,8 @@ oauth:
 oidc:
   # example for Keycloak as OIDC provider
   - discoveryURL: https://keycloakserver/auth/realms/realmname
-    createUsers: true
+    createUsers: false
+    verifyEmail: false
     clientID: clientid
     clientSecret: supersecret
     button:
@@ -225,6 +226,7 @@ oidc:
   # example for Google as OIDC provider
   - discoveryURL: https://accounts.google.com
     createUsers: false
+    verifyEmail: false
     clientID: clientid
     clientSecret: supersecret
     button:
@@ -252,8 +254,34 @@ When you activate OAuth2 or an OpenID service, you must provide a valid `redirec
 The redirect URL is the same for all the login service you want to support (OAuth2 and OpenID): `${externalUrl}/oauth/callback`
 
 You can customize the value changing the `/callback` part at the end.
-To do so you must use the configuration parameter `oauth.redirectURL`, or the environment variable `OAUTH_REDIRECT_URL`. 
+To do so you must use the configuration parameter `oauth.redirectURL`, or the environment variable `OAUTH_REDIRECT_URL`.
 
+The configuration for the OpenID services cannot be passed using environment variables, so if you want to use OpenID,
+you need to use the YAML configuration file.
+
+This is the example of a OpenID service configuration:
+
+```yaml
+  - discoveryURL: https://accounts.google.com
+    createUsers: false
+    verifyEmail: false
+    clientID: clientid
+    clientSecret: supersecret
+    button:
+      icon: openid
+      label: Sign In with Google
+```
+
+- `discoveryURL` is the discovery URL of the service you want to configure.
+- `createUsers` if set to `false` (**default**), a user not already present in the local database will be rejected, if 
+  set to `true`, the user will be automatically created in the local database.
+- `verifyEmail` if set to `false` (**default**), the `email_verified` claim of the user will be ignored, if set to
+  `true` the `email_verified` claim will be enforced and the user will be rejected if the email is not verified
+- `clientID` is the clientID of the OpenID service
+- `clientSecret` is the clientSecret of the OpenID service
+- `button.icon` is the icon used for the login button, at the moment the supported values are `openid` and `keycloak`
+- `button.label` is the text used in the login button
+  
 ### RESTful API
 WireGuard Portal offers a RESTful API to interact with. 
 The API is documented using OpenAPI 2.0, the Swagger UI can be found 
