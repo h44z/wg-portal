@@ -12,8 +12,9 @@ import (
 
 type oidcProvider struct {
 	oauth2.Config
-	p           *oidc.Provider
-	createUsers bool
+	oidcProvider *oidc.Provider
+	createUsers  bool
+	verifyEmail  bool
 }
 
 type ProviderConfig struct {
@@ -22,10 +23,11 @@ type ProviderConfig struct {
 	ClientSecret string
 	RedirectURL  string
 	CreateUsers  bool
+	VerifyEmail  bool
 }
 
 func New(ctx context.Context, c ProviderConfig) (oauthproviders.Provider, error) {
-	p, err := oidc.NewProvider(ctx, c.DiscoveryURL)
+	provider, err := oidc.NewProvider(ctx, c.DiscoveryURL)
 	if err != nil {
 		return nil, err
 	}
@@ -33,28 +35,20 @@ func New(ctx context.Context, c ProviderConfig) (oauthproviders.Provider, error)
 	config := oauth2.Config{
 		ClientID:     c.ClientID,
 		ClientSecret: c.ClientSecret,
-		Endpoint:     p.Endpoint(),
+		Endpoint:     provider.Endpoint(),
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 		RedirectURL:  c.RedirectURL,
 	}
 
 	return &oidcProvider{
-		Config:      config,
-		p:           p,
-		createUsers: c.CreateUsers,
+		Config:       config,
+		oidcProvider: provider,
+		createUsers:  c.CreateUsers,
+		verifyEmail:  c.VerifyEmail,
 	}, nil
 }
 
 func (p oidcProvider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (userprofile.Profile, error) {
-	userInfo, err := p.p.UserInfo(ctx, ts)
-	if err != nil {
-		return userprofile.Profile{}, err
-	}
-
-	if !userInfo.EmailVerified {
-		return userprofile.Profile{}, fmt.Errorf("oidc: user email not verified")
-	}
-
 	t, err := ts.Token()
 	if err != nil {
 		return userprofile.Profile{}, err
@@ -65,7 +59,7 @@ func (p oidcProvider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (user
 		return userprofile.Profile{}, fmt.Errorf("oidc: missing id_token")
 	}
 
-	verifier := p.p.Verifier(&oidc.Config{ClientID: p.Config.ClientID})
+	verifier := p.oidcProvider.Verifier(&oidc.Config{ClientID: p.Config.ClientID})
 
 	idToken, err := verifier.Verify(ctx, rawIDToken)
 	if err != nil {
@@ -85,10 +79,14 @@ func (p oidcProvider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (user
 		return userprofile.Profile{}, err
 	}
 
+	if p.verifyEmail && !claims.EmailVerified {
+		return userprofile.Profile{}, fmt.Errorf("oidc: user email not verified")
+	}
+
 	return userprofile.Profile{
 		FirstName: claims.GivenName,
 		LastName:  claims.FamilyName,
-		Email:     userInfo.Email,
+		Email:     claims.Email,
 	}, nil
 }
 

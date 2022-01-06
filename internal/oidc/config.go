@@ -22,9 +22,10 @@ type Config []ConfigItem
 
 type ConfigItem struct {
 	DiscoveryURL string `yaml:"discoveryURL" envconfig:"DISCOVERY_URL"`
-	CreateUsers  bool   `yaml:"createUsers" envconfig:"CREATE_USERS"`
 	ClientID     string `yaml:"clientID" envconfig:"CLIENT_ID"`
 	ClientSecret string `yaml:"clientSecret" envconfig:"CLIENT_SECRET"`
+	CreateUsers  bool   `yaml:"createUsers" envconfig:"CREATE_USERS"`
+	VerifyEmail  bool   `yaml:"verifyEmail" envconfig:"VERIFY_EMAIL"`
 	LoginURL     string
 	Button       struct {
 		Icon  IconType `yaml:"icon,omitempty" envconfig:"BUTTON_ICON"`
@@ -66,6 +67,7 @@ func (c Config) NewProviderFromID(ctx context.Context, loginURL, redirectURL str
 		ClientSecret: item.ClientSecret,
 		RedirectURL:  redirectURL,
 		CreateUsers:  item.CreateUsers,
+		VerifyEmail:  item.VerifyEmail,
 	}
 
 	return New(ctx, config)
