@@ -128,6 +128,10 @@ func NewConfig() *Config {
 	cfg.OAUTH.Gitlab.ClientSecret = "supersecret"
 	cfg.OAUTH.Gitlab.Enabled = false
 	cfg.OAUTH.Gitlab.CreateUsers = false
+	cfg.OAUTH.Bitbucket.ClientID = "clientid"
+	cfg.OAUTH.Bitbucket.ClientSecret = "supersecret"
+	cfg.OAUTH.Bitbucket.Enabled = false
+	cfg.OAUTH.Bitbucket.CreateUsers = false
 	cfg.OAUTH.RedirectURL = "/callback"
 
 	cfg.WG.DeviceNames = []string{"wg0"}

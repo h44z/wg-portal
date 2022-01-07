@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/h44z/wg-portal/internal/oauth/oauthproviders"
+	"github.com/h44z/wg-portal/internal/oauth/oauthproviders/bitbucket"
 	"github.com/h44z/wg-portal/internal/oauth/oauthproviders/github"
 	"github.com/h44z/wg-portal/internal/oauth/oauthproviders/gitlab"
 	"github.com/h44z/wg-portal/internal/oauth/oauthproviders/google"
@@ -32,6 +33,13 @@ type Config struct {
 		Enabled      bool   `yaml:"enabled" envconfig:"OAUTH_GITLAB_ENABLED"`
 		provider     oauthproviders.Provider
 	} `yaml:"gitlab"`
+	Bitbucket struct {
+		ClientID     string `yaml:"clientID" envconfig:"OAUTH_BITBUCKET_CLIENT_ID"`
+		ClientSecret string `yaml:"clientSecret" envconfig:"OAUTH_BITBUCKET_CLIENT_SECRET"`
+		CreateUsers  bool   `yaml:"createUsers" envconfig:"OAUTH_BITBUCKET_CREATE_USERS"`
+		Enabled      bool   `yaml:"enabled" envconfig:"OAUTH_BITBUCKET_ENABLED"`
+		provider     oauthproviders.Provider
+	} `yaml:"bitbucket"`
 	RedirectURL string `yaml:"redirectURL" envconfig:"OAUTH_REDIRECT_URL"`
 	enabled     bool
 }
@@ -66,6 +74,16 @@ func (c *Config) Parse(redirectURL string) {
 		})
 		c.enabled = true
 	}
+
+	if c.Bitbucket.Enabled {
+		c.Bitbucket.provider = bitbucket.New(oauthproviders.ProviderConfig{
+			ClientID:     c.Bitbucket.ClientID,
+			ClientSecret: c.Bitbucket.ClientSecret,
+			RedirectURL:  redirectURL,
+			CreateUsers:  c.Bitbucket.CreateUsers,
+		})
+		c.enabled = true
+	}
 }
 
 func (c Config) IsEnabled() bool {
@@ -80,6 +98,8 @@ func (c Config) ProviderByID(providerID string) (oauthproviders.Provider, error)
 		return c.Google.provider, nil
 	case gitlab.ProviderGitlab:
 		return c.Gitlab.provider, nil
+	case bitbucket.ProviderBitbucket:
+		return c.Bitbucket.provider, nil
 	}
 
 	return nil, errors.New(fmt.Sprintf("oauth: the providerID was not found in the configuration: %s", providerID))
@@ -117,6 +137,15 @@ func (c Config) ToFrontendButtons() (fc []FrontendButtonConfig) {
 			ButtonStyle: "btn-gitlab",
 			IconStyle:   "fa-gitlab",
 			Label:       "Sign in with Gitlab",
+		})
+	}
+
+	if c.Bitbucket.Enabled {
+		fc = append(fc, FrontendButtonConfig{
+			ProviderID:  c.Bitbucket.provider.ID(),
+			ButtonStyle: "btn-bitbucket",
+			IconStyle:   "fa-bitbucket",
+			Label:       "Sign in with BitBucket",
 		})
 	}
 
