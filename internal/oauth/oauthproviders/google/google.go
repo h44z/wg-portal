@@ -3,13 +3,15 @@ package google
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/h44z/wg-portal/internal/oauth/oauthproviders"
 	"github.com/h44z/wg-portal/internal/oauth/userprofile"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
+
+const ProviderGoogle oauthproviders.ProviderType = "google"
 
 const (
 	googleApiUserProfile = "https://www.googleapis.com/oauth2/v1/userinfo?alt=json"
@@ -28,6 +30,7 @@ type userInfo struct {
 
 type provider struct {
 	oauth2.Config
+	id          string
 	createUsers bool
 }
 
@@ -42,8 +45,13 @@ func New(pc oauthproviders.ProviderConfig) oauthproviders.Provider {
 
 	return &provider{
 		Config:      config,
+		id:          string(ProviderGoogle),
 		createUsers: pc.CreateUsers,
 	}
+}
+
+func (g provider) ID() string {
+	return g.id
 }
 
 func (g provider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (userprofile.Profile, error) {
@@ -55,11 +63,11 @@ func (g provider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (userprof
 
 	var p userInfo
 	if err = json.NewDecoder(resp.Body).Decode(&p); err != nil {
-		return userprofile.Profile{}, fmt.Errorf("google: invalid response from the authentication sever: %v", err)
+		return userprofile.Profile{}, errors.WithMessage(err, "google: invalid response from the authentication sever")
 	}
 
 	if p.Email == "" || !p.VerifiedEmail {
-		return userprofile.Profile{}, fmt.Errorf("google: no valid email found for the user '%s' (%s)", p.Name, p.ID)
+		return userprofile.Profile{}, errors.WithMessagef(err, "google: no valid email found for the user '%s' (%s)", p.Name, p.ID)
 	}
 
 	if p.GivenName == "" && p.FamilyName == "" {

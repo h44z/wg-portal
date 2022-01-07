@@ -1,9 +1,7 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/authentication"
@@ -15,37 +13,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func getIDFromLoginURL(loginUrl string) (string, string) {
-	values := strings.SplitN(loginUrl, "/", 3)
-
-	if values[1] == "oidc" {
-		return values[1], fmt.Sprintf("/%s", values[2])
+func (s *Server) providerFromID(providerID string) (provider oauthproviders.Provider, err error) {
+	provider, err = s.config.OAUTH.ProviderByID(providerID)
+	if err == nil {
+		return
 	}
 
-	oauthValues := strings.Split(values[2], "/")
-
-	return values[1], oauthValues[0]
-}
-
-func (s *Server) providerFromLoginURL(c *gin.Context, loginUrl string, redirectURL string) (provider oauthproviders.Provider, err error) {
-	providerType, providerID := getIDFromLoginURL(loginUrl)
-
-	switch providerType {
-	case "oauth":
-		provider, err = s.config.OAUTH.NewProviderFromID(oauthproviders.ProviderType(providerID), redirectURL)
-	case "oidc":
-		provider, err = s.config.OIDC.NewProviderFromID(c.Request.Context(), providerID, redirectURL)
-	default:
-		err = fmt.Errorf("unknown authentication provider type: %s", providerType)
-	}
-
-	return
+	return s.config.OIDC.ProviderByID(providerID)
 }
 
 func (s *Server) OAuthLogin(c *gin.Context) {
-	redirectURL := fmt.Sprintf("%s/oauth%s", strings.TrimSuffix(s.config.Core.ExternalUrl, "/"), s.config.OAUTH.RedirectURL)
+	providerID := c.Request.FormValue("_pid")
 
-	provider, err := s.providerFromLoginURL(c, c.Request.URL.Path, redirectURL)
+	provider, err := s.providerFromID(providerID)
 	if err != nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
 		logrus.Errorf("oidc callback login failed for URL %s: %v", c.Request.RequestURI, err)
@@ -56,9 +36,12 @@ func (s *Server) OAuthLogin(c *gin.Context) {
 	// create a new state:
 	// store the request remote IP address to validate the state in the callback
 	// store the used loginURL to create the right authentication provider later in the callback
-	state, err := oauth.GetStateManager(s.ctx).NewState(c.Request.RemoteAddr, c.Request.URL.Path)
+	state, err := oauth.GetStateManager(s.ctx).NewState(c.Request.RemoteAddr, provider.ID())
 	if err != nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
+		logrus.Errorf("oauth login saving state state: %v", err)
+
+		return
 	}
 
 	oauth2URL := provider.AuthCodeURL(state)
@@ -66,7 +49,6 @@ func (s *Server) OAuthLogin(c *gin.Context) {
 }
 
 func (s *Server) OAuthCallback(c *gin.Context) {
-	redirectURL := fmt.Sprintf("%s/oauth%s", strings.TrimSuffix(s.config.Core.ExternalUrl, "/"), s.config.OAUTH.RedirectURL)
 	stateString := c.Request.FormValue("state")
 	code := c.Request.FormValue("code")
 
@@ -89,11 +71,10 @@ func (s *Server) OAuthCallback(c *gin.Context) {
 		return
 	}
 
-	// get the right authentication provider, using the loginURL stored in the state
-	provider, err := s.providerFromLoginURL(c, state.LoginURL(), redirectURL)
+	provider, err := s.providerFromID(state.ProviderID())
 	if err != nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
-		logrus.Errorf("oauth callback failed for state %s: %v", stateString, err)
+		logrus.Errorf("oidc callback login failed for URL %s: %v", c.Request.RequestURI, err)
 
 		return
 	}

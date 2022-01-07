@@ -31,15 +31,13 @@ func (s *Server) GetLogin(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "login.html", gin.H{
-		"error":              authError != "",
-		"message":            errMsg,
-		"static":             s.getStaticData(),
-		"Csrf":               csrf.GetToken(c),
-		"socialEnabled":      s.config.OAUTH.IsEnabled() || s.config.OIDC.IsEnabled(),
-		"oauthGithubEnabled": s.config.OAUTH.Github.Enabled,
-		"oauthGoogleEnabled": s.config.OAUTH.Google.Enabled,
-		"oauthGitlabEnabled": s.config.OAUTH.Gitlab.Enabled,
-		"oidc":               s.config.OIDC.ToFrontendButtons(),
+		"error":         authError != "",
+		"message":       errMsg,
+		"static":        s.getStaticData(),
+		"Csrf":          csrf.GetToken(c),
+		"socialEnabled": s.config.OAUTH.IsEnabled() || s.config.OIDC.IsEnabled(),
+		"oauth":         s.config.OAUTH.ToFrontendButtons(),
+		"oidc":          s.config.OIDC.ToFrontendButtons(),
 	})
 }
 

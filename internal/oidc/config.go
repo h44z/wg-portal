@@ -1,10 +1,11 @@
 package oidc
 
 import (
-	"context"
 	"fmt"
 
+	"github.com/h44z/wg-portal/internal/oauth"
 	"github.com/h44z/wg-portal/internal/oauth/oauthproviders"
+	"github.com/pkg/errors"
 )
 
 type IconType string
@@ -20,34 +21,41 @@ const (
 
 type Config []ConfigItem
 
-type ConfigItem struct {
-	DiscoveryURL string `yaml:"discoveryURL" envconfig:"DISCOVERY_URL"`
-	ClientID     string `yaml:"clientID" envconfig:"CLIENT_ID"`
-	ClientSecret string `yaml:"clientSecret" envconfig:"CLIENT_SECRET"`
-	CreateUsers  bool   `yaml:"createUsers" envconfig:"CREATE_USERS"`
-	VerifyEmail  bool   `yaml:"verifyEmail" envconfig:"VERIFY_EMAIL"`
-	LoginURL     string
-	Button       struct {
-		Icon  IconType `yaml:"icon,omitempty" envconfig:"BUTTON_ICON"`
-		Label string   `yaml:"label,omitempty" envconfig:"BUTTON_LABEL"`
-	} `yaml:"button,omitempty"`
+func (c Config) Parse(redirectURL string) (err error) {
+	for i := range c {
+		config := ProviderConfig{
+			DiscoveryURL: c[i].DiscoveryURL,
+			ClientID:     c[i].ClientID,
+			ClientSecret: c[i].ClientSecret,
+			RedirectURL:  redirectURL,
+			CreateUsers:  c[i].CreateUsers,
+			VerifyEmail:  c[i].VerifyEmail,
+		}
+
+		c[i].provider, err = New(config)
+		if err != nil {
+			return err
+		}
+	}
+
+	return
 }
 
 func (c Config) IsEnabled() bool {
 	return len(c) > 0
 }
 
-func (c Config) getByLoginURL(loginURL string) (*ConfigItem, error) {
+func (c Config) ProviderByID(providerID string) (oauthproviders.Provider, error) {
 	for i := range c {
-		if c[i].LoginURL == loginURL {
-			return &c[i], nil
+		if c[i].provider.ID() == providerID {
+			return c[i].provider, nil
 		}
 	}
 
-	return &ConfigItem{}, fmt.Errorf("the loginURL was not found in the configuration: %s", loginURL)
+	return nil, errors.New(fmt.Sprintf("oauth: the providerID was not found in the configuration: %s", providerID))
 }
 
-func (c Config) ToFrontendButtons() (fc []FrontendButton) {
+func (c Config) ToFrontendButtons() (fc []oauth.FrontendButtonConfig) {
 	for i := range c {
 		fc = append(fc, c[i].ToFrontendButton())
 	}
@@ -55,34 +63,23 @@ func (c Config) ToFrontendButtons() (fc []FrontendButton) {
 	return
 }
 
-func (c Config) NewProviderFromID(ctx context.Context, loginURL, redirectURL string) (oauthproviders.Provider, error) {
-	item, err := c.getByLoginURL(loginURL)
-	if err != nil {
-		return nil, err
-	}
-
-	config := ProviderConfig{
-		DiscoveryURL: item.DiscoveryURL,
-		ClientID:     item.ClientID,
-		ClientSecret: item.ClientSecret,
-		RedirectURL:  redirectURL,
-		CreateUsers:  item.CreateUsers,
-		VerifyEmail:  item.VerifyEmail,
-	}
-
-	return New(ctx, config)
+type ConfigItem struct {
+	DiscoveryURL string `yaml:"discoveryURL" envconfig:"DISCOVERY_URL"`
+	ClientID     string `yaml:"clientID" envconfig:"CLIENT_ID"`
+	ClientSecret string `yaml:"clientSecret" envconfig:"CLIENT_SECRET"`
+	CreateUsers  bool   `yaml:"createUsers" envconfig:"CREATE_USERS"`
+	VerifyEmail  bool   `yaml:"verifyEmail" envconfig:"VERIFY_EMAIL"`
+	provider     oauthproviders.Provider
+	Button       struct {
+		Icon  IconType `yaml:"icon,omitempty" envconfig:"BUTTON_ICON"`
+		Label string   `yaml:"label,omitempty" envconfig:"BUTTON_LABEL"`
+	} `yaml:"button,omitempty"`
 }
 
-type FrontendButton struct {
-	LoginURL string
-	Style    string
-	Label    string
-}
-
-func (c ConfigItem) ToFrontendButton() FrontendButton {
+func (ci ConfigItem) ToFrontendButton() oauth.FrontendButtonConfig {
 	var style string
 
-	switch c.Button.Icon {
+	switch ci.Button.Icon {
 	case IconTypeKeycloak:
 		style = "logo-keycloak"
 	case IconTypeOpenID:
@@ -91,13 +88,14 @@ func (c ConfigItem) ToFrontendButton() FrontendButton {
 		style = "logo-openid"
 	}
 
-	if c.Button.Label == "" {
-		c.Button.Label = defaultLabel
+	if ci.Button.Label == "" {
+		ci.Button.Label = defaultLabel
 	}
 
-	return FrontendButton{
-		LoginURL: c.LoginURL,
-		Style:    style,
-		Label:    c.Button.Label,
+	return oauth.FrontendButtonConfig{
+		ProviderID:  ci.provider.ID(),
+		ButtonStyle: "btn-openid",
+		IconStyle:   style,
+		Label:       ci.Button.Label,
 	}
 }

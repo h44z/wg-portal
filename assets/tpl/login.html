@@ -53,35 +53,21 @@
             <div class="card p-2 mt-3">
                 <div class="card-header">Social login</div>
                 <div class="card-body">
-                    {{ if eq .oauthGithubEnabled true }}
+                    {{ range $oauth := .oauth }}
                     <div class="mt-3">
-                        <form action="/oauth/github/login" method="post">
-                            <input type="hidden" name="_csrf" value="{{.Csrf}}">
-                            <button class="btn btn-block btn-social btn-sm btn-github" type="submit"><span class="fab fa-github"></span> Sign in with GitHub</button>
-                        </form>
-                    </div>
-                    {{end}}
-                    {{ if eq .oauthGoogleEnabled true }}
-                    <div class="mt-3">
-                        <form action="/oauth/google/login" method="post">
-                            <input type="hidden" name="_csrf" value="{{.Csrf}}">
-                            <button class="btn btn-block btn-social btn-sm btn-google" type="submit"><span class="fa fa-google"></span> Sign in with Google</button>
-                        </form>
-                    </div>
-                    {{end}}
-                    {{ if eq .oauthGitlabEnabled true }}
-                    <div class="mt-3">
-                        <form action="/oauth/gitlab/login" method="post">
-                            <input type="hidden" name="_csrf" value="{{.Csrf}}">
-                            <button class="btn btn-block btn-social btn-sm btn-gitlab" type="submit"><span class="fa fa-gitlab"></span> Sign in with Gitlab</button>
+                        <form action="/oauth/login" method="post">
+                            <input type="hidden" name="_csrf" value="{{$.Csrf}}"/>
+                            <input type="hidden" name="_pid" value="{{$oauth.ProviderID}}"/>
+                            <button class="btn btn-block btn-social btn-sm {{$oauth.ButtonStyle}}" type="submit"><span class="fab {{$oauth.IconStyle}}"></span> {{$oauth.Label}}</button>
                         </form>
                     </div>
                     {{end}}
                     {{ range $oidc := .oidc }}
                     <div class="mt-3">
-                        <form action="/oidc{{$oidc.LoginURL}}" method="post">
-                            <input type="hidden" name="_csrf" value="{{$.Csrf}}">
-                            <button class="btn btn-block btn-social btn-sm btn-openid" type="submit"><span class="fa {{$oidc.Style}}"></span> {{$oidc.Label}}</button>
+                        <form action="/oauth/login" method="post">
+                            <input type="hidden" name="_csrf" value="{{$.Csrf}}"/>
+                            <input type="hidden" name="_pid" value="{{$oidc.ProviderID}}"/>
+                            <button class="btn btn-block btn-social btn-sm {{$oidc.ButtonStyle}}" type="submit"><span class="fa {{$oidc.IconStyle}}"></span> {{$oidc.Label}}</button>
                         </form>
                     </div>
                     {{end}}

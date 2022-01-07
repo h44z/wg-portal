@@ -13,12 +13,6 @@ import (
 
 type ProviderType string
 
-const (
-	ProviderGithub ProviderType = "github"
-	ProviderGoogle ProviderType = "google"
-	ProviderGitlab ProviderType = "gitlab"
-)
-
 type ProviderConfig struct {
 	ClientID     string
 	ClientSecret string
@@ -31,6 +25,7 @@ type Provider interface {
 	Exchange(context.Context, string, ...oauth2.AuthCodeOption) (*oauth2.Token, error)
 	TokenSource(context.Context, *oauth2.Token) oauth2.TokenSource
 
+	ID() string
 	CanCreateUsers() bool
 	UserInfo(ctx context.Context, ts oauth2.TokenSource) (userprofile.Profile, error)
 }
@@ -45,6 +40,7 @@ func DoRequest(ctx context.Context, ts oauth2.TokenSource, url string) (*http.Re
 	if err != nil {
 		return nil, fmt.Errorf("oauth: cannot get access token: %v", err)
 	}
+
 	token.SetAuthHeader(req)
 
 	client := &http.Client{Timeout: 5 * time.Second}

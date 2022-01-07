@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/gob"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"io/ioutil"
@@ -98,6 +99,13 @@ func (s *Server) Setup(ctx context.Context) error {
 
 	s.config = NewConfig()
 	s.ctx = ctx
+
+	redirectURL := fmt.Sprintf("%s/oauth%s", strings.TrimSuffix(s.config.Core.ExternalUrl, "/"), s.config.OAUTH.RedirectURL)
+
+	s.config.OAUTH.Parse(redirectURL)
+	if err = s.config.OIDC.Parse(redirectURL); err != nil {
+		return errors.WithMessage(err, "OpenID configuration parse failed")
+	}
 
 	// Setup database connection
 	s.db, err = common.GetDatabaseForConfig(&s.config.Database)

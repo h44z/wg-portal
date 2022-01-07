@@ -5,14 +5,17 @@ import (
 	"fmt"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/gofrs/uuid"
 	"github.com/h44z/wg-portal/internal/oauth/oauthproviders"
 	"github.com/h44z/wg-portal/internal/oauth/userprofile"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
 
 type oidcProvider struct {
 	oauth2.Config
 	oidcProvider *oidc.Provider
+	id           string
 	createUsers  bool
 	verifyEmail  bool
 }
@@ -26,8 +29,8 @@ type ProviderConfig struct {
 	VerifyEmail  bool
 }
 
-func New(ctx context.Context, c ProviderConfig) (oauthproviders.Provider, error) {
-	provider, err := oidc.NewProvider(ctx, c.DiscoveryURL)
+func New(c ProviderConfig) (oauthproviders.Provider, error) {
+	provider, err := oidc.NewProvider(context.Background(), c.DiscoveryURL)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +46,14 @@ func New(ctx context.Context, c ProviderConfig) (oauthproviders.Provider, error)
 	return &oidcProvider{
 		Config:       config,
 		oidcProvider: provider,
+		id:           uuid.NewV3(uuid.NamespaceURL, c.DiscoveryURL).String(),
 		createUsers:  c.CreateUsers,
 		verifyEmail:  c.VerifyEmail,
 	}, nil
+}
+
+func (p oidcProvider) ID() string {
+	return p.id
 }
 
 func (p oidcProvider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (userprofile.Profile, error) {
@@ -76,11 +84,11 @@ func (p oidcProvider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (user
 	}
 
 	if err := idToken.Claims(&claims); err != nil {
-		return userprofile.Profile{}, err
+		return userprofile.Profile{}, errors.WithMessage(err, "oidc: cannot parte the token claims")
 	}
 
 	if p.verifyEmail && !claims.EmailVerified {
-		return userprofile.Profile{}, fmt.Errorf("oidc: user email not verified")
+		return userprofile.Profile{}, errors.New("oidc: the user has an unverified email address")
 	}
 
 	return userprofile.Profile{

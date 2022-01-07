@@ -9,9 +9,12 @@ import (
 
 	"github.com/h44z/wg-portal/internal/oauth/oauthproviders"
 	"github.com/h44z/wg-portal/internal/oauth/userprofile"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/gitlab"
 )
+
+const ProviderGitlab oauthproviders.ProviderType = "gitlab"
 
 const (
 	gitlabApiUserProfile = "https://gitlab.com/api/v4/user"
@@ -52,6 +55,7 @@ type userInfo struct {
 }
 
 type provider struct {
+	id string
 	oauth2.Config
 	createUsers bool
 }
@@ -67,8 +71,13 @@ func New(pc oauthproviders.ProviderConfig) oauthproviders.Provider {
 
 	return &provider{
 		Config:      config,
+		id:          string(ProviderGitlab),
 		createUsers: pc.CreateUsers,
 	}
+}
+
+func (g provider) ID() string {
+	return g.id
 }
 
 func (g provider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (userprofile.Profile, error) {
@@ -79,12 +88,12 @@ func (g provider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (userprof
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return userprofile.Profile{}, fmt.Errorf("gitlab: returned status code %s", resp.Status)
+		return userprofile.Profile{}, errors.New(fmt.Sprintf("gitlab: returned status code %s", resp.Status))
 	}
 
 	var p userInfo
 	if err = json.NewDecoder(resp.Body).Decode(&p); err != nil {
-		return userprofile.Profile{}, fmt.Errorf("gitlab: invalid response from the authentication sever: %v", err)
+		return userprofile.Profile{}, errors.WithMessage(err, "gitlab: invalid response from the authentication sever")
 	}
 
 	email := p.PublicEmail

@@ -8,9 +8,12 @@ import (
 
 	"github.com/h44z/wg-portal/internal/oauth/oauthproviders"
 	"github.com/h44z/wg-portal/internal/oauth/userprofile"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 )
+
+const ProviderGithub oauthproviders.ProviderType = "github"
 
 const (
 	githubApiUserProfile = "https://api.github.com/user"
@@ -31,6 +34,7 @@ type userInfo struct {
 
 type provider struct {
 	oauth2.Config
+	id          string
 	createUsers bool
 }
 
@@ -45,8 +49,13 @@ func New(pc oauthproviders.ProviderConfig) oauthproviders.Provider {
 
 	return &provider{
 		Config:      config,
+		id:          string(ProviderGithub),
 		createUsers: pc.CreateUsers,
 	}
+}
+
+func (g provider) ID() string {
+	return g.id
 }
 
 func (g provider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (userprofile.Profile, error) {
@@ -57,12 +66,12 @@ func (g provider) UserInfo(ctx context.Context, ts oauth2.TokenSource) (userprof
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return userprofile.Profile{}, fmt.Errorf("github: returned status code %s", resp.Status)
+		return userprofile.Profile{}, errors.New(fmt.Sprintf("github: returned status code %s", resp.Status))
 	}
 
 	var p userInfo
 	if err = json.NewDecoder(resp.Body).Decode(&p); err != nil {
-		return userprofile.Profile{}, fmt.Errorf("github: invalid response from the authentication sever: %v", err)
+		return userprofile.Profile{}, errors.WithMessage(err, "github: invalid response from the authentication sever")
 	}
 
 	if p.Email == "" {
@@ -93,7 +102,7 @@ func (g provider) userEmail(ctx context.Context, ts oauth2.TokenSource) (string,
 
 	var emailList []emails
 	if err = json.NewDecoder(resp.Body).Decode(&emailList); err != nil {
-		return "", fmt.Errorf("invalid response from the authentication sever: %v", err)
+		return "", errors.WithMessage(err, "github: invalid response from the authentication sever")
 	}
 
 	for _, item := range emailList {
@@ -102,7 +111,7 @@ func (g provider) userEmail(ctx context.Context, ts oauth2.TokenSource) (string,
 		}
 	}
 
-	return "", fmt.Errorf("no valid email found")
+	return "", errors.WithMessage(err, "github: no valid email found")
 }
 
 func (g provider) CanCreateUsers() bool {

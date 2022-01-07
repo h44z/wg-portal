@@ -8,17 +8,18 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
 )
 
 type State interface {
 	IsValid(remoteAddr string) bool
-	LoginURL() string
+	ProviderID() string
 }
 
 type state struct {
 	expireAt   time.Time
 	remoteAddr string
-	loginURL   string
+	providerID string
 }
 
 func (s state) IsValid(remoteAddr string) bool {
@@ -32,8 +33,8 @@ func (s state) IsValid(remoteAddr string) bool {
 	return oParts[0] == nParts[0]
 }
 
-func (s state) LoginURL() string {
-	return s.loginURL
+func (s state) ProviderID() string {
+	return s.providerID
 }
 
 const (
@@ -59,17 +60,17 @@ func GetStateManager(ctx context.Context) *StateManager {
 	return &instance
 }
 
-func (sm *StateManager) NewState(remoteAddr, loginURL string) (string, error) {
+func (sm *StateManager) NewState(remoteAddr, providerID string) (string, error) {
 	id, err := uuid.DefaultGenerator.NewV4()
 	if err != nil {
-		return "", fmt.Errorf("cannot generate oauth code: %s", err)
+		return "", fmt.Errorf("cannot generate oauth state: %s", err)
 	}
 
 	sm.mu.Lock()
 	sm.states[id.String()] = state{
 		expireAt:   time.Now().Add(stateTTL),
 		remoteAddr: remoteAddr,
-		loginURL:   loginURL,
+		providerID: providerID,
 	}
 	sm.mu.Unlock()
 
@@ -82,7 +83,7 @@ func (sm *StateManager) GetState(state string) (State, error) {
 	sm.mu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("specified state not found: %s", state)
+		return nil, errors.New(fmt.Sprintf("specified state not found: %s", state))
 	}
 
 	return s, nil

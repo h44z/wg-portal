@@ -1,8 +1,6 @@
 package server
 
 import (
-	"crypto/md5"
-	"fmt"
 	"os"
 	"reflect"
 	"runtime"
@@ -162,13 +160,6 @@ func NewConfig() *Config {
 	if cfg.WG.ManageIPAddresses && runtime.GOOS != "linux" {
 		logrus.Warnf("managing IP addresses only works on linux, feature disabled...")
 		cfg.WG.ManageIPAddresses = false
-	}
-
-	// generate the login URLs used in frontend OIDC buttons
-	for i := range cfg.OIDC {
-		// md5(item_index + discovery_url)
-		urlID := fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%d%s", i, cfg.OIDC[i].DiscoveryURL))))
-		cfg.OIDC[i].LoginURL = fmt.Sprintf("/%s/login", urlID)
 	}
 
 	return cfg
