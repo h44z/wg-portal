@@ -77,7 +77,7 @@ In this example we will use `gitlab` as the authentication provider.
         ...
         if c.Gitlab.Enabled {
             fc = append(fc, FrontendButtonConfig{
-                ProviderID:  c.Github.provider.ID(),
+                ProviderID:  c.Gitlab.provider.ID(),
                 ButtonStyle: "btn-gitlab",
                 IconStyle:   "fa-gitlab",
                 Label:       "Sign in with Gitlab",

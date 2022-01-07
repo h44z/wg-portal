@@ -133,7 +133,7 @@ func (c Config) ToFrontendButtons() (fc []FrontendButtonConfig) {
 
 	if c.Gitlab.Enabled {
 		fc = append(fc, FrontendButtonConfig{
-			ProviderID:  c.Github.provider.ID(),
+			ProviderID:  c.Gitlab.provider.ID(),
 			ButtonStyle: "btn-gitlab",
 			IconStyle:   "fa-gitlab",
 			Label:       "Sign in with Gitlab",
