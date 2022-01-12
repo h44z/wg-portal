@@ -34,6 +34,21 @@
         rootSelector: '[data-toggle=confirmation]',
         // other options
     });
+
+    // Handle OAuth2 login button transition
+    $(document).on('submit', 'form.login-oauth', function() {
+        const $button = $(this).children("button.btn-social")
+        $button.prop("disabled", true);
+        $button.children("span").children("span.fab").prop('class', 'fa fa-spinner fa-spin');
+    });
+
+    // Handle OIDC login button transition
+    $(document).on('submit', 'form.login-oidc', function() {
+        const $button = $(this).children("button.btn-social")
+        $button.prop("disabled", true);
+        $button.children("span.fa").prop('class', 'fa');
+        $button.children("span.fa").children("span.login-oidc-spn").prop('class', 'fa fa-spinner fa-spin');
+    });
 })(jQuery); // End of use strict
 
 

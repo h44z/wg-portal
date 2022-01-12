@@ -54,20 +54,22 @@
                 <div class="card-header">Social login</div>
                 <div class="card-body">
                     {{ range $oauth := .oauth }}
-                    <div class="mt-3">
-                        <form action="/oauth/login" method="post">
+                    <div class="mt-2">
+                        <form action="/oauth/login" class="login-oauth" method="post" id="{{$oauth.ProviderID}}">
                             <input type="hidden" name="_csrf" value="{{$.Csrf}}"/>
                             <input type="hidden" name="_pid" value="{{$oauth.ProviderID}}"/>
-                            <button class="btn btn-block btn-social btn-sm {{$oauth.ButtonStyle}}" type="submit"><span class="fab {{$oauth.IconStyle}}"></span> {{$oauth.Label}}</button>
+                            <button id="submit_{{$oauth.ProviderID}}" class="btn btn-block btn-social btn-sm {{$oauth.ButtonStyle}}" type="submit">
+                                <span><span class="fab {{$oauth.IconStyle}}"></span></span> {{$oauth.Label}}</button>
                         </form>
                     </div>
                     {{end}}
                     {{ range $oidc := .oidc }}
-                    <div class="mt-3">
-                        <form action="/oauth/login" method="post">
+                    <div class="mt-2">
+                        <form action="/oauth/login" class="login-oidc" method="post" id="{{$oidc.ProviderID}}">
                             <input type="hidden" name="_csrf" value="{{$.Csrf}}"/>
                             <input type="hidden" name="_pid" value="{{$oidc.ProviderID}}"/>
-                            <button class="btn btn-block btn-social btn-sm {{$oidc.ButtonStyle}}" type="submit"><span class="fa {{$oidc.IconStyle}}"></span> {{$oidc.Label}}</button>
+                            <button id="submit_{{$oidc.ProviderID}}" class="btn btn-block btn-social btn-sm {{$oidc.ButtonStyle}}" type="submit">
+                                <span class="fa {{$oidc.IconStyle}}"><span class="login-oidc-spn"></span></span> {{$oidc.Label}}</button>
                         </form>
                     </div>
                     {{end}}
