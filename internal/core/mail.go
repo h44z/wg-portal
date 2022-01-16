@@ -1,4 +1,4 @@
-package portal
+package core
 
 type MailEncryption string
 

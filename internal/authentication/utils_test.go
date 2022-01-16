@@ -1,4 +1,4 @@
-package common
+package authentication
 
 import (
 	"reflect"
@@ -101,7 +101,7 @@ func Test_uniqueStringSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := uniqueStringSlice(tt.args.slice); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("UniqueStringSlice() = %v, want %v", got, tt.want)
+				t.Errorf("uniqueStringSlice() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/h44z/wg-portal/internal/core"
 	"github.com/h44z/wg-portal/internal/persistence"
 
-	"github.com/h44z/wg-portal/internal/portal"
 	"github.com/pkg/errors"
 
 	"github.com/urfave/cli/v2"
@@ -19,7 +19,7 @@ const (
 	interfaceFlag = "interface"
 )
 
-var backend portal.Backend
+var backend core.Backend
 
 var globalFlags = []cli.Flag{
 	&cli.StringFlag{
@@ -167,7 +167,7 @@ func main() {
 			return errors.WithMessagef(err, "failed to initialize persistent store")
 		}
 
-		backend, err = portal.NewPersistentBackend(database)
+		backend, err = core.NewPersistentBackend(database)
 		if err != nil {
 			return errors.WithMessagef(err, "backend failed to initialize")
 		}

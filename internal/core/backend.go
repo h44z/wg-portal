@@ -1,4 +1,4 @@
-package portal
+package core
 
 import (
 	"github.com/h44z/wg-portal/internal/lowlevel"

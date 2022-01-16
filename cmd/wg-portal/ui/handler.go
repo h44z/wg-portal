@@ -8,11 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/h44z/wg-portal/internal/authentication"
+	"github.com/h44z/wg-portal/internal/core"
+
 	"github.com/h44z/wg-portal/internal/persistence"
 
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/cmd/wg-portal/common"
-	"github.com/h44z/wg-portal/internal/portal"
 	"github.com/pkg/errors"
 	csrf "github.com/utrack/gin-csrf"
 )
@@ -21,18 +23,18 @@ type handler struct {
 	config *common.Config
 
 	session             SessionStore
-	backend             portal.Backend
-	oauthAuthenticators map[string]common.Authenticator
-	ldapAuthenticators  map[string]common.LdapAuthenticator
+	backend             core.Backend
+	oauthAuthenticators map[string]authentication.Authenticator
+	ldapAuthenticators  map[string]authentication.LdapAuthenticator
 }
 
-func NewHandler(config *common.Config, backend portal.Backend) (*handler, error) {
+func NewHandler(config *common.Config, backend core.Backend) (*handler, error) {
 	h := &handler{
 		config:              config,
 		backend:             backend,
 		session:             GinSessionStore{sessionIdentifier: "wgPortalSession"},
-		oauthAuthenticators: make(map[string]common.Authenticator),
-		ldapAuthenticators:  make(map[string]common.LdapAuthenticator),
+		oauthAuthenticators: make(map[string]authentication.Authenticator),
+		ldapAuthenticators:  make(map[string]authentication.LdapAuthenticator),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -62,7 +64,7 @@ func (h *handler) setupAuthProviders(ctx context.Context) error {
 		redirectUrl := *extUrl
 		redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", providerId, "/callback")
 
-		authenticator, err := common.NewOidcAuthenticator(ctx, redirectUrl.String(), providerCfg)
+		authenticator, err := authentication.NewOidcAuthenticator(ctx, redirectUrl.String(), providerCfg)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to setup oidc authentication provider %s", providerCfg.ProviderName)
 		}
@@ -79,7 +81,7 @@ func (h *handler) setupAuthProviders(ctx context.Context) error {
 		redirectUrl := *extUrl
 		redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", providerId, "/callback")
 
-		authenticator, err := common.NewPlainOauthAuthenticator(ctx, redirectUrl.String(), providerCfg)
+		authenticator, err := authentication.NewPlainOauthAuthenticator(ctx, redirectUrl.String(), providerCfg)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to setup oauth authentication provider %s", providerId)
 		}
@@ -93,7 +95,7 @@ func (h *handler) setupAuthProviders(ctx context.Context) error {
 			return errors.Errorf("auth provider with name %s is already registerd", providerId)
 		}
 
-		authenticator, err := common.NewLdapAuthenticator(ctx, providerCfg)
+		authenticator, err := authentication.NewLdapAuthenticator(ctx, providerCfg)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to setup ldap authentication provider %s", providerId)
 		}

@@ -10,9 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/h44z/wg-portal/internal/authentication"
+
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
-	"github.com/h44z/wg-portal/cmd/wg-portal/common"
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/persistence"
 	"github.com/pkg/errors"
@@ -169,9 +170,9 @@ func (h *handler) handleLoginGetOauth() gin.HandlerFunc {
 
 		var authCodeUrl string
 		switch authenticator.GetType() {
-		case common.AuthenticatorTypeOAuth:
+		case authentication.AuthenticatorTypeOAuth:
 			authCodeUrl = authenticator.AuthCodeURL(state)
-		case common.AuthenticatorTypeOidc:
+		case authentication.AuthenticatorTypeOidc:
 			nonce, err := randString(16)
 			if err != nil {
 				h.redirectWithFlash(c, "/auth/login", FlashData{Message: err.Error(), Type: "danger"})
@@ -326,7 +327,7 @@ func (h *handler) getAuthenticatorConfig(id string) (interface{}, error) {
 	return nil, errors.Errorf("no configuration for authenticator id %s", id)
 }
 
-func (h *handler) prepareUserSession(userInfo *common.AuthenticatorUserInfo, providerId string) (SessionData, error) {
+func (h *handler) prepareUserSession(userInfo *authentication.AuthenticatorUserInfo, providerId string) (SessionData, error) {
 	session := h.session.DefaultSessionData()
 	authenticatorCfg, err := h.getAuthenticatorConfig(providerId)
 	if err != nil {
@@ -334,9 +335,9 @@ func (h *handler) prepareUserSession(userInfo *common.AuthenticatorUserInfo, pro
 	}
 	registrationEnabled := false
 	switch cfg := authenticatorCfg.(type) {
-	case common.OAuthProvider:
+	case authentication.OAuthProvider:
 		registrationEnabled = cfg.RegistrationEnabled
-	case common.OpenIDConnectProvider:
+	case authentication.OpenIDConnectProvider:
 		registrationEnabled = cfg.RegistrationEnabled
 	}
 
@@ -363,7 +364,7 @@ func (h *handler) prepareUserSession(userInfo *common.AuthenticatorUserInfo, pro
 	return session, nil
 }
 
-func (h *handler) registerOauthUser(userInfo *common.AuthenticatorUserInfo) (*persistence.User, error) {
+func (h *handler) registerOauthUser(userInfo *authentication.AuthenticatorUserInfo) (*persistence.User, error) {
 	user := &persistence.User{
 		Identifier: userInfo.Identifier,
 		Email:      userInfo.Email,

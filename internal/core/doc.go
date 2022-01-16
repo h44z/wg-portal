@@ -1,4 +1,4 @@
-package portal
+package core
 
 /*
 Package portal manages the business logic of WireGuard Portal.

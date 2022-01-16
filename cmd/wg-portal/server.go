@@ -17,8 +17,8 @@ import (
 	"github.com/h44z/wg-portal/cmd/wg-portal/common"
 	"github.com/h44z/wg-portal/cmd/wg-portal/restapi"
 	"github.com/h44z/wg-portal/cmd/wg-portal/ui"
+	"github.com/h44z/wg-portal/internal/core"
 	"github.com/h44z/wg-portal/internal/persistence"
-	"github.com/h44z/wg-portal/internal/portal"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
@@ -32,7 +32,7 @@ type server struct {
 	config *common.Config
 
 	server  *gin.Engine
-	backend portal.Backend
+	backend core.Backend
 }
 
 func NewServer(config *common.Config) (*server, error) {
@@ -47,7 +47,7 @@ func NewServer(config *common.Config) (*server, error) {
 	}
 
 	// Portal Backend
-	s.backend, err = portal.NewPersistentBackend(database)
+	s.backend, err = core.NewPersistentBackend(database)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "backend failed to initialize")
 	}

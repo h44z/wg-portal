@@ -121,6 +121,7 @@ type PeerConfig struct {
 	DisplayName    string         // a nice display name/ description for the peer
 	Identifier     PeerIdentifier `gorm:"primaryKey"` // peer unique identifier
 	UserIdentifier UserIdentifier `gorm:"index"`      // the owner
+	Temporary      bool           `gorm:"temporary"`  // is this a temporary peer (only prepared, but never saved)
 
 	// Interface settings for the peer, used to generate the [interface] section in the peer config file
 	Interface *PeerInterfaceConfig `gorm:"embedded"`
