@@ -19,10 +19,10 @@
         </div>
         {{template "prt_flashes.gohtml" .}}
         <div class="mt-4 row">
-            <div class="col-sm-10 col-12">
+            <div class="col-sm-6 col-12">
                 <h2 class="mt-2">All Users</h2>
             </div>
-            <div class="col-sm-2 col-12 text-right">
+            <div class="col-sm-6 col-12 text-end">
                 <a href="/admin/users/create" title="Add a user" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i>M</a>
             </div>
         </div>
@@ -30,17 +30,19 @@
             <table class="table table-sm" id="userTable">
                 <thead>
                 <tr>
-                    <th scope="col"><a href="?sort=email">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "users" "email"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=lastname">Lastname <i class="fa fa-fw {{.Session.GetSortIcon "users" "lastname"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=firstname">Firstname <i class="fa fa-fw {{.Session.GetSortIcon "users" "firstname"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=source">Source <i class="fa fa-fw {{.Session.GetSortIcon "users" "source"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=admin">Is Admin <i class="fa fa-fw {{.Session.GetSortIcon "users" "admin"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=uid">ID <i class="fa fa-fw {{getSortIcon $.Session "users" "uid"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=email">E-Mail <i class="fa fa-fw {{getSortIcon $.Session "users" "email"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=lastname">Lastname <i class="fa fa-fw {{getSortIcon $.Session "users" "lastname"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=firstname">Firstname <i class="fa fa-fw {{getSortIcon $.Session "users" "firstname"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=source">Source <i class="fa fa-fw {{getSortIcon $.Session "users" "source"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=admin">Is Admin <i class="fa fa-fw {{getSortIcon $.Session "users" "admin"}}"></i></a></th>
                     <th scope="col"></th><!-- Actions -->
                 </tr>
                 </thead>
                 <tbody>
-                {{range $i, $u :=.Users}}
+                {{range $i, $u := $.Users}}
                     <tr id="user-pos-{{$i}}" {{if $u.DeletedAt.Valid}}class="disabled-peer"{{end}}>
+                        <td>{{$u.Identifier}}</td>
                         <td>{{$u.Email}}</td>
                         <td>{{$u.Lastname}}</td>
                         <td>{{$u.Firstname}}</td>
@@ -62,11 +64,7 @@
     </div>
     {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>
-    <script src="/js/jquery.easing.js"></script>
-    <script src="/js/popper.min.js"></script>
     <script src="/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/bootstrap-confirmation.min.js"></script>
-    <script src="/js/custom.js"></script>
 </body>
 
 </html>
