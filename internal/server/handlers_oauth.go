@@ -58,7 +58,7 @@ func (s *Server) OAuthCallback(c *gin.Context) {
 	state, err := oauth.GetStateManager(s.ctx).GetState(stateString)
 	if err != nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
-		logrus.Errorf("oauth callback failed for state %s: %v", stateString, err)
+		logrus.Errorf("oauth callback failed: %v", err)
 
 		return
 	}
@@ -66,7 +66,7 @@ func (s *Server) OAuthCallback(c *gin.Context) {
 	// check if the returned state is the same we sent before
 	if !state.IsValid(c.Request.RemoteAddr) {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
-		logrus.Errorf("oauth callback failed for state %s: invalid or expired state", stateString)
+		logrus.Errorf("oauth callback failed: invalid or expired state")
 
 		return
 	}
@@ -83,7 +83,7 @@ func (s *Server) OAuthCallback(c *gin.Context) {
 	t, err := provider.Exchange(c.Request.Context(), code)
 	if err != nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
-		logrus.Errorf("oauth callback failed: cannot get the token for state %s: %v", stateString, err)
+		logrus.Errorf("oauth callback failed: cannot get the token: %v", err)
 
 		return
 	}
@@ -91,7 +91,7 @@ func (s *Server) OAuthCallback(c *gin.Context) {
 	userInfo, err := provider.UserInfo(c.Request.Context(), provider.TokenSource(s.ctx, t))
 	if err != nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
-		logrus.Errorf("oauth callback failed: cannot get the user info for state %s: %v", stateString, err)
+		logrus.Errorf("oauth callback failed: cannot get the user info: %v", err)
 
 		return
 	}
@@ -105,7 +105,7 @@ func (s *Server) OAuthCallback(c *gin.Context) {
 	// Check if user is authenticated
 	if user == nil {
 		c.Redirect(http.StatusSeeOther, "/auth/login?err=authfail")
-		logrus.Errorf("oauth callback failed for state %s: user not found or disabled", stateString)
+		logrus.Errorf("oauth callback failed: user not found or disabled")
 
 		return
 	}
