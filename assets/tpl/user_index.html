@@ -15,7 +15,16 @@
     <div class="container mt-5">
         <h1>WireGuard VPN User-Portal</h1>
 
-        <h2 class="mt-4">Your VPN Profiles</h2>
+        <div class="mt-4 row">
+            <div class="col-sm-8 col-12">        
+                <h2 class="mt-2">Your VPN Profiles</h2>
+            </div>
+            <div class="col-sm-4 col-12 text-right">
+                {{if eq $.UserManagePeers true}}
+                <a href="/user/peer/create" title="Add a peer" class="btn btn-primary"><i class="fa fa-fw fa-plus"></i><i class="fa fa-fw fa-user"></i></a>
+                {{end}}
+            </div>
+        </div>
         <div class="mt-2 table-responsive">
             <table class="table table-sm" id="userTable">
                 <thead>
@@ -26,6 +35,9 @@
                     <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "userpeers" "mail"}}"></i></a></th>
                     <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "userpeers" "ip"}}"></i></a></th>
                     <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{.Session.GetSortIcon "userpeers" "handshake"}}"></i></a></th>
+                    {{if eq $.UserManagePeers true}}
+                    <th scope="col"></th>
+                    {{end}}
                 </tr>
                 </thead>
                 <tbody>
@@ -42,6 +54,11 @@
                         <td>{{$p.Email}}</td>
                         <td>{{$p.IPsStr}}</td>
                         <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{{$p.LastHandshakeTime}}">{{$p.LastHandshake}}</span></td>
+                        {{if eq $.UserManagePeers true}}
+                        <td>
+                            <a href="/user/peer/edit?pkey={{$p.PublicKey}}" title="Edit peer"><i class="fas fa-cog"></i></a>
+                        </td>
+                        {{end}}
                     </tr>
                     <tr class="hiddenRow">
                         <td colspan="6" class="hiddenCell" style="white-space:nowrap">

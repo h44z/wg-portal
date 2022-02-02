@@ -135,15 +135,16 @@ func (s *Server) GetUserIndex(c *gin.Context) {
 	peers := s.peers.GetSortedPeersForEmail(currentSession.SortedBy["userpeers"], currentSession.SortDirection["userpeers"], currentSession.Email)
 
 	c.HTML(http.StatusOK, "user_index.html", gin.H{
-		"Route":       c.Request.URL.Path,
-		"Alerts":      GetFlashes(c),
-		"Session":     currentSession,
-		"Static":      s.getStaticData(),
-		"Peers":       peers,
-		"TotalPeers":  len(peers),
-		"Users":       []users.User{*s.users.GetUser(currentSession.Email)},
-		"Device":      s.peers.GetDevice(currentSession.DeviceName),
-		"DeviceNames": s.GetDeviceNames(),
+		"Route":       			c.Request.URL.Path,
+		"Alerts":      			GetFlashes(c),
+		"Session":     			currentSession,
+		"Static":      			s.getStaticData(),
+		"Peers":       			peers,
+		"TotalPeers":  			len(peers),
+		"Users":       			[]users.User{*s.users.GetUser(currentSession.Email)},
+		"Device":      			s.peers.GetDevice(currentSession.DeviceName),
+		"DeviceNames": 			s.GetDeviceNames(),
+		"UserManagePeers": 	s.config.WG.UserManagePeers,
 	})
 }
 
