@@ -356,6 +356,8 @@ func (m *wgCtrlManager) GetImportableInterfaces() (map[*ImportableInterface][]*p
 		}
 
 		cfg, err := m.convertWireGuardInterface(devices[d])
+		cfg.ImportLocation = "interface" // TODO: interface, file, ... ?
+		cfg.ImportType = "unknown"
 		if err != nil {
 			return nil, errors.WithMessagef(err, "failed to convert WireGuard interface %s", device.Name)
 		}

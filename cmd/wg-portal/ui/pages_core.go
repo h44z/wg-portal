@@ -169,6 +169,16 @@ func (h *handler) handleLoginPost() gin.HandlerFunc {
 		authSession.Firstname = user.Firstname
 		authSession.Lastname = user.Lastname
 		authSession.Email = user.Email
+
+		interfaces, err := h.backend.GetInterfaces()
+		if err != nil {
+			h.HandleError(c, http.StatusInternalServerError, err, "failed to load available interfaces")
+			return
+		}
+		if len(interfaces) != 0 {
+			authSession.InterfaceIdentifier = interfaces[0].Identifier
+		}
+
 		h.session.SetData(c, authSession)
 
 		nextUrl := "/"
@@ -265,6 +275,15 @@ func (h *handler) handleLoginGetOauthCallback() gin.HandlerFunc {
 		if err != nil {
 			h.redirectWithFlash(c, "/auth/login", FlashData{Message: err.Error(), Type: "danger"})
 			return
+		}
+
+		interfaces, err := h.backend.GetInterfaces()
+		if err != nil {
+			h.HandleError(c, http.StatusInternalServerError, err, "failed to load available interfaces")
+			return
+		}
+		if len(interfaces) != 0 {
+			sessionData.InterfaceIdentifier = interfaces[0].Identifier
 		}
 
 		h.session.SetData(c, sessionData)

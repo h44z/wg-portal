@@ -188,6 +188,9 @@ func (h *handler) RegisterRoutes(g *gin.Engine) {
 	admin.Use(csrfMiddleware)
 	admin.Use(h.authenticationMiddleware("admin"))
 	admin.GET("/", h.handleAdminIndexGet())
+	admin.GET("/interface/new", h.handleAdminNewGet())
+	admin.GET("/interface/create", h.handleAdminCreateGet())
+	admin.GET("/interface/import", h.handleAdminImportGet())
 	admin.GET("/users", h.handleAdminUserIndexGet())
 
 	// User routes

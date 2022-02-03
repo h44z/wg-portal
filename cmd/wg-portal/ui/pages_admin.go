@@ -19,52 +19,22 @@ func (h *handler) handleAdminIndexGet() gin.HandlerFunc {
 			return
 		}
 
-		_, err = h.backend.GetInterface(currentSession.InterfaceIdentifier)
-		if err != nil {
-			h.HandleError(c, http.StatusInternalServerError, err,
-				fmt.Sprintf("failed to load selected interface %s", currentSession.InterfaceIdentifier))
-			return
+		var iface *persistence.InterfaceConfig
+		if currentSession.InterfaceIdentifier != "" {
+			iface, err = h.backend.GetInterface(currentSession.InterfaceIdentifier)
+			if err != nil {
+				h.HandleError(c, http.StatusInternalServerError, err,
+					fmt.Sprintf("failed to load selected interface %s", currentSession.InterfaceIdentifier))
+				return
+			}
 		}
 
 		c.HTML(http.StatusOK, "admin_index.gohtml", gin.H{
-			"Route":   c.Request.URL.Path,
-			"Alerts":  h.session.GetFlashes(c),
-			"Session": currentSession,
-			"Static":  h.getStaticData(),
-			"Interface": persistence.InterfaceConfig{
-				BaseModel:                  persistence.BaseModel{},
-				Identifier:                 "wg0",
-				KeyPair:                    persistence.KeyPair{},
-				ListenPort:                 0,
-				AddressStr:                 "",
-				DnsStr:                     "",
-				DnsSearchStr:               "",
-				Mtu:                        0,
-				FirewallMark:               0,
-				RoutingTable:               "",
-				PreUp:                      "",
-				PostUp:                     "",
-				PreDown:                    "",
-				PostDown:                   "",
-				SaveConfig:                 false,
-				Enabled:                    false,
-				DisplayName:                "wgX descr",
-				Type:                       persistence.InterfaceTypeServer,
-				DriverType:                 "",
-				PeerDefNetworkStr:          "",
-				PeerDefDnsStr:              "",
-				PeerDefDnsSearchStr:        "",
-				PeerDefEndpoint:            "",
-				PeerDefAllowedIPsStr:       "",
-				PeerDefMtu:                 0,
-				PeerDefPersistentKeepalive: 0,
-				PeerDefFirewallMark:        0,
-				PeerDefRoutingTable:        "",
-				PeerDefPreUp:               "",
-				PeerDefPostUp:              "",
-				PeerDefPreDown:             "",
-				PeerDefPostDown:            "",
-			},
+			"Route":          c.Request.URL.Path,
+			"Alerts":         h.session.GetFlashes(c),
+			"Session":        currentSession,
+			"Static":         h.getStaticData(),
+			"Interface":      iface,
 			"InterfacePeers": []persistence.PeerConfig{},
 			"PagedInterfacePeers": []persistence.PeerConfig{
 				{
@@ -109,6 +79,101 @@ func (h *handler) handleAdminIndexGet() gin.HandlerFunc {
 			},
 			"Interfaces": interfaces,
 			"TotalPeers": 12,
+		})
+	}
+}
+
+func (h *handler) handleAdminNewGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		currentSession := h.session.GetData(c)
+
+		interfaces, err := h.backend.GetInterfaces()
+		if err != nil {
+			h.HandleError(c, http.StatusInternalServerError, err, "failed to load available interfaces")
+			return
+		}
+
+		importableInterfaces, err := h.backend.GetImportableInterfaces()
+		if err != nil {
+			h.HandleError(c, http.StatusInternalServerError, err, "failed to get importable interfaces")
+			return
+		}
+
+		var iface *persistence.InterfaceConfig
+		if currentSession.InterfaceIdentifier != "" {
+			iface, err = h.backend.GetInterface(currentSession.InterfaceIdentifier)
+			if err != nil {
+				h.HandleError(c, http.StatusInternalServerError, err,
+					fmt.Sprintf("failed to load selected interface %s", currentSession.InterfaceIdentifier))
+				return
+			}
+		}
+
+		c.HTML(http.StatusOK, "admin_new_interface.gohtml", gin.H{
+			"Route":                c.Request.URL.Path,
+			"Alerts":               h.session.GetFlashes(c),
+			"Session":              currentSession,
+			"Static":               h.getStaticData(),
+			"Interface":            iface,
+			"Interfaces":           interfaces,
+			"ImportableInterfaces": importableInterfaces,
+		})
+	}
+}
+
+func (h *handler) handleAdminCreateGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		currentSession := h.session.GetData(c)
+
+		interfaces, err := h.backend.GetInterfaces()
+		if err != nil {
+			h.HandleError(c, http.StatusInternalServerError, err, "failed to load available interfaces")
+			return
+		}
+
+		c.HTML(http.StatusOK, "admin_create_interface.gohtml", gin.H{
+			"Route":      c.Request.URL.Path,
+			"Alerts":     h.session.GetFlashes(c),
+			"Session":    currentSession,
+			"Static":     h.getStaticData(),
+			"Interface":  nil,
+			"Interfaces": interfaces,
+		})
+	}
+}
+
+func (h *handler) handleAdminImportGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		currentSession := h.session.GetData(c)
+
+		interfaces, err := h.backend.GetInterfaces()
+		if err != nil {
+			h.HandleError(c, http.StatusInternalServerError, err, "failed to load available interfaces")
+			return
+		}
+
+		if currentSession.InterfaceIdentifier == "" && len(interfaces) > 0 {
+			currentSession.InterfaceIdentifier = interfaces[0].Identifier
+			h.session.SetData(c, currentSession)
+		}
+
+		var iface *persistence.InterfaceConfig
+		if currentSession.InterfaceIdentifier != "" {
+			iface, err = h.backend.GetInterface(currentSession.InterfaceIdentifier)
+			if err != nil {
+				h.HandleError(c, http.StatusInternalServerError, err,
+					fmt.Sprintf("failed to load selected interface %s", currentSession.InterfaceIdentifier))
+				return
+			}
+		}
+
+		c.HTML(http.StatusOK, "admin_import_interface.gohtml", gin.H{
+			"Route":      c.Request.URL.Path,
+			"Alerts":     h.session.GetFlashes(c),
+			"Session":    currentSession,
+			"Static":     h.getStaticData(),
+			"Interface":  iface,
+			"Interfaces": interfaces,
 		})
 	}
 }

@@ -20,9 +20,16 @@
         {{template "prt_flashes.gohtml" .}}
         <div class="row">
             <div class="col-lg-12">
+                {{with not $.Interfaces}}
+                <div class="mt-5">
+                    <h4>No interfaces found...</h4>
+
+                    <a class="btn btn-primary mt-4" href="/admin/interface/new">Create new interface</a>
+                </div>
+                {{else}}
                 <div class="card border-secondary mb-4" style="min-height: 15rem;">
                     <div class="card-header">
-                        Interface status for <strong>{{.Interface.Identifier}}</strong> {{if eq $.Interface.Type "server"}}(server mode){{end}}{{if eq $.Interface.Type "client"}}(client mode){{end}}
+                        Interface status for <strong>{{$.Interface.Identifier}}</strong> {{if eq $.Interface.Type "server"}}(server mode){{end}}{{if eq $.Interface.Type "client"}}(client mode){{end}}
                         <div class="float-end">
                             <a href="/admin/interface/show?dev={{.Interface.Identifier}}" title="Show interface configuration"><i class="fas fa-eye"></i></a>
                             &nbsp;&nbsp;&nbsp;
@@ -130,9 +137,12 @@
                         </div>
                     </div>
                 </div>
+                {{end}}
             </div>
         </div>
 
+
+        {{with $.Interface}}
         <div class="mt-4 row">
             <div class="col-sm-6 col-12">
                 {{if eq $.Interface.Type "server"}}
@@ -293,6 +303,7 @@
                 </ul>
             </div>
         </div>
+        {{end}}
     </div>
     {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>

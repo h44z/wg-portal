@@ -101,3 +101,7 @@ a.advanced-settings.collapsed:before {
 .text-blue {
     color: #0057bb;
 }
+
+.text-large {
+    font-size: 150%;
+}

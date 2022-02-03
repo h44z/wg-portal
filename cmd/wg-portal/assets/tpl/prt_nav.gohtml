@@ -27,6 +27,8 @@
             <div class="navbar-nav d-flex justify-content-end">
                 {{with eq $.Session.LoggedIn true}}{{with eq $.Session.IsAdmin true}}
                 {{with startsWith $.Route "/admin/"}}
+                <a class="nav-link" href="/admin/interface/new" title="Add new interface"><i class="fas fa-plus-square text-large"></i></a>
+                {{with $.Interfaces}}
                 <form class="d-flex" method="get">
                     <select name="device" id="inputDevice" class="form-select device-selector me-4">
                         {{range $cnt, $i := $.Interfaces}}
@@ -34,6 +36,7 @@
                         {{end}}
                     </select>
                 </form>
+                {{end}}
                 {{end}}
                 {{end}}{{end}}
                 {{if eq $.Session.LoggedIn true}}

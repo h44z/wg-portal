@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Theme: https://bootswatch.com/lux/ -->
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .Static.WebsiteTitle }} - New Interface</title>
+    <meta name="description" content="{{ .Static.WebsiteTitle }}">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+<body id="page-top" class="d-flex flex-column min-vh-100">
+{{template "prt_nav.gohtml" .}}
+    <div class="container mt-5 flex-shrink-0">
+        <div class="page-header">
+            <h1>WireGuard VPN Administration</h1>
+        </div>
+        {{template "prt_flashes.gohtml" .}}
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="mt-5">
+                    <div class="card border-secondary mt-5" style="min-height: 15rem;">
+                        <div class="card-header">Create new interface</div>
+                        <div class="card-body">
+                            <p>Create a new WireGuard interface. This action will also create the interface on
+                                the host system.</p>
+                            <a class="btn btn-primary" href="/admin/interface/create">Create</a>
+                        </div>
+                    </div>
+
+                    <div class="card border-secondary mt-4" style="min-height: 15rem;">
+                        <div class="card-header">Import interface</div>
+                        <div class="card-body d-flex flex-column">
+                            {{if not $.ImportableInterfaces}}
+                            <p>No interfaces available...</p>
+                            {{else}}
+                            <div class="table-responsive">
+                                <table class="table table-sm" id="importTable">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Interface</th>
+                                            <th scope="col">Public Key</th>
+                                            <th scope="col">Source</th>
+                                            <th scope="col">Type</th>
+                                            <th scope="col">Peers</th>
+                                            <th scope="col"></th> <!-- actions -->
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {{range $i, $ps := $.ImportableInterfaces}}
+                                        <tr>
+                                            <td>{{$i.Identifier}}</td>
+                                            <td>{{$i.PublicKey}}</td>
+                                            <td>{{$i.ImportLocation}}</td>
+                                            <td>{{$i.ImportType}}</td>
+                                            <td>{{len $ps}}</td>
+                                            <td><a href="/admin/interface/import?id={{$i.Identifier}}" title="Import Interface"><i class="fas fa-file-import"></i></a></td>
+                                        </tr>
+                                    {{end}}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{template "prt_footer.gohtml" .}}
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
