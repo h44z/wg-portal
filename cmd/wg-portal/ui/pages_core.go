@@ -34,13 +34,49 @@ func (h *handler) handleIndexGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		currentSession := h.session.GetData(c)
 
+		interfaces, err := h.backend.GetInterfaces()
+		if err != nil {
+			h.HandleError(c, http.StatusInternalServerError, err, "failed to load available interfaces")
+			return
+		}
+
 		c.HTML(http.StatusOK, "index.gohtml", gin.H{
-			"Route":          c.Request.URL.Path,
-			"Alerts":         h.session.GetFlashes(c),
-			"Session":        currentSession,
-			"Static":         h.getStaticData(),
-			"Interface":      nil, // TODO: load interface specified in the session
-			"InterfaceNames": map[string]string{"wgX": "wgX descr"},
+			"Route":      c.Request.URL.Path,
+			"Alerts":     h.session.GetFlashes(c),
+			"Session":    currentSession,
+			"Static":     h.getStaticData(),
+			"Interface":  nil, // TODO: load interface specified in the session
+			"Interfaces": interfaces,
+		})
+	}
+}
+
+func (h *handler) handleErrorGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		currentSession := h.session.GetData(c)
+
+		var (
+			err       = ""
+			errorCode = http.StatusNotFound
+			details   = ""
+			path      = "/"
+		)
+		if currentSession.Error != nil {
+			err = currentSession.Error.Message
+			details = currentSession.Error.Details
+			errorCode = currentSession.Error.Code
+			path = currentSession.Error.Path
+		}
+
+		c.HTML(errorCode, "error.gohtml", gin.H{
+			"Route":         c.Request.URL.Path,
+			"Alerts":        h.session.GetFlashes(c),
+			"Session":       currentSession,
+			"Static":        h.getStaticData(),
+			"ErrorCode":     errorCode,
+			"Error":         err,
+			"ErrorDetails":  details,
+			"PreviousRoute": path,
 		})
 	}
 }

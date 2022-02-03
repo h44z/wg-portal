@@ -12,6 +12,7 @@ import (
 func init() {
 	gob.Register(SessionData{})
 	gob.Register(FlashData{})
+	gob.Register(ErrorData{})
 }
 
 type SessionData struct {
@@ -42,6 +43,16 @@ type SessionData struct {
 
 	// currently filled form data
 	FormData interface{}
+
+	// Session error
+	Error *ErrorData
+}
+
+type ErrorData struct {
+	Message string
+	Details string
+	Code    int
+	Path    string
 }
 
 type FlashData struct {

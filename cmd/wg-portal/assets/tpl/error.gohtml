@@ -1,33 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Theme: https://bootswatch.com/lux/ -->
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>{{ .Static.WebsiteTitle }} - Error</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .Static.WebsiteTitle }}</title>
     <meta name="description" content="{{ .Static.WebsiteTitle }}">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
     <link rel="stylesheet" href="/css/custom.css">
 </head>
 
-<body id="page-top">
+<body id="page-top" class="d-flex flex-column min-vh-100">
     {{template "prt_nav.gohtml" .}}
-    <div class="container">
+    <div class="container mt-5 flex-shrink-0">
+        {{with $.Error}}
         <div class="text-center mt-5">
-            <div class="error mx-auto" data-text="{{.Data.Code}}">
-                <p class="m-0">{{.Data.Code}}</p>
+            <div class="error mx-auto" data-text="{{$.ErrorCode}}">
+                <h3 class="m-0">{{$.ErrorCode}}</h3>
             </div>
-            <p class="text-dark mb-5 lead">{{.Data.Message}}</p>
-            <p class="text-black-50 mb-0">{{.Data.Details}}</p><a href="/">← Back to Dashboard</a>
+            <p class="text-dark mb-5 lead">{{$.Error}}</p>
+            <p class="text-black-50 mb-0">{{$.ErrorDetails}}</p>
+        </div>
+        {{end}}
+        {{with not $.Error}}
+        <div class="text-center mt-5">
+            <div class="error mx-auto" data-text="{{$.ErrorCode}}">
+                <h3 class="m-0">{{$.ErrorCode}}</h3>
+            </div>
+            <p class="text-black-50">Oops... something unexpected happened...</p>
+        </div>
+        {{end}}
+
+        <div class="text-center mt-5">
+            <a class="btn btn-light" href="{{$.PreviousRoute}}">← Go Back</a>
         </div>
     </div>
     {{template "prt_footer.gohtml" .}}
     <script src="/js/jquery.min.js"></script>
-    <script src="/js/jquery.easing.js"></script>
-    <script src="/js/popper.min.js"></script>
     <script src="/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/bootstrap-confirmation.min.js"></script>
-    <script src="/js/custom.js"></script>
 </body>
 
 </html>

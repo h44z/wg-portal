@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"path"
@@ -163,8 +164,15 @@ func (h *handler) RegisterRoutes(g *gin.Engine) {
 		},
 	})
 
+	g.NoRoute(func(c *gin.Context) {
+		h.HandleError(c, http.StatusNotFound,
+			errors.New("Oops... you have reached the end of the internet"),
+			fmt.Sprintf("Requested page %s not found", c.Request.URL.Path))
+	})
+
 	// Entrypoint
 	g.GET("/", h.handleIndexGet())
+	g.GET("/oops", h.handleErrorGet())
 
 	// Auth routes
 	auth := g.Group("/auth")
@@ -183,6 +191,26 @@ func (h *handler) RegisterRoutes(g *gin.Engine) {
 	admin.GET("/users", h.handleAdminUserIndexGet())
 
 	// User routes
+}
+
+func (h *handler) HandleError(c *gin.Context, code int, err error, details string) {
+	currentSession := h.session.GetData(c)
+
+	currentSession.Error = &ErrorData{
+		Message: err.Error(),
+		Details: details,
+		Code:    code,
+		Path:    c.Request.URL.Path,
+	}
+
+	// If page was not found, redirect to /
+	if code == http.StatusNotFound {
+		currentSession.Error.Path = "/"
+	}
+
+	h.session.SetData(c, currentSession)
+
+	c.Redirect(http.StatusSeeOther, "/oops")
 }
 
 //

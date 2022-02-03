@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/h44z/wg-portal/internal/persistence"
@@ -11,6 +12,19 @@ import (
 func (h *handler) handleAdminIndexGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		currentSession := h.session.GetData(c)
+
+		interfaces, err := h.backend.GetInterfaces()
+		if err != nil {
+			h.HandleError(c, http.StatusInternalServerError, err, "failed to load available interfaces")
+			return
+		}
+
+		_, err = h.backend.GetInterface(currentSession.InterfaceIdentifier)
+		if err != nil {
+			h.HandleError(c, http.StatusInternalServerError, err,
+				fmt.Sprintf("failed to load selected interface %s", currentSession.InterfaceIdentifier))
+			return
+		}
 
 		c.HTML(http.StatusOK, "admin_index.gohtml", gin.H{
 			"Route":   c.Request.URL.Path,
@@ -93,8 +107,8 @@ func (h *handler) handleAdminIndexGet() gin.HandlerFunc {
 					},
 				},
 			},
-			"InterfaceNames": map[string]string{"wgX": "wgX descr"},
-			"TotalPeers":     12,
+			"Interfaces": interfaces,
+			"TotalPeers": 12,
 		})
 	}
 }

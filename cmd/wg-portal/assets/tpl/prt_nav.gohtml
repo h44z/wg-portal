@@ -29,8 +29,8 @@
                 {{with startsWith $.Route "/admin/"}}
                 <form class="d-flex" method="get">
                     <select name="device" id="inputDevice" class="form-select device-selector me-4">
-                        {{range $d, $dn := $.InterfaceNames}}
-                        <option value="{{$d}}" {{if eq $d $.Session.InterfaceIdentifier}}selected{{end}}>{{$d}} {{if and (ne $dn "") (ne $d $dn)}}({{$dn}}){{end}}</option>
+                        {{range $cnt, $i := $.Interfaces}}
+                        <option value="{{$i.Identifier}}" {{if eq $i.Identifier $.Session.InterfaceIdentifier}}selected{{end}}>{{$i.Identifier}} {{if and (ne $i.DisplayName "") (ne $i.Identifier $i.DisplayName)}}({{$i.DisplayName}}){{end}}</option>
                         {{end}}
                     </select>
                 </form>
