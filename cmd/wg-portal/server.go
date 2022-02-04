@@ -98,6 +98,8 @@ func (s *server) setupGin() error {
 		"startsWith":    strings.HasPrefix,
 		"isConfigValid": isConfigValid,
 		"getSortIcon":   getSortIcon,
+		"intRange":      intRange,
+		"intAdd":        intAdd,
 	})
 
 	// Setup templates
@@ -197,4 +199,18 @@ func getSortIcon(s ui.SessionData, table, field string) string {
 	} else {
 		return "fa-sort-alpha-up"
 	}
+}
+
+// https://stackoverflow.com/questions/57762069/how-to-iterate-over-a-range-of-numbers-in-golang-template
+func intRange(start, end int) []int {
+	n := end - start + 1
+	result := make([]int, n)
+	for i := 0; i < n; i++ {
+		result[i] = start + i
+	}
+	return result
+}
+
+func intAdd(one, two int) int {
+	return one + two
 }

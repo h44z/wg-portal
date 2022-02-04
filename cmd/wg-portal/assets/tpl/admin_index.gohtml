@@ -166,7 +166,7 @@
                 <tr>
                     <th scope="col" class="list-image-cell"></th><!-- Status and expand -->
                     <th scope="col"><a href="?sort=id">Identifier <i class="fa fa-fw {{getSortIcon $.Session "peers" "id"}}"></i></a></th>
-                    <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{getSortIcon $.Session "peers" "pubKey"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=displayName">Name <i class="fa fa-fw {{getSortIcon $.Session "peers" "displayName"}}"></i></a></th>
                     {{if eq $.Interface.Type "server"}}
                     <th scope="col"><a href="?sort=user">User <i class="fa fa-fw {{getSortIcon $.Session "peers" "user"}}"></i></a></th>
                     {{end}}
@@ -190,7 +190,7 @@
                             <span title="Online status" class="online-status" id="online-{{$p.Identifier}}" data-pkey="{{$p.PublicKey}}"><i class="fas fa-unlink"></i></span>
                         </th>
                         <td>{{$p.Identifier}}</td>
-                        <td>{{$p.PublicKey}}</td>
+                        <td>{{$p.DisplayName}}</td>
                         {{if eq $p.Interface.Type "server"}}
                         <td>{{$p.UserIdentifier}}</td>
                         {{end}}
@@ -200,7 +200,7 @@
                         {{if eq $p.Interface.Type "client"}}
                         <td>{{$p.Endpoint.Value}}</td>
                         {{end}}
-                        <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{/{$p.LastHandshakeTime}}">never {/{$p.LastHandshake}}</span></td>
+                        <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{-{$p.LastHandshakeTime}}">{-{$p.LastHandshake}}</span></td>
                         <td>
                             {{if eq $.Session.IsAdmin true}}
                                 <a href="/admin/peer/edit?pkey={{$p.PublicKey}}" title="Edit peer"><i class="fas fa-cog"></i></a>
@@ -276,29 +276,21 @@
                 {{end}}
                 </tbody>
             </table>
-            <p>Currently listed peers: <strong>{{len $.PagedInterfacePeers}}</strong></p>
+            <p>Currently listed peers: <strong>{{len $.PagedInterfacePeers}}</strong>, page size: {{$.PageSize}}</p>
             <div>
                 <ul class="pagination pagination-sm">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#">&laquo;</a>
+                    <li class="page-item {{if eq $.Page 1}}disabled{{end}}">
+                        <a class="page-link" href="?page={{intAdd $.Page -1}}">&laquo;</a>
                     </li>
-                    <li class="page-item active">
-                        <a class="page-link" href="#">1</a>
+
+                    {{range $i := intRange 1 $.TotalPages}}
+                    <li class="page-item {{if eq $i $.Page}}active{{end}}">
+                        <a class="page-link" href="?page={{$i}}">{{$i}}</a>
                     </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">2</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">3</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">4</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">5</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">&raquo;</a>
+                    {{end}}
+
+                    <li class="page-item {{if eq $.Page $.TotalPages}}disabled{{end}}">
+                        <a class="page-link" href="?page={{intAdd $.Page 1}}">&raquo;</a>
                     </li>
                 </ul>
             </div>

@@ -35,7 +35,8 @@ type SessionData struct {
 	SortedBy      map[string]string
 	SortDirection map[string]string
 	Search        map[string]string
-	CurrentPage   map[string]int
+	CurrentPage   int
+	PageSize      int
 
 	// alert that is printed on top of the page
 	AlertData string
@@ -99,8 +100,10 @@ func (g GinSessionStore) GetData(c *gin.Context) SessionData {
 func (g GinSessionStore) DefaultSessionData() SessionData {
 	return SessionData{
 		Search:              map[string]string{"peers": "", "userpeers": "", "users": ""},
-		SortedBy:            map[string]string{"peers": "handshake", "userpeers": "id", "users": "email"},
-		SortDirection:       map[string]string{"peers": "desc", "userpeers": "asc", "users": "asc"},
+		SortedBy:            map[string]string{"peers": "id", "userpeers": "id", "users": "email"},
+		SortDirection:       map[string]string{"peers": "asc", "userpeers": "asc", "users": "asc"},
+		CurrentPage:         1,
+		PageSize:            25,
 		Email:               "",
 		Firstname:           "",
 		Lastname:            "",
