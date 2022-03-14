@@ -8,9 +8,9 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/h44z/wg-portal)
 [![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/h44z/wg-portal/)
 
-A simple, web based configuration portal for [WireGuard](https://wireguard.com). 
-The portal uses the WireGuard [wgctrl](https://github.com/WireGuard/wgctrl-go) library to manage existing VPN 
-interfaces. This allows for seamless activation or deactivation of new users, without disturbing existing VPN 
+A simple, web based configuration portal for [WireGuard](https://wireguard.com).
+The portal uses the WireGuard [wgctrl](https://github.com/WireGuard/wgctrl-go) library to manage existing VPN
+interfaces. This allows for seamless activation or deactivation of new users, without disturbing existing VPN
 connections.
 
 The configuration portal currently supports using SQLite and MySQL as a user source for authentication and profile data.
@@ -31,11 +31,11 @@ It also supports LDAP (Active Directory or OpenLDAP) as authentication provider.
  * Can be used with existing WireGuard setups
  * Support for multiple WireGuard interfaces
  * REST API for management and client deployment
- 
+
 ![Screenshot](screenshot.png)
 
 ## Setup
-Make sure that your host system has at least one WireGuard interface (for example wg0) available. 
+Make sure that your host system has at least one WireGuard interface (for example wg0) available.
 If you did not start up a WireGuard interface yet, take a look at [wg-quick](https://manpages.debian.org/unstable/wireguard-tools/wg-quick.8.en.html) in order to get started.
 
 ### Docker
@@ -156,6 +156,9 @@ The following configuration options are available:
 | LDAP_ATTR_LASTNAME         | attrLastname            | ldap        | sn                                              | User lastname attribute.                                                                                 |
 | LDAP_ATTR_PHONE            | attrPhone               | ldap        | telephoneNumber                                 | User phone number attribute.                                                                                 |
 | LDAP_ATTR_GROUPS           | attrGroups              | ldap        | memberOf                                        | User groups attribute.                                                                                 |
+| LDAP_CERT_CONN             | ldapCertConn            | ldap        | false                                           | Allow connection with certificate against LDAP server without user/password                            |
+| LDAPTLS_CERT               | ldapTlsCert             | ldap        |                                                 | The LDAP cert's path                                                                                   |
+| LDAPTLS_KEY                | ldapTlsKey              | ldap        |                                                 | The LDAP key's path                                                                                    |
 | LOG_LEVEL                  |                         |             | debug                                           | Specify log level, one of: trace, debug, info, off.                                                                                       |
 | LOG_JSON                   |                         |             | false                                           | Format log output as JSON.                                                                                      |
 | LOG_COLOR                  |                         |             | true                                            | Colorize log output.                                                                                    |
@@ -190,7 +193,7 @@ email:
   user: test@gmail.com
   pass: topsecret
 wg:
-  devices: 
+  devices:
     - wg0
     - wg1
   defaultDevice: wg0
@@ -199,8 +202,8 @@ wg:
 ```
 
 ### RESTful API
-WireGuard Portal offers a RESTful API to interact with. 
-The API is documented using OpenAPI 2.0, the Swagger UI can be found 
+WireGuard Portal offers a RESTful API to interact with.
+The API is documented using OpenAPI 2.0, the Swagger UI can be found
 under the URL `http://<your wg-portal ip/domain>/swagger/index.html?displayOperationId=true`.
 
 The [API's unittesting](tests/test_API.py) may serve as an example how to make use of the API with python3 & pyswagger.
@@ -210,7 +213,7 @@ The [API's unittesting](tests/test_API.py) may serve as an example how to make u
  * Generation or application of any `iptables` or `nftables` rules.
  * Setting up or changing IP-addresses of the WireGuard interface on operating systems other than linux.
  * Importing private keys of an existing WireGuard setup.
- 
+
 ## Application stack
 
  * [Gin, HTTP web framework written in Go](https://github.com/gin-gonic/gin)
@@ -221,6 +224,6 @@ The [API's unittesting](tests/test_API.py) may serve as an example how to make u
 ## License
 
  * MIT License. [MIT](LICENSE.txt) or https://opensource.org/licenses/MIT
- 
+
 
 This project was inspired by [wg-gen-web](https://github.com/vx3r/wg-gen-web).
