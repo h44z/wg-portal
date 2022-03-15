@@ -19,7 +19,7 @@ func Open(cfg *Config) (*ldap.Conn, error) {
 
 	if cfg.LdapCertConn {
 
-		certificate, err := ioutil.ReadFile(cfg.LdapTlsCert)
+		cert_plain, err := ioutil.ReadFile(cfg.LdapTlsCert)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to load the certificate")
 
@@ -30,12 +30,12 @@ func Open(cfg *Config) (*ldap.Conn, error) {
 			return nil, errors.WithMessage(err, "failed to load the key")
 		}
 
-		cert, err := tls.X509KeyPair(certificate, key)
+		cert_x509, err := tls.X509KeyPair(cert_plain, key)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed X509")
 
 		}
-		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert}}
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert_x509}}
 
 	} else {
 

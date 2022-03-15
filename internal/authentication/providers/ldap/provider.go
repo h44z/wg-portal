@@ -159,7 +159,7 @@ func (provider Provider) open() (*ldap.Conn, error) {
 
 	if provider.config.LdapCertConn {
 
-		certificate, err := ioutil.ReadFile(provider.config.LdapTlsCert)
+		cert_plain, err := ioutil.ReadFile(provider.config.LdapTlsCert)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to load the certificate")
 
@@ -170,12 +170,12 @@ func (provider Provider) open() (*ldap.Conn, error) {
 			return nil, errors.WithMessage(err, "failed to load the key")
 		}
 
-		cert, err := tls.X509KeyPair(certificate, key)
+		cert_x509, err := tls.X509KeyPair(cert_plain, key)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed X509")
 
 		}
-		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert}}
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert_x509}}
 
 	} else {
 
