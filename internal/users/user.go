@@ -29,7 +29,7 @@ type User struct {
 	// required fields
 	Email   string `gorm:"primaryKey" form:"email" binding:"required,email"`
 	Source  UserSource
-	IsAdmin bool
+	IsAdmin bool `form:"isadmin"`
 
 	// optional fields
 	Firstname string `form:"firstname" binding:"required"`

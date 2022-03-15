@@ -161,9 +161,14 @@ func (m Manager) UpdateUser(user *User) error {
 	return nil
 }
 
-func (m Manager) DeleteUser(user *User) error {
+func (m Manager) DeleteUser(user *User, soft bool) error {
 	user.Email = strings.ToLower(user.Email)
-	res := m.db.Delete(user)
+	var res *gorm.DB
+	if soft {
+		res = m.db.Delete(user)
+	} else {
+		res = m.db.Unscoped().Delete(user)
+	}
 	if res.Error != nil {
 		return errors.Wrapf(res.Error, "failed to update user %s", user.Email)
 	}

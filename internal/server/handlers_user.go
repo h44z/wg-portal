@@ -83,6 +83,26 @@ func (s *Server) GetAdminUsersEdit(c *gin.Context) {
 	})
 }
 
+func (s *Server) GetAdminUsersDelete(c *gin.Context) {
+	user := s.users.GetUserUnscoped(c.Query("pkey"))
+	if user == nil {
+		SetFlashMessage(c, "invalid user", "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/users/")
+		return
+	}
+
+	urlEncodedKey := url.QueryEscape(c.Query("pkey"))
+
+	if err := s.HardDeleteUser(*user); err != nil {
+		SetFlashMessage(c, "failed to delete user: "+err.Error(), "danger")
+		c.Redirect(http.StatusSeeOther, "/admin/users/edit?pkey="+urlEncodedKey+"&formerr=delete")
+		return
+	}
+
+	SetFlashMessage(c, "user deleted successfully", "success")
+	c.Redirect(http.StatusSeeOther, "/admin/users/")
+}
+
 func (s *Server) PostAdminUsersEdit(c *gin.Context) {
 	currentUser := s.users.GetUserUnscoped(c.Query("pkey"))
 	if currentUser == nil {
@@ -113,7 +133,7 @@ func (s *Server) PostAdminUsersEdit(c *gin.Context) {
 	} else {
 		formUser.DeletedAt = gorm.DeletedAt{}
 	}
-	formUser.IsAdmin = c.PostForm("isadmin") == "true"
+	formUser.IsAdmin = c.PostForm("isadmin") != ""
 
 	if err := s.UpdateUser(formUser); err != nil {
 		_ = s.updateFormInSession(c, formUser)
