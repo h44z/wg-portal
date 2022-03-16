@@ -192,6 +192,10 @@ func (h *handler) RegisterRoutes(g *gin.Engine) {
 	admin.GET("/interface/create", h.handleAdminCreateGet())
 	admin.GET("/interface/import", h.handleAdminImportGet())
 	admin.GET("/users", h.handleAdminUserIndexGet())
+	admin.GET("/users/edit", h.handleAdminUserEditGet())
+	admin.POST("/users/edit", h.handleAdminUserEditPost())
+	admin.GET("/users/create", h.handleAdminUserCreateGet())
+	admin.POST("/users/create", h.handleAdminUserCreatePost())
 
 	// User routes
 }

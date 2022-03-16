@@ -16,7 +16,7 @@
         {{if eq .User.CreatedAt .Epoch}}
         <h1>Create a new user</h1>
         {{else}}
-        <h1>Edit user <strong>{{.User.Email}}</strong></h1>
+        <h1>Edit user <strong>{{.User.Identifier}}</strong></h1>
         {{end}}
 
         {{template "prt_flashes.gohtml" .}}
@@ -26,48 +26,54 @@
             {{if eq .User.CreatedAt .Epoch}}
             <div class="form-row">
                 <div class="form-group required col-md-12">
-                    <label for="inputEmail">Email</label>
-                    <input type="text" name="email" class="form-control" id="inputEmail" value="{{.User.Email}}" required>
+                    <label for="inputId" class="form-label mt-4">User ID</label>
+                    <input type="text" name="identifier" class="form-control" id="inputId" value="{{.User.Identifier}}" required>
                 </div>
             </div>
             {{else}}
-            <input type="hidden" name="email" value="{{.User.Email}}">
+            <input type="hidden" name="identifier" value="{{.User.Identifier}}">
             {{end}}
             <div class="form-row">
                 <div class="form-group required col-md-12">
-                    <label for="inputFirstname">Firstname</label>
+                    <label for="inputFirstname" class="form-label mt-4">Firstname</label>
                     <input type="text" name="firstname" class="form-control" id="inputFirstname" value="{{.User.Firstname}}" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group required col-md-12">
-                    <label for="inputLastname">Lastname</label>
+                    <label for="inputLastname" class="form-label mt-4">Lastname</label>
                     <input type="text" name="lastname" class="form-control" id="inputLastname" value="{{.User.Lastname}}" required>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group col-md-12">
-                    <label for="inputPhone">Phone</label>
+                    <label for="inputEmail" class="form-label mt-4">Email</label>
+                    <input type="text" name="email" class="form-control" id="inputEmail" value="{{.User.Email}}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="inputPhone" class="form-label mt-4">Phone</label>
                     <input type="text" name="phone" class="form-control" id="inputPhone" value="{{.User.Phone}}">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group col-md-12 {{if eq .User.CreatedAt .Epoch}}required{{end}}">
-                    <label for="inputPassword">Password</label>
+                    <label for="inputPassword" class="form-label mt-4">Password</label>
                     <input type="password" name="password" class="form-control" id="inputPassword" {{if eq .User.CreatedAt .Epoch}}required{{end}}>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group col-md-12">
-                    <div class="custom-control custom-switch">
-                        <input class="custom-control-input" name="isadmin" type="checkbox" value="true" id="inputAdmin" {{if .User.IsAdmin}}checked{{end}}>
-                        <label class="custom-control-label" for="inputAdmin">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" name="isadmin" type="checkbox" value="true" id="inputAdmin" {{if .User.IsAdmin}}checked{{end}}>
+                        <label class="form-check-label" for="inputAdmin">
                             Administrator
                         </label>
                     </div>
-                    <div class="custom-control custom-switch">
-                        <input class="custom-control-input" name="isdisabled" type="checkbox" value="true" id="inputDisabled" {{if .User.DeletedAt.Valid}}checked{{end}}>
-                        <label class="custom-control-label" for="inputDisabled">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" name="isdisabled" type="checkbox" value="true" id="inputDisabled" {{if .User.DeletedAt.Valid}}checked{{end}}>
+                        <label class="form-check-label" for="inputDisabled">
                             Disabled
                         </label>
                     </div>

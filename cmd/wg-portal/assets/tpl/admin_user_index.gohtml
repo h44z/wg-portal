@@ -51,7 +51,7 @@
                         <td>
                             {{if eq $.Session.IsAdmin true}}
                             {{if eq $u.Source "db"}}
-                                <a href="/admin/users/edit?pkey={{$u.Email}}" title="Edit user"><i class="fas fa-cog"></i></a>
+                                <a href="/admin/users/edit?uid={{$u.Identifier}}" title="Edit user"><i class="fas fa-cog"></i></a>
                             {{end}}
                             {{end}}
                         </td>
