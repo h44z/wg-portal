@@ -2,6 +2,7 @@ package ldap
 
 import (
 	"crypto/tls"
+	"io/ioutil"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -154,7 +155,33 @@ func (provider Provider) GetUserModel(ctx *authentication.AuthContext) (*authent
 }
 
 func (provider Provider) open() (*ldap.Conn, error) {
-	tlsConfig := &tls.Config{InsecureSkipVerify: !provider.config.CertValidation}
+	var tlsConfig *tls.Config
+
+	if provider.config.LdapCertConn {
+
+		cert_plain, err := ioutil.ReadFile(provider.config.LdapTlsCert)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to load the certificate")
+
+		}
+
+		key, err := ioutil.ReadFile(provider.config.LdapTlsKey)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to load the key")
+		}
+
+		cert_x509, err := tls.X509KeyPair(cert_plain, key)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed X509")
+
+		}
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert_x509}}
+
+	} else {
+
+		tlsConfig = &tls.Config{InsecureSkipVerify: !provider.config.CertValidation}
+	}
+
 	conn, err := ldap.DialURL(provider.config.URL, ldap.DialWithTLSConfig(tlsConfig))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to connect to LDAP")

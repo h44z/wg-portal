@@ -64,6 +64,7 @@ func SetupRoutes(s *Server) {
 	admin.GET("/users/create", s.GetAdminUsersCreate)
 	admin.POST("/users/create", s.PostAdminUsersCreate)
 	admin.GET("/users/edit", s.GetAdminUsersEdit)
+	admin.GET("/users/delete", s.GetAdminUsersDelete)
 	admin.POST("/users/edit", s.PostAdminUsersEdit)
 
 	// User routes

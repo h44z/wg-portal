@@ -44,14 +44,14 @@ func (s *Server) SyncLdapWithUserDatabase() {
 	logrus.Info("ldap user synchronization stopped")
 }
 
-func (s Server)userIsInAdminGroup(ldapData *ldap.RawLdapData) bool {
+func (s Server) userIsInAdminGroup(ldapData *ldap.RawLdapData) bool {
 	if s.config.LDAP.AdminLdapGroup_ == nil {
-			return false
+		return false
 	}
 	for _, group := range ldapData.RawAttributes[s.config.LDAP.GroupMemberAttribute] {
-		var dn,_ = gldap.ParseDN(string(group))
+		var dn, _ = gldap.ParseDN(string(group))
 		if s.config.LDAP.AdminLdapGroup_.Equal(dn) {
-            return true
+			return true
 		}
 	}
 	return false
@@ -114,7 +114,7 @@ func (s *Server) disableMissingLdapUsers(ldapUsers []ldap.RawLdapData) {
 			}
 		}
 
-		if err := s.users.DeleteUser(&activeUsers[i]); err != nil {
+		if err := s.users.DeleteUser(&activeUsers[i], true); err != nil {
 			logrus.Errorf("failed to delete deactivated user %s in database: %v", activeUsers[i].Email, err)
 		}
 	}
