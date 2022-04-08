@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	csrf "github.com/utrack/gin-csrf"
+
 	"github.com/h44z/wg-portal/internal/persistence"
 
 	"github.com/gin-gonic/gin"
@@ -37,6 +39,7 @@ func (h *handler) handleAdminUserCreateGet() gin.HandlerFunc {
 			"Alerts":  h.session.GetFlashes(c),
 			"Session": currentSession,
 			"Static":  h.getStaticData(),
+			"Csrf":    csrf.GetToken(c),
 			"Epoch":   time.Time{},
 			"User":    &persistence.User{},
 		})

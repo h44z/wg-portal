@@ -1,6 +1,6 @@
 module github.com/h44z/wg-portal
 
-go 1.17
+go 1.18
 
 require (
 	github.com/coreos/go-oidc/v3 v3.1.0
@@ -14,26 +14,25 @@ require (
 	github.com/urfave/cli/v2 v2.4.0
 	github.com/utrack/gin-csrf v0.0.0-20190424104817-40fb8d2c8fca
 	github.com/vishvananda/netlink v1.1.0
-	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
+	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
-	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20220208144051-fde48d68ee68
+	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20220330030906-9490840b0b01
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	gorm.io/driver/mysql v1.3.2
-	gorm.io/driver/postgres v1.3.1
+	gorm.io/driver/mysql v1.3.3
+	gorm.io/driver/postgres v1.3.4
 	gorm.io/driver/sqlite v1.3.1
-	gorm.io/driver/sqlserver v1.3.1
-	gorm.io/gorm v1.23.2
+	gorm.io/driver/sqlserver v1.3.2
+	gorm.io/gorm v1.23.4
 )
 
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
-	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5 // indirect
 	github.com/denisenkom/go-mssqldb v0.12.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/go-asn1-ber/asn1-ber v1.5.3 // indirect
+	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.10.1 // indirect
@@ -54,7 +53,7 @@ require (
 	github.com/jackc/pgtype v1.10.0 // indirect
 	github.com/jackc/pgx/v4 v4.15.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.4 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/native v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
@@ -62,7 +61,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/mdlayher/genetlink v1.2.0 // indirect
 	github.com/mdlayher/netlink v1.6.0 // indirect
-	github.com/mdlayher/socket v0.2.2 // indirect
+	github.com/mdlayher/socket v0.2.3 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -71,17 +70,13 @@ require (
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	golang.org/x/net v0.0.0-20220403103023-749bd193bc2b // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220315194320-039c03cc5b86 // indirect
+	golang.org/x/sys v0.0.0-20220406163625-3f8b81556e12 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/tools v0.1.10 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	golang.zx2c4.com/wireguard v0.0.0-20220310012736-ae6bc4dd64e1 // indirect
+	golang.zx2c4.com/wireguard v0.0.0-20220407013110-ef5c587f782d // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	honnef.co/go/tools v0.2.2 // indirect
 )

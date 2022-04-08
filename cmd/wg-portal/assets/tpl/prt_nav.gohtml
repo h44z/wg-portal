@@ -44,8 +44,8 @@
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{{$.Session.Firstname}} {{$.Session.Lastname}}</a>
                     <div class="dropdown-menu">
                         {{with eq $.Session.LoggedIn true}}{{with eq $.Session.IsAdmin true}}
-                            <a class="dropdown-item" href="/admin/"><i class="fas fa-cogs"></i> Administration</a>
-                            <a class="dropdown-item" href="/admin/users/"><i class="fas fa-users-cog"></i> User Management</a>
+                            <a class="dropdown-item" href="/admin"><i class="fas fa-cogs"></i> Administration</a>
+                            <a class="dropdown-item" href="/admin/users"><i class="fas fa-users-cog"></i> User Management</a>
                             <div class="dropdown-divider"></div>
                         {{end}}{{end}}
                         <a class="dropdown-item" href="/user/profile"><i class="fas fa-user"></i> Profile</a>

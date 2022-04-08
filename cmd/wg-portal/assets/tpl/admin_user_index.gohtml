@@ -60,6 +60,23 @@
                 </tbody>
             </table>
             <p>Currently listed users: <strong>{{len .Users}}</strong></p>
+            <div>
+                <ul class="pagination pagination-sm">
+                    <li class="page-item {{if eq $.Page 1}}disabled{{end}}">
+                        <a class="page-link" href="?page={{intAdd $.Page -1}}">&laquo;</a>
+                    </li>
+
+                    {{range $i := intRange 1 $.TotalPages}}
+                        <li class="page-item {{if eq $i $.Page}}active{{end}}">
+                            <a class="page-link" href="?page={{$i}}">{{$i}}</a>
+                        </li>
+                    {{end}}
+
+                    <li class="page-item {{if eq $.Page $.TotalPages}}disabled{{end}}">
+                        <a class="page-link" href="?page={{intAdd $.Page 1}}">&raquo;</a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
     {{template "prt_footer.gohtml" .}}

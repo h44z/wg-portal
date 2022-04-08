@@ -53,6 +53,7 @@
             </div>
         </div>
 
+        {{with eq $.Session.LoggedIn true}}
         <div class="bg-light p-5">
             <h2 class="display-5">VPN Profiles</h2>
             <p class="lead">You can access and download your personal VPN configurations via your Userprofile.</p>
@@ -62,9 +63,10 @@
                 <a href="/user/profile" class="btn btn-primary btn-lg" title="User-Profile">Open My Profile</a>
             </p>
         </div>
+        {{end}}
 
         {{with eq $.Session.LoggedIn true}}{{with eq $.Session.IsAdmin true}}
-        <div class="bg-light p-5">
+        <div class="bg-light p-5 mt-4">
             <h2 class="display-5">Administration Area</h2>
             <p class="lead">In the administration area you can manage WireGuard peers and the server interface as well as users that are allowed to log in to the WireGuard Portal.</p>
             <hr class="my-4">
