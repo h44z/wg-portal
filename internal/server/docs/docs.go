@@ -437,7 +437,7 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "202": {
+                    "204": {
                         "description": "No Content"
                     },
                     "400": {

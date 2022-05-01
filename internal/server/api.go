@@ -536,7 +536,7 @@ func (s *ApiServer) PatchPeer(c *gin.Context) {
 // @ID DeletePeer
 // @Produce json
 // @Param PublicKey query string true "Public Key"
-// @Success 202 "No Content"
+// @Success 204 "No Content"
 // @Failure 400 {object} ApiError
 // @Failure 401 {object} ApiError
 // @Failure 403 {object} ApiError
