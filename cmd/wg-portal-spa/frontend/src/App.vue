@@ -1,119 +1,55 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from '@/components/HelloWorld.vue'
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/"><img src="/img/header-logo.png" alt="WireGuard Portal"/></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTop" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+      <div class="collapse navbar-collapse" id="navbarTop">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <RouterLink class="nav-link" :to="{name:'home'}">Home</RouterLink>
+          </li>
+          <li class="nav-item">
+            <RouterLink class="nav-link" :to="{name:'interfaces'}">Interfaces</RouterLink>
+          </li>
+          <li class="nav-item">
+            <RouterLink class="nav-link" :to="{name:'users'}">Users</RouterLink>
+          </li>
+        </ul>
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
+        <div class="navbar-nav d-flex justify-content-end">
+          <div class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Firstname Lastname</a>
+            <div class="dropdown-menu">
+              <a class="dropdown-item" href="/admin"><i class="fas fa-cogs"></i> Administration</a>
+              <a class="dropdown-item" href="/admin/users"><i class="fas fa-users-cog"></i> User Management</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="/user/profile"><i class="fas fa-user"></i> Profile</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="/auth/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+          </div>
+          <div class="nav-item">
+            <a href="/login" class="nav-link"><i class="fas fa-sign-in-alt fa-sm fa-fw me-2"></i>Login</a>
+          </div>
+        </div>
+      </div>
     </div>
-  </header>
+  </nav>
 
-  <RouterView />
+  <div class="container mt-5 flex-shrink-0">
+    <RouterView />
+  </div>
+
+  <footer class="page-footer mt-auto">
+    <div class="container mt-5">
+      <p>Powered by <img height="20" src="@/assets/logo.svg" alt="Vue.JS"/></p>
+    </div>
+  </footer>
 </template>
-
-<style>
-@import '@/assets/base.css';
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-
-  font-weight: normal;
-}
-
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
-
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>

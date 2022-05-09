@@ -4,10 +4,24 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite App</title>
+    <title>WireGuard Portal</title>
+    <meta name="description" content="WireGuard VPN Management Portal">
   </head>
-  <body>
+  <body class="d-flex flex-column min-vh-100">
+    <noscript>
+      <strong>We're sorry but this site doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+
+    <!-- vue teleport will add toasts here -->
+    <div id="toasts"></div>
+
+    <!-- main application -->
     <div id="app"></div>
+
+    <!-- vue teleport will add modals and dialogs here -->
+    <div id="modals"></div>
+    <div id="dialogs"></div>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
