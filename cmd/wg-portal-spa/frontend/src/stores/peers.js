@@ -12,10 +12,21 @@ export const peerStore = defineStore({
   }),
   getters: {
     Count: (state) => state.peers.length,
+    FilteredCount: (state) => state.Filtered.length,
     All: (state) => state.peers,
-    Filtered: (state) => state.peers.slice(state.pageOffset, state.pageOffset + state.pageSize), // TODO: filter
+    Filtered: (state) => {
+      if (!state.filter) {
+        return state.peers
+      }
+      return state.peers.filter((p) => {
+        return p.Name.includes(state.filter) || p.Identifier.includes(state.filter)
+      })
+    },
+    FilteredAndPaged: (state) => {
+      return state.Filtered.slice(state.pageOffset, state.pageOffset + state.pageSize)
+    },
     isFetching: (state) => state.fetching,
-    hasNextPage: (state) => state.pageOffset < (state.peers.length - state.pageSize),
+    hasNextPage: (state) => state.pageOffset < (state.FilteredCount - state.pageSize),
     hasPrevPage: (state) => state.pageOffset > 0,
     currentPage: (state) => (state.pageOffset / state.pageSize)+1,
   },
@@ -28,7 +39,7 @@ export const peerStore = defineStore({
     calculatePages() {
       let pageCounter = 1;
       this.pages = []
-      for (let i = 0; i < this.peers.length; i+=this.pageSize) {
+      for (let i = 0; i < this.FilteredCount; i+=this.pageSize) {
         this.pages.push(pageCounter++)
       }
     },
@@ -63,34 +74,34 @@ export const peerStore = defineStore({
         Name:"Testing name"
       },{
         Identifier: "id2",
-        Name:"Testing name 2"
+        Name:"Another test"
       },{
         Identifier: "id3",
-        Name:"Testing name 2"
+        Name:"Some name"
       },{
         Identifier: "id4",
-        Name:"Testing name 2"
+        Name:"Wireguard"
       },{
         Identifier: "id5",
-        Name:"Testing name 2"
+        Name:"User"
       },{
         Identifier: "id6",
-        Name:"Testing name 2"
+        Name:"VPN User"
       },{
         Identifier: "id7",
-        Name:"Testing name 2"
+        Name:"VPN User 2"
       },{
         Identifier: "id8",
-        Name:"Testing name 2"
+        Name:"WG User"
       },{
         Identifier: "id9",
-        Name:"Testing name 2"
+        Name:"Max Muster"
       },{
         Identifier: "id10",
-        Name:"Testing name 2"
+        Name:"Max Sample"
       },{
         Identifier: "id11",
-        Name:"Testing name 2"
+        Name:"A very long name"
       },{
         Identifier: "id12",
         Name:"Testing name 2"

@@ -2,12 +2,14 @@
 import Modal from "../components/Modal.vue";
 import Confirmation from "../components/Confirmation.vue";
 
-import {onMounted} from "vue";
+import {onMounted, ref} from "vue";
 import {peerStore} from "../stores/peers";
 import {interfaceStore} from "../stores/interfaces";
 
 const interfaces = interfaceStore()
 const peers = peerStore()
+
+const searchState = ref("close")
 
 onMounted(() => {
   interfaces.fetch()
@@ -178,11 +180,19 @@ onMounted(() => {
 
   <!-- Peer list -->
   <div class="mt-4 row" v-if="interfaces.Count!==0">
-    <div class="col-12 col-lg-8">
+    <div class="col-12 col-lg-5">
       <h2 v-if="interfaces.GetSelected.Mode==='server'" class="mt-2">Current VPN Peers</h2>
       <h2 v-else class="mt-2">Current VPN Endpoints</h2>
     </div>
     <div class="col-12 col-lg-4 text-lg-end">
+      <div class="form-group d-inline">
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" placeholder="Search..." v-model="peers.filter" @keyup="peers.afterPageSizeChange">
+          <button class="input-group-text btn btn-primary" title="Search"><i class="fa-solid fa-search"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-3 text-lg-end">
       <a v-if="interfaces.GetSelected.Mode==='server' && peers.Count!==0" class="btn btn-primary" href="#" title="Send mail to all peers"><i class="fa fa-paper-plane"></i></a>
       <a class="btn btn-primary ms-2" href="#" title="Add multiple peers"><i class="fa fa-plus me-1"></i><i class="fa fa-users"></i></a>
       <a class="btn btn-primary ms-2" href="#" title="Add a peer"><i class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
@@ -209,7 +219,7 @@ onMounted(() => {
       </tr>
       </thead>
       <tbody>
-        <tr v-for="peer in peers.Filtered" :key="peer.Identifier">
+        <tr v-for="peer in peers.FilteredAndPaged" :key="peer.Identifier">
           <th scope="row">
             <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
           </th>
