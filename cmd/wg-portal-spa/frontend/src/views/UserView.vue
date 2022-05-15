@@ -7,7 +7,7 @@ import Confirmation from "../components/Confirmation.vue";
   <!-- Headline and interface selector -->
   <div class="page-header row">
     <div class="col-12">
-      <h1>User Administration</h1>
+      <h1>{{ $t('user.h1') }}</h1>
     </div>
   </div>
 
@@ -17,26 +17,28 @@ import Confirmation from "../components/Confirmation.vue";
     </div>
     <div class="col-12 col-lg-4 text-lg-end">
       <a class="btn btn-primary" href="#" title="Send mail to selected users"><i class="fa fa-paper-plane"></i></a>
-      <a class="btn btn-primary ms-2" href="#" title="Add multiple users"><i class="fa fa-plus me-1"></i><i class="fa fa-users"></i></a>
-      <a class="btn btn-primary ms-2" href="#" title="Add a user"><i class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
+      <a class="btn btn-primary ms-2" href="#" title="Add multiple users"><i class="fa fa-plus me-1"></i><i
+          class="fa fa-users"></i></a>
+      <a class="btn btn-primary ms-2" href="#" title="Add a user"><i class="fa fa-plus me-1"></i><i
+          class="fa fa-user"></i></a>
     </div>
   </div>
   <div class="mt-2 table-responsive">
     <table class="table table-sm" id="userTable">
       <thead>
-      <tr>
-        <th scope="col">
-          <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" title="Select all">
-        </th><!-- select -->
-        <th scope="col">ID</th>
-        <th scope="col">Email</th>
-        <th scope="col">Firstname</th>
-        <th scope="col">Lastname</th>
-        <th scope="col" class="text-center">Source</th>
-        <th scope="col" class="text-center">Peers</th>
-        <th scope="col" class="text-center">Admin</th>
-        <th scope="col"></th><!-- Actions -->
-      </tr>
+        <tr>
+          <th scope="col">
+            <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" title="Select all">
+          </th><!-- select -->
+          <th scope="col">{{ $t('login.id') }}</th>
+          <th scope="col">{{ $t('login.email') }}</th>
+          <th scope="col">{{ $t('login.firstname') }}</th>
+          <th scope="col">{{ $t('login.lastname') }}</th>
+          <th scope="col" class="text-center">{{ $t('login.source') }}</th>
+          <th scope="col" class="text-center">{{ $t('login.peers') }}</th>
+          <th scope="col" class="text-center">{{ $t('login.admin') }}</th>
+          <th scope="col"></th><!-- Actions -->
+        </tr>
       </thead>
       <tbody>
         <tr>
@@ -97,13 +99,14 @@ import Confirmation from "../components/Confirmation.vue";
       </div>
       <div class="col-6">
         <div class="form-group row">
-          <label for="paginationSelector" class="col-sm-6 col-form-label text-end">Pagination size:</label>
+          <label for="paginationSelector" class="col-sm-6 col-form-label text-end">{{ $t('interfaces.pagination.size')
+          }}:</label>
           <div class="col-sm-6">
             <select class="form-select" id="paginationSelector">
               <option value="configurator.id">25</option>
               <option value="configurator.id">50</option>
               <option value="configurator.id">100</option>
-              <option value="configurator.id">All (slow)</option>
+              <option value="configurator.id">{{ $t('interfaces.pagination.all') }}</option>
             </select>
           </div>
         </div>

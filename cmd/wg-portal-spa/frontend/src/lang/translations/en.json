@@ -1,0 +1,107 @@
+{
+  "hello": "Hello World!",
+  "menu": {
+    "home": "Home",
+    "interfaces": "Interfaces",
+    "firstname": "Firstname",
+    "lastname": "Lastname",
+    "login": "Login",
+    "lang": "Toggle Language"
+  },
+  "home": {
+    "h1": "WireGuard® VPN Portal",
+    "info": "More Information",
+    "abstract": "WireGuard® is an extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography. It aims to be faster, simpler, leaner, and more useful than IPsec, while avoiding the massive headache. It intends to be considerably more performant than OpenVPN.",
+    "installation": {
+      "instruct": "Installation instructions for client software can be found on the official WireGuard website.",
+      "h1": "WireGuard Installation",
+      "h2": "Installation",
+      "btn": "Open Instructions"
+    },
+    "about-wg": {
+      "instruct": "WireGuard® is an extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography.",
+      "h1": "About WireGuard",
+      "h2": "About",
+      "btn": "More"
+    },
+    "about-portal": {
+      "instruct": "WireGuard Portal is a simple, web based configuration portal for WireGuard.",
+      "h1": "About WireGuard Portal",
+      "h2": "WireGuard Portal",
+      "btn": "More"
+    },
+    "profiles": {
+      "h1": "VPN Profiles",
+      "abstract": "You can access and download your personal VPN configurations via your Userprofile.",
+      "instruct": "To find all your configured profiles click on the button below.",
+      "btn": "Open my profile"
+    },
+    "admin": {
+      "h1": "Administration Area",
+      "abstract": "In the administration area you can manage WireGuard peers and the server interface as well as users that are allowed to log in to the WireGuard Portal.",
+      "instruct": "To find all your configured profiles click on the button below.",
+      "btn-1": "Open Server Administration",
+      "btn-2": "Open User Administration"
+    }
+  },
+  "interfaces": {
+    "h1": "Interface Administration",
+    "h2": "Current VPN Peers",
+    "h2-client": "Current Endpoints",
+    "tableHeadings": [
+      "Name",
+      "Identifier",
+      "User",
+      "IPs",
+      "Endpoint",
+      "Handshake"
+    ],
+    "noInterface": {
+      "h1": "No interfaces found...",
+      "message": "Click the plus button above to create a new WireGuard interface."
+    },
+    "notAvailable": "No Interface available",
+    "statusBox": {
+      "h1": "Interface status for",
+      "mode": "mode",
+      "key": "Public Key",
+      "endpoint": "Public Endpoint",
+      "port": "Listening Port",
+      "peers": "Enabled Peers",
+      "totalPeers": "Total Peers",
+      "ip": "IP Address",
+      "allowedIP": "Default allowed IPs",
+      "dnsServers": "DNS Servers",
+      "mtu": "Default MTU",
+      "interval": "Default Keepalive Interval"
+    },
+    "noPeerSelect": {
+      "h4": "No peers for the selected interface...",
+      "message": "Click the plus button above to create a new WireGuard interface."
+    },
+    "pagination": {
+      "size": "Number of Elements",
+      "all": "All (slow)"
+    }
+  },
+  "login": {
+    "please": "Please sign in",
+    "username": "Username",
+    "userMessage": "Please enter your username",
+    "pass": "Password",
+    "passMessage": "Please enter your password",
+    "btn": "Sign in"
+  },
+  "user": {
+    "h1": "User Administration",
+    "id": "ID",
+    "email": "eMail",
+    "firstname": "Firstname",
+    "lastname": "Lastname",
+    "source": "Source",
+    "peers": "Peers",
+    "admin": "Administration",
+    "addUser": "Add User",
+    "addMulti": "Add Multiple Users"
+  }
+}

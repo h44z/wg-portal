@@ -1,0 +1,99 @@
+{
+  "hello": "Hallo Welt!",
+  "menu": {
+    "home": "Home",
+    "interfaces": "Schnittstellen",
+    "firstname": "Vorname",
+    "surname": "Nachname",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "admin": "Verwaltung",
+    "user": "Nutzer",
+    "profile": "Profil",
+    "lang": "Sprache umschalten"
+  },
+  "home": {
+    "h1": "WireGuard® VPN Portal",
+    "abstract": "WireGuard® ist ein extrem einfaches, aber dennoch schnelles und modernes VPN, das modernste Kryptographie nutzt. Es zielt darauf ab, schneller, einfacher, schlanker und nützlicher als IPsec zu sein, während es die massiven Kopfschmerzen vermeidet. Es soll wesentlich leistungsfähiger sein als OpenVPN.",
+    "info": "Informationen",
+    "installation": {
+      "h1": "VPN Installation",
+      "h2": "Installation",
+      "instruct": "Die Installationsanweisungen für die Client-Software finden Sie auf der offiziellen WireGuard-Website.",
+      "btn": "Anleitung öffnen"
+    },
+    "about-wg": {
+      "instruct": "WireGuard® ist ein extrem einfaches, aber schnelles und modernes VPN, das modernste Kryptographie verwendet.",
+      "h1": "Über WireGuard",
+      "h2": "Über",
+      "btn": "Details"
+    },
+    "about-portal": {
+      "instruct": "WireGuard Portal ist ein einfaches, webbasiertes Konfigurationsportal für WireGuard.",
+      "h1": "Über WireGuard Portal",
+      "h2": "WireGuard-Portal",
+      "btn": "Details"
+    },
+    "profiles": {
+      "h1": "VPN Profile",
+      "abstract": "Über Ihr Benutzerprofil können Sie auf Ihre persönlichen VPN-Konfigurationen zugreifen und diese herunterladen.",
+      "instruct": "Um alle Ihre konfigurierten Profile zu finden, klicken Sie auf die Schaltfläche unten.",
+      "btn": "Mein Profil öffnen"
+    },
+    "admin": {
+      "h1": "Verwaltungsbereich",
+      "abstract": "Im Administrationsbereich können Sie VPN-Zugänge und die Serverschnittstelle sowie die Benutzer, die sich am VPN-Portal anmelden dürfen, verwalten.",
+      "instruct": "Um alle Ihre konfigurierten Profile zu finden, klicken Sie auf die Schaltfläche unten.",
+      "btn-1": "Serververwaltung öffnen",
+      "btn-2": "Benutzerverwaltung öffnen"
+    }
+  },
+  "interfaces": {
+    "h1": "Schnittstellenverwaltung",
+    "h2": "Aktuelle VPN-Geräte",
+    "h2-client": "Aktuelle Endpunkte",
+    "tableHeadings": [
+      "Name",
+      "Kennung",
+      "Benutzer",
+      "IPs",
+      "Endpunkt",
+      "Handschlag"
+    ],
+    "noInterface": {
+      "h1": "Keine Schnittstellen gefunden...",
+      "message": "Klicken Sie auf die Plus-Schaltfläche oben, um eine neue WireGuard-Schnittstelle zu erstellen."
+    },
+    "notAvailable": "Keine Schnittstelle verfügbar",
+    "statusBox": {
+      "h1": "Schnittstellenstatus für",
+      "key": "Öffentlicher Schlüssel",
+      "mode": "Modus",
+      "endpoint": "Öffentlicher Endpunkt",
+      "port": "Lauschender Port",
+      "peers": "Aktivierte Zugänge",
+      "totalPeers": "Alle Zugänge",
+      "ip": "IP-Adresse",
+      "allowedIP": "Standardmäßig erlaubte IPs",
+      "dnsServers": "DNS-Server",
+      "mtu": "Vorgegebene MTU",
+      "intervall": "Standard-Keepalive-Intervall"
+    },
+    "noPeerSelect": {
+      "h4": "Keine Zugänge für die ausgewählte Schnittstelle...",
+      "message": "Klicken Sie auf die Plus-Schaltfläche oben, um eine neue VPN-Schnittstelle zu erstellen."
+    },
+    "pagination": {
+      "size": "Anzahl",
+      "all": "Alle (langsam)"
+    }
+  },
+  "login": {
+    "please": "Bitte melden Sie sich an",
+    "username": "Benutzername",
+    "userMessage": "Bitte geben Sie Ihren Benutzernamen ein",
+    "pass": "Kennwort",
+    "passMessage": "Bitte geben Sie Ihr Passwort ein",
+    "btn": "Sign in"
+  }
+}

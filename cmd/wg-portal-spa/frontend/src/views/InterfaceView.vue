@@ -35,7 +35,7 @@ onMounted(() => {
   <!-- Headline and interface selector -->
   <div class="page-header row">
     <div class="col-12 col-lg-8">
-      <h1>Interface Administration</h1>
+      <h1>{{ $t('interfaces.h1') }}</h1>
     </div>
     <div class="col-12 col-lg-4 text-end">
       <div class="form-group">
@@ -45,7 +45,7 @@ onMounted(() => {
         <div class="input-group mb-3">
           <button class="input-group-text btn btn-primary" title="Add new interface"><i class="fa-solid fa-plus-circle"></i></button>
           <select class="form-select" :disabled="interfaces.Count===0" v-model="interfaces.selected">
-            <option v-if="interfaces.Count===0" value="nothing">No Interface available</option>
+            <option v-if="interfaces.Count===0" value="nothing">{{ $t('interfaces.notAvailable') }}</option>
             <option v-for="iface in interfaces.All" :key="iface.Identifier" :value="iface.Identifier">{{iface.Identifier}}</option>
           </select>
         </div>
@@ -57,8 +57,8 @@ onMounted(() => {
   <div class="row" v-if="interfaces.Count===0">
     <div class="col-lg-12">
       <div class="mt-5">
-        <h4>No interfaces found...</h4>
-        <p>Click the plus button above to create a new WireGuard interface.</p>
+        <h4>{{ $t('interfaces.noInterface.h1') }}</h4>
+        <p>{{ $t('interfaces.noInterface.message') }}</p>
       </div>
     </div>
   </div>
@@ -71,7 +71,7 @@ onMounted(() => {
         <div class="card-header">
           <div class="row">
             <div class="col-12 col-lg-8">
-              Interface status for <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{interfaces.GetSelected.Mode}} mode)
+              {{ $t('interfaces.statusBox.h1') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{interfaces.GetSelected.Mode}} {{ $t('interfaces.statusBox.mode') }})
             </div>
             <div class="col-12 col-lg-4 text-lg-end">
               <a class="btn-link" href="#" title="Show interface configuration"><i class="fas fa-eye"></i></a>
@@ -87,23 +87,23 @@ onMounted(() => {
               <table class="table table-sm table-borderless device-status-table">
                 <tbody>
                 <tr>
-                  <td>Public Key:</td>
+                  <td>{{ $t('interfaces.statusBox.key') }}:</td>
                   <td>{{interfaces.GetSelected.PublicKey}}</td>
                 </tr>
                 <tr>
-                  <td>Public Endpoint:</td>
+                  <td>{{ $t('interfaces.statusBox.endpoint') }}:</td>
                   <td>{{interfaces.GetSelected.PeerDefEndpoint}}</td>
                 </tr>
                 <tr>
-                  <td>Listening Port:</td>
+                  <td>{{ $t('interfaces.statusBox.port') }}:</td>
                   <td>{{interfaces.GetSelected.ListenPort}}</td>
                 </tr>
                 <tr>
-                  <td>Enabled Peers:</td>
+                  <td>{{ $t('interfaces.statusBox.peers') }}:</td>
                   <td>{{interfaces.GetSelected.InterfacePeers}}</td>
                 </tr>
                 <tr>
-                  <td>Total Peers:</td>
+                  <td>{{ $t('interfaces.statusBox.totalPeers') }}:</td>
                   <td>{{interfaces.GetSelected.TotalPeers}}</td>
                 </tr>
                 </tbody>
@@ -113,23 +113,23 @@ onMounted(() => {
               <table class="table table-sm table-borderless device-status-table">
                 <tbody>
                 <tr>
-                  <td>IP Address:</td>
+                  <td>{{ $t('interfaces.statusBox.ip') }}:</td>
                   <td>{{interfaces.GetSelected.AddressStr}}</td>
                 </tr>
                 <tr>
-                  <td>Default allowed IP's:</td>
+                  <td>{{ $t('interfaces.statusBox.allowedIP') }}:</td>
                   <td>{{interfaces.GetSelected.PeerDefAllowedIPsStr}}</td>
                 </tr>
                 <tr>
-                  <td>Default DNS servers:</td>
+                  <td>{{ $t('interfaces.statusBox.dnsServers') }}:</td>
                   <td>{{interfaces.GetSelected.PeerDefDnsStr}}</td>
                 </tr>
                 <tr>
-                  <td>Default MTU:</td>
+                  <td>{{ $t('interfaces.statusBox.mtu') }}:</td>
                   <td>{{interfaces.GetSelected.Mtu}}</td>
                 </tr>
                 <tr>
-                  <td>Default Keepalive Interval:</td>
+                  <td>{{ $t('interfaces.statusBox.intervall') }}:</td>
                   <td>{{interfaces.GetSelected.PeerDefPersistentKeepalive}}</td>
                 </tr>
                 </tbody>
@@ -140,15 +140,15 @@ onMounted(() => {
               <table class="table table-sm table-borderless device-status-table">
                 <tbody>
                 <tr>
-                  <td>Public Key:</td>
+                  <td>{{ $t('interfaces.statusBox.key') }}:</td>
                   <td>{{interfaces.GetSelected.PublicKey}}</td>
                 </tr>
                 <tr>
-                  <td>Enabled Endpoints:</td>
+                  <td>{{ $t('interfaces.statusBox.endpoint') }}:</td>
                   <td>{{interfaces.GetSelected.InterfacePeers}}</td>
                 </tr>
                 <tr>
-                  <td>Total Endpoints:</td>
+                  <td>{{ $t('interfaces.statusBox.totalPeers') }}:</td>
                   <td>{{interfaces.GetSelected.TotalPeers}}</td>
                 </tr>
                 </tbody>
@@ -158,15 +158,15 @@ onMounted(() => {
               <table class="table table-sm table-borderless device-status-table">
                 <tbody>
                 <tr>
-                  <td>IP Address:</td>
+                  <td>{{ $t('interfaces.statusBox.ip') }}:</td>
                   <td>{{interfaces.GetSelected.AddressStr}}</td>
                 </tr>
                 <tr>
-                  <td>DNS servers:</td>
+                  <td>{{ $t('interfaces.statusBox.dnsServers') }}:</td>
                   <td>{{interfaces.GetSelected.DnsStr}}</td>
                 </tr>
                 <tr>
-                  <td>Default MTU:</td>
+                  <td>{{ $t('interfaces.statusBox.mtu') }}:</td>
                   <td>{{interfaces.GetSelected.Mtu}}</td>
                 </tr>
                 </tbody>
@@ -181,8 +181,8 @@ onMounted(() => {
   <!-- Peer list -->
   <div class="mt-4 row" v-if="interfaces.Count!==0">
     <div class="col-12 col-lg-5">
-      <h2 v-if="interfaces.GetSelected.Mode==='server'" class="mt-2">Current VPN Peers</h2>
-      <h2 v-else class="mt-2">Current VPN Endpoints</h2>
+      <h2 v-if="interfaces.GetSelected.Mode==='server'" class="mt-2">{{ $t('interfaces.h2') }}</h2>
+      <h2 v-else class="mt-2">{{ $t('interfaces.h2-client') }}</h2>
     </div>
     <div class="col-12 col-lg-4 text-lg-end">
       <div class="form-group d-inline">
@@ -200,8 +200,8 @@ onMounted(() => {
   </div>
   <div class="mt-2 table-responsive" v-if="interfaces.Count!==0">
     <div v-if="peers.Count===0">
-    <h4>No peers for the selected interface...</h4>
-    <p>Click the plus button above to create a new WireGuard interface.</p>
+    <h4>{{ $t('interfaces.noPeerSelect.h4') }}</h4>
+    <p>{{ $t('interfaces.noPeerSelect.message') }}</p>
     </div>
     <table v-if="peers.Count!==0" class="table table-sm" id="userTable">
       <thead>
@@ -209,12 +209,12 @@ onMounted(() => {
         <th scope="col">
           <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" title="Select all">
         </th><!-- select -->
-        <th scope="col">Name</th>
-        <th scope="col">Identifier</th>
-        <th scope="col">User</th>
-        <th scope="col">IP's</th>
-        <th scope="col" v-if="interfaces.GetSelected.Mode==='client'">Endpoint</th>
-        <th scope="col">Handshake</th>
+        <th scope="col">{{ $t('interfaces.tableHeadings[0]') }}</th>
+        <th scope="col">{{ $t('interfaces.tableHeadings[1]') }}</th>
+        <th scope="col">{{ $t('interfaces.tableHeadings[2]') }}</th>
+        <th scope="col">{{ $t('interfaces.tableHeadings[3]') }}</th>
+        <th scope="col" v-if="interfaces.GetSelected.Mode==='client'">{{ $t('interfaces.tableHeadings[5]') }}</th>
+        <th scope="col">{{ $t('interfaces.tableHeadings[5]') }}</th>
         <th scope="col"></th><!-- Actions -->
       </tr>
       </thead>
@@ -259,14 +259,14 @@ onMounted(() => {
       </div>
       <div class="col-6">
         <div class="form-group row">
-          <label for="paginationSelector" class="col-sm-6 col-form-label text-end">Pagination size:</label>
+          <label for="paginationSelector" class="col-sm-6 col-form-label text-end">{{ $t('interfaces.pagination.size') }}:</label>
           <div class="col-sm-6">
             <select class="form-select" v-model.number="peers.pageSize" @click="peers.afterPageSizeChange()">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
               <option value="100">100</option>
-              <option value="999999999">All (slow)</option>
+              <option value="999999999">{{ $t('interfaces.pagination.all') }}</option>
             </select>
           </div>
         </div>
