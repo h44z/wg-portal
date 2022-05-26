@@ -7,6 +7,7 @@ type Config struct {
 	DefaultDeviceName   string   `yaml:"defaultDevice" envconfig:"WG_DEFAULT_DEVICE"` // this device is used for auto-created peers, use GetDefaultDeviceName() to access this field
 	ConfigDirectoryPath string   `yaml:"configDirectory" envconfig:"WG_CONFIG_PATH"`  // optional, if set, updates will be written to this path, filename: <devicename>.conf
 	ManageIPAddresses   bool     `yaml:"manageIPAddresses" envconfig:"MANAGE_IPS"`    // handle ip-address setup of interface
+	UserManagePeers     bool     `yaml:"userManagePeers" envconfig:"USER_MANAGE_PEERS"`  // user can manage own peers
 }
 
 func (c Config) GetDefaultDeviceName() string {

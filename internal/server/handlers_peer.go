@@ -392,3 +392,117 @@ func (s *Server) sendPeerConfigMail(peer wireguard.Peer) error {
 
 	return nil
 }
+
+func (s *Server) GetUserCreatePeer(c *gin.Context) {
+	currentSession, err := s.setNewPeerFormInSession(c)
+	if err != nil {
+		s.GetHandleError(c, http.StatusInternalServerError, "Session error", err.Error())
+		return
+	}
+	c.HTML(http.StatusOK, "user_create_client.html", gin.H{
+		"Route":        c.Request.URL.Path,
+		"Alerts":       GetFlashes(c),
+		"Session":      currentSession,
+		"Static":       s.getStaticData(),
+		"Peer":         currentSession.FormData.(wireguard.Peer),
+		"EditableKeys": s.config.Core.EditableKeys,
+		"Device":       s.peers.GetDevice(currentSession.DeviceName),
+		"DeviceNames":  s.GetDeviceNames(),
+		"AdminEmail":   s.config.Core.AdminUser,
+		"Csrf":         csrf.GetToken(c),
+	})
+}
+
+func (s *Server) PostUserCreatePeer(c *gin.Context) {
+	currentSession := GetSessionData(c)
+	var formPeer wireguard.Peer
+	if currentSession.FormData != nil {
+		formPeer = currentSession.FormData.(wireguard.Peer)
+	}
+
+	formPeer.Email = currentSession.Email;
+	formPeer.Identifier = currentSession.Email;
+	formPeer.DeviceType = wireguard.DeviceTypeServer;
+  formPeer.PrivateKey = "";
+	
+	if err := c.ShouldBind(&formPeer); err != nil {
+		_ = s.updateFormInSession(c, formPeer)
+		SetFlashMessage(c, "failed to bind form data: "+err.Error(), "danger")
+		c.Redirect(http.StatusSeeOther, "/user/peer/create?formerr=bind")
+		return
+	}
+
+	disabled := c.PostForm("isdisabled") != ""
+	now := time.Now()
+	if disabled {
+		formPeer.DeactivatedAt = &now
+	}
+
+	if err := s.CreatePeer(currentSession.DeviceName, formPeer); err != nil {
+		_ = s.updateFormInSession(c, formPeer)
+		SetFlashMessage(c, "failed to add user: "+err.Error(), "danger")
+		c.Redirect(http.StatusSeeOther, "/user/peer/create?formerr=create")
+		return
+	}
+
+	SetFlashMessage(c, "client created successfully", "success")
+	c.Redirect(http.StatusSeeOther, "/user/profile")
+}
+
+func (s *Server) GetUserEditPeer(c *gin.Context) {
+	peer := s.peers.GetPeerByKey(c.Query("pkey"))
+
+	
+	currentSession, err := s.setFormInSession(c, peer)
+	if err != nil {
+		s.GetHandleError(c, http.StatusInternalServerError, "Session error", err.Error())
+		return
+	}
+
+	if peer.Email != currentSession.Email {
+		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
+		return;
+	}
+
+	c.HTML(http.StatusOK, "user_edit_client.html", gin.H{
+		"Route":        c.Request.URL.Path,
+		"Alerts":       GetFlashes(c),
+		"Session":      currentSession,
+		"Static":       s.getStaticData(),
+		"Peer":         currentSession.FormData.(wireguard.Peer),
+		"EditableKeys": s.config.Core.EditableKeys,
+		"Device":       s.peers.GetDevice(currentSession.DeviceName),
+		"DeviceNames":  s.GetDeviceNames(),
+		"AdminEmail":   s.config.Core.AdminUser,
+		"Csrf":         csrf.GetToken(c),
+	})
+}
+
+func (s *Server) PostUserEditPeer(c *gin.Context) {
+	currentPeer := s.peers.GetPeerByKey(c.Query("pkey"))
+	urlEncodedKey := url.QueryEscape(c.Query("pkey"))
+
+	currentSession := GetSessionData(c)
+
+	if currentPeer.Email != currentSession.Email {
+		s.GetHandleError(c, http.StatusUnauthorized, "No permissions", "You don't have permissions to view this resource!")
+		return;
+	}
+
+	disabled := c.PostForm("isdisabled") != ""
+	now := time.Now()
+	if disabled && currentPeer.DeactivatedAt == nil {
+		currentPeer.DeactivatedAt = &now
+	}
+	
+	// Update in database
+	if err := s.UpdatePeer(currentPeer, now); err != nil {
+		_ = s.updateFormInSession(c, currentPeer)
+		SetFlashMessage(c, "failed to update user: "+err.Error(), "danger")
+		c.Redirect(http.StatusSeeOther, "/user/peer/edit?pkey="+urlEncodedKey+"&formerr=update")
+		return
+	}
+
+	SetFlashMessage(c, "changes applied successfully", "success")
+	c.Redirect(http.StatusSeeOther, "/user/peer/edit?pkey="+urlEncodedKey)
+}

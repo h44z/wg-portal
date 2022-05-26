@@ -5,7 +5,8 @@
 [Interface]
 
 # Core settings
-PrivateKey = {{ .Peer.PrivateKey }}
+
+PrivateKey = {{or .Peer.PrivateKey "<please-insert-your-private-key>" }}
 Address = {{ .Peer.IPsStr }}
 
 # Misc. settings (optional)
