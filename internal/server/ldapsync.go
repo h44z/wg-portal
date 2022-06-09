@@ -45,6 +45,9 @@ func (s *Server) SyncLdapWithUserDatabase() {
 }
 
 func (s Server) userIsInAdminGroup(ldapData *ldap.RawLdapData) bool {
+	if s.config.LDAP.EveryoneAdmin {
+		return true
+	}
 	if s.config.LDAP.AdminLdapGroup_ == nil {
 		return false
 	}
