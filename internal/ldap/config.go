@@ -29,6 +29,7 @@ type Config struct {
 	SyncFilter      string    `yaml:"syncFilter" envconfig:"LDAP_SYNC_FILTER"`
 	AdminLdapGroup  string    `yaml:"adminGroup" envconfig:"LDAP_ADMIN_GROUP"` // Members of this group receive admin rights in WG-Portal
 	AdminLdapGroup_ *gldap.DN `yaml:"-"`
+	EveryoneAdmin bool `yaml:"everyoneAdmin" envconfig:"LDAP_EVERYONE_ADMIN"`
 	LdapCertConn    bool      `yaml:"ldapCertConn" envconfig:"LDAP_CERT_CONN"`
 	LdapTlsCert     string    `yaml:"ldapTlsCert" envconfig:"LDAPTLS_CERT"`
 	LdapTlsKey      string    `yaml:"ldapTlsKey" envconfig:"LDAPTLS_KEY"`
