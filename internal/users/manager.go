@@ -153,7 +153,7 @@ func (m Manager) CreateUser(user *User) error {
 
 func (m Manager) UpdateUser(user *User) error {
 	user.Email = strings.ToLower(user.Email)
-	res := m.db.Save(user)
+	res := m.db.Unscoped().Save(user)
 	if res.Error != nil {
 		return errors.Wrapf(res.Error, "failed to update user %s", user.Email)
 	}
