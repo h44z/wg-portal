@@ -1,8 +1,10 @@
 package server
 
 import (
+	"database/sql"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -63,6 +65,9 @@ func (s *Server) GetAdminUsersIndex(c *gin.Context) {
 
 func (s *Server) GetAdminUsersEdit(c *gin.Context) {
 	user := s.users.GetUserUnscoped(c.Query("pkey"))
+
+	// conversion to string for datetimepicker
+	user.ExpiresAtString = strings.Replace(user.ExpiresAt.Time.String()[0:16], " ", "T", -1)
 
 	currentSession, err := s.setFormInSession(c, *user)
 	if err != nil {
@@ -134,6 +139,25 @@ func (s *Server) PostAdminUsersEdit(c *gin.Context) {
 		formUser.DeletedAt = gorm.DeletedAt{}
 	}
 	formUser.IsAdmin = c.PostForm("isadmin") != ""
+
+	if c.PostForm("expiresat") != "" {
+		expiresAtString := strings.Replace(c.PostForm("expiresat"), "T", " ", -1)
+
+		expiresAt, err := time.Parse("2006-01-02 15:04", expiresAtString)
+		if err != nil {
+			_ = s.updateFormInSession(c, formUser)
+			SetFlashMessage(c, "failed to parse users expiry time: "+err.Error(), "danger")
+			c.Redirect(http.StatusSeeOther, "/admin/users/edit?pkey="+urlEncodedKey+"&formerr=update")
+			return
+		}
+
+		formUser.ExpiresAt = sql.NullTime{
+			Time:  expiresAt,
+			Valid: true,
+		}
+	} else {
+		formUser.ExpiresAt = sql.NullTime{Valid: false}
+	}
 
 	if err := s.UpdateUser(formUser); err != nil {
 		_ = s.updateFormInSession(c, formUser)

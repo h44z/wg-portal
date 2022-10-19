@@ -74,6 +74,18 @@
                 </div>
             </div>
 
+            {{if eq .User.IsAdmin false}}
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="expiry-time">Expiry time:</label>
+                    <input class="form-control" type="datetime-local" id="expiry-time"
+                           name="expiresat" value="{{.User.ExpiresAtString}}"
+                           min="2022-01-01T00:01">
+                </div>
+            </div>
+            {{else}}
+            {{end}}
+
             <button type="submit" class="btn btn-primary">Save</button>
             <a href="/admin/users/" class="btn btn-secondary">Cancel</a>
             {{if eq $.Session.IsAdmin true}}

@@ -359,6 +359,11 @@ func (s *Server) CreateUserDefaultPeer(email, device string) error {
 	}
 	peer.CreatedBy = existingUser.Email
 	peer.UpdatedBy = existingUser.Email
+
+	if existingUser.ExpiresAt.Valid {
+		peer.ExpiresAt = existingUser.ExpiresAt.Time
+	}
+
 	if err := s.CreatePeer(device, peer); err != nil {
 		return errors.WithMessagef(err, "failed to automatically create vpn peer for %s", email)
 	}

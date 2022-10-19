@@ -1,6 +1,7 @@
 package users
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -43,4 +44,8 @@ type User struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index" json:",omitempty" swaggertype:"string"`
+
+	// expiry time and a placeholder for its formatted ui string
+	ExpiresAt       sql.NullTime `gorm:"index" json:",omitempty" swaggertype:"string"`
+	ExpiresAtString string       `gorm:"-"`
 }

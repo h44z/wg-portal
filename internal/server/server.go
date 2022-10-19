@@ -191,6 +191,9 @@ func (s *Server) Setup(ctx context.Context) error {
 		return errors.WithMessage(err, "unable to setup peer manager")
 	}
 
+	// Disconnect peers that have expired
+	go s.peers.PurgeExpiredPeers()
+
 	for _, deviceName := range s.wg.Cfg.DeviceNames {
 		if err = s.RestoreWireGuardInterface(deviceName); err != nil {
 			return errors.WithMessagef(err, "unable to restore WireGuard state for %s", deviceName)

@@ -23,9 +23,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//
 // CUSTOM VALIDATORS ----------------------------------------------------------------------------
-//
 var cidrList validator.Func = func(fl validator.FieldLevel) bool {
 	cidrListStr := fl.Field().String()
 
@@ -98,6 +96,7 @@ type Peer struct {
 	UpdatedBy     string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	ExpiresAt     time.Time
 }
 
 func (p *Peer) SetIPAddresses(addresses ...string) {
@@ -461,6 +460,11 @@ func (m *PeerManager) validateOrCreatePeer(device string, wgPeer wgtypes.Peer) e
 
 	dev := m.GetDevice(device)
 
+	// Do not create peers that are expired
+	if peer.ExpiresAt.Before(time.Now()) {
+		return nil
+	}
+
 	if peer.PublicKey == "" { // peer not found, create
 		peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(wgPeer.PublicKey.String())))
 		if dev.Type == DeviceTypeServer {
@@ -587,6 +591,30 @@ func (m *PeerManager) fixPeerDefaultData(peer *Peer, device *Device) error {
 		return m.UpdatePeer(*peer)
 	}
 	return nil
+}
+
+// PurgeExpiredPeers disconnected all expired connections
+func (m *PeerManager) PurgeExpiredPeers() {
+
+	ticker := time.NewTicker(5 * time.Minute)
+
+	for {
+		select {
+		case <-ticker.C:
+			peers := make([]Peer, 0)
+			peers = append(peers, m.GetAllPeers("wg0")...)
+			peers = append(peers, m.GetAllPeers("wg1")...)
+
+			for _, peer := range peers {
+
+				if peer.ExpiresAt.Before(time.Now()) {
+					if err := m.DeletePeer(peer); err != nil {
+						logrus.Errorf("failed to delete expired peer: %v", err)
+					}
+				}
+			}
+		}
+	}
 }
 
 // populateDeviceData enriches the device struct with WireGuard live data like interface information
