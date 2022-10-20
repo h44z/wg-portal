@@ -602,8 +602,10 @@ func (m *PeerManager) PurgeExpiredPeers() {
 		select {
 		case <-ticker.C:
 			peers := make([]Peer, 0)
-			peers = append(peers, m.GetAllPeers("wg0")...)
-			peers = append(peers, m.GetAllPeers("wg1")...)
+
+			for _, device := range m.wg.Cfg.DeviceNames {
+				peers = append(peers, m.GetAllPeers(device)...)
+			}
 
 			for _, peer := range peers {
 

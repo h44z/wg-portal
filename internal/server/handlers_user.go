@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -67,7 +66,7 @@ func (s *Server) GetAdminUsersEdit(c *gin.Context) {
 	user := s.users.GetUserUnscoped(c.Query("pkey"))
 
 	// conversion to string for datetimepicker
-	user.ExpiresAtString = strings.Replace(user.ExpiresAt.Time.String()[0:16], " ", "T", -1)
+	user.ExpiresAtString = user.ExpiresAt.Time.Format("2006-01-02T15:04")[0:16]
 
 	currentSession, err := s.setFormInSession(c, *user)
 	if err != nil {
@@ -141,9 +140,8 @@ func (s *Server) PostAdminUsersEdit(c *gin.Context) {
 	formUser.IsAdmin = c.PostForm("isadmin") != ""
 
 	if c.PostForm("expiresat") != "" {
-		expiresAtString := strings.Replace(c.PostForm("expiresat"), "T", " ", -1)
 
-		expiresAt, err := time.Parse("2006-01-02 15:04", expiresAtString)
+		expiresAt, err := time.Parse("2006-01-02T15:04", c.PostForm("expiresat"))
 		if err != nil {
 			_ = s.updateFormInSession(c, formUser)
 			SetFlashMessage(c, "failed to parse users expiry time: "+err.Error(), "danger")
