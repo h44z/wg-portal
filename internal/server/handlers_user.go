@@ -66,7 +66,7 @@ func (s *Server) GetAdminUsersEdit(c *gin.Context) {
 	user := s.users.GetUserUnscoped(c.Query("pkey"))
 
 	// conversion to string for datetimepicker
-	user.ExpiresAtString = user.ExpiresAt.Time.Format("2006-01-02T15:04")[0:16]
+	user.ExpiresAtString = user.ExpiresAt.Time.Format("2006-01-02T15:04")
 
 	currentSession, err := s.setFormInSession(c, *user)
 	if err != nil {
