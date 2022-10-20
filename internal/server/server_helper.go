@@ -276,14 +276,19 @@ func (s *Server) UpdateUser(user users.User) error {
 		return s.DeleteUser(user)
 	}
 
-	// Otherwise, if user was deleted (disabled), reactivate it's peers
-	if currentUser.DeletedAt.Valid {
-		for _, peer := range s.peers.GetPeersByMail(user.Email) {
-			now := time.Now()
+	for _, peer := range s.peers.GetPeersByMail(user.Email) {
+		now := time.Now()
+
+		// if user was deleted (disabled), reactivate it's peers
+		if currentUser.DeletedAt.Valid {
 			peer.DeactivatedAt = nil
-			if err := s.UpdatePeer(peer, now); err != nil {
-				logrus.Errorf("failed to update (re)activated peer %s for %s: %v", peer.PublicKey, user.Email, err)
-			}
+		}
+
+		// propagate users expiry time to its peers
+		peer.ExpiresAt = user.ExpiresAt.Time
+
+		if err := s.UpdatePeer(peer, now); err != nil {
+			logrus.Errorf("failed to update (re)activated peer %s for %s: %v", peer.PublicKey, user.Email, err)
 		}
 	}
 
