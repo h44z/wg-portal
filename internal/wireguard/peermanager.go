@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -23,9 +24,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//
 // CUSTOM VALIDATORS ----------------------------------------------------------------------------
-//
 var cidrList validator.Func = func(fl validator.FieldLevel) bool {
 	cidrListStr := fl.Field().String()
 
@@ -33,6 +32,18 @@ var cidrList validator.Func = func(fl validator.FieldLevel) bool {
 	for i := range cidrList {
 		_, _, err := net.ParseCIDR(cidrList[i])
 		if err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+var dnsList validator.Func = func(fl validator.FieldLevel) bool {
+	dnsListStr := fl.Field().String()
+	dnsList := common.ParseStringList(dnsListStr)
+	for i := range dnsList {
+		ip := net.ParseIP(dnsList[i])
+		if ip == nil && !govalidator.IsDNSName(dnsList[i]) {
 			return false
 		}
 	}
@@ -55,6 +66,7 @@ func init() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		_ = v.RegisterValidation("cidrlist", cidrList)
 		_ = v.RegisterValidation("iplist", ipList)
+		_ = v.RegisterValidation("dnsList", dnsList)
 	}
 }
 
@@ -89,7 +101,7 @@ type Peer struct {
 	// Misc. WireGuard Settings
 	PrivateKey string `form:"privkey" binding:"omitempty,base64"`
 	IPsStr     string `form:"ip" binding:"cidrlist,required_if=DeviceType server"` // a comma separated list of IPs of the client
-	DNSStr     string `form:"dns" binding:"iplist"`                                // comma separated list of the DNS servers for the client
+	DNSStr     string `form:"dns" binding:"dnsList"`                               // comma separated list of the DNS servers for the client
 	// Global Device Settings (can be ignored, only make sense if device is in server mode)
 	Mtu int `form:"mtu" binding:"gte=0,lte=1500"`
 
@@ -255,7 +267,7 @@ type Device struct {
 	PublicKey    string `form:"pubkey" binding:"required,base64"`
 	Mtu          int    `form:"mtu" binding:"gte=0,lte=1500"`   // the interface MTU, wg-quick addition
 	IPsStr       string `form:"ip" binding:"required,cidrlist"` // comma separated list of the IPs of the client, wg-quick addition
-	DNSStr       string `form:"dns" binding:"iplist"`           // comma separated list of the DNS servers of the client, wg-quick addition
+	DNSStr       string `form:"dns" binding:"dnsList"`          // comma separated list of the DNS servers of the client, wg-quick addition
 	RoutingTable string `form:"routingtable"`                   // the routing table, wg-quick addition
 	PreUp        string `form:"preup"`                          // pre up script, wg-quick addition
 	PostUp       string `form:"postup"`                         // post up script, wg-quick addition

@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	git.prolicht.digital/pub/healthcheck v1.0.1
+	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5 // indirect
 	github.com/evanphx/json-patch v0.5.2
 	github.com/gin-contrib/sessions v0.0.5
