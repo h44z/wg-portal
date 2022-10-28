@@ -112,6 +112,7 @@ func (s *Server) disableMissingLdapUsers(ldapUsers []ldap.RawLdapData) {
 		for _, peer := range s.peers.GetPeersByMail(activeUsers[i].Email) {
 			now := time.Now()
 			peer.DeactivatedAt = &now
+			peer.DeactivatedReason = "missing ldap user"
 			if err := s.UpdatePeer(peer, now); err != nil {
 				logrus.Errorf("failed to update deactivated peer %s: %v", peer.PublicKey, err)
 			}
@@ -141,6 +142,7 @@ func (s *Server) updateLdapUsers(ldapUsers []ldap.RawLdapData) {
 			for _, peer := range s.peers.GetPeersByMail(user.Email) {
 				now := time.Now()
 				peer.DeactivatedAt = nil
+				peer.DeactivatedReason = ""
 				if err = s.UpdatePeer(peer, now); err != nil {
 					logrus.Errorf("failed to update activated peer %s: %v", peer.PublicKey, err)
 				}

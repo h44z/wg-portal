@@ -106,7 +106,7 @@
             </div>
 
             <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group col-md-6">
                     <div class="custom-control custom-switch">
                         <input class="custom-control-input" name="isdisabled" type="checkbox" value="true" id="server_Disabled" {{if .Peer.DeactivatedAt}}checked{{end}}>
                         <label class="custom-control-label" for="server_Disabled">
@@ -119,6 +119,10 @@
                             Ignore global settings (<span class="text-blue">g</span>)
                         </label>
                     </div>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="expires_at">Expires At</label>
+                    <input type="date" name="expires_at" pattern="\d{4}-\d{2}-\d{2}" class="form-control" id="expires_at" placeholder="" value="{{formatDate .Peer.ExpiresAt}}" min="2022-01-01">
                 </div>
             </div>
 
@@ -185,13 +189,17 @@
             </div>
 
             <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group col-md-6">
                     <div class="custom-control custom-switch">
                         <input class="custom-control-input" name="isdisabled" type="checkbox" value="true" id="client_Disabled" {{if .Peer.DeactivatedAt}}checked{{end}}>
                         <label class="custom-control-label" for="client_Disabled">
                             Disabled
                         </label>
                     </div>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="expires_at">Expires At</label>
+                    <input type="date" name="expires_at" pattern="\d{4}-\d{2}-\d{2}" class="form-control" id="expires_at" placeholder="" value="{{formatDate .Peer.ExpiresAt}}" min="2022-01-01">
                 </div>
             </div>
 

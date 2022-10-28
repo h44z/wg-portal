@@ -170,7 +170,7 @@
                             <!-- online check -->
                             <span title="Online status" class="online-status" id="online-{{$p.UID}}" data-pkey="{{$p.PublicKey}}"><i class="fas fa-unlink"></i></span>
                         </th>
-                        <td>{{$p.Identifier}}</td>
+                        <td>{{$p.Identifier}}{{if $p.WillExpire}} <i class="fas fa-hourglass-end expiring-peer" data-toggle="tooltip" data-placement="right" title="" data-original-title="Expires at: {{formatDate $p.ExpiresAt}}"></i>{{end}}</td>
                         <td>{{$p.PublicKey}}</td>
                         {{if eq $.Device.Type "server"}}
                         <td>{{$p.Email}}</td>
@@ -243,8 +243,14 @@
                                         {{end}}
                                     </div>
                                     <div class="col-md-3">
+                                        {{if $p.DeactivatedAt}}
+                                        <div class="pull-right-lg mt-lg-5 disabled-peer">Peer is disabled! <i class="fas fa-comment-dots" data-toggle="tooltip" data-placement="left" title="" data-original-title="Reason: {{$p.DeactivatedReason}}"></i></div>
+                                        {{end}}
+                                        {{if $p.WillExpire}}{{if not $p.DeactivatedAt}}
+                                        <div class="pull-right-lg mt-lg-5 expiring-peer"><i class="fas fa-exclamation-triangle"></i> Peer will expire on {{ formatDate $p.ExpiresAt}}</div>
+                                        {{end}}{{end}}
                                         {{if eq $.Device.Type "server"}}
-                                        <div class="float-right mt-5">
+                                        <div class="pull-right-lg mt-lg-5 mt-md-3">
                                         <a href="/admin/peer/download?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Download configuration">Download</a>
                                         <a href="/admin/peer/email?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Send configuration via Email">Email</a>
                                         </div>

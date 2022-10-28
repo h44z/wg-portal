@@ -439,6 +439,7 @@ func (s *ApiServer) PutPeer(c *gin.Context) {
 	now := time.Now()
 	if updatePeer.DeactivatedAt != nil {
 		updatePeer.DeactivatedAt = &now
+		updatePeer.DeactivatedReason = "api update"
 	}
 	if err := s.s.UpdatePeer(updatePeer, now); err != nil {
 		c.JSON(http.StatusInternalServerError, ApiError{Message: err.Error()})
@@ -516,6 +517,7 @@ func (s *ApiServer) PatchPeer(c *gin.Context) {
 	now := time.Now()
 	if mergedPeer.DeactivatedAt != nil {
 		mergedPeer.DeactivatedAt = &now
+		mergedPeer.DeactivatedReason = "api update"
 	}
 	if err := s.s.UpdatePeer(mergedPeer, now); err != nil {
 		c.JSON(http.StatusInternalServerError, ApiError{Message: err.Error()})

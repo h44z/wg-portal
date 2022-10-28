@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 )
 
 // BroadcastAddr returns the last address in the given network, or the broadcast address.
@@ -21,7 +22,7 @@ func BroadcastAddr(n *net.IPNet) net.IP {
 	return broadcast
 }
 
-//  http://play.golang.org/p/m8TNTtygK0
+// http://play.golang.org/p/m8TNTtygK0
 func IncreaseIP(ip net.IP) {
 	for j := len(ip) - 1; j >= 0; j-- {
 		ip[j]++
@@ -83,4 +84,12 @@ func ByteCountSI(b int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB",
 		float64(b)/float64(div), "kMGTPE"[exp])
+}
+
+func FormatDateHTML(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+
+	return t.Format("2006-01-02")
 }

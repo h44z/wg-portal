@@ -36,6 +36,14 @@ func init() {
 			return nil
 		},
 	})
+
+	migrations = append(migrations, Migration{
+		version: "1.0.9",
+		migrateFn: func(db *gorm.DB) error {
+			logrus.Infof("upgraded database format to version 1.0.9")
+			return nil
+		},
+	})
 }
 
 type SupportedDatabase string

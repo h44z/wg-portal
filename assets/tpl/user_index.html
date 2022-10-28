@@ -102,7 +102,10 @@
                                         <img class="list-image-large" src="/user/qrcode?pkey={{$p.PublicKey}}"/>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="float-right mt-5">
+                                        {{if $p.DeactivatedAt}}
+                                        <div class="pull-right-lg mt-lg-5 disabled-peer">Peer is disabled! <i class="fas fa-comment-dots" data-toggle="tooltip" data-placement="left" title="" data-original-title="Reason: {{$p.DeactivatedReason}}"></i></div>
+                                        {{end}}
+                                        <div class="pull-right-lg mt-lg-5 mt-md-3">
                                         <a href="/user/download?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Download configuration">Download</a>
                                         <a href="/user/email?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Send configuration via Email">Email</a>
                                         </div>
