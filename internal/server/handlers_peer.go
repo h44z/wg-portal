@@ -71,12 +71,17 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	now := time.Now()
 	if disabled && currentPeer.DeactivatedAt == nil {
 		formPeer.DeactivatedAt = &now
-		formPeer.DeactivatedReason = "admin update"
+		formPeer.DeactivatedReason = wireguard.DeactivatedReasonAdminEdit
 	} else if !disabled {
 		formPeer.DeactivatedAt = nil
 		formPeer.DeactivatedReason = ""
+		// If a peer was deactivated due to expiry, remove the expires-at date to avoid
+		// unwanted re-expiry.
+		if currentPeer.DeactivatedReason == wireguard.DeactivatedReasonExpired {
+			formPeer.ExpiresAt = nil
+		}
 	}
-	if formPeer.ExpiresAt != nil && formPeer.ExpiresAt.IsZero() {
+	if formPeer.ExpiresAt != nil && formPeer.ExpiresAt.IsZero() { // convert 01-01-0001 to nil
 		formPeer.ExpiresAt = nil
 	}
 
@@ -134,7 +139,7 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	now := time.Now()
 	if disabled {
 		formPeer.DeactivatedAt = &now
-		formPeer.DeactivatedReason = "admin create"
+		formPeer.DeactivatedReason = wireguard.DeactivatedReasonAdminCreate
 	}
 
 	if err := s.CreatePeer(currentSession.DeviceName, formPeer); err != nil {
@@ -446,7 +451,7 @@ func (s *Server) PostUserCreatePeer(c *gin.Context) {
 	now := time.Now()
 	if disabled {
 		formPeer.DeactivatedAt = &now
-		formPeer.DeactivatedReason = "user create"
+		formPeer.DeactivatedReason = wireguard.DeactivatedReasonUserCreate
 	}
 
 	if err := s.CreatePeer(currentSession.DeviceName, formPeer); err != nil {
@@ -503,7 +508,7 @@ func (s *Server) PostUserEditPeer(c *gin.Context) {
 	now := time.Now()
 	if disabled && currentPeer.DeactivatedAt == nil {
 		currentPeer.DeactivatedAt = &now
-		currentPeer.DeactivatedReason = "user update"
+		currentPeer.DeactivatedReason = wireguard.DeactivatedReasonUserEdit
 	}
 
 	// Update in database

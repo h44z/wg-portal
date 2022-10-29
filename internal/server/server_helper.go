@@ -300,7 +300,7 @@ func (s *Server) DeleteUser(user users.User) error {
 	for _, peer := range s.peers.GetPeersByMail(user.Email) {
 		now := time.Now()
 		peer.DeactivatedAt = &now
-		peer.DeactivatedReason = "user deleted"
+		peer.DeactivatedReason = wireguard.DeactivatedReasonUserMissing
 		if err := s.UpdatePeer(peer, now); err != nil {
 			logrus.Errorf("failed to update deactivated peer %s for %s: %v", peer.PublicKey, user.Email, err)
 		}
@@ -408,7 +408,7 @@ func (s *Server) checkExpiredPeers() error {
 
 				peer.UpdatedAt = now
 				peer.DeactivatedAt = &now
-				peer.DeactivatedReason = "expired"
+				peer.DeactivatedReason = wireguard.DeactivatedReasonExpired
 
 				res := s.db.Save(&peer)
 				if res.Error != nil {

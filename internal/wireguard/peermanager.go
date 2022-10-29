@@ -23,6 +23,18 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	DeactivatedReasonExpired     = "expired"
+	DeactivatedReasonUserEdit    = "user edit action"
+	DeactivatedReasonUserCreate  = "user create action"
+	DeactivatedReasonAdminEdit   = "admin edit action"
+	DeactivatedReasonAdminCreate = "admin create action"
+	DeactivatedReasonApiEdit     = "api edit action"
+	DeactivatedReasonApiCreate   = "api create action"
+	DeactivatedReasonLdapMissing = "missing in ldap"
+	DeactivatedReasonUserMissing = "missing user"
+)
+
 // CUSTOM VALIDATORS ----------------------------------------------------------------------------
 var cidrList validator.Func = func(fl validator.FieldLevel) bool {
 	cidrListStr := fl.Field().String()
