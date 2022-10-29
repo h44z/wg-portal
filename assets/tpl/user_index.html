@@ -49,7 +49,7 @@
                             <!-- online check -->
                             <span class="online-status" id="online-{{$p.UID}}" data-pkey="{{$p.PublicKey}}"><i class="fas fa-unlink"></i></span>
                         </th>
-                        <td>{{$p.Identifier}}</td>
+                        <td>{{$p.Identifier}}{{if $p.WillExpire}} <i class="fas fa-hourglass-end expiring-peer" data-toggle="tooltip" data-placement="right" title="" data-original-title="Expires at: {{formatDate $p.ExpiresAt}}"></i>{{end}}</td>
                         <td>{{$p.PublicKey}}</td>
                         <td>{{$p.Email}}</td>
                         <td>{{$p.IPsStr}}</td>
@@ -104,6 +104,9 @@
                                     <div class="col-md-3">
                                         {{if $p.DeactivatedAt}}
                                         <div class="pull-right-lg mt-lg-5 disabled-peer">Peer is disabled! <i class="fas fa-comment-dots" data-toggle="tooltip" data-placement="left" title="" data-original-title="Reason: {{$p.DeactivatedReason}}"></i></div>
+                                        {{end}}
+                                        {{if $p.WillExpire}}
+                                        <div class="pull-right-lg mt-lg-5 expiring-peer"><i class="fas fa-exclamation-triangle"></i> Profile expires on {{ formatDate $p.ExpiresAt}}</div>
                                         {{end}}
                                         <div class="pull-right-lg mt-lg-5 mt-md-3">
                                         <a href="/user/download?pkey={{$p.PublicKey}}" class="btn btn-primary" title="Download configuration">Download</a>
