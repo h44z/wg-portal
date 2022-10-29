@@ -35,7 +35,7 @@ require (
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20220504211119-3d4a969bb56b
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0
-	gorm.io/driver/mysql v1.3.3
-	gorm.io/driver/sqlite v1.3.2
-	gorm.io/gorm v1.23.5
+	gorm.io/driver/mysql v1.4.3
+	gorm.io/driver/sqlite v1.4.3
+	gorm.io/gorm v1.24.0
 )

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -40,6 +41,27 @@ func init() {
 	migrations = append(migrations, Migration{
 		version: "1.0.9",
 		migrateFn: func(db *gorm.DB) error {
+			type sqlIndex struct {
+				Name  string `gorm:"column:name"`
+				Table string `gorm:"column:tbl_name"`
+			}
+			var indices []sqlIndex
+			if err := db.Raw("SELECT name, tbl_name FROM sqlite_master WHERE type == 'index'").Scan(&indices).Error; err != nil {
+				return errors.Wrap(err, "failed to fetch indices")
+			}
+
+			for _, index := range indices {
+				if index.Table != "devices" && index.Table != "peers" && index.Table != "users" {
+					continue
+				}
+				if strings.Contains(index.Name, "autoindex") {
+					continue
+				}
+				if err := db.Exec("DROP INDEX " + index.Name).Error; err != nil {
+					return errors.Wrap(err, "failed to drop index "+index.Name)
+				}
+			}
+
 			logrus.Infof("upgraded database format to version 1.0.9")
 			return nil
 		},
