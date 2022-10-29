@@ -67,10 +67,11 @@ type Config struct {
 		EditableKeys            bool   `yaml:"editableKeys" envconfig:"EDITABLE_KEYS"`
 		CreateDefaultPeer       bool   `yaml:"createDefaultPeer" envconfig:"CREATE_DEFAULT_PEER"`
 		SelfProvisioningAllowed bool   `yaml:"selfProvisioning" envconfig:"SELF_PROVISIONING"`
-		WGExoprterFriendlyNames bool   `yaml:"wgExporterFriendlyNames" envconfig:"WG_EXPORTER_FRIENDLY_NAMES"`
+		WGExporterFriendlyNames bool   `yaml:"wgExporterFriendlyNames" envconfig:"WG_EXPORTER_FRIENDLY_NAMES"`
 		LdapEnabled             bool   `yaml:"ldapEnabled" envconfig:"LDAP_ENABLED"`
 		SessionSecret           string `yaml:"sessionSecret" envconfig:"SESSION_SECRET"`
 		LogoUrl                 string `yaml:"logoUrl" envconfig:"LOGO_URL"`
+		BackgroundTaskInterval  int    `yaml:"backgroundTaskInterval" envconfig:"BACKGROUND_TASK_INTERVAL"` // in seconds
 	} `yaml:"core"`
 	Database common.DatabaseConfig `yaml:"database"`
 	Email    common.MailConfig     `yaml:"email"`
@@ -92,8 +93,9 @@ func NewConfig() *Config {
 	cfg.Core.AdminPassword = "wgportal"
 	cfg.Core.LdapEnabled = false
 	cfg.Core.EditableKeys = true
-	cfg.Core.WGExoprterFriendlyNames = false
+	cfg.Core.WGExporterFriendlyNames = false
 	cfg.Core.SessionSecret = "secret"
+	cfg.Core.BackgroundTaskInterval = 15 * 60 // 15 minutes
 
 	cfg.Database.Typ = "sqlite"
 	cfg.Database.Database = "data/wg_portal.db"

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/md5"
 	"fmt"
 	"io/ioutil"
@@ -62,7 +63,7 @@ func (s *Server) PrepareNewPeer(device string) (wireguard.Peer, error) {
 }
 
 // CreatePeerByEmail creates a new peer for the given email.
-func (s *Server) CreatePeerByEmail(device, email, identifierSuffix string, disabled bool) error {
+func (s *Server) CreatePeerByEmail(device, email, identifierSuffix string) error {
 	user := s.users.GetUser(email)
 
 	peer, err := s.PrepareNewPeer(device)
@@ -74,10 +75,6 @@ func (s *Server) CreatePeerByEmail(device, email, identifierSuffix string, disab
 		peer.Identifier = fmt.Sprintf("%s %s (%s)", user.Firstname, user.Lastname, identifierSuffix)
 	} else {
 		peer.Identifier = fmt.Sprintf("%s (%s)", email, identifierSuffix)
-	}
-	now := time.Now()
-	if disabled {
-		peer.DeactivatedAt = &now
 	}
 
 	return s.CreatePeer(device, peer)
@@ -209,7 +206,7 @@ func (s *Server) WriteWireGuardConfigFile(device string) error {
 	}
 
 	dev := s.peers.GetDevice(device)
-	cfg, err := dev.GetConfigFile(s.peers.GetActivePeers(device), s.config.Core.WGExoprterFriendlyNames)
+	cfg, err := dev.GetConfigFile(s.peers.GetActivePeers(device), s.config.Core.WGExporterFriendlyNames)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get config file")
 	}
@@ -281,6 +278,7 @@ func (s *Server) UpdateUser(user users.User) error {
 		for _, peer := range s.peers.GetPeersByMail(user.Email) {
 			now := time.Now()
 			peer.DeactivatedAt = nil
+			peer.DeactivatedReason = ""
 			if err := s.UpdatePeer(peer, now); err != nil {
 				logrus.Errorf("failed to update (re)activated peer %s for %s: %v", peer.PublicKey, user.Email, err)
 			}
@@ -302,6 +300,7 @@ func (s *Server) DeleteUser(user users.User) error {
 	for _, peer := range s.peers.GetPeersByMail(user.Email) {
 		now := time.Now()
 		peer.DeactivatedAt = &now
+		peer.DeactivatedReason = wireguard.DeactivatedReasonUserMissing
 		if err := s.UpdatePeer(peer, now); err != nil {
 			logrus.Errorf("failed to update deactivated peer %s for %s: %v", peer.PublicKey, user.Email, err)
 		}
@@ -375,4 +374,61 @@ func (s *Server) GetDeviceNames() map[string]string {
 	}
 
 	return devNames
+}
+
+func (s *Server) RunBackgroundTasks(ctx context.Context) {
+	running := true
+	for running {
+		select {
+		case <-ctx.Done():
+			running = false
+			continue
+		case <-time.After(time.Duration(s.config.Core.BackgroundTaskInterval) * time.Second):
+			// sleep completed, select will stop blocking
+		}
+
+		logrus.Debug("running periodic background tasks...")
+
+		err := s.checkExpiredPeers()
+		if err != nil {
+			logrus.Errorf("failed to check expired peers: %v", err)
+		}
+	}
+}
+
+func (s *Server) checkExpiredPeers() error {
+	now := time.Now()
+
+	for _, devName := range s.wg.Cfg.DeviceNames {
+		changed := false
+		peers := s.peers.GetAllPeers(devName)
+		for _, peer := range peers {
+			if peer.IsExpired() && !peer.IsDeactivated() {
+				changed = true
+
+				peer.UpdatedAt = now
+				peer.DeactivatedAt = &now
+				peer.DeactivatedReason = wireguard.DeactivatedReasonExpired
+
+				res := s.db.Save(&peer)
+				if res.Error != nil {
+					return fmt.Errorf("failed save expired peer %s: %w", peer.PublicKey, res.Error)
+				}
+
+				err := s.wg.RemovePeer(peer.DeviceName, peer.PublicKey)
+				if err != nil {
+					return fmt.Errorf("failed to expire peer %s: %w", peer.PublicKey, err)
+				}
+			}
+		}
+
+		if changed {
+			err := s.WriteWireGuardConfigFile(devName)
+			if err != nil {
+				return fmt.Errorf("failed to persist config for interface %s: %w", devName, err)
+			}
+		}
+	}
+
+	return nil
 }

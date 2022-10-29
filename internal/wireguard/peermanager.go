@@ -23,6 +23,18 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	DeactivatedReasonExpired     = "expired"
+	DeactivatedReasonUserEdit    = "user edit action"
+	DeactivatedReasonUserCreate  = "user create action"
+	DeactivatedReasonAdminEdit   = "admin edit action"
+	DeactivatedReasonAdminCreate = "admin create action"
+	DeactivatedReasonApiEdit     = "api edit action"
+	DeactivatedReasonApiCreate   = "api create action"
+	DeactivatedReasonLdapMissing = "missing in ldap"
+	DeactivatedReasonUserMissing = "missing user"
+)
+
 // CUSTOM VALIDATORS ----------------------------------------------------------------------------
 var cidrList validator.Func = func(fl validator.FieldLevel) bool {
 	cidrListStr := fl.Field().String()
@@ -108,11 +120,15 @@ type Peer struct {
 	// Global Device Settings (can be ignored, only make sense if device is in server mode)
 	Mtu int `form:"mtu" binding:"gte=0,lte=1500"`
 
-	DeactivatedAt *time.Time `json:",omitempty"`
-	CreatedBy     string
-	UpdatedBy     string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	DeactivatedAt     *time.Time `json:",omitempty"`
+	DeactivatedReason string     `json:",omitempty"`
+
+	ExpiresAt *time.Time `json:",omitempty" form:"expires_at" binding:"omitempty" time_format:"2006-01-02"`
+
+	CreatedBy string
+	UpdatedBy string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (p *Peer) SetIPAddresses(addresses ...string) {
@@ -236,6 +252,33 @@ func (p Peer) IsValid() bool {
 	}
 
 	return true
+}
+
+func (p Peer) WillExpire() bool {
+	if p.ExpiresAt == nil {
+		return false
+	}
+	if p.DeactivatedAt != nil {
+		return false // already deactivated...
+	}
+	if p.ExpiresAt.After(time.Now()) {
+		return true
+	}
+	return false
+}
+
+func (p Peer) IsExpired() bool {
+	if p.ExpiresAt == nil {
+		return false
+	}
+	if p.ExpiresAt.Before(time.Now()) {
+		return true
+	}
+	return false
+}
+
+func (p Peer) IsDeactivated() bool {
+	return p.DeactivatedAt != nil
 }
 
 func (p Peer) GetConfigFileName() string {

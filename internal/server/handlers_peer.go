@@ -71,8 +71,18 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 	now := time.Now()
 	if disabled && currentPeer.DeactivatedAt == nil {
 		formPeer.DeactivatedAt = &now
+		formPeer.DeactivatedReason = wireguard.DeactivatedReasonAdminEdit
 	} else if !disabled {
 		formPeer.DeactivatedAt = nil
+		formPeer.DeactivatedReason = ""
+		// If a peer was deactivated due to expiry, remove the expires-at date to avoid
+		// unwanted re-expiry.
+		if currentPeer.DeactivatedReason == wireguard.DeactivatedReasonExpired {
+			formPeer.ExpiresAt = nil
+		}
+	}
+	if formPeer.ExpiresAt != nil && formPeer.ExpiresAt.IsZero() { // convert 01-01-0001 to nil
+		formPeer.ExpiresAt = nil
 	}
 
 	// Update in database
@@ -129,6 +139,7 @@ func (s *Server) PostAdminCreatePeer(c *gin.Context) {
 	now := time.Now()
 	if disabled {
 		formPeer.DeactivatedAt = &now
+		formPeer.DeactivatedReason = wireguard.DeactivatedReasonAdminCreate
 	}
 
 	if err := s.CreatePeer(currentSession.DeviceName, formPeer); err != nil {
@@ -189,7 +200,7 @@ func (s *Server) PostAdminCreateLdapPeers(c *gin.Context) {
 	logrus.Infof("creating %d ldap peers", len(emails))
 
 	for i := range emails {
-		if err := s.CreatePeerByEmail(currentSession.DeviceName, emails[i], formData.Identifier, false); err != nil {
+		if err := s.CreatePeerByEmail(currentSession.DeviceName, emails[i], formData.Identifier); err != nil {
 			_ = s.updateFormInSession(c, formData)
 			SetFlashMessage(c, "failed to add user: "+err.Error(), "danger")
 			c.Redirect(http.StatusSeeOther, "/admin/peer/createldap?formerr=create")
@@ -440,6 +451,7 @@ func (s *Server) PostUserCreatePeer(c *gin.Context) {
 	now := time.Now()
 	if disabled {
 		formPeer.DeactivatedAt = &now
+		formPeer.DeactivatedReason = wireguard.DeactivatedReasonUserCreate
 	}
 
 	if err := s.CreatePeer(currentSession.DeviceName, formPeer); err != nil {
@@ -496,6 +508,7 @@ func (s *Server) PostUserEditPeer(c *gin.Context) {
 	now := time.Now()
 	if disabled && currentPeer.DeactivatedAt == nil {
 		currentPeer.DeactivatedAt = &now
+		currentPeer.DeactivatedReason = wireguard.DeactivatedReasonUserEdit
 	}
 
 	// Update in database

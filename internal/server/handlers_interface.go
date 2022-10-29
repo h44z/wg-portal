@@ -112,7 +112,7 @@ func (s *Server) GetInterfaceConfig(c *gin.Context) {
 	currentSession := GetSessionData(c)
 	device := s.peers.GetDevice(currentSession.DeviceName)
 	peers := s.peers.GetActivePeers(device.DeviceName)
-	cfg, err := device.GetConfigFile(peers, s.config.Core.WGExoprterFriendlyNames)
+	cfg, err := device.GetConfigFile(peers, s.config.Core.WGExporterFriendlyNames)
 	if err != nil {
 		s.GetHandleError(c, http.StatusInternalServerError, "ConfigFile error", err.Error())
 		return

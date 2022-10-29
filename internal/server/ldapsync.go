@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/h44z/wg-portal/internal/wireguard"
+
 	"github.com/h44z/wg-portal/internal/ldap"
 	"github.com/h44z/wg-portal/internal/users"
 	"github.com/sirupsen/logrus"
@@ -112,6 +114,7 @@ func (s *Server) disableMissingLdapUsers(ldapUsers []ldap.RawLdapData) {
 		for _, peer := range s.peers.GetPeersByMail(activeUsers[i].Email) {
 			now := time.Now()
 			peer.DeactivatedAt = &now
+			peer.DeactivatedReason = wireguard.DeactivatedReasonLdapMissing
 			if err := s.UpdatePeer(peer, now); err != nil {
 				logrus.Errorf("failed to update deactivated peer %s: %v", peer.PublicKey, err)
 			}
@@ -141,6 +144,7 @@ func (s *Server) updateLdapUsers(ldapUsers []ldap.RawLdapData) {
 			for _, peer := range s.peers.GetPeersByMail(user.Email) {
 				now := time.Now()
 				peer.DeactivatedAt = nil
+				peer.DeactivatedReason = ""
 				if err = s.UpdatePeer(peer, now); err != nil {
 					logrus.Errorf("failed to update activated peer %s: %v", peer.PublicKey, err)
 				}

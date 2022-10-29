@@ -73,6 +73,10 @@ pre{background:#f7f7f9}iframe{overflow:hidden;border:none}@media (min-width: 768
     color: #d03131;
 }
 
+.expiring-peer {
+    color: #d09d12;
+}
+
 .tokenfield .token {
     border-radius: 0px;
     border: 1px solid #1a1a1a;
@@ -105,4 +109,10 @@ a.advanced-settings.collapsed:before {
 
 .text-blue {
     color: #0057bb;
+}
+
+@media (min-width: 992px) {
+    .pull-right-lg {
+        float: right;
+    }
 }

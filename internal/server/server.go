@@ -127,6 +127,7 @@ func (s *Server) Setup(ctx context.Context) error {
 	})
 	s.server.Use(sessions.Sessions("authsession", cookieStore))
 	s.server.SetFuncMap(template.FuncMap{
+		"formatDate":  common.FormatDateHTML,
 		"formatBytes": common.ByteCountSI,
 		"urlEncode":   url.QueryEscape,
 		"startsWith":  strings.HasPrefix,
@@ -214,6 +215,8 @@ func (s *Server) Run() {
 	if s.config.Core.LdapEnabled {
 		go s.SyncLdapWithUserDatabase()
 	}
+
+	go s.RunBackgroundTasks(s.ctx)
 
 	// Run web service
 	srv := &http.Server{
