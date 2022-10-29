@@ -239,7 +239,7 @@
                                     </div>
                                     <div class="col-md-3">
                                         {{if eq $.Device.Type "server"}}
-                                        <img class="list-image-large" src="/user/qrcode?pkey={{$p.PublicKey}}"/>
+                                        <img class="list-image-large" loading="lazy" alt="Configuration QR Code" src="/user/qrcode?pkey={{$p.PublicKey}}"/>
                                         {{end}}
                                     </div>
                                     <div class="col-md-3">
