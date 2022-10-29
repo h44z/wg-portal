@@ -255,6 +255,20 @@ func (p Peer) WillExpire() bool {
 	return false
 }
 
+func (p Peer) IsExpired() bool {
+	if p.ExpiresAt == nil {
+		return false
+	}
+	if p.ExpiresAt.Before(time.Now()) {
+		return true
+	}
+	return false
+}
+
+func (p Peer) IsDeactivated() bool {
+	return p.DeactivatedAt != nil
+}
+
 func (p Peer) GetConfigFileName() string {
 	reg := regexp.MustCompile("[^a-zA-Z0-9_-]+")
 	return reg.ReplaceAllString(strings.ReplaceAll(p.Identifier, " ", "-"), "") + ".conf"

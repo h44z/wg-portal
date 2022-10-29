@@ -216,6 +216,8 @@ func (s *Server) Run() {
 		go s.SyncLdapWithUserDatabase()
 	}
 
+	go s.RunBackgroundTasks(s.ctx)
+
 	// Run web service
 	srv := &http.Server{
 		Addr:    s.config.Core.ListeningAddress,

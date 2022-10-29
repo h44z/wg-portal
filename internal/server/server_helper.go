@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/md5"
 	"fmt"
 	"io/ioutil"
@@ -205,7 +206,7 @@ func (s *Server) WriteWireGuardConfigFile(device string) error {
 	}
 
 	dev := s.peers.GetDevice(device)
-	cfg, err := dev.GetConfigFile(s.peers.GetActivePeers(device), s.config.Core.WGExoprterFriendlyNames)
+	cfg, err := dev.GetConfigFile(s.peers.GetActivePeers(device), s.config.Core.WGExporterFriendlyNames)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get config file")
 	}
@@ -373,4 +374,61 @@ func (s *Server) GetDeviceNames() map[string]string {
 	}
 
 	return devNames
+}
+
+func (s *Server) RunBackgroundTasks(ctx context.Context) {
+	running := true
+	for running {
+		select {
+		case <-ctx.Done():
+			running = false
+			continue
+		case <-time.After(time.Duration(s.config.Core.BackgroundTaskInterval) * time.Second):
+			// sleep completed, select will stop blocking
+		}
+
+		logrus.Debug("running periodic background tasks...")
+
+		err := s.checkExpiredPeers()
+		if err != nil {
+			logrus.Errorf("failed to check expired peers: %v", err)
+		}
+	}
+}
+
+func (s *Server) checkExpiredPeers() error {
+	now := time.Now()
+
+	for _, devName := range s.wg.Cfg.DeviceNames {
+		changed := false
+		peers := s.peers.GetAllPeers(devName)
+		for _, peer := range peers {
+			if peer.IsExpired() && !peer.IsDeactivated() {
+				changed = true
+
+				peer.UpdatedAt = now
+				peer.DeactivatedAt = &now
+				peer.DeactivatedReason = "expired"
+
+				res := s.db.Save(&peer)
+				if res.Error != nil {
+					return fmt.Errorf("failed save expired peer %s: %w", peer.PublicKey, res.Error)
+				}
+
+				err := s.wg.RemovePeer(peer.DeviceName, peer.PublicKey)
+				if err != nil {
+					return fmt.Errorf("failed to expire peer %s: %w", peer.PublicKey, err)
+				}
+			}
+		}
+
+		if changed {
+			err := s.WriteWireGuardConfigFile(devName)
+			if err != nil {
+				return fmt.Errorf("failed to persist config for interface %s: %w", devName, err)
+			}
+		}
+	}
+
+	return nil
 }
