@@ -81,9 +81,6 @@ func (s *Server) PostAdminEditPeer(c *gin.Context) {
 			formPeer.ExpiresAt = nil
 		}
 	}
-	if formPeer.ExpiresAt != nil && formPeer.ExpiresAt.IsZero() { // convert 01-01-0001 to nil
-		formPeer.ExpiresAt = nil
-	}
 
 	// Update in database
 	if err := s.UpdatePeer(formPeer, now); err != nil {

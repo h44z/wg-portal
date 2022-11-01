@@ -141,6 +141,13 @@ func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 	currentPeer := s.peers.GetPeerByKey(peer.PublicKey)
 	dev := s.peers.GetDevice(peer.DeviceName)
 
+	// Check if expiry date is in the future, an reactivate the peer in case.
+	if s.config.Core.ExpiryReEnable && currentPeer.DeactivatedReason == wireguard.DeactivatedReasonExpired &&
+		peer.ExpiresAt != nil && peer.ExpiresAt.After(time.Now()) {
+		peer.DeactivatedAt = nil
+		peer.DeactivatedReason = ""
+	}
+
 	// Update WireGuard device
 	var err error
 	switch {
@@ -156,6 +163,9 @@ func (s *Server) UpdatePeer(peer wireguard.Peer, updateTime time.Time) error {
 	}
 
 	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
+	if peer.ExpiresAt != nil && peer.ExpiresAt.IsZero() { // convert 01-01-0001 to nil
+		peer.ExpiresAt = nil
+	}
 
 	// Update in database
 	if err := s.peers.UpdatePeer(peer); err != nil {
