@@ -120,6 +120,9 @@ func (s *Server) CreatePeer(device string, peer wireguard.Peer) error {
 	}
 	peer.DeviceName = dev.DeviceName
 	peer.UID = fmt.Sprintf("u%x", md5.Sum([]byte(peer.PublicKey)))
+	if peer.ExpiresAt != nil && peer.ExpiresAt.IsZero() { // convert 01-01-0001 to nil
+		peer.ExpiresAt = nil
+	}
 
 	// Create WireGuard interface
 	if peer.DeactivatedAt == nil {
