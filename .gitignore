@@ -28,6 +28,7 @@
 out/
 dist/
 data/
+docker_images/
 ssh.key
 .testCoverage.txt
 wg_portal.db
