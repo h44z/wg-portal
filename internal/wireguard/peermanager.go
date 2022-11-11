@@ -302,7 +302,7 @@ type Device struct {
 	Peers     []Peer          `gorm:"foreignKey:DeviceName" binding:"-" json:"-"` // linked WireGuard peers
 
 	Type        DeviceType `form:"devicetype" binding:"required,oneof=client server"`
-	DeviceName  string     `form:"device" gorm:"primaryKey" binding:"required" validator:"regexp=[0-9a-zA-Z\-]+"`
+	DeviceName  string     `form:"device" gorm:"primaryKey" binding:"required" validator:"regexp=[0-9a-zA-Z\\-]+"`
 	DisplayName string     `form:"displayname" binding:"omitempty,max=200"`
 
 	// Core WireGuard Settings (Interface section)
