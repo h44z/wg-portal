@@ -3,7 +3,6 @@ package common
 import (
 	"crypto/tls"
 	"io"
-	"io/ioutil"
 	"time"
 
 	"github.com/pkg/errors"
@@ -96,7 +95,7 @@ func SendEmailWithAttachments(cfg MailConfig, sender, replyTo, subject, body, ht
 	email.AddAlternative(mail.TextPlain, body)
 
 	for _, attachment := range attachments {
-		attachmentData, err := ioutil.ReadAll(attachment.Data)
+		attachmentData, err := io.ReadAll(attachment.Data)
 		if err != nil {
 			return errors.Wrapf(err, "failed to read attachment data for %s", attachment.Name)
 		}

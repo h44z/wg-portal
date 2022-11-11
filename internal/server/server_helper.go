@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"syscall"
 	"time"
@@ -224,7 +224,7 @@ func (s *Server) WriteWireGuardConfigFile(device string) error {
 		return errors.WithMessage(err, "failed to get config file")
 	}
 	filePath := path.Join(s.config.WG.ConfigDirectoryPath, dev.DeviceName+".conf")
-	if err := ioutil.WriteFile(filePath, cfg, 0644); err != nil {
+	if err := os.WriteFile(filePath, cfg, 0644); err != nil {
 		return errors.Wrap(err, "failed to write WireGuard config file")
 	}
 	return nil

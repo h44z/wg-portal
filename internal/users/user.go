@@ -11,7 +11,6 @@ type UserSource string
 const (
 	UserSourceLdap     UserSource = "ldap" // LDAP / ActiveDirectory
 	UserSourceDatabase UserSource = "db"   // sqlite / mysql database
-	UserSourceOIDC     UserSource = "oidc" // open id connect, TODO: implement
 )
 
 type PrivateString string

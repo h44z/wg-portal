@@ -85,7 +85,7 @@ services:
 ```
 Please note that mapping ```/etc/wireguard``` to ```/etc/wireguard``` inside the docker, will erase your host's current configuration.
 If needed, please make sure to back up your files from ```/etc/wireguard```.
-For a full list of configuration options take a look at the source file [internal/server/configuration.go](internal/server/configuration.go#L56).
+For a full list of configuration options take a look at the source file [internal/server/configuration.go](internal/server/configuration.go#L58).
 
 ### Standalone
 For a standalone application, use the Makefile provided in the repository to build the application. Go version 1.16 or higher has to be installed to build WireGuard Portal.

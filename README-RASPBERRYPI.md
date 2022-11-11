@@ -4,16 +4,21 @@ This readme only contains a detailed explanation of how to set up the WireGuard 
 
 ## Setup
 
-You can download prebuild binaries from the [release page](https://github.com/h44z/wg-portal/releases). If you want to build the binary yourself,
-use the following instructions:
+You can either download prebuild binaries from the [release page](https://github.com/h44z/wg-portal/releases) or use Docker images for ARM. 
+If you want to build the binary yourself, use the following building instructions.
 
 ### Building
 This section describes how to build the WireGuard Portal code.
 To compile the final binary, use the Makefile provided in the repository.
 As WireGuard Portal is written in Go, **golang >= 1.16** must be installed prior to building.
+If you want to cross compile ARM binaries from AMD64 systems, install *arm-linux-gnueabi-gcc* (armv7) or *aarch64-linux-gnu-gcc* (arm64).
 
 ```
-make build-cross-plat
+# for 64 bit OS
+make build-arm64
+
+# for 32 bit OS
+make build-arm 
 ```
 
 The compiled binary and all necessary assets will be located in the dist folder.

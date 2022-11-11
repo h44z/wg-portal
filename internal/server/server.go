@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/gob"
 	"html/template"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -110,7 +110,7 @@ func (s *Server) Setup(ctx context.Context) error {
 
 	// Setup http server
 	gin.SetMode(gin.DebugMode)
-	gin.DefaultWriter = ioutil.Discard
+	gin.DefaultWriter = io.Discard
 	s.server = gin.New()
 	if logrus.GetLevel() == logrus.TraceLevel {
 		s.server.Use(ginlogrus.Logger(logrus.StandardLogger()))

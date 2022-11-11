@@ -50,8 +50,8 @@ func (Provider) GetPriority() int {
 	return 0 // DB password provider = highest prio
 }
 
-func (provider Provider) SetupRoutes(routes *gin.RouterGroup) {
-	// nothing todo here
+func (provider Provider) SetupRoutes(_ *gin.RouterGroup) {
+	// nothing here
 }
 
 func (provider Provider) Login(ctx *authentication.AuthContext) (string, error) {
@@ -79,8 +79,8 @@ func (provider Provider) Login(ctx *authentication.AuthContext) (string, error) 
 	return user.Email, nil
 }
 
-func (provider Provider) Logout(context *authentication.AuthContext) error {
-	return nil // nothing todo here
+func (provider Provider) Logout(_ *authentication.AuthContext) error {
+	return nil // nothing here
 }
 
 func (provider Provider) GetUserModel(ctx *authentication.AuthContext) (*authentication.User, error) {

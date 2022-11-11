@@ -2,7 +2,7 @@ package ldap
 
 import (
 	"crypto/tls"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -48,8 +48,8 @@ func (Provider) GetPriority() int {
 	return 1 // LDAP password provider
 }
 
-func (provider Provider) SetupRoutes(routes *gin.RouterGroup) {
-	// nothing todo here
+func (provider Provider) SetupRoutes(_ *gin.RouterGroup) {
+	// nothing here
 }
 
 func (provider Provider) Login(ctx *authentication.AuthContext) (string, error) {
@@ -97,8 +97,8 @@ func (provider Provider) Login(ctx *authentication.AuthContext) (string, error) 
 	return sr.Entries[0].GetAttributeValue(provider.config.EmailAttribute), nil
 }
 
-func (provider Provider) Logout(context *authentication.AuthContext) error {
-	return nil // nothing todo here
+func (provider Provider) Logout(_ *authentication.AuthContext) error {
+	return nil // nothing here
 }
 
 func (provider Provider) GetUserModel(ctx *authentication.AuthContext) (*authentication.User, error) {
@@ -159,23 +159,23 @@ func (provider Provider) open() (*ldap.Conn, error) {
 
 	if provider.config.LdapCertConn {
 
-		cert_plain, err := ioutil.ReadFile(provider.config.LdapTlsCert)
+		certPlain, err := os.ReadFile(provider.config.LdapTlsCert)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to load the certificate")
 
 		}
 
-		key, err := ioutil.ReadFile(provider.config.LdapTlsKey)
+		key, err := os.ReadFile(provider.config.LdapTlsKey)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to load the key")
 		}
 
-		cert_x509, err := tls.X509KeyPair(cert_plain, key)
+		certX509, err := tls.X509KeyPair(certPlain, key)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed X509")
 
 		}
-		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert_x509}}
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{certX509}}
 
 	} else {
 

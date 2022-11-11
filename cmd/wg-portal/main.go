@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/signal"
 	"runtime"
@@ -74,7 +74,7 @@ func setupLogger(logger *logrus.Logger) error {
 
 	switch level {
 	case "off":
-		logger.SetOutput(ioutil.Discard)
+		logger.SetOutput(io.Discard)
 	case "info":
 		logger.SetLevel(logrus.InfoLevel)
 	case "debug":

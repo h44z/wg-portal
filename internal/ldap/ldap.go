@@ -2,7 +2,7 @@ package ldap
 
 import (
 	"crypto/tls"
-	"io/ioutil"
+	"os"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/pkg/errors"
@@ -19,23 +19,23 @@ func Open(cfg *Config) (*ldap.Conn, error) {
 
 	if cfg.LdapCertConn {
 
-		cert_plain, err := ioutil.ReadFile(cfg.LdapTlsCert)
+		certPlain, err := os.ReadFile(cfg.LdapTlsCert)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to load the certificate")
 
 		}
 
-		key, err := ioutil.ReadFile(cfg.LdapTlsKey)
+		key, err := os.ReadFile(cfg.LdapTlsKey)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to load the key")
 		}
 
-		cert_x509, err := tls.X509KeyPair(cert_plain, key)
+		certX509, err := tls.X509KeyPair(certPlain, key)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed X509")
 
 		}
-		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert_x509}}
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{certX509}}
 
 	} else {
 
