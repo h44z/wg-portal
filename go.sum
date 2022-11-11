@@ -1,5 +1,5 @@
-git.prolicht.digital/pub/healthcheck v1.0.1 h1:cdNgcSyQL9oveFBC9V+XE4OVbfMEwqPqGdShH79sZ98=
-git.prolicht.digital/pub/healthcheck v1.0.1/go.mod h1:5CVsGrijfedtLaYv3KJkfvM0nmzpgndC9MgBjC1tom4=
+git.prolicht.digital/golib/healthcheck v1.1.1 h1:bdx0MuGqAq0PCooPpiuPXsr4/Ok+yfJwq8P9ITq2eLI=
+git.prolicht.digital/golib/healthcheck v1.1.1/go.mod h1:wEqVrqHJ8NsSx5qlFGUlw74wJ/wDSKaA34QoyvsEkdc=
 github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e h1:ZU22z/2YRFLyf/P4ZwUYSdNCWsMEI0VeyrFoI2rAhJQ=
 github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e/go.mod h1:chxPXzSsl7ZWRAuOIE23GDNzjWuZquvFlgA8xmpunjU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=

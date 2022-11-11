@@ -10,7 +10,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            make dep
+            make build-dependencies
       - save_cache:
           key: go-mod-latest-v4-{{ checksum "go.sum" }}
           paths:
@@ -20,19 +20,26 @@ jobs:
           command: |
             VERSION=$CIRCLE_BRANCH
             if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
-            make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build
+            make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build-amd64
       - run:
           name: Install Cross-Platform Dependencies
           command: |
             sudo apt-get update
-            sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+            sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+            sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
             sudo ln -s /usr/include/asm-generic /usr/include/asm
+      - run:
+          name: Build ARM64
+          command: |
+            VERSION=$CIRCLE_BRANCH
+            if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
+            make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build-arm64
       - run:
           name: Build ARM
           command: |
             VERSION=$CIRCLE_BRANCH
             if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
-            make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build-cross-plat
+            make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build-arm
       - store_artifacts:
           path: ~/repo/dist
       - run:
@@ -44,7 +51,7 @@ jobs:
             fi
     working_directory: ~/repo
     docker:
-      - image: cimg/go:1.17
+      - image: cimg/go:1.19
   build-116: # just to validate compatibility with minimum go version
     steps:
       - checkout
@@ -54,13 +61,13 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            make dep
+            make build-dependencies
       - save_cache:
           key: go-mod-116-v4-{{ checksum "go.sum" }}
           paths:
             - "~/go/pkg/mod"
       - run:
-          name: Build AMD64
+          name: Build
           command: |
             VERSION=$CIRCLE_BRANCH
             if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
@@ -68,54 +75,6 @@ jobs:
     working_directory: ~/repo116
     docker:
       - image: cimg/go:1.16
-  build-legacy:
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - go-mod-legacy-v4-{{ checksum "go.sum" }}
-      - run:
-          name: Install Dependencies
-          command: |
-            make dep
-      - save_cache:
-          key: go-mod-legacy-v4-{{ checksum "go.sum" }}
-          paths:
-            - "/go/pkg/mod"
-      - run:
-          name: Build AMD64
-          command: |
-            VERSION=$CIRCLE_BRANCH
-            if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
-            make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build
-      - run:
-          name: Install Cross-Platform Dependencies
-          command: |
-            sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
-            sudo ln -s /usr/include/asm-generic /usr/include/asm
-      - run:
-          name: Build ARM
-          command: |
-            VERSION=$CIRCLE_BRANCH
-            if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
-            make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build-cross-plat
-      - store_artifacts:
-          path: ~/repolegacy/dist
-      - run:
-          name: "Publish Legacy Release on GitHub"
-          command: |
-            rm ~/repolegacy/dist/wg-portal.service ~/repolegacy/dist/wg-portal.env
-            mv ~/repolegacy/dist/wg-portal-amd64 ~/repolegacy/dist/wg-portal-amd64-legacy
-            mv ~/repolegacy/dist/wg-portal-arm ~/repolegacy/dist/wg-portal-arm-legacy
-            mv ~/repolegacy/dist/wg-portal-arm64 ~/repolegacy/dist/wg-portal-arm64-legacy
-            if [ ! -z "${CIRCLE_TAG}" ]; then
-               go get github.com/tcnksm/ghr
-               ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} $CIRCLE_TAG ~/repolegacy/dist
-            fi
-    working_directory: ~/repolegacy
-    docker:
-      - image: circleci/golang:1.16-stretch
-
 
 workflows:
   build-and-release:
@@ -126,12 +85,6 @@ workflows:
             tags:
               only: /^v.*/
       - build-116:
-          requires:
-            - build-latest
-          filters:
-            tags:
-              only: /^v.*/
-      - build-legacy:
           requires:
             - build-latest
           filters:
