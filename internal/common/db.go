@@ -41,6 +41,11 @@ func init() {
 	migrations = append(migrations, Migration{
 		version: "1.0.9",
 		migrateFn: func(db *gorm.DB) error {
+			if db.Dialector.Name() != (sqlite.Dialector{}).Name() {
+				logrus.Infof("upgraded database format to version 1.0.9")
+				return nil // only perform migration for sqlite
+			}
+
 			type sqlIndex struct {
 				Name  string `gorm:"column:name"`
 				Table string `gorm:"column:tbl_name"`
