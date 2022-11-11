@@ -26,12 +26,20 @@ jobs:
           command: |
             sudo apt-get update
             sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+            sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
+            sudo ln -s /usr/include/asm-generic /usr/include/asm
       - run:
           name: Build ARM64
           command: |
             VERSION=$CIRCLE_BRANCH
             if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
             make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build-arm64
+      - run:
+          name: Build ARM
+          command: |
+            VERSION=$CIRCLE_BRANCH
+            if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
+            make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build-arm
       - store_artifacts:
           path: ~/repo/dist
       - run:

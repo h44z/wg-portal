@@ -104,6 +104,17 @@ build-arm64: build-dependencies
 	 -ldflags "-w -s -extldflags \"-static\"" \
 	 cmd/hc/main.go
 
+#< build-arm: Build all executables for ARM32
+.PHONY: build-arm
+build-arm: build-dependencies
+	CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -o $(BUILDDIR)/wg-portal-arm \
+	 -ldflags "-w -s -extldflags \"-static\" -X 'github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}'" \
+	 cmd/wg-portal/main.go
+
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -o $(BUILDDIR)/hc-arm \
+	 -ldflags "-w -s -extldflags \"-static\"" \
+	 cmd/hc/main.go
+
 #< build-dependencies: Generate the output directory for compiled executables and download dependencies
 .PHONY: build-dependencies
 build-dependencies:
