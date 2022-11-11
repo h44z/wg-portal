@@ -10,7 +10,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            make dep
+            make build-dependencies
       - save_cache:
           key: go-mod-latest-v4-{{ checksum "go.sum" }}
           paths:
@@ -53,7 +53,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            make dep
+            make build-dependencies
       - save_cache:
           key: go-mod-116-v4-{{ checksum "go.sum" }}
           paths:
