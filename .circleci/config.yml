@@ -46,7 +46,7 @@ jobs:
           name: "Publish Release on GitHub"
           command: |
             if [ ! -z "${CIRCLE_TAG}" ]; then
-               go get github.com/tcnksm/ghr
+               go install github.com/tcnksm/ghr@latest
                ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace $CIRCLE_TAG ~/repo/dist
             fi
     working_directory: ~/repo
