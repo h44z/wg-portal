@@ -82,7 +82,7 @@ build: build-dependencies
 	 -ldflags "-w -s -extldflags \"-static\"" \
 	 cmd/hc/main.go
 
-#< build: Build all executables for AMD64
+#< build-amd64: Build all executables for AMD64
 .PHONY: build-amd64
 build-amd64: build-dependencies
 	CGO_ENABLED=1 $(GOCMD) build -o $(BUILDDIR)/wg-portal-amd64 \
