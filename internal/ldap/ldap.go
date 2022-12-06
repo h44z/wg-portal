@@ -8,6 +8,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+type ObjectType int64
+
+const (
+	Users  ObjectType = 1
+	Groups ObjectType = 2
+)
+
 type RawLdapData struct {
 	DN            string
 	Attributes    map[string]string
@@ -69,21 +76,34 @@ func Close(conn *ldap.Conn) {
 	}
 }
 
-func FindAllUsers(cfg *Config) ([]RawLdapData, error) {
+func FindAllObjects(cfg *Config, objType ObjectType) ([]RawLdapData, error) {
 	client, err := Open(cfg)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to open ldap connection")
 	}
 	defer Close(client)
 
-	// Search all users
-	attrs := []string{"dn", cfg.EmailAttribute, cfg.EmailAttribute, cfg.FirstNameAttribute, cfg.LastNameAttribute,
-		cfg.PhoneAttribute, cfg.GroupMemberAttribute}
-	searchRequest := ldap.NewSearchRequest(
-		cfg.BaseDN,
-		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		cfg.SyncFilter, attrs, nil,
-	)
+	var searchRequest *ldap.SearchRequest
+	var attrs []string
+
+	if objType == Users {
+		// Search all users
+		attrs = []string{"dn", cfg.EmailAttribute, cfg.EmailAttribute, cfg.FirstNameAttribute, cfg.LastNameAttribute,
+			cfg.PhoneAttribute, cfg.GroupMemberAttribute}
+		searchRequest = ldap.NewSearchRequest(
+			cfg.BaseDN,
+			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+			cfg.SyncFilter, attrs, nil,
+		)
+	} else if objType == Groups {
+		// Search all groups
+		attrs = []string{"dn", cfg.GroupMemberAttribute}
+		searchRequest = ldap.NewSearchRequest(
+			cfg.BaseDN,
+			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+			cfg.SyncGroupFilter, attrs, nil,
+		)
+	}
 
 	sr, err := client.Search(searchRequest)
 	if err != nil {
