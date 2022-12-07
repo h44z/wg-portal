@@ -4,14 +4,13 @@ import (
 	"strings"
 	"time"
 
+	gldap "github.com/go-ldap/ldap/v3"
 	"github.com/h44z/wg-portal/internal/wireguard"
 
 	"github.com/h44z/wg-portal/internal/ldap"
 	"github.com/h44z/wg-portal/internal/users"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-
-	gldap "github.com/go-ldap/ldap/v3"
 )
 
 func (s *Server) SyncLdapWithUserDatabase() {
@@ -48,21 +47,33 @@ func (s *Server) SyncLdapWithUserDatabase() {
 	logrus.Info("ldap user synchronization stopped")
 }
 
-func (s Server) userIsInAdminGroup(ldapData *ldap.RawLdapData, ldapGroupData []ldap.RawLdapData) bool {
+func (s Server) userIsInAdminGroup(ldapData *ldap.RawLdapData, ldapGroupData []ldap.RawLdapData, layer int) bool {
 	if s.config.LDAP.EveryoneAdmin {
 		return true
 	}
 	if s.config.LDAP.AdminLdapGroup_ == nil {
 		return false
 	}
+	//fmt.Printf("%+v\n", ldapData.Attributes)
+	var prefix string
+	for i := 0; i < layer; i++ {
+		prefix += "+"
+	}
+	logrus.Tracef("%s Group layer: %d\n", prefix, layer)
 	for _, group := range ldapData.RawAttributes[s.config.LDAP.GroupMemberAttribute] {
+		logrus.Tracef("%s%s\n", prefix, string(group))
 		var dn, _ = gldap.ParseDN(string(group))
 		if s.config.LDAP.AdminLdapGroup_.Equal(dn) {
+			logrus.Tracef("%sFOUND: %s\n", prefix, string(group))
 			return true
 		}
 		for _, group2 := range ldapGroupData {
 			if group2.DN == string(group) {
-				return s.userIsInAdminGroup(&group2, ldapGroupData)
+				logrus.Tracef("%sChecking nested: %s\n", prefix, group2.DN)
+				isAdmin := s.userIsInAdminGroup(&group2, ldapGroupData, layer+1)
+				if isAdmin {
+					return true
+				}
 			}
 		}
 	}
@@ -90,7 +101,7 @@ func (s Server) userChangedInLdap(user *users.User, ldapData *ldap.RawLdapData, 
 		return true
 	}
 
-	if user.IsAdmin != s.userIsInAdminGroup(ldapData, ldapGroupData) {
+	if user.IsAdmin != s.userIsInAdminGroup(ldapData, ldapGroupData, 0) {
 		return true
 	}
 
@@ -165,7 +176,7 @@ func (s *Server) updateLdapUsers(ldapUsers []ldap.RawLdapData, ldapGroups []ldap
 			user.Lastname = ldapUsers[i].Attributes[s.config.LDAP.LastNameAttribute]
 			user.Email = ldapUsers[i].Attributes[s.config.LDAP.EmailAttribute]
 			user.Phone = ldapUsers[i].Attributes[s.config.LDAP.PhoneAttribute]
-			user.IsAdmin = s.userIsInAdminGroup(&ldapUsers[i], ldapGroups)
+			user.IsAdmin = s.userIsInAdminGroup(&ldapUsers[i], ldapGroups, 0)
 			user.Source = users.UserSourceLdap
 			user.DeletedAt = gorm.DeletedAt{} // Not deleted
 
