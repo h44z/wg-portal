@@ -28,7 +28,7 @@ func main() {
 	defer cancel()
 
 	// start health check service on port 11223
-	healthcheck.New(healthcheck.ListenOn(":11223")).StartWithContext(ctx)
+	healthcheck.New(healthcheck.ListenOn("127.0.0.1:11223")).StartWithContext(ctx)
 
 	service := server.Server{}
 	if err := service.Setup(ctx); err != nil {
