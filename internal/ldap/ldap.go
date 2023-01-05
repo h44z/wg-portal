@@ -97,6 +97,9 @@ func FindAllObjects(cfg *Config, objType ObjectType) ([]RawLdapData, error) {
 			cfg.SyncFilter, attrs, nil,
 		)
 	case Groups:
+		if cfg.SyncGroupFilter == "" {
+			return nil, nil // no groups
+		}
 		// Search all groups
 		attrs = []string{"dn", cfg.GroupMemberAttribute}
 		searchRequest = ldap.NewSearchRequest(
