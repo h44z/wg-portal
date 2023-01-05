@@ -293,7 +293,7 @@ func (s *Server) UpdateUser(user users.User) error {
 			peer.DeactivatedAt = nil
 			peer.DeactivatedReason = ""
 			if err := s.UpdatePeer(peer, now); err != nil {
-				logrus.Errorf("failed to update (re)activated peer %s for %s: %v", peer.PublicKey, user.Email, err)
+				logrus.Errorf("failed to update (re)activated peer %s for %s: %v", peer.PublicKey, peer.Email, err)
 			}
 		}
 	}
@@ -315,7 +315,7 @@ func (s *Server) DeleteUser(user users.User) error {
 		peer.DeactivatedAt = &now
 		peer.DeactivatedReason = wireguard.DeactivatedReasonUserMissing
 		if err := s.UpdatePeer(peer, now); err != nil {
-			logrus.Errorf("failed to update deactivated peer %s for %s: %v", peer.PublicKey, user.Email, err)
+			logrus.Errorf("failed to update deactivated peer %s for %s: %v", peer.PublicKey, peer.Email, err)
 		}
 	}
 
