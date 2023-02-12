@@ -5,6 +5,7 @@ GOFILES:=$(shell go list ./... | grep -v /vendor/)
 BUILDDIR=dist
 BINARIES=$(subst cmd/,,$(wildcard cmd/*))
 IMAGE=h44z/wg-portal
+NPMCMD=npm
 
 all: help
 
@@ -122,3 +123,8 @@ build-dependencies:
 	@mkdir -p $(BUILDDIR)
 	cp scripts/wg-portal.service $(BUILDDIR)
 	cp scripts/wg-portal.env $(BUILDDIR)
+	cd internal/ports/api/core/frontend; $(NPMCMD) install
+
+#< frontend: Build Vue.js frontend
+frontend:
+	cd internal/ports/api/core/frontend; $(NPMCMD) run build

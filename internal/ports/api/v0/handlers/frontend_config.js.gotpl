@@ -1,0 +1,1 @@
+WGPORTAL_BACKEND_BASE_URL="{{ $.BackendUrl }}";

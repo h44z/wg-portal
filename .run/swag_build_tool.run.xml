@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="swag_build_tool" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="wg-portal" />
+    <working_directory value="$PROJECT_DIR$" />
+    <kind value="PACKAGE" />
+    <package value="github.com/h44z/wg-portal/internal/ports/api/build_tool" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/internal/ports/api/build_tool/main.go" />
+    <method v="2" />
+  </configuration>
+</component>

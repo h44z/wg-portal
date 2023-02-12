@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="wg-portal" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="wg-portal" />
+    <working_directory value="$PROJECT_DIR$" />
+    <envs>
+      <env name="SESSION_SECRET" value="extremlybad" />
+      <env name="LOG_LEVEL" value="trace" />
+    </envs>
+    <sudo value="true" />
+    <kind value="PACKAGE" />
+    <package value="github.com/h44z/wg-portal/cmd/wg-portal" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/cmd/wg-portal/main.go" />
+    <method v="2" />
+  </configuration>
+</component>
