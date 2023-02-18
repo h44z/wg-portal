@@ -52,18 +52,18 @@ jobs:
     working_directory: ~/repo
     docker:
       - image: cimg/go:1.19
-  build-116: # just to validate compatibility with minimum go version
+  build-118: # just to validate compatibility with minimum go version
     steps:
       - checkout
       - restore_cache:
           keys:
-            - go-mod-116-v4-{{ checksum "go.sum" }}
+            - go-mod-118-v4-{{ checksum "go.sum" }}
       - run:
           name: Install Dependencies
           command: |
             make build-dependencies
       - save_cache:
-          key: go-mod-116-v4-{{ checksum "go.sum" }}
+          key: go-mod-118-v4-{{ checksum "go.sum" }}
           paths:
             - "~/go/pkg/mod"
       - run:
@@ -72,9 +72,9 @@ jobs:
             VERSION=$CIRCLE_BRANCH
             if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
             make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build
-    working_directory: ~/repo116
+    working_directory: ~/repo118
     docker:
-      - image: cimg/go:1.16
+      - image: cimg/go:1.18
 
 workflows:
   build-and-release:

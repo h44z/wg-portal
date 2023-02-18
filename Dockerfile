@@ -4,7 +4,7 @@
 ######-
 # Start from the latest golang base image as builder image (only used to compile the code)
 ######-
-FROM golang:1.16 as builder
+FROM golang:1.18 as builder
 
 ARG BUILD_IDENTIFIER
 ENV ENV_BUILD_IDENTIFIER=$BUILD_IDENTIFIER
