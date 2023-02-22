@@ -128,8 +128,8 @@ func (s *Server) GetUserIndex(c *gin.Context) {
 			s.GetHandleError(c, http.StatusInternalServerError, "sort error", "failed to save session")
 			return
 		}
-		c.Redirect(http.StatusSeeOther, "/admin")
-		return
+		/*c.Redirect(http.StatusSeeOther, "/admin")
+		return*/
 	}
 
 	peers := s.peers.GetSortedPeersForEmail(currentSession.SortedBy["userpeers"], currentSession.SortDirection["userpeers"], currentSession.Email)

@@ -731,6 +731,9 @@ func sortPeers(sortKey string, sortDirection string, peers []Peer) {
 		case "endpoint":
 			sortValueLeft = peers[i].Endpoint
 			sortValueRight = peers[j].Endpoint
+		case "device":
+			sortValueLeft = peers[i].DeviceName
+			sortValueRight = peers[j].DeviceName
 		case "handshake":
 			if peers[i].Peer == nil {
 				return true
