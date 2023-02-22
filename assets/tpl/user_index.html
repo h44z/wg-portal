@@ -34,6 +34,7 @@
                     <th scope="col"><a href="?sort=pubKey">Public Key <i class="fa fa-fw {{.Session.GetSortIcon "userpeers" "pubKey"}}"></i></a></th>
                     <th scope="col"><a href="?sort=mail">E-Mail <i class="fa fa-fw {{.Session.GetSortIcon "userpeers" "mail"}}"></i></a></th>
                     <th scope="col"><a href="?sort=ip">IP's <i class="fa fa-fw {{.Session.GetSortIcon "userpeers" "ip"}}"></i></a></th>
+                    <th scope="col"><a href="?sort=device">Interface <i class="fa fa-fw {{.Session.GetSortIcon "userpeers" "device"}}"></i></a></th>
                     <th scope="col"><a href="?sort=handshake">Handshake <i class="fa fa-fw {{.Session.GetSortIcon "userpeers" "handshake"}}"></i></a></th>
                     {{if eq $.UserManagePeers true}}
                     <th scope="col"></th>
@@ -53,6 +54,7 @@
                         <td>{{$p.PublicKey}}</td>
                         <td>{{$p.Email}}</td>
                         <td>{{$p.IPsStr}}</td>
+                        <td>{{$p.DeviceName}}</td>
                         <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{{$p.LastHandshakeTime}}">{{$p.LastHandshake}}</span></td>
                         {{if eq $.UserManagePeers true}}
                         <td>
