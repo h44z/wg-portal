@@ -54,17 +54,30 @@ func (p Peer) IsDisabled() bool {
 	return p.Disabled != nil
 }
 
+func (p Peer) CheckAliveAddress() string {
+	if p.Interface.CheckAliveAddress != "" {
+		return p.Interface.CheckAliveAddress
+	}
+
+	if len(p.Interface.Addresses) > 0 {
+		return p.Interface.Addresses[0].Addr // take the first peer address
+	}
+
+	return ""
+}
+
 type PeerInterfaceConfig struct {
 	KeyPair // private/public Key of the peer
 
 	Type InterfaceType `gorm:"column:iface_type"` // the interface type (server, client, any)
 
-	Addresses    []Cidr             `gorm:"many2many:peer_addresses;"`                     // the interface ip addresses
-	DnsStr       StringConfigOption `gorm:"embedded;embeddedPrefix:iface_dns_str_"`        // the dns server that should be set if the interface is up, comma separated
-	DnsSearchStr StringConfigOption `gorm:"embedded;embeddedPrefix:iface_dns_search_str_"` // the dns search option string that should be set if the interface is up, will be appended to DnsStr
-	Mtu          IntConfigOption    `gorm:"embedded;embeddedPrefix:iface_mtu_"`            // the device MTU
-	FirewallMark Int32ConfigOption  `gorm:"embedded;embeddedPrefix:iface_firewall_mark_"`  // a firewall mark
-	RoutingTable StringConfigOption `gorm:"embedded;embeddedPrefix:iface_routing_table_"`  // the routing table
+	Addresses         []Cidr             `gorm:"many2many:peer_addresses;"`                     // the interface ip addresses
+	CheckAliveAddress string             `gorm:"column:check_alive_address"`                    // optional ip address or DNS name that is used for ping checks
+	DnsStr            StringConfigOption `gorm:"embedded;embeddedPrefix:iface_dns_str_"`        // the dns server that should be set if the interface is up, comma separated
+	DnsSearchStr      StringConfigOption `gorm:"embedded;embeddedPrefix:iface_dns_search_str_"` // the dns search option string that should be set if the interface is up, will be appended to DnsStr
+	Mtu               IntConfigOption    `gorm:"embedded;embeddedPrefix:iface_mtu_"`            // the device MTU
+	FirewallMark      Int32ConfigOption  `gorm:"embedded;embeddedPrefix:iface_firewall_mark_"`  // a firewall mark
+	RoutingTable      StringConfigOption `gorm:"embedded;embeddedPrefix:iface_routing_table_"`  // the routing table
 
 	PreUp    StringConfigOption `gorm:"embedded;embeddedPrefix:iface_pre_up_"`    // action that is executed before the device is up
 	PostUp   StringConfigOption `gorm:"embedded;embeddedPrefix:iface_post_up_"`   // action that is executed after the device is up
@@ -88,8 +101,8 @@ type PhysicalPeer struct {
 	LastHandshake   time.Time
 	ProtocolVersion int
 
-	BytesUpload   uint64
-	BytesDownload uint64
+	BytesUpload   uint64 // upload bytes are the number of bytes that the remote peer has sent to the server
+	BytesDownload uint64 // upload bytes are the number of bytes that the remote peer has received from the server
 }
 
 func (p PhysicalPeer) GetPresharedKey() *wgtypes.Key {

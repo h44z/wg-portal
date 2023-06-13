@@ -1,6 +1,7 @@
 package config
 
 type WebConfig struct {
+	RequestLogging    bool   `yaml:"request_logging"`
 	ExternalUrl       string `yaml:"external_url"`
 	ListeningAddress  string `yaml:"listening_address"`
 	SessionIdentifier string `yaml:"session_identifier"`

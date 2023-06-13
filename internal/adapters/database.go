@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm/logger"
+	"gorm.io/gorm/utils"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,13 +28,74 @@ import (
 var sqlMigrationFs embed.FS
 var SchemaVersion uint64 = 1
 
+// GormLogger is a custom logger for Gorm, making it use logrus.
+type GormLogger struct {
+	SlowThreshold           time.Duration
+	SourceField             string
+	IgnoreErrRecordNotFound bool
+	Debug                   bool
+}
+
+func NewLogger(slowThreshold time.Duration, debug bool) *GormLogger {
+	return &GormLogger{
+		SlowThreshold:           slowThreshold,
+		Debug:                   debug,
+		IgnoreErrRecordNotFound: true,
+		SourceField:             "src",
+	}
+}
+
+func (l *GormLogger) LogMode(logger.LogLevel) logger.Interface {
+	return l
+}
+
+func (l *GormLogger) Info(ctx context.Context, s string, args ...interface{}) {
+	logrus.WithContext(ctx).Infof(s, args)
+}
+
+func (l *GormLogger) Warn(ctx context.Context, s string, args ...interface{}) {
+	logrus.WithContext(ctx).Warnf(s, args)
+}
+
+func (l *GormLogger) Error(ctx context.Context, s string, args ...interface{}) {
+	logrus.WithContext(ctx).Errorf(s, args)
+}
+
+func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+	elapsed := time.Since(begin)
+	sql, rows := fc()
+	fields := logrus.Fields{
+		"rows":     rows,
+		"duration": elapsed,
+	}
+	if l.SourceField != "" {
+		fields[l.SourceField] = utils.FileWithLineNum()
+	}
+	if err != nil && !(errors.Is(err, gorm.ErrRecordNotFound) && l.IgnoreErrRecordNotFound) {
+		fields[logrus.ErrorKey] = err
+		logrus.WithContext(ctx).WithFields(fields).Errorf("%s", sql)
+		return
+	}
+
+	if l.SlowThreshold != 0 && elapsed > l.SlowThreshold {
+		logrus.WithContext(ctx).WithFields(fields).Warnf("%s", sql)
+		return
+	}
+
+	if l.Debug {
+		logrus.WithContext(ctx).WithFields(fields).Debugf("%s", sql)
+	}
+}
+
 func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 	var gormDb *gorm.DB
 	var err error
 
 	switch cfg.Type {
 	case config.DatabaseMySQL:
-		gormDb, err = gorm.Open(gormMySQL.Open(cfg.DSN), &gorm.Config{})
+		gormDb, err = gorm.Open(gormMySQL.Open(cfg.DSN), &gorm.Config{
+			Logger: NewLogger(cfg.SlowQueryThreshold, cfg.Debug),
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to open MySQL database: %w", err)
 		}
@@ -46,12 +109,16 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 			return nil, fmt.Errorf("failed to ping MySQL database: %w", err)
 		}
 	case config.DatabaseMsSQL:
-		gormDb, err = gorm.Open(sqlserver.Open(cfg.DSN), &gorm.Config{})
+		gormDb, err = gorm.Open(sqlserver.Open(cfg.DSN), &gorm.Config{
+			Logger: NewLogger(cfg.SlowQueryThreshold, cfg.Debug),
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to open sqlserver database: %w", err)
 		}
 	case config.DatabasePostgres:
-		gormDb, err = gorm.Open(postgres.Open(cfg.DSN), &gorm.Config{})
+		gormDb, err = gorm.Open(postgres.Open(cfg.DSN), &gorm.Config{
+			Logger: NewLogger(cfg.SlowQueryThreshold, cfg.Debug),
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to open Postgres database: %w", err)
 		}
@@ -61,7 +128,10 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 				return nil, fmt.Errorf("failed to create database base directory: %w", err)
 			}
 		}
-		gormDb, err = gorm.Open(sqlite.Open(cfg.DSN), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
+		gormDb, err = gorm.Open(sqlite.Open(cfg.DSN), &gorm.Config{
+			Logger:                                   NewLogger(cfg.SlowQueryThreshold, cfg.Debug),
+			DisableForeignKeyConstraintWhenMigrating: true,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to open sqlite database: %w", err)
 		}
@@ -89,9 +159,11 @@ func NewSqlRepository(db *gorm.DB) (*SqlRepo, error) {
 
 func (r *SqlRepo) migrate() error {
 	// TODO: REMOVE
-	logrus.Warnf("user migration: %v", r.db.AutoMigrate(&domain.User{}))
-	logrus.Warnf("interface migration: %v", r.db.AutoMigrate(&domain.Interface{}))
-	logrus.Warnf("peer migration: %v", r.db.AutoMigrate(&domain.Peer{}))
+	logrus.Debugf("user migration: %v", r.db.AutoMigrate(&domain.User{}))
+	logrus.Debugf("interface migration: %v", r.db.AutoMigrate(&domain.Interface{}))
+	logrus.Debugf("peer migration: %v", r.db.AutoMigrate(&domain.Peer{}))
+	logrus.Debugf("peer status migration: %v", r.db.AutoMigrate(&domain.PeerStatus{}))
+	logrus.Debugf("interface status migration: %v", r.db.AutoMigrate(&domain.InterfaceStatus{}))
 	// TODO: REMOVE THE ABOVE LINES
 
 	rawDb, err := r.db.DB()
@@ -267,7 +339,7 @@ func (r *SqlRepo) GetInterfaceIps(ctx context.Context) (map[domain.InterfaceIden
 
 	err := r.db.WithContext(ctx).
 		Table("interface_addresses").
-		Joins("LEFT JOIN cidrs ON interface_addresses.cidr_addr = cidrs.addr AND interface_addresses.cidr_net_length = cidrs.net_len").
+		Joins("LEFT JOIN cidrs ON interface_addresses.cidr_cidr = cidrs.cidr").
 		Scan(&ips).Error
 	if err != nil {
 		return nil, err
@@ -525,3 +597,113 @@ func (r *SqlRepo) upsertUser(tx *gorm.DB, user *domain.User) error {
 }
 
 // endregion users
+
+// region statistics
+
+func (r *SqlRepo) UpdateInterfaceStatus(ctx context.Context, id domain.InterfaceIdentifier, updateFunc func(in *domain.InterfaceStatus) (*domain.InterfaceStatus, error)) error {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		in, err := r.getOrCreateInterfaceStatus(tx, id)
+		if err != nil {
+			return err // return any error will roll back
+		}
+
+		in, err = updateFunc(in)
+		if err != nil {
+			return err
+		}
+
+		err = r.upsertInterfaceStatus(tx, in)
+		if err != nil {
+			return err
+		}
+
+		// return nil will commit the whole transaction
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *SqlRepo) getOrCreateInterfaceStatus(tx *gorm.DB, id domain.InterfaceIdentifier) (*domain.InterfaceStatus, error) {
+	var in domain.InterfaceStatus
+
+	// defaults will be applied to newly created record
+	defaults := domain.InterfaceStatus{
+		InterfaceId: id,
+		UpdatedAt:   time.Now(),
+	}
+
+	err := tx.Attrs(defaults).FirstOrCreate(&in, id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &in, nil
+}
+
+func (r *SqlRepo) upsertInterfaceStatus(tx *gorm.DB, in *domain.InterfaceStatus) error {
+	err := tx.Save(in).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *SqlRepo) UpdatePeerStatus(ctx context.Context, id domain.PeerIdentifier, updateFunc func(in *domain.PeerStatus) (*domain.PeerStatus, error)) error {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		in, err := r.getOrCreatePeerStatus(tx, id)
+		if err != nil {
+			return err // return any error will roll back
+		}
+
+		in, err = updateFunc(in)
+		if err != nil {
+			return err
+		}
+
+		err = r.upsertPeerStatus(tx, in)
+		if err != nil {
+			return err
+		}
+
+		// return nil will commit the whole transaction
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *SqlRepo) getOrCreatePeerStatus(tx *gorm.DB, id domain.PeerIdentifier) (*domain.PeerStatus, error) {
+	var in domain.PeerStatus
+
+	// defaults will be applied to newly created record
+	defaults := domain.PeerStatus{
+		PeerId:    id,
+		UpdatedAt: time.Now(),
+	}
+
+	err := tx.Attrs(defaults).FirstOrCreate(&in, id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &in, nil
+}
+
+func (r *SqlRepo) upsertPeerStatus(tx *gorm.DB, in *domain.PeerStatus) error {
+	err := tx.Save(in).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// endregion statistics
