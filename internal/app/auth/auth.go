@@ -21,8 +21,8 @@ import (
 )
 
 type UserManager interface {
-	Get(context.Context, domain.UserIdentifier) (*domain.User, error)
-	Register(ctx context.Context, user *domain.User) error
+	GetUser(context.Context, domain.UserIdentifier) (*domain.User, error)
+	RegisterUser(ctx context.Context, user *domain.User) error
 }
 
 type Authenticator struct {
@@ -149,7 +149,7 @@ func (a *Authenticator) GetExternalLoginProviders(_ context.Context) []domain.Lo
 }
 
 func (a *Authenticator) IsUserValid(ctx context.Context, id domain.UserIdentifier) bool {
-	user, err := a.users.Get(ctx, id)
+	user, err := a.users.GetUser(ctx, id)
 	if err != nil {
 		return false
 	}
@@ -187,7 +187,7 @@ func (a *Authenticator) passwordAuthentication(ctx context.Context, identifier d
 
 	var userInDatabase = false
 	var userSource domain.UserSource
-	existingUser, err := a.users.Get(ctx, identifier)
+	existingUser, err := a.users.GetUser(ctx, identifier)
 	if err == nil {
 		userInDatabase = true
 		userSource = domain.UserSourceDatabase
@@ -313,7 +313,7 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 
 func (a *Authenticator) processUserInfo(ctx context.Context, userInfo *domain.AuthenticatorUserInfo, source domain.UserSource, provider string, withReg bool) (*domain.User, error) {
 	// Search user in backend
-	user, err := a.users.Get(ctx, userInfo.Identifier)
+	user, err := a.users.GetUser(ctx, userInfo.Identifier)
 	switch {
 	case err != nil && withReg:
 		user, err = a.registerNewUser(ctx, userInfo, source, provider)
@@ -341,7 +341,7 @@ func (a *Authenticator) registerNewUser(ctx context.Context, userInfo *domain.Au
 		Department:   userInfo.Department,
 	}
 
-	err := a.users.Register(ctx, user)
+	err := a.users.RegisterUser(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register new user: %w", err)
 	}

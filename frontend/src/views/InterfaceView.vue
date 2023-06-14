@@ -2,6 +2,7 @@
 import PeerViewModal from "../components/PeerViewModal.vue";
 import PeerEditModal from "../components/PeerEditModal.vue";
 import InterfaceEditModal from "../components/InterfaceEditModal.vue";
+import InterfaceViewModal from "../components/InterfaceViewModal.vue";
 
 import {onMounted, ref} from "vue";
 import {peerStore} from "../stores/peers";
@@ -13,6 +14,15 @@ const peers = peerStore()
 const viewedPeerId = ref("")
 const editPeerId = ref("")
 const editInterfaceId = ref("")
+const viewedInterfaceId = ref("")
+
+function calculateInterfaceName(id, name) {
+  let result = id
+  if (name) {
+    result += ' (' + name + ')'
+  }
+  return result
+}
 
 onMounted(async () => {
   await interfaces.LoadInterfaces()
@@ -24,6 +34,7 @@ onMounted(async () => {
   <PeerViewModal :peerId="viewedPeerId" :visible="viewedPeerId!==''" @close="viewedPeerId=''"></PeerViewModal>
   <PeerEditModal :peerId="editPeerId" :visible="editPeerId!==''" @close="editPeerId=''"></PeerEditModal>
   <InterfaceEditModal :interfaceId="editInterfaceId" :visible="editInterfaceId!==''" @close="editInterfaceId=''"></InterfaceEditModal>
+  <InterfaceViewModal :interfaceId="viewedInterfaceId" :visible="viewedInterfaceId!==''" @close="viewedInterfaceId=''"></InterfaceViewModal>
 
   <!-- Headline and interface selector -->
   <div class="page-header row">
@@ -41,7 +52,7 @@ onMounted(async () => {
           </button>
           <select v-model="interfaces.selected" :disabled="interfaces.Count===0" class="form-select" @change="peers.LoadPeers()">
             <option v-if="interfaces.Count===0" value="nothing">{{ $t('interfaces.notAvailable') }}</option>
-            <option v-for="iface in interfaces.All" :key="iface.Identifier" :value="iface.Identifier">{{iface.Identifier}}</option>
+            <option v-for="iface in interfaces.All" :key="iface.Identifier" :value="iface.Identifier">{{ calculateInterfaceName(iface.Identifier,iface.DisplayName) }}</option>
           </select>
         </div>
       </div>
@@ -68,7 +79,7 @@ onMounted(async () => {
               {{ $t('interfaces.statusBox.h1') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{interfaces.GetSelected.Mode}} {{ $t('interfaces.statusBox.mode') }})
             </div>
             <div class="col-12 col-lg-4 text-lg-end">
-              <a class="btn-link" href="#" title="Show interface configuration"><i class="fas fa-eye"></i></a>
+              <a class="btn-link" href="#" title="Show interface configuration" @click.prevent="viewedInterfaceId=interfaces.GetSelected.Identifier"><i class="fas fa-eye"></i></a>
               <a class="ms-5 btn-link" href="#" title="Download interface configuration"><i class="fas fa-download"></i></a>
               <a class="ms-5 btn-link" href="#" title="Write interface configuration file"><i class="fas fa-save"></i></a>
               <a class="ms-5 btn-link" href="#" title="Edit interface settings" @click.prevent="editInterfaceId=interfaces.GetSelected.Identifier"><i class="fas fa-cog"></i></a>
@@ -154,11 +165,11 @@ onMounted(async () => {
                 <tbody>
                 <tr>
                   <td>{{ $t('interfaces.statusBox.ip') }}:</td>
-                  <td>{{interfaces.GetSelected.AddressStr}}</td>
+                  <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.Addresses" :key="addr">{{addr}}</span></td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.statusBox.dnsServers') }}:</td>
-                  <td>{{interfaces.GetSelected.DnsStr}}</td>
+                  <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.Dns" :key="addr">{{addr}}</span></td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.statusBox.mtu') }}:</td>
@@ -200,15 +211,15 @@ onMounted(async () => {
                 <tbody>
                 <tr>
                   <td>{{ $t('interfaces.statusBox.ip') }}:</td>
-                  <td>{{interfaces.GetSelected.Addresses}}</td>
+                  <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.Addresses" :key="addr">{{addr}}</span></td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.statusBox.allowedIP') }}:</td>
-                  <td>{{interfaces.GetSelected.PeerDefAllowedIPsStr}}</td>
+                  <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.PeerDefAllowedIPs" :key="addr">{{addr}}</span></td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.statusBox.dnsServers') }}:</td>
-                  <td>{{interfaces.GetSelected.PeerDefDnsStr}}</td>
+                  <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.PeerDefDns" :key="addr">{{addr}}</span></td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.statusBox.mtu') }}:</td>

@@ -13,6 +13,7 @@ export const interfaceStore = defineStore({
         Identifier: "",
         Type: "server",
     },
+    configuration: "",
     selected: "wg0",
     fetching: false,
   }),
@@ -46,7 +47,9 @@ export const interfaceStore = defineStore({
     },
     setPreparedInterface(iface) {
       this.prepared = iface;
-      this.prepared.AddressStr = iface.Addresses.join(', ');
+    },
+    setInterfaceConfig(ifaceConfig) {
+        this.configuration = ifaceConfig;
     },
     async PrepareInterface() {
       return apiWrapper.get(`${baseUrl}/prepare`)
@@ -60,9 +63,21 @@ export const interfaceStore = defineStore({
           })
         })
     },
+  async InterfaceConfig(id) {
+      return apiWrapper.get(`${baseUrl}/config/${id}`)
+          .then(this.setInterfaceConfig)
+          .catch(error => {
+              this.prepared = {}
+              console.log("Failed to load interface configuration: ", error)
+              notify({
+                  title: "Backend Connection Failure",
+                  text: "Failed to load interface configuration!",
+              })
+          })
+  },
     async DeleteInterface(id) {
       this.fetching = true
-      return apiWrapper.delete(`${baseUrl}/` + id)
+      return apiWrapper.delete(`${baseUrl}/${id}`)
         .then(() => {
           this.interfaces = this.interfaces.filter(i => i.Identifier !== id)
           this.fetching = false
@@ -75,7 +90,7 @@ export const interfaceStore = defineStore({
     },
     async UpdateInterface(id, formData) {
       this.fetching = true
-      return apiWrapper.put(`${baseUrl}/` + id, formData)
+      return apiWrapper.put(`${baseUrl}/${id}`, formData)
         .then(iface => {
           let idx = this.interfaces.findIndex((i) => i.Identifier === id)
           this.interfaces[idx] = iface

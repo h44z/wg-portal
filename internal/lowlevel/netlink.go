@@ -15,6 +15,7 @@ type NetlinkClient interface {
 	AddrReplace(link netlink.Link, addr *netlink.Addr) error
 	AddrAdd(link netlink.Link, addr *netlink.Addr) error
 	AddrList(link netlink.Link) ([]netlink.Addr, error)
+	AddrDel(link netlink.Link, addr *netlink.Addr) error
 }
 
 type NetlinkManager struct {
@@ -60,4 +61,8 @@ func (n NetlinkManager) AddrList(link netlink.Link) ([]netlink.Addr, error) {
 	ipAddresses = append(ipAddresses, listIPv6...)
 
 	return ipAddresses, nil
+}
+
+func (n NetlinkManager) AddrDel(link netlink.Link, addr *netlink.Addr) error {
+	return netlink.AddrDel(link, addr)
 }

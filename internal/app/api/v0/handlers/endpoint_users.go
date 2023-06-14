@@ -39,7 +39,7 @@ func (e userEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 // @Router /users [get]
 func (e userEndpoint) handleAllGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		users, err := e.app.Users.GetAll(c.Request.Context())
+		users, err := e.app.GetAllUsers(c.Request.Context())
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model2.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
@@ -83,7 +83,7 @@ func (e userEndpoint) handleUpdatePut() gin.HandlerFunc {
 			return
 		}
 
-		updateUser, err := e.app.Users.Update(ctx, model2.NewDomainUser(&user))
+		updateUser, err := e.app.UpdateUser(ctx, model2.NewDomainUser(&user))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model2.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
@@ -115,7 +115,7 @@ func (e userEndpoint) handleCreatePost() gin.HandlerFunc {
 			return
 		}
 
-		newUser, err := e.app.Users.Create(ctx, model2.NewDomainUser(&user))
+		newUser, err := e.app.CreateUser(ctx, model2.NewDomainUser(&user))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model2.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
@@ -142,7 +142,7 @@ func (e userEndpoint) handlePeersGet() gin.HandlerFunc {
 			return
 		}
 
-		peers, err := e.app.WireGuard.GetUserPeers(c.Request.Context(), domain.UserIdentifier(interfaceId))
+		peers, err := e.app.GetUserPeers(c.Request.Context(), domain.UserIdentifier(interfaceId))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model2.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return

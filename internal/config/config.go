@@ -23,13 +23,14 @@ type Config struct {
 	} `yaml:"core"`
 
 	Advanced struct {
-		LogLevel         string        `yaml:"log_level"`
-		StartupTimeout   time.Duration `yaml:"startup_timeout"`
-		LdapSyncInterval time.Duration `yaml:"ldap_sync_interval"`
-		StartListenPort  int           `yaml:"start_listen_port"`
-		StartCidrV4      string        `yaml:"start_cidr_v4"`
-		StartCidrV6      string        `yaml:"start_cidr_v6"`
-		UseIpV6          bool          `yaml:"use_ip_v6"`
+		LogLevel          string        `yaml:"log_level"`
+		StartupTimeout    time.Duration `yaml:"startup_timeout"`
+		LdapSyncInterval  time.Duration `yaml:"ldap_sync_interval"`
+		StartListenPort   int           `yaml:"start_listen_port"`
+		StartCidrV4       string        `yaml:"start_cidr_v4"`
+		StartCidrV6       string        `yaml:"start_cidr_v6"`
+		UseIpV6           bool          `yaml:"use_ip_v6"`
+		ConfigStoragePath string        `yaml:"config_storage_path"` // keep empty to disable config export to file
 	} `yaml:"advanced"`
 
 	Statistics struct {
@@ -67,6 +68,7 @@ func defaultConfig() *Config {
 		ListeningAddress:  ":8888",
 		SessionSecret:     "verysecret",
 		SessionIdentifier: "wgPortalSession",
+		ExternalUrl:       "http://localhost:8888",
 	}
 
 	cfg.Auth.CallbackUrlPrefix = "/api/v0"

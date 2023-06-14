@@ -2,17 +2,14 @@ package handlers
 
 import (
 	"context"
-	model2 "github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/gin-gonic/gin"
+	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/h44z/wg-portal/internal/domain"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
-
-	"github.com/h44z/wg-portal/internal/domain"
-
-	"github.com/gin-gonic/gin"
-
-	"github.com/h44z/wg-portal/internal/app"
 )
 
 type authEndpoint struct {
@@ -49,7 +46,7 @@ func (e authEndpoint) handleExternalLoginProvidersGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		providers := e.app.Authenticator.GetExternalLoginProviders(c.Request.Context())
 
-		c.JSON(http.StatusOK, model2.NewLoginProviderInfos(providers))
+		c.JSON(http.StatusOK, model.NewLoginProviderInfos(providers))
 	}
 }
 
@@ -82,7 +79,7 @@ func (e authEndpoint) handleSessionInfoGet() gin.HandlerFunc {
 			email = &e
 		}
 
-		c.JSON(http.StatusOK, model2.SessionInfo{
+		c.JSON(http.StatusOK, model.SessionInfo{
 			LoggedIn:       currentSession.LoggedIn,
 			IsAdmin:        currentSession.IsAdmin,
 			UserIdentifier: loggedInUid,
@@ -132,7 +129,7 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 				returnParams = queryParams.Encode()
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusBadRequest, model2.Error{Code: http.StatusBadRequest, Message: "already logged in"})
+				c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "already logged in"})
 			}
 			return
 		}
@@ -142,7 +139,7 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 			if autoRedirect {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusInternalServerError, model2.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+				c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			}
 			return
 		}
@@ -157,7 +154,7 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 		if autoRedirect {
 			c.Redirect(http.StatusFound, authCodeUrl)
 		} else {
-			c.JSON(http.StatusOK, model2.OauthInitiationResponse{
+			c.JSON(http.StatusOK, model.OauthInitiationResponse{
 				RedirectUrl: authCodeUrl,
 				State:       state,
 			})
@@ -200,7 +197,7 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 				returnParams = queryParams.Encode()
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusBadRequest, model2.Error{Message: "already logged in"})
+				c.JSON(http.StatusBadRequest, model.Error{Message: "already logged in"})
 			}
 			return
 		}
@@ -213,7 +210,7 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 			if returnUrl != nil {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusBadRequest, model2.Error{Code: http.StatusBadRequest, Message: "invalid oauth provider"})
+				c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "invalid oauth provider"})
 			}
 			return
 		}
@@ -221,7 +218,7 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 			if returnUrl != nil {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusBadRequest, model2.Error{Code: http.StatusBadRequest, Message: "invalid oauth state"})
+				c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "invalid oauth state"})
 			}
 			return
 		}
@@ -233,7 +230,7 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 			if returnUrl != nil {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusUnauthorized, model2.Error{Code: http.StatusUnauthorized, Message: err.Error()})
+				c.JSON(http.StatusUnauthorized, model.Error{Code: http.StatusUnauthorized, Message: err.Error()})
 			}
 			return
 		}
@@ -281,7 +278,7 @@ func (e authEndpoint) handleLoginPost() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		currentSession := e.authenticator.Session.GetData(c)
 		if currentSession.LoggedIn {
-			c.JSON(http.StatusOK, model2.Error{Code: http.StatusOK, Message: "already logged in"})
+			c.JSON(http.StatusOK, model.Error{Code: http.StatusOK, Message: "already logged in"})
 			return
 		}
 
@@ -291,13 +288,13 @@ func (e authEndpoint) handleLoginPost() gin.HandlerFunc {
 		}
 
 		if err := c.ShouldBindJSON(&loginData); err != nil {
-			c.JSON(http.StatusBadRequest, model2.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
 		user, err := e.app.Authenticator.PlainLogin(c.Request.Context(), loginData.Username, loginData.Password)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, model2.Error{Code: http.StatusUnauthorized, Message: "login failed"})
+			c.JSON(http.StatusUnauthorized, model.Error{Code: http.StatusUnauthorized, Message: "login failed"})
 			return
 		}
 
@@ -320,11 +317,11 @@ func (e authEndpoint) handleLogoutPost() gin.HandlerFunc {
 		currentSession := e.authenticator.Session.GetData(c)
 
 		if !currentSession.LoggedIn { // Not logged in
-			c.JSON(http.StatusOK, model2.Error{Code: http.StatusOK, Message: "not logged in"})
+			c.JSON(http.StatusOK, model.Error{Code: http.StatusOK, Message: "not logged in"})
 			return
 		}
 
 		e.authenticator.Session.DestroyData(c)
-		c.JSON(http.StatusOK, model2.Error{Code: http.StatusOK, Message: "logout ok"})
+		c.JSON(http.StatusOK, model.Error{Code: http.StatusOK, Message: "logout ok"})
 	}
 }

@@ -42,8 +42,8 @@ func NewUserManager(cfg *config.Config, bus evbus.MessageBus, users UserDatabase
 	return m, nil
 }
 
-func (m Manager) Register(ctx context.Context, user *domain.User) error {
-	err := m.New(ctx, user)
+func (m Manager) RegisterUser(ctx context.Context, user *domain.User) error {
+	err := m.NewUser(ctx, user)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (m Manager) Register(ctx context.Context, user *domain.User) error {
 	return nil
 }
 
-func (m Manager) New(ctx context.Context, user *domain.User) error {
+func (m Manager) NewUser(ctx context.Context, user *domain.User) error {
 	if user.Identifier == "" {
 		return errors.New("missing user identifier")
 	}
@@ -82,7 +82,7 @@ func (m Manager) StartBackgroundJobs(ctx context.Context) {
 	go m.runLdapSynchronizationService(ctx)
 }
 
-func (m Manager) Get(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+func (m Manager) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
 	user, err := m.users.GetUser(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load peer %s: %w", id, err)
@@ -94,7 +94,7 @@ func (m Manager) Get(ctx context.Context, id domain.UserIdentifier) (*domain.Use
 	return user, nil
 }
 
-func (m Manager) GetAll(ctx context.Context) ([]domain.User, error) {
+func (m Manager) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	users, err := m.users.GetAllUsers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load users: %w", err)
@@ -122,7 +122,7 @@ func (m Manager) GetAll(ctx context.Context) ([]domain.User, error) {
 	return users, nil
 }
 
-func (m Manager) Update(ctx context.Context, user *domain.User) (*domain.User, error) {
+func (m Manager) UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
 	existingUser, err := m.users.GetUser(ctx, user.Identifier)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load existing user %s: %w", user.Identifier, err)
@@ -152,7 +152,7 @@ func (m Manager) Update(ctx context.Context, user *domain.User) (*domain.User, e
 	return user, nil
 }
 
-func (m Manager) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
+func (m Manager) CreateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
 	existingUser, err := m.users.GetUser(ctx, user.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return nil, fmt.Errorf("unable to load existing user %s: %w", user.Identifier, err)
@@ -299,7 +299,7 @@ func (m Manager) updateLdapUsers(ctx context.Context, providerName string, rawUs
 		}
 
 		if existingUser == nil {
-			err := m.New(ctx, user)
+			err := m.NewUser(ctx, user)
 			if err != nil {
 				return fmt.Errorf("create error for user id %s: %w", user.Identifier, err)
 			}

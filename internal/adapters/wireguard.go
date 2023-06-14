@@ -228,15 +228,35 @@ func (r *wgRepo) updateLowLevelInterface(pi *domain.PhysicalInterface) error {
 		}
 	}
 
-	for i, addr := range pi.Addresses {
-		var err error
-		if i == 0 {
-			err = r.nl.AddrReplace(link, addr.NetlinkAddr())
-		} else {
-			err = r.nl.AddrAdd(link, addr.NetlinkAddr())
-		}
+	for _, addr := range pi.Addresses {
+		err := r.nl.AddrReplace(link, addr.NetlinkAddr())
 		if err != nil {
 			return fmt.Errorf("failed to set ip %s: %w", addr.String(), err)
+		}
+	}
+
+	// Remove unwanted IP addresses
+	rawAddresses, err := r.nl.AddrList(link)
+	if err != nil {
+		return fmt.Errorf("failed to fetch interface ips: %w", err)
+	}
+	for _, rawAddr := range rawAddresses {
+		netlinkAddr := domain.CidrFromNetlinkAddr(rawAddr)
+		remove := true
+		for _, addr := range pi.Addresses {
+			if addr == netlinkAddr {
+				remove = false
+				break
+			}
+		}
+
+		if !remove {
+			continue
+		}
+
+		err := r.nl.AddrDel(link, &rawAddr)
+		if err != nil {
+			return fmt.Errorf("failed to remove deprecated ip %s: %w", netlinkAddr.String(), err)
 		}
 	}
 

@@ -1,13 +1,11 @@
 package handlers
 
 import (
-	model2 "github.com/h44z/wg-portal/internal/app/api/v0/model"
-	"net/http"
-
-	"github.com/h44z/wg-portal/internal/domain"
-
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/h44z/wg-portal/internal/domain"
+	"net/http"
 )
 
 type interfaceEndpoint struct {
@@ -27,6 +25,7 @@ func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *aut
 	apiGroup.GET("/get/:id", e.handleSingleGet())
 	apiGroup.PUT("/:id", e.handleUpdatePut())
 	apiGroup.POST("/new", e.handleCreatePost())
+	apiGroup.GET("/config/:id", e.handleConfigGet())
 
 	apiGroup.GET("/peers/:id", e.handlePeersGet())
 }
@@ -42,15 +41,15 @@ func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *aut
 // @Router /interface/prepare [get]
 func (e interfaceEndpoint) handlePrepareGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		in, err := e.app.WireGuard.PrepareInterface(c.Request.Context())
+		in, err := e.app.PrepareInterface(c.Request.Context())
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model2.Error{
+			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model2.NewInterface(in))
+		c.JSON(http.StatusOK, model.NewInterface(in))
 	}
 }
 
@@ -65,15 +64,15 @@ func (e interfaceEndpoint) handlePrepareGet() gin.HandlerFunc {
 // @Router /interface/all [get]
 func (e interfaceEndpoint) handleAllGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		interfaces, err := e.app.WireGuard.GetAllInterfaces(c.Request.Context())
+		interfaces, err := e.app.GetAllInterfaces(c.Request.Context())
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model2.Error{
+			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model2.NewInterfaces(interfaces))
+		c.JSON(http.StatusOK, model.NewInterfaces(interfaces))
 	}
 }
 
@@ -91,21 +90,55 @@ func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model2.Error{
+			c.JSON(http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
 			})
 			return
 		}
 
-		iface, _, err := e.app.WireGuard.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(id))
+		iface, _, err := e.app.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model2.Error{
+			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model2.NewInterface(iface))
+		c.JSON(http.StatusOK, model.NewInterface(iface))
+	}
+}
+
+// handleConfigGet returns a gorm handler function.
+//
+// @ID interfaces_handleConfigGet
+// @Tags Interface
+// @Summary Get interface configuration as string.
+// @Produce json
+// @Success 200 {object} string
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /interface/config/{id} [get]
+func (e interfaceEndpoint) handleConfigGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+		if id == "" {
+			c.JSON(http.StatusBadRequest, model.Error{
+				Code: http.StatusInternalServerError, Message: "missing id parameter",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, `[Interface]
+Address = 10.0.0.1/32, fd12:3456:789a::1/128
+ListenPort = 51820
+PrivateKey = <Private Key>
+SaveConfig = true
+
+[Peer]
+PublicKey = <Client public key>
+PresharedKey = <Pre-Shared Key>
+AllowedIPs = 10.0.0.2/32,fd12:3456:789a::2/128
+PersistentKeepalive = 25`)
 	}
 }
 
@@ -127,31 +160,31 @@ func (e interfaceEndpoint) handleUpdatePut() gin.HandlerFunc {
 
 		id := c.Param("id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model2.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
-		var in model2.Interface
+		var in model.Interface
 		err := c.BindJSON(&in)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, model2.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
 		if id != in.Identifier {
-			c.JSON(http.StatusBadRequest, model2.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
 			return
 		}
 
-		updatedInterface, err := e.app.WireGuard.UpdateInterface(ctx, model2.NewDomainInterface(&in))
+		updatedInterface, err := e.app.UpdateInterface(ctx, model.NewDomainInterface(&in))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model2.Error{
+			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model2.NewInterface(updatedInterface))
+		c.JSON(http.StatusOK, model.NewInterface(updatedInterface))
 	}
 }
 
@@ -170,22 +203,22 @@ func (e interfaceEndpoint) handleCreatePost() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		var in model2.Interface
+		var in model.Interface
 		err := c.BindJSON(&in)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, model2.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		newInterface, err := e.app.WireGuard.CreateInterface(ctx, model2.NewDomainInterface(&in))
+		newInterface, err := e.app.CreateInterface(ctx, model.NewDomainInterface(&in))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model2.Error{
+			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model2.NewInterface(newInterface))
+		c.JSON(http.StatusOK, model.NewInterface(newInterface))
 	}
 }
 
@@ -202,20 +235,20 @@ func (e interfaceEndpoint) handlePeersGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model2.Error{
+			c.JSON(http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
 			})
 			return
 		}
 
-		_, peers, err := e.app.WireGuard.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(id))
+		_, peers, err := e.app.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model2.Error{
+			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model2.NewPeers(peers))
+		c.JSON(http.StatusOK, model.NewPeers(peers))
 	}
 }

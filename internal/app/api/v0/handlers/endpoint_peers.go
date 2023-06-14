@@ -1,13 +1,11 @@
 package handlers
 
 import (
-	model2 "github.com/h44z/wg-portal/internal/app/api/v0/model"
-	"net/http"
-
-	"github.com/h44z/wg-portal/internal/domain"
-
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/h44z/wg-portal/internal/domain"
+	"net/http"
 )
 
 type peerEndpoint struct {
@@ -38,16 +36,16 @@ func (e peerEndpoint) handlePeersGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		interfaceId := c.Param("id")
 		if interfaceId == "" {
-			c.JSON(http.StatusBadRequest, model2.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
 			return
 		}
 
-		_, peers, err := e.app.WireGuard.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(interfaceId))
+		_, peers, err := e.app.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model2.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model2.NewPeers(peers))
+		c.JSON(http.StatusOK, model.NewPeers(peers))
 	}
 }

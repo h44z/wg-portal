@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"html/template"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app"
+	"html/template"
+	"net/http"
 )
 
 //go:embed frontend_config.js.gotpl

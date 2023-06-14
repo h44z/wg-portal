@@ -14,13 +14,13 @@ type Authenticator interface {
 }
 
 type UserManager interface {
-	Register(ctx context.Context, user *domain.User) error
-	New(ctx context.Context, user *domain.User) error
+	RegisterUser(ctx context.Context, user *domain.User) error
+	NewUser(ctx context.Context, user *domain.User) error
 	StartBackgroundJobs(ctx context.Context)
-	Get(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
-	GetAll(ctx context.Context) ([]domain.User, error)
-	Update(ctx context.Context, user *domain.User) (*domain.User, error)
-	Create(ctx context.Context, user *domain.User) (*domain.User, error)
+	GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
+	GetAllUsers(ctx context.Context) ([]domain.User, error)
+	UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error)
+	CreateUser(ctx context.Context, user *domain.User) (*domain.User, error)
 }
 
 type WireGuardManager interface {

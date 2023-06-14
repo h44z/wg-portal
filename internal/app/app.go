@@ -15,10 +15,10 @@ type App struct {
 	Config *config.Config
 	bus    evbus.MessageBus
 
-	Authenticator       Authenticator
-	Users               UserManager
-	WireGuard           WireGuardManager
-	StatisticsCollector StatisticsCollector
+	Authenticator
+	UserManager
+	WireGuardManager
+	StatisticsCollector
 }
 
 func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, users UserManager, wireGuard WireGuardManager, stats StatisticsCollector) (*App, error) {
@@ -28,8 +28,8 @@ func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, 
 		bus:    bus,
 
 		Authenticator:       authenticator,
-		Users:               users,
-		WireGuard:           wireGuard,
+		UserManager:         users,
+		WireGuardManager:    wireGuard,
 		StatisticsCollector: stats,
 	}
 
@@ -52,7 +52,7 @@ func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, 
 }
 
 func (a *App) Startup(ctx context.Context) error {
-	a.Users.StartBackgroundJobs(ctx)
+	a.UserManager.StartBackgroundJobs(ctx)
 	a.StatisticsCollector.StartBackgroundJobs(ctx)
 
 	return nil
@@ -64,7 +64,7 @@ func (a *App) importNewInterfaces(ctx context.Context) error {
 		return nil // feature disabled
 	}
 
-	err := a.WireGuard.ImportNewInterfaces(ctx)
+	err := a.ImportNewInterfaces(ctx)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (a *App) restoreInterfaceState(ctx context.Context) error {
 		return nil // feature disabled
 	}
 
-	err := a.WireGuard.RestoreInterfaceState(ctx, true)
+	err := a.RestoreInterfaceState(ctx, true)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 		return nil // empty admin user - do not create
 	}
 
-	_, err := a.Users.Get(ctx, adminUserId)
+	_, err := a.GetUser(ctx, adminUserId)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return err
 	}
@@ -105,7 +105,7 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 	}
 
 	now := time.Now()
-	admin, err := a.Users.Create(ctx, &domain.User{
+	admin, err := a.CreateUser(ctx, &domain.User{
 		BaseModel: domain.BaseModel{
 			CreatedBy: "system",
 			UpdatedBy: "system",

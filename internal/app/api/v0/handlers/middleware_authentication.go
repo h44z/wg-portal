@@ -1,13 +1,11 @@
 package handlers
 
 import (
-	"github.com/h44z/wg-portal/internal/app/api/v0/model"
-	"net/http"
-
-	"github.com/h44z/wg-portal/internal/domain"
-
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/h44z/wg-portal/internal/domain"
+	"net/http"
 )
 
 type Scope string

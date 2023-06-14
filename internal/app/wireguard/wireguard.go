@@ -311,6 +311,10 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 	if m.cfg.Advanced.UseIpV6 {
 		ips = append(ips, ipv6)
 	}
+	networks := []domain.Cidr{ipv4.NetworkAddr()}
+	if m.cfg.Advanced.UseIpV6 {
+		networks = append(networks, ipv6.NetworkAddr())
+	}
 
 	freshInterface := &domain.Interface{
 		BaseModel: domain.BaseModel{
@@ -332,17 +336,17 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 		PostUp:                     "",
 		PreDown:                    "",
 		PostDown:                   "",
-		SaveConfig:                 false,
+		SaveConfig:                 m.cfg.Advanced.ConfigStoragePath != "",
 		DisplayName:                string(id),
 		Type:                       domain.InterfaceTypeServer,
 		DriverType:                 "",
 		Disabled:                   nil,
 		DisabledReason:             "",
-		PeerDefNetworkStr:          "", // TODO
-		PeerDefDnsStr:              "", // TODO
+		PeerDefNetworkStr:          domain.CidrsToString(networks),
+		PeerDefDnsStr:              "",
 		PeerDefDnsSearchStr:        "",
 		PeerDefEndpoint:            "",
-		PeerDefAllowedIPsStr:       "",
+		PeerDefAllowedIPsStr:       domain.CidrsToString(networks),
 		PeerDefMtu:                 1420,
 		PeerDefPersistentKeepalive: 16,
 		PeerDefFirewallMark:        0,
@@ -358,7 +362,7 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 
 func (m Manager) getNewInterfaceName(ctx context.Context) (domain.InterfaceIdentifier, error) {
 	namePrefix := "wg"
-	nameSuffix := 1
+	nameSuffix := 0
 
 	existingInterfaces, err := m.db.GetAllInterfaces(ctx)
 	if err != nil {

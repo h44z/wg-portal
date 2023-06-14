@@ -16,12 +16,14 @@ import "bootstrap";
 import "./assets/base.css";
 
 // Fontawesome
-import "@fortawesome/fontawesome-free/js/all.js";
+import "@fortawesome/fontawesome-free/js/all.js"
 
 // Flags
 import "flag-icons/css/flag-icons.min.css"
 
-
+// Syntax Highlighting
+import 'prismjs'
+import 'prismjs/themes/prism-okaidia.css'
 
 const app = createApp(App);
 

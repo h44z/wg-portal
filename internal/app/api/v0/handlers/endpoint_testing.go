@@ -1,12 +1,11 @@
 package handlers
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type testEndpoint struct{}

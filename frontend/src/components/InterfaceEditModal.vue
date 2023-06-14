@@ -51,7 +51,7 @@ function freshFormData() {
     ListenPort:  51820,
     Addresses: [],
     DnsStr: [],
-    DnsSearchStr: "",
+    DnsSearch: [],
 
     Mtu: 0,
     FirewallMark: 0,
@@ -66,11 +66,11 @@ function freshFormData() {
 
     // Peer defaults
 
-    PeerDefNetworkStr: "",
-    PeerDefDnsStr: "",
-    PeerDefDnsSearchStr: "",
+    PeerDefNetwork: [],
+    PeerDefDns: [],
+    PeerDefDnsSearch: [],
     PeerDefEndpoint: "",
-    PeerDefAllowedIPsStr: "",
+    PeerDefAllowedIPs: [],
     PeerDefMtu: 0,
     PeerDefPersistentKeepalive: 0,
     PeerDefFirewallMark: 0,
@@ -98,8 +98,8 @@ watch(() => props.visible, async (newValue, oldValue) => {
 
           formData.value.ListenPort = interfaces.Prepared.ListenPort
           formData.value.Addresses = interfaces.Prepared.Addresses
-          formData.value.DnsStr = interfaces.Prepared.DnsStr
-          formData.value.DnsSearchStr = interfaces.Prepared.DnsSearchStr
+          formData.value.Dns = interfaces.Prepared.Dns
+          formData.value.DnsSearch = interfaces.Prepared.DnsSearch
 
           formData.value.Mtu = interfaces.Prepared.Mtu
           formData.value.FirewallMark = interfaces.Prepared.FirewallMark
@@ -112,12 +112,12 @@ watch(() => props.visible, async (newValue, oldValue) => {
 
           formData.value.SaveConfig = interfaces.Prepared.SaveConfig
 
-          formData.value.PeerDefNetworkStr = interfaces.Prepared.PeerDefNetworkStr
-          formData.value.PeerDefDnsStr = interfaces.Prepared.PeerDefDnsStr
-          formData.value.PeerDefDnsSearchStr = interfaces.Prepared.PeerDefDnsSearchStr
+          formData.value.PeerDefNetwork = interfaces.Prepared.PeerDefNetwork
+          formData.value.PeerDefDns = interfaces.Prepared.PeerDefDns
+          formData.value.PeerDefDnsSearch = interfaces.Prepared.PeerDefDnsSearch
           formData.value.PeerDefEndpoint = interfaces.Prepared.PeerDefEndpoint
-          formData.value.PeerDefAllowedIPsStr = interfaces.Prepared.PeerDefAllowedIPsStr
-          formData.value.PeerDefMtu = selectedInterface.value.PeerDefMtu
+          formData.value.PeerDefAllowedIPs = interfaces.Prepared.PeerDefAllowedIPs
+          formData.value.PeerDefMtu = interfaces.Prepared.PeerDefMtu
           formData.value.PeerDefPersistentKeepalive = interfaces.Prepared.PeerDefPersistentKeepalive
           formData.value.PeerDefFirewallMark = interfaces.Prepared.PeerDefFirewallMark
           formData.value.PeerDefRoutingTable = interfaces.Prepared.PeerDefRoutingTable
@@ -136,8 +136,8 @@ watch(() => props.visible, async (newValue, oldValue) => {
 
           formData.value.ListenPort = selectedInterface.value.ListenPort
           formData.value.Addresses = selectedInterface.value.Addresses
-          formData.value.DnsStr = selectedInterface.value.DnsStr
-          formData.value.DnsSearchStr = selectedInterface.value.DnsSearchStr
+          formData.value.Dns = selectedInterface.value.Dns
+          formData.value.DnsSearch = selectedInterface.value.DnsSearch
 
           formData.value.Mtu = selectedInterface.value.Mtu
           formData.value.FirewallMark = selectedInterface.value.FirewallMark
@@ -150,11 +150,11 @@ watch(() => props.visible, async (newValue, oldValue) => {
 
           formData.value.SaveConfig = selectedInterface.value.SaveConfig
 
-          formData.value.PeerDefNetworkStr = selectedInterface.value.PeerDefNetworkStr
-          formData.value.PeerDefDnsStr = selectedInterface.value.PeerDefDnsStr
-          formData.value.PeerDefDnsSearchStr = selectedInterface.value.PeerDefDnsSearchStr
+          formData.value.PeerDefNetwork = selectedInterface.value.PeerDefNetwork
+          formData.value.PeerDefDns = selectedInterface.value.PeerDefDns
+          formData.value.PeerDefDnsSearch = selectedInterface.value.PeerDefDnsSearch
           formData.value.PeerDefEndpoint = selectedInterface.value.PeerDefEndpoint
-          formData.value.PeerDefAllowedIPsStr = selectedInterface.value.PeerDefAllowedIPsStr
+          formData.value.PeerDefAllowedIPs = selectedInterface.value.PeerDefAllowedIPs
           formData.value.PeerDefMtu = selectedInterface.value.PeerDefMtu
           formData.value.PeerDefPersistentKeepalive = selectedInterface.value.PeerDefPersistentKeepalive
           formData.value.PeerDefFirewallMark = selectedInterface.value.PeerDefFirewallMark
@@ -204,8 +204,67 @@ function handleChangeDns(tags) {
     }
   })
   if(validInput) {
-    formData.value.DnsStr = tags
+    formData.value.Dns = tags
   }
+}
+
+function handleChangeDnsSearch(tags) {
+  formData.value.DnsSearch = tags
+}
+
+function handleChangePeerDefNetwork(tags) {
+  let validInput = true
+  tags.forEach(tag => {
+    if(isCidr(tag) === 0) {
+      validInput = false
+      notify({
+        title: "Invalid CIDR",
+        text: tag + " is not a valid IP address",
+        type: 'error',
+      })
+    }
+  })
+  if(validInput) {
+    formData.value.PeerDefNetwork = tags
+  }
+}
+
+function handleChangePeerDefAllowedIPs(tags) {
+  let validInput = true
+  tags.forEach(tag => {
+    if(isCidr(tag) === 0) {
+      validInput = false
+      notify({
+        title: "Invalid CIDR",
+        text: tag + " is not a valid IP address",
+        type: 'error',
+      })
+    }
+  })
+  if(validInput) {
+    formData.value.PeerDefAllowedIPs = tags
+  }
+}
+
+function handleChangePeerDefDns(tags) {
+  let validInput = true
+  tags.forEach(tag => {
+    if(!isIP(tag)) {
+      validInput = false
+      notify({
+        title: "Invalid IP",
+        text: tag + " is not a valid IP address",
+        type: 'error',
+      })
+    }
+  })
+  if(validInput) {
+    formData.value.PeerDefDns = tags
+  }
+}
+
+function handleChangePeerDefDnsSearch(tags) {
+  formData.value.DnsSearch = tags
 }
 
 function validateCIDR(value) {
@@ -214,6 +273,11 @@ function validateCIDR(value) {
 
 function validateIP(value) {
   return isIP(value)
+}
+
+function validateDomain(value) {
+  console.log("validating: ", value)
+  return true
 }
 
 async function save() {
@@ -297,7 +361,7 @@ async function del() {
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.ips') }}</label>
               <vue3-tags-input class="form-control" :tags="formData.Addresses"
                                placeholder="IP Addresses (CIDR format)"
-                               add-tag-on-keys="[13, 188, 32, 9]"
+                               :add-tag-on-keys="[13, 188, 32, 9]"
                                :validate="validateCIDR"
                                @on-tags-changed="handleChangeAddresses"/>
             </div>
@@ -307,15 +371,19 @@ async function del() {
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.dns') }}</label>
-              <vue3-tags-input class="form-control" :tags="formData.DnsStr"
+              <vue3-tags-input class="form-control" :tags="formData.Dns"
                                placeholder="DNS Servers"
-                               add-tag-on-keys="[13, 188, 32, 9]"
+                               :add-tag-on-keys="[13, 188, 32, 9]"
                                :validate="validateIP"
                                @on-tags-changed="handleChangeDns"/>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.dnssearch') }}</label>
-              <input v-model="formData.DnsSearchStr" class="form-control" placeholder="DNS Search prefix" type="text">
+              <vue3-tags-input class="form-control" :tags="formData.DnsSearch"
+                               placeholder="DNS Search prefixes"
+                               :add-tag-on-keys="[13, 188, 32, 9]"
+                               :validate="validateDomain"
+                               @on-tags-changed="handleChangeDnsSearch"/>
             </div>
             <div class="row">
               <div class="form-group col-md-6">
@@ -377,20 +445,36 @@ async function del() {
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.defaults.networks') }}</label>
-              <input v-model="formData.PeerDefNetworkStr" class="form-control" placeholder="Network Addresses" type="text">
+              <vue3-tags-input class="form-control" :tags="formData.PeerDefNetwork"
+                               placeholder="Network Addresses"
+                               :add-tag-on-keys="[13, 188, 32, 9]"
+                               :validate="validateCIDR"
+                               @on-tags-changed="handleChangePeerDefNetwork"/>
               <small class="form-text text-muted">Peers will get IP addresses from those subnets.</small>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.defaults.allowedips') }}</label>
-              <input v-model="formData.PeerDefAllowedIPsStr" class="form-control" placeholder="Listen Port" type="text">
+              <vue3-tags-input class="form-control" :tags="formData.PeerDefAllowedIPs"
+                               placeholder="Default Allowed IP Addresses"
+                               :add-tag-on-keys="[13, 188, 32, 9]"
+                               :validate="validateCIDR"
+                               @on-tags-changed="handleChangePeerDefAllowedIPs"/>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.defaults.dns') }}</label>
-              <input v-model="formData.PeerDefDnsStr" class="form-control" placeholder="DNS Servers" type="text">
+              <vue3-tags-input class="form-control" :tags="formData.PeerDefDns"
+                               placeholder="DNS Servers"
+                               :add-tag-on-keys="[13, 188, 32, 9]"
+                               :validate="validateIP"
+                               @on-tags-changed="handleChangePeerDefDns"/>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.defaults.dnssearch') }}</label>
-              <input v-model="formData.PeerDefDnsSearchStr" class="form-control" placeholder="DNS Search prefix" type="text">
+              <vue3-tags-input class="form-control" :tags="formData.PeerDefDnsSearch"
+                               placeholder="DNS Search prefix"
+                               :add-tag-on-keys="[13, 188, 32, 9]"
+                               :validate="validateDomain"
+                               @on-tags-changed="handleChangePeerDefDnsSearch"/>
             </div>
             <div class="row">
               <div class="form-group col-md-6">

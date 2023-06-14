@@ -104,10 +104,13 @@ func SliceContains[T comparable](slice []T, needle T) bool {
 
 func SliceString(str string) []string {
 	strParts := strings.Split(str, ",")
-	stringSlice := make([]string, len(strParts))
+	stringSlice := make([]string, 0, len(strParts))
 
-	for i, s := range strParts {
-		stringSlice[i] = strings.TrimSpace(s)
+	for _, s := range strParts {
+		trimmed := strings.TrimSpace(s)
+		if trimmed != "" {
+			stringSlice = append(stringSlice, trimmed)
+		}
 	}
 
 	return stringSlice
