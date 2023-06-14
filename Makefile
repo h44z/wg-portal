@@ -123,8 +123,8 @@ build-dependencies:
 	@mkdir -p $(BUILDDIR)
 	cp scripts/wg-portal.service $(BUILDDIR)
 	cp scripts/wg-portal.env $(BUILDDIR)
-	cd internal/ports/api/core/frontend; $(NPMCMD) install
+	cd frontend; $(NPMCMD) install
 
 #< frontend: Build Vue.js frontend
 frontend:
-	cd internal/ports/api/core/frontend; $(NPMCMD) run build
+	cd frontend; $(NPMCMD) run build
