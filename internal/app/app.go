@@ -38,6 +38,9 @@ func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, 
 	startupContext, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// The first user in the DB is admin.
+	startupContext = context.WithValue(startupContext, domain.CtxUserInfo, domain.GetAdminInfo())
+
 	if err := a.createDefaultUser(startupContext); err != nil {
 		return nil, fmt.Errorf("failed to create default user: %w", err)
 	}
