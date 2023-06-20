@@ -1,4 +1,4 @@
-package app
+package filetemplate
 
 import (
 	"bytes"
@@ -14,30 +14,34 @@ import (
 //go:embed tpl_files/*
 var TemplateFiles embed.FS
 
-type templateHandler struct {
+type TemplateHandler struct {
 	wireGuardTemplates *template.Template
 
 	mailHtmlTemplates *htmlTemplate.Template
 	mailTextTemplates *template.Template
 }
 
-func newTemplateHandler() (*templateHandler, error) {
-	templateCache, err := template.New("WireGuard").ParseFS(TemplateFiles, "tpl_files/*.tpl")
+func newTemplateHandler() (*TemplateHandler, error) {
+	tplFuncs := template.FuncMap{
+		"CidrsToString": domain.CidrsToString,
+	}
+
+	templateCache, err := template.New("WireGuard").Funcs(tplFuncs).ParseFS(TemplateFiles, "tpl_files/*.tpl")
 	if err != nil {
 		return nil, err
 	}
 
-	mailHtmlTemplateCache, err := htmlTemplate.New("WireGuard").ParseFS(TemplateFiles, "tpl_files/*.gohtml")
+	mailHtmlTemplateCache, err := htmlTemplate.New("WireGuard").Funcs(tplFuncs).ParseFS(TemplateFiles, "tpl_files/*.gohtml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse html template files: %w", err)
 	}
 
-	mailTxtTemplateCache, err := template.New("WireGuard").ParseFS(TemplateFiles, "tpl_files/*.gotpl")
+	mailTxtTemplateCache, err := template.New("WireGuard").Funcs(tplFuncs).ParseFS(TemplateFiles, "tpl_files/*.gotpl")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse text template files: %w", err)
 	}
 
-	handler := &templateHandler{
+	handler := &TemplateHandler{
 		wireGuardTemplates: templateCache,
 		mailHtmlTemplates:  mailHtmlTemplateCache,
 		mailTextTemplates:  mailTxtTemplateCache,
@@ -46,7 +50,7 @@ func newTemplateHandler() (*templateHandler, error) {
 	return handler, nil
 }
 
-func (c templateHandler) GetInterfaceConfig(cfg *domain.Interface, peers []*domain.Peer) (io.Reader, error) {
+func (c TemplateHandler) GetInterfaceConfig(cfg *domain.Interface, peers []domain.Peer) (io.Reader, error) {
 	var tplBuff bytes.Buffer
 
 	err := c.wireGuardTemplates.ExecuteTemplate(&tplBuff, "wg_interface.tpl", map[string]interface{}{
@@ -63,7 +67,7 @@ func (c templateHandler) GetInterfaceConfig(cfg *domain.Interface, peers []*doma
 	return &tplBuff, nil
 }
 
-func (c templateHandler) GetPeerConfig(peer *domain.Peer) (io.Reader, error) {
+func (c TemplateHandler) GetPeerConfig(peer *domain.Peer) (io.Reader, error) {
 	var tplBuff bytes.Buffer
 
 	err := c.wireGuardTemplates.ExecuteTemplate(&tplBuff, "wg_peer.tpl", map[string]interface{}{
@@ -79,7 +83,7 @@ func (c templateHandler) GetPeerConfig(peer *domain.Peer) (io.Reader, error) {
 	return &tplBuff, nil
 }
 
-func (c templateHandler) GetConfigMail(user *domain.User, peer *domain.Peer, link string) (io.Reader, io.Reader, error) {
+func (c TemplateHandler) GetConfigMail(user *domain.User, peer *domain.Peer, link string) (io.Reader, io.Reader, error) {
 	var tplBuff bytes.Buffer
 	var htmlTplBuff bytes.Buffer
 
@@ -104,7 +108,7 @@ func (c templateHandler) GetConfigMail(user *domain.User, peer *domain.Peer, lin
 	return &tplBuff, &htmlTplBuff, nil
 }
 
-func (c templateHandler) GetConfigMailWithAttachment(user *domain.User, peer *domain.Peer) (io.Reader, io.Reader, error) {
+func (c TemplateHandler) GetConfigMailWithAttachment(user *domain.User, peer *domain.Peer) (io.Reader, io.Reader, error) {
 	var tplBuff bytes.Buffer
 	var htmlTplBuff bytes.Buffer
 

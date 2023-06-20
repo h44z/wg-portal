@@ -5,6 +5,7 @@ import (
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/domain"
+	"io"
 	"net/http"
 )
 
@@ -129,17 +130,23 @@ func (e interfaceEndpoint) handleConfigGet() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, `[Interface]
-Address = 10.0.0.1/32, fd12:3456:789a::1/128
-ListenPort = 51820
-PrivateKey = <Private Key>
-SaveConfig = true
+		config, err := e.app.GetInterfaceConfig(c.Request.Context(), domain.InterfaceIdentifier(id))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
 
-[Peer]
-PublicKey = <Client public key>
-PresharedKey = <Pre-Shared Key>
-AllowedIPs = 10.0.0.2/32,fd12:3456:789a::2/128
-PersistentKeepalive = 25`)
+		configString, err := io.ReadAll(config)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, string(configString))
 	}
 }
 

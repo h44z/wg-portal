@@ -19,9 +19,10 @@ type App struct {
 	UserManager
 	WireGuardManager
 	StatisticsCollector
+	TemplateManager
 }
 
-func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, users UserManager, wireGuard WireGuardManager, stats StatisticsCollector) (*App, error) {
+func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, users UserManager, wireGuard WireGuardManager, stats StatisticsCollector, templates TemplateManager) (*App, error) {
 
 	a := &App{
 		Config: cfg,
@@ -31,6 +32,7 @@ func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, 
 		UserManager:         users,
 		WireGuardManager:    wireGuard,
 		StatisticsCollector: stats,
+		TemplateManager:     templates,
 	}
 
 	startupContext, cancel := context.WithTimeout(context.Background(), 30*time.Second)

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"github.com/h44z/wg-portal/internal/domain"
+	"io"
 )
 
 type Authenticator interface {
@@ -40,4 +41,9 @@ type WireGuardManager interface {
 
 type StatisticsCollector interface {
 	StartBackgroundJobs(ctx context.Context)
+}
+
+type TemplateManager interface {
+	GetInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) (io.Reader, error)
+	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
 }

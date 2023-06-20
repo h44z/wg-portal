@@ -201,7 +201,7 @@ func (r *SqlRepo) migrate() error {
 func (r *SqlRepo) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error) {
 	var in domain.Interface
 
-	err := r.db.WithContext(ctx).First(&in, id).Error
+	err := r.db.WithContext(ctx).Preload("Addresses").First(&in, id).Error
 
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, domain.ErrNotFound
@@ -355,6 +355,17 @@ func (r *SqlRepo) GetInterfaceIps(ctx context.Context) (map[domain.InterfaceIden
 // endregion interfaces
 
 // region peers
+
+func (r *SqlRepo) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error) {
+	var peer domain.Peer
+
+	err := r.db.WithContext(ctx).Where("identifier = ?", id).Find(&peer).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &peer, nil
+}
 
 func (r *SqlRepo) GetInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.Peer, error) {
 	var peers []domain.Peer

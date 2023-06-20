@@ -5,6 +5,7 @@ import (
 	"github.com/h44z/wg-portal/internal/app/api/core"
 	handlersV0 "github.com/h44z/wg-portal/internal/app/api/v0/handlers"
 	"github.com/h44z/wg-portal/internal/app/auth"
+	"github.com/h44z/wg-portal/internal/app/filetemplate"
 	"github.com/h44z/wg-portal/internal/app/users"
 	"github.com/h44z/wg-portal/internal/app/wireguard"
 	"os"
@@ -63,7 +64,12 @@ func main() {
 	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, database, wireGuard)
 	internal.AssertNoError(err)
 
-	backend, err := app.New(cfg, eventBus, authenticator, userManager, wireGuardManager, statisticsCollector)
+	templateManager, err := filetemplate.NewTemplateManager(cfg, database, database)
+	internal.AssertNoError(err)
+
+	backend, err := app.New(cfg, eventBus, authenticator, userManager, wireGuardManager,
+		statisticsCollector, templateManager)
+
 	internal.AssertNoError(err)
 	err = backend.Startup(ctx)
 	internal.AssertNoError(err)

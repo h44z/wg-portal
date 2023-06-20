@@ -12,7 +12,7 @@
 
 # Core settings
 PrivateKey = {{ .Interface.KeyPair.PrivateKey }}
-Address = {{ .Interface.AddressStr }}
+Address = {{ CidrsToString .Interface.Addresses }}
 
 # Misc. settings (optional)
 {{- if ne .Interface.ListenPort 0}}
