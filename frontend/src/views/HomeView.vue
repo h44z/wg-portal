@@ -1,5 +1,6 @@
 <script setup>
   import {authStore} from "../stores/auth";
+  import {RouterLink} from "vue-router";
 
   const auth = authStore()
 </script>
@@ -18,7 +19,7 @@
     <hr class="my-4">
     <p>{{ $t('home.profiles.instruct') }}</p>
     <p class="lead">
-      <a href="/user/profile" class="btn btn-primary btn-lg" title="User-Profile">{{ $t('home.profiles.btn') }}</a>
+      <RouterLink :to="{ name: 'profile' }" class="btn btn-primary btn-lg">{{ $t('home.profiles.btn') }}</RouterLink>
     </p>
   </div>
 
@@ -28,8 +29,8 @@
     <hr class="my-4">
     <p>{{ $t('home.admin.instruct') }}</p>
     <p class="lead">
-      <a href="/admin/" class="btn btn-primary btn-lg me-2" title="WireGuard Administration">{{ $t('home.admin.btn-1') }}</a>
-      <a href="/admin/users/" class="btn btn-primary btn-lg" title="User Administration">{{ $t('home.admin.btn-2') }}</a>
+      <RouterLink :to="{ name: 'interfaces' }" class="btn btn-primary btn-lg me-2">{{ $t('home.admin.btn-1') }}</RouterLink>
+      <RouterLink :to="{ name: 'users' }" class="btn btn-primary btn-lg">{{ $t('home.admin.btn-2') }}</RouterLink>
     </p>
   </div>
 
