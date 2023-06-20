@@ -51,3 +51,9 @@ func GetUserInfo(ctx context.Context) *ContextUserInfo {
 
 	return DefaultContextUserInfo()
 }
+
+func GetAdminInfo() *ContextUserInfo {
+	userInfo := DefaultContextUserInfo()
+	userInfo.IsAdmin = true
+	return userInfo
+}
