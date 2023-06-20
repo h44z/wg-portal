@@ -1,0 +1,10 @@
+advanced:
+  log_level: trace
+
+core:
+  admin_user: test@test.de
+  admin_password: secret
+
+web:
+  external_url: http://localhost:8888
+  request_logging: true
