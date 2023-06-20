@@ -21,6 +21,7 @@ type UserManager interface {
 	GetAllUsers(ctx context.Context) ([]domain.User, error)
 	UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error)
 	CreateUser(ctx context.Context, user *domain.User) (*domain.User, error)
+	DeleteUser(ctx context.Context, id domain.UserIdentifier) error
 }
 
 type WireGuardManager interface {
@@ -34,6 +35,7 @@ type WireGuardManager interface {
 	PrepareInterface(ctx context.Context) (*domain.Interface, error)
 	CreateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error)
 	UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error)
+	DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error
 }
 
 type StatisticsCollector interface {

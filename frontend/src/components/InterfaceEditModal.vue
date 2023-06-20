@@ -441,7 +441,7 @@ async function del() {
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.defaults.endpoint') }}</label>
               <input v-model="formData.PeerDefEndpoint" class="form-control" placeholder="Endpoint Addresses" type="text">
-              <small class="form-text text-muted">Peers will get IP addresses from those subnets.</small>
+              <small class="form-text text-muted">The endpoint address that peers will connect to.</small>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.defaults.networks') }}</label>

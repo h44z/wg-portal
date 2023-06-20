@@ -54,13 +54,6 @@ const title = computed(() => {
 
 const formData = ref(freshFormData())
 
-const notificationData = ref({
-  title: "",
-  content: "",
-  cause: "",
-  type: "normal",
-})
-
 
 function freshFormData() {
   return {
@@ -141,29 +134,24 @@ function freshFormData() {
 
 watch(() => props.visible, async (newValue, oldValue) => {
       if (oldValue === false && newValue === true) { // if modal is shown
+        console.log(selectedInterface.value)
+        console.log(selectedPeer.value)
         if (!selectedPeer.value) {
-          await loadNewPeerData()
+          await peers.PreparePeer(selectedInterface.value.Identifier)
+
+          formData.value.Disabled = peers.Prepared.Disabled
+          formData.value.Identifier = peers.Prepared.Identifier
+          formData.value.DisplayName = peers.Prepared.DisplayName
+
+        } else { // fill existing data
+          formData.value.Disabled = selectedPeer.value.Disabled
+          formData.value.Identifier = selectedPeer.value.Identifier
+          formData.value.DisplayName = selectedPeer.value.DisplayName
+
         }
       }
     }
 )
-
-async function loadNewPeerData() {
-  console.log("loading new peer data...")
-  notify({
-    title: "Authorization",
-    text: "You have been logged in!",
-  })
-  notify({
-    title: "Authorization2",
-    text: "You have been logged in!",
-  })
-  notify({
-    title: "Authorization3",
-    text: "You have been logged in!",
-  })
-
-}
 
 function close() {
   formData.value = freshFormData()

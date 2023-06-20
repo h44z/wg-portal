@@ -90,8 +90,8 @@ async function save() {
     close()
   } catch (e) {
     notify({
-      title: "Backend Connection Failure",
-      text: "Failed to save user!",
+      title: "Failed to save user!",
+      text: e.toString(),
       type: 'error',
     })
   }
@@ -103,8 +103,8 @@ async function del() {
     close()
   } catch (e) {
     notify({
-      title: "Backend Connection Failure",
-      text: "Failed to delete user!",
+      title: "Failed to delete user!",
+      text: e.toString(),
       type: 'error',
     })
   }

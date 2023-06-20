@@ -24,6 +24,7 @@ func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *aut
 	apiGroup.GET("/all", e.handleAllGet())
 	apiGroup.GET("/get/:id", e.handleSingleGet())
 	apiGroup.PUT("/:id", e.handleUpdatePut())
+	apiGroup.DELETE("/:id", e.handleDelete())
 	apiGroup.POST("/new", e.handleCreatePost())
 	apiGroup.GET("/config/:id", e.handleConfigGet())
 
@@ -250,5 +251,38 @@ func (e interfaceEndpoint) handlePeersGet() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, model.NewPeers(peers))
+	}
+}
+
+// handleDelete returns a gorm handler function.
+//
+// @ID interfaces_handleDelete
+// @Tags Interface
+// @Summary Delete the interface record.
+// @Produce json
+// @Param id path string true "The interface identifier"
+// @Success 204 "No content if deletion was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /interface/{id} [delete]
+func (e interfaceEndpoint) handleDelete() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
+		id := c.Param("id")
+		if id == "" {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			return
+		}
+
+		err := e.app.DeleteInterface(ctx, domain.InterfaceIdentifier(id))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
+
+		c.Status(http.StatusNoContent)
 	}
 }

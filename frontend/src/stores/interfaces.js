@@ -63,7 +63,7 @@ export const interfaceStore = defineStore({
           })
         })
     },
-  async InterfaceConfig(id) {
+    async InterfaceConfig(id) {
       return apiWrapper.get(`${baseUrl}/config/${id}`)
           .then(this.setInterfaceConfig)
           .catch(error => {
@@ -74,7 +74,7 @@ export const interfaceStore = defineStore({
                   text: "Failed to load interface configuration!",
               })
           })
-  },
+    },
     async DeleteInterface(id) {
       this.fetching = true
       return apiWrapper.delete(`${baseUrl}/${id}`)

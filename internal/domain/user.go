@@ -70,6 +70,10 @@ func (u *User) CheckPassword(password string) error {
 		return errors.New("invalid user source")
 	}
 
+	if u.IsDisabled() {
+		return errors.New("user disabled")
+	}
+
 	if u.Password == "" {
 		return errors.New("empty user password")
 	}

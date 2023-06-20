@@ -524,6 +524,34 @@ func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*do
 	return in, nil
 }
 
+func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {
+	existingInterface, err := m.db.GetInterface(ctx, id)
+	if err != nil {
+		return fmt.Errorf("unable to find interface %s: %w", id, err)
+	}
+
+	if err := m.validateDeletion(ctx, existingInterface); err != nil {
+		return fmt.Errorf("deletion not allowed: %w", err)
+	}
+
+	err = m.deleteInterfacePeers(ctx, id)
+	if err != nil {
+		return fmt.Errorf("peer deletion failure: %w", err)
+	}
+
+	err = m.wg.DeleteInterface(ctx, id)
+	if err != nil {
+		return fmt.Errorf("wireguard deletion failure: %w", err)
+	}
+
+	err = m.db.DeleteInterface(ctx, id)
+	if err != nil {
+		return fmt.Errorf("deletion failure: %w", err)
+	}
+
+	return nil
+}
+
 func (m Manager) validateModifications(ctx context.Context, old, new *domain.Interface) error {
 	currentUser := domain.GetUserInfo(ctx)
 
@@ -543,6 +571,36 @@ func (m Manager) validateCreation(ctx context.Context, old, new *domain.Interfac
 
 	if !currentUser.IsAdmin {
 		return fmt.Errorf("insufficient permissions")
+	}
+
+	return nil
+}
+
+func (m Manager) validateDeletion(ctx context.Context, del *domain.Interface) error {
+	currentUser := domain.GetUserInfo(ctx)
+
+	if !currentUser.IsAdmin {
+		return fmt.Errorf("insufficient permissions")
+	}
+
+	return nil
+}
+
+func (m Manager) deleteInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) error {
+	allPeers, err := m.db.GetInterfacePeers(ctx, id)
+	if err != nil {
+		return err
+	}
+	for _, peer := range allPeers {
+		err = m.wg.DeletePeer(ctx, id, peer.Identifier)
+		if err != nil {
+			return fmt.Errorf("wireguard peer deletion failure for %s: %w", peer.Identifier, err)
+		}
+
+		err = m.db.DeletePeer(ctx, peer.Identifier)
+		if err != nil {
+			return fmt.Errorf("peer deletion failure for %s: %w", peer.Identifier, err)
+		}
 	}
 
 	return nil

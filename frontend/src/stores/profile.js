@@ -1,17 +1,16 @@
 import { defineStore } from 'pinia'
-import {apiWrapper} from "../helpers/fetch-wrapper";
+import {apiWrapper} from "@/helpers/fetch-wrapper";
 import {notify} from "@kyvg/vue3-notification";
-import {interfaceStore} from "./interfaces";
+import {authStore} from "@/stores/auth";
 
-const baseUrl = `/peer`
 
-export const peerStore = defineStore({
-  id: 'peers',
+const baseUrl = `/user`
+
+export const profileStore = defineStore({
+  id: 'profile',
   state: () => ({
     peers: [],
-    prepared: {
-      Identifier: "",
-    },
+    user: {},
     filter: "",
     pageSize: 10,
     pageOffset: 0,
@@ -19,14 +18,13 @@ export const peerStore = defineStore({
     fetching: false,
   }),
   getters: {
-    Find: (state) => {
+    FindPeers: (state) => {
       return (id) => state.peers.find((p) => p.Identifier === id)
     },
-    Count: (state) => state.peers.length,
-    Prepared: (state) => {console.log("STATE:", state.prepared); return state.prepared},
-    FilteredCount: (state) => state.Filtered.length,
-    All: (state) => state.peers,
-    Filtered: (state) => {
+    CountPeers: (state) => state.peers.length,
+    FilteredPeerCount: (state) => state.FilteredPeers.length,
+    Peers: (state) => state.peers,
+    FilteredPeers: (state) => {
       if (!state.filter) {
         return state.peers
       }
@@ -34,11 +32,11 @@ export const peerStore = defineStore({
         return p.DisplayName.includes(state.filter) || p.Identifier.includes(state.filter)
       })
     },
-    FilteredAndPaged: (state) => {
-      return state.Filtered.slice(state.pageOffset, state.pageOffset + state.pageSize)
+    FilteredAndPagedPeers: (state) => {
+      return state.FilteredPeers.slice(state.pageOffset, state.pageOffset + state.pageSize)
     },
     isFetching: (state) => state.fetching,
-    hasNextPage: (state) => state.pageOffset < (state.FilteredCount - state.pageSize),
+    hasNextPage: (state) => state.pageOffset < (state.FilteredPeerCount - state.pageSize),
     hasPrevPage: (state) => state.pageOffset > 0,
     currentPage: (state) => (state.pageOffset / state.pageSize)+1,
   },
@@ -51,7 +49,7 @@ export const peerStore = defineStore({
     calculatePages() {
       let pageCounter = 1;
       this.pages = []
-      for (let i = 0; i < this.FilteredCount; i+=this.pageSize) {
+      for (let i = 0; i < this.FilteredPeerCount; i+=this.pageSize) {
         this.pages.push(pageCounter++)
       }
     },
@@ -72,41 +70,39 @@ export const peerStore = defineStore({
     },
     setPeers(peers) {
       this.peers = peers
-      this.calculatePages()
       this.fetching = false
     },
-    setPreparedPeer(peer) {
-      this.prepared = peer;
-    },
-    async PreparePeer(interfaceId) {
-      return apiWrapper.get(`${baseUrl}/prepare/${interfaceId}`)
-        .then(this.setPreparedPeer)
-        .catch(error => {
-          this.prepared = {}
-          console.log("Failed to load prepared peer: ", error)
-          notify({
-            title: "Backend Connection Failure",
-            text: "Failed to load prepared peer!",
-          })
-        })
+    setUser(user) {
+      this.user = user
+      this.fetching = false
     },
     async LoadPeers() {
-      let iface = interfaceStore().GetSelected
-      if (!iface) {
-        return // no interface, nothing to load
-      }
       this.fetching = true
-
-      return apiWrapper.get(`${baseUrl}/all/` + iface.Identifier)
+      let currentUser = authStore().user.Identifier
+      return apiWrapper.get(`${baseUrl}/${currentUser}/peers`)
         .then(this.setPeers)
         .catch(error => {
           this.setPeers([])
-          console.log("Failed to load peers: ", error)
+          console.log("Failed to load user peers for ", currentUser, ": ", error)
           notify({
             title: "Backend Connection Failure",
-            text: "Failed to load peers!",
+            text: "Failed to load user peers!",
           })
         })
-    }
+    },
+    async LoadUser() {
+      this.fetching = true
+      let currentUser = authStore().user.Identifier
+      return apiWrapper.get(`${baseUrl}/${currentUser}`)
+        .then(this.setUser)
+        .catch(error => {
+          this.setUser({})
+          console.log("Failed to load user for ", currentUser, ": ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to load user!",
+          })
+        })
+    },
   }
 })

@@ -181,8 +181,32 @@ func (m Manager) CreateUser(ctx context.Context, user *domain.User) (*domain.Use
 	return user, nil
 }
 
+func (m Manager) DeleteUser(ctx context.Context, id domain.UserIdentifier) error {
+	existingUser, err := m.users.GetUser(ctx, id)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return fmt.Errorf("unable to find user %s: %w", id, err)
+	}
+
+	if err := m.validateDeletion(ctx, existingUser); err != nil {
+		return fmt.Errorf("deletion not allowed: %w", err)
+	}
+
+	err = m.users.DeleteUser(ctx, id)
+	if err != nil {
+		return fmt.Errorf("deletion failure: %w", err)
+	}
+
+	m.bus.Publish(app.TopicUserDeleted, existingUser)
+
+	return nil
+}
+
 func (m Manager) validateModifications(ctx context.Context, old, new *domain.User) error {
 	currentUser := domain.GetUserInfo(ctx)
+
+	if currentUser.Id != new.Identifier && !currentUser.IsAdmin {
+		return fmt.Errorf("insufficient permissions")
+	}
 
 	if err := old.EditAllowed(); err != nil {
 		return fmt.Errorf("no access: %w", err)
@@ -208,8 +232,18 @@ func (m Manager) validateModifications(ctx context.Context, old, new *domain.Use
 }
 
 func (m Manager) validateCreation(ctx context.Context, new *domain.User) error {
+	currentUser := domain.GetUserInfo(ctx)
+
+	if !currentUser.IsAdmin {
+		return fmt.Errorf("insufficient permissions")
+	}
+
 	if new.Identifier == "" {
 		return fmt.Errorf("invalid user identifier")
+	}
+
+	if new.Identifier == "all" { // the all user identifier collides with the rest api routes
+		return fmt.Errorf("reserved user identifier")
 	}
 
 	if new.Source != domain.UserSourceDatabase {
@@ -218,6 +252,24 @@ func (m Manager) validateCreation(ctx context.Context, new *domain.User) error {
 
 	if string(new.Password) == "" {
 		return fmt.Errorf("invalid password")
+	}
+
+	return nil
+}
+
+func (m Manager) validateDeletion(ctx context.Context, del *domain.User) error {
+	currentUser := domain.GetUserInfo(ctx)
+
+	if !currentUser.IsAdmin {
+		return fmt.Errorf("insufficient permissions")
+	}
+
+	if err := del.EditAllowed(); err != nil {
+		return fmt.Errorf("no access: %w", err)
+	}
+
+	if currentUser.Id == del.Identifier {
+		return fmt.Errorf("cannot delete own user")
 	}
 
 	return nil

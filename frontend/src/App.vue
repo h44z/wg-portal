@@ -72,9 +72,7 @@ const languageFlag = computed(() => {
             <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#"
               role="button">{{ auth.User.Firstname }} {{ auth.User.Lastname }}</a>
             <div class="dropdown-menu">
-              <a class="dropdown-item" href="/user/profile">
-                <i class="fas fa-user"></i> {{ $t('menu.profile') }}
-              </a>
+              <RouterLink :to="{ name: 'profile' }" class="dropdown-item"><i class="fas fa-user"></i> {{ $t('menu.profile') }}</RouterLink>
               <div class="dropdown-divider"></div>
               <a class="dropdown-item" href="#" @click.prevent="auth.Logout">
                 <i class="fas fa-sign-out-alt"></i> {{ $t('menu.logout') }}
