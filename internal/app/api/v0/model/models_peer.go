@@ -1,6 +1,9 @@
 package model
 
-import "github.com/h44z/wg-portal/internal/domain"
+import (
+	"github.com/h44z/wg-portal/internal/domain"
+	"time"
+)
 
 type Peer struct {
 	Identifier          string `json:"Identifier" example:"super_nice_peer"` // peer unique identifier
@@ -72,4 +75,34 @@ func NewPeers(src []domain.Peer) []Peer {
 	}
 
 	return results
+}
+
+func NewDomainPeer(src *Peer) *domain.Peer {
+	now := time.Now()
+
+	res := &domain.Peer{
+		BaseModel:           domain.BaseModel{},
+		Endpoint:            domain.StringConfigOption{},
+		EndpointPublicKey:   src.EndpointPublicKey,
+		AllowedIPsStr:       domain.StringConfigOption{},
+		ExtraAllowedIPsStr:  "",
+		PresharedKey:        "",
+		PersistentKeepalive: domain.IntConfigOption{},
+		DisplayName:         "",
+		Identifier:          "",
+		UserIdentifier:      "",
+		InterfaceIdentifier: "",
+		Temporary:           nil,
+		Disabled:            nil,
+		DisabledReason:      "",
+		ExpiresAt:           nil,
+		Notes:               "",
+		Interface:           domain.PeerInterfaceConfig{},
+	}
+
+	if src.Disabled {
+		res.Disabled = &now
+	}
+
+	return res
 }
