@@ -8,6 +8,10 @@ jobs:
           keys:
             - go-mod-latest-v4-{{ checksum "go.sum" }}
       - run:
+          name: Build Frontend
+          command: |
+            make frontend
+      - run:
           name: Install Dependencies
           command: |
             make build-dependencies
@@ -51,19 +55,13 @@ jobs:
             fi
     working_directory: ~/repo
     docker:
-      - image: cimg/go:1.19
+      - image: cimg/go:1.20-node
 
 workflows:
   build-and-release:
     jobs:
       #--------------- BUILD ---------------#
       - build-latest:
-          filters:
-            tags:
-              only: /^v.*/
-      - build-116:
-          requires:
-            - build-latest
           filters:
             tags:
               only: /^v.*/
