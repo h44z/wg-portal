@@ -37,6 +37,7 @@ type WireGuardManager interface {
 	CreateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error)
 	UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error)
 	DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error
+	PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error)
 }
 
 type StatisticsCollector interface {

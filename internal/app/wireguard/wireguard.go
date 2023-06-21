@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/h44z/wg-portal/internal/app"
 	"time"
 
@@ -604,4 +605,68 @@ func (m Manager) deleteInterfacePeers(ctx context.Context, id domain.InterfaceId
 	}
 
 	return nil
+}
+
+func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error) {
+	currentUser := domain.GetUserInfo(ctx)
+
+	iface, err := m.db.GetInterface(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find interface %s: %w", id, err)
+	}
+
+	kp, err := domain.NewFreshKeypair()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate keys: %w", err)
+	}
+
+	pk, err := domain.NewPreSharedKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate preshared key: %w", err)
+	}
+
+	peerMode := domain.InterfaceTypeClient
+	if iface.Type == domain.InterfaceTypeClient {
+		peerMode = domain.InterfaceTypeServer
+	}
+
+	freshPeer := &domain.Peer{
+		BaseModel: domain.BaseModel{
+			CreatedBy: string(currentUser.Id),
+			UpdatedBy: string(currentUser.Id),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		Endpoint:            domain.StringConfigOption{},
+		EndpointPublicKey:   "",
+		AllowedIPsStr:       domain.StringConfigOption{},
+		ExtraAllowedIPsStr:  "",
+		PresharedKey:        pk,
+		PersistentKeepalive: domain.IntConfigOption{},
+		DisplayName:         "",
+		Identifier:          domain.PeerIdentifier(uuid.New().String()),
+		UserIdentifier:      currentUser.Id,
+		InterfaceIdentifier: iface.Identifier,
+		Disabled:            nil,
+		DisabledReason:      "",
+		ExpiresAt:           nil,
+		Notes:               "",
+		Interface: domain.PeerInterfaceConfig{
+			KeyPair:           kp,
+			Type:              peerMode,
+			Addresses:         nil,
+			CheckAliveAddress: "",
+			DnsStr:            domain.StringConfigOption{},
+			DnsSearchStr:      domain.StringConfigOption{},
+			Mtu:               domain.IntConfigOption{},
+			FirewallMark:      domain.Int32ConfigOption{},
+			RoutingTable:      domain.StringConfigOption{},
+			PreUp:             domain.StringConfigOption{},
+			PostUp:            domain.StringConfigOption{},
+			PreDown:           domain.StringConfigOption{},
+			PostDown:          domain.StringConfigOption{},
+		},
+	}
+
+	return freshPeer, nil
 }

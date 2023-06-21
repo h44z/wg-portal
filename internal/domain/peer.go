@@ -40,7 +40,6 @@ type Peer struct {
 	Identifier          PeerIdentifier      `gorm:"primaryKey;column:identifier"`      // peer unique identifier
 	UserIdentifier      UserIdentifier      `gorm:"index;column:user_identifier"`      // the owner
 	InterfaceIdentifier InterfaceIdentifier `gorm:"index;column:interface_identifier"` // the interface id
-	Temporary           *time.Time          `gorm:"-"`                                 // is this a temporary peer (only prepared, but never saved to db)
 	Disabled            *time.Time          `gorm:"column:disabled"`                   // if this field is set, the peer is disabled
 	DisabledReason      string              // the reason why the peer has been disabled
 	ExpiresAt           *time.Time          `gorm:"column:expires_at"`         // expiry dates for peers
@@ -159,7 +158,6 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 		Identifier:          pp.Identifier,
 		UserIdentifier:      "",
 		InterfaceIdentifier: "",
-		Temporary:           nil,
 		Disabled:            nil,
 		Interface: PeerInterfaceConfig{
 			KeyPair: pp.KeyPair,
