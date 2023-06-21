@@ -19,6 +19,7 @@ type InterfaceAndPeerDatabaseRepo interface {
 	FindUserPeers(ctx context.Context, id domain.UserIdentifier, search string) ([]domain.Peer, error)
 	SavePeer(ctx context.Context, id domain.PeerIdentifier, updateFunc func(in *domain.Peer) (*domain.Peer, error)) error
 	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
+	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 }
 
 type StatisticsDatabaseRepo interface {
