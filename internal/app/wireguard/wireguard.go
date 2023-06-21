@@ -670,3 +670,31 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 
 	return freshPeer, nil
 }
+
+func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error {
+	peer, err := m.db.GetPeer(ctx, id)
+	if err != nil {
+		return fmt.Errorf("unable to find peer %s: %w", id, err)
+	}
+
+	err = m.wg.DeletePeer(ctx, peer.InterfaceIdentifier, id)
+	if err != nil {
+		return fmt.Errorf("wireguard failed to delete peer %s: %w", id, err)
+	}
+
+	err = m.db.DeletePeer(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete peer %s: %w", id, err)
+	}
+
+	return nil
+}
+
+func (m Manager) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error) {
+	peer, err := m.db.GetPeer(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find peer %s: %w", id, err)
+	}
+
+	return peer, nil
+}
