@@ -20,6 +20,13 @@ func DefaultContextUserInfo() *ContextUserInfo {
 	}
 }
 
+func SystemAdminContextUserInfo() *ContextUserInfo {
+	return &ContextUserInfo{
+		Id:      "_WG_SYS_ADMIN_",
+		IsAdmin: true,
+	}
+}
+
 func SetUserInfoFromGin(c *gin.Context) context.Context {
 	ginUserInfo, exists := c.Get(CtxUserInfo)
 
@@ -30,7 +37,7 @@ func SetUserInfoFromGin(c *gin.Context) context.Context {
 		}
 	}
 
-	ctx := context.WithValue(c.Request.Context(), CtxUserInfo, info)
+	ctx := SetUserInfo(c.Request.Context(), info)
 	return ctx
 }
 
@@ -50,10 +57,4 @@ func GetUserInfo(ctx context.Context) *ContextUserInfo {
 	}
 
 	return DefaultContextUserInfo()
-}
-
-func GetAdminInfo() *ContextUserInfo {
-	userInfo := DefaultContextUserInfo()
-	userInfo.IsAdmin = true
-	return userInfo
 }
