@@ -79,7 +79,7 @@ export const peerStore = defineStore({
       this.prepared = peer;
     },
     async PreparePeer(interfaceId) {
-      return apiWrapper.get(`${baseUrl}/prepare/${interfaceId}`)
+      return apiWrapper.get(`${baseUrl}/iface/${iface.Identifier}/prepare`)
         .then(this.setPreparedPeer)
         .catch(error => {
           this.prepared = {}
@@ -97,7 +97,7 @@ export const peerStore = defineStore({
       }
       this.fetching = true
 
-      return apiWrapper.get(`${baseUrl}/all/` + iface.Identifier)
+      return apiWrapper.get(`${baseUrl}/iface/${iface.Identifier}/all`)
         .then(this.setPeers)
         .catch(error => {
           this.setPeers([])
