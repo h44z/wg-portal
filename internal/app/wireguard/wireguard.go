@@ -630,6 +630,7 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 		peerMode = domain.InterfaceTypeServer
 	}
 
+	peerId := domain.PeerIdentifier(uuid.New().String())
 	freshPeer := &domain.Peer{
 		BaseModel: domain.BaseModel{
 			CreatedBy: string(currentUser.Id),
@@ -637,14 +638,14 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
-		Endpoint:            domain.StringConfigOption{},
-		EndpointPublicKey:   "",
-		AllowedIPsStr:       domain.StringConfigOption{},
+		Endpoint:            domain.NewStringConfigOption(iface.PeerDefEndpoint, true),
+		EndpointPublicKey:   iface.PublicKey,
+		AllowedIPsStr:       domain.NewStringConfigOption(iface.PeerDefAllowedIPsStr, true),
 		ExtraAllowedIPsStr:  "",
 		PresharedKey:        pk,
-		PersistentKeepalive: domain.IntConfigOption{},
-		DisplayName:         "",
-		Identifier:          domain.PeerIdentifier(uuid.New().String()),
+		PersistentKeepalive: domain.NewIntConfigOption(iface.PeerDefPersistentKeepalive, true),
+		DisplayName:         fmt.Sprintf("Peer %s", peerId[0:8]),
+		Identifier:          peerId,
 		UserIdentifier:      currentUser.Id,
 		InterfaceIdentifier: iface.Identifier,
 		Disabled:            nil,
@@ -654,17 +655,17 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 		Interface: domain.PeerInterfaceConfig{
 			KeyPair:           kp,
 			Type:              peerMode,
-			Addresses:         nil,
+			Addresses:         nil, // TODO
 			CheckAliveAddress: "",
-			DnsStr:            domain.StringConfigOption{},
-			DnsSearchStr:      domain.StringConfigOption{},
-			Mtu:               domain.IntConfigOption{},
-			FirewallMark:      domain.Int32ConfigOption{},
-			RoutingTable:      domain.StringConfigOption{},
-			PreUp:             domain.StringConfigOption{},
-			PostUp:            domain.StringConfigOption{},
-			PreDown:           domain.StringConfigOption{},
-			PostDown:          domain.StringConfigOption{},
+			DnsStr:            domain.NewStringConfigOption(iface.PeerDefDnsStr, true),
+			DnsSearchStr:      domain.NewStringConfigOption(iface.PeerDefDnsSearchStr, true),
+			Mtu:               domain.NewIntConfigOption(iface.PeerDefMtu, true),
+			FirewallMark:      domain.NewInt32ConfigOption(iface.PeerDefFirewallMark, true),
+			RoutingTable:      domain.NewStringConfigOption(iface.PeerDefRoutingTable, true),
+			PreUp:             domain.NewStringConfigOption(iface.PeerDefPreUp, true),
+			PostUp:            domain.NewStringConfigOption(iface.PeerDefPostUp, true),
+			PreDown:           domain.NewStringConfigOption(iface.PeerDefPreUp, true),
+			PostDown:          domain.NewStringConfigOption(iface.PeerDefPostUp, true),
 		},
 	}
 
