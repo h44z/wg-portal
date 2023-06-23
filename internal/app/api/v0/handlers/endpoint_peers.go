@@ -5,6 +5,7 @@ import (
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/domain"
+	"io"
 	"net/http"
 )
 
@@ -23,6 +24,8 @@ func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 	apiGroup.GET("/iface/:iface/all", e.handleAllGet())
 	apiGroup.GET("/iface/:iface/prepare", e.handlePrepareGet())
 	apiGroup.POST("/iface/:iface/new", e.handleCreatePost())
+	apiGroup.GET("/config-qr/:id", e.handleQrCodeGet())
+	apiGroup.GET("/config/:id", e.handleConfigGet())
 	apiGroup.GET("/:id", e.handleSingleGet())
 	apiGroup.PUT("/:id", e.handleUpdatePut())
 	apiGroup.DELETE("/:id", e.handleDelete())
@@ -43,7 +46,7 @@ func (e peerEndpoint) handleAllGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		interfaceId := c.Param("iface")
+		interfaceId := Base64UrlDecode(c.Param("iface"))
 		if interfaceId == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
 			return
@@ -74,7 +77,7 @@ func (e peerEndpoint) handleSingleGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		peerId := c.Param("id")
+		peerId := Base64UrlDecode(c.Param("id"))
 		if peerId == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing id parameter"})
 			return
@@ -105,7 +108,7 @@ func (e peerEndpoint) handlePrepareGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		interfaceId := c.Param("iface")
+		interfaceId := Base64UrlDecode(c.Param("iface"))
 		if interfaceId == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
 			return
@@ -137,7 +140,7 @@ func (e peerEndpoint) handleCreatePost() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		interfaceId := c.Param("iface")
+		interfaceId := Base64UrlDecode(c.Param("iface"))
 		if interfaceId == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
 			return
@@ -176,12 +179,12 @@ func (e peerEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Success 200 {object} model.Peer
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
-// @Router /peer/{id} [post]
+// @Router /peer/{id} [put]
 func (e peerEndpoint) handleUpdatePut() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		peerId := c.Param("id")
+		peerId := Base64UrlDecode(c.Param("id"))
 		if peerId == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing id parameter"})
 			return
@@ -224,7 +227,7 @@ func (e peerEndpoint) handleDelete() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		id := c.Param("id")
+		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
 			return
@@ -237,5 +240,85 @@ func (e peerEndpoint) handleDelete() gin.HandlerFunc {
 		}
 
 		c.Status(http.StatusNoContent)
+	}
+}
+
+// handleConfigGet returns a gorm handler function.
+//
+// @ID peers_handleConfigGet
+// @Tags Peer
+// @Summary Get peer configuration as string.
+// @Produce json
+// @Success 200 {object} string
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /peer/config/{id} [get]
+func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := Base64UrlDecode(c.Param("id"))
+		if id == "" {
+			c.JSON(http.StatusBadRequest, model.Error{
+				Code: http.StatusInternalServerError, Message: "missing id parameter",
+			})
+			return
+		}
+
+		config, err := e.app.GetPeerConfig(c.Request.Context(), domain.PeerIdentifier(id))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
+
+		configString, err := io.ReadAll(config)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, string(configString))
+	}
+}
+
+// handleQrCodeGet returns a gorm handler function.
+//
+// @ID peers_handleQrCodeGet
+// @Tags Peer
+// @Summary Get peer configuration as qr code.
+// @Produce json
+// @Success 200 {object} string
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /peer/config-qr/{id} [get]
+func (e peerEndpoint) handleQrCodeGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := Base64UrlDecode(c.Param("id"))
+		if id == "" {
+			c.JSON(http.StatusBadRequest, model.Error{
+				Code: http.StatusInternalServerError, Message: "missing id parameter",
+			})
+			return
+		}
+
+		config, err := e.app.GetPeerConfigQrCode(c.Request.Context(), domain.PeerIdentifier(id))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
+
+		configData, err := io.ReadAll(config)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
+
+		c.Data(http.StatusOK, "image/png", configData)
 	}
 }

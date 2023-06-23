@@ -90,7 +90,7 @@ func (e interfaceEndpoint) handleAllGet() gin.HandlerFunc {
 // @Router /interface/get/{id} [get]
 func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
@@ -122,7 +122,7 @@ func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
 // @Router /interface/config/{id} [get]
 func (e interfaceEndpoint) handleConfigGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
@@ -166,7 +166,7 @@ func (e interfaceEndpoint) handleUpdatePut() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		id := c.Param("id")
+		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
@@ -241,7 +241,9 @@ func (e interfaceEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Router /interface/peers/{id} [get]
 func (e interfaceEndpoint) handlePeersGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		ctx := domain.SetUserInfoFromGin(c)
+
+		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
@@ -249,7 +251,7 @@ func (e interfaceEndpoint) handlePeersGet() gin.HandlerFunc {
 			return
 		}
 
-		_, peers, err := e.app.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(id))
+		_, peers, err := e.app.GetInterfaceAndPeers(ctx, domain.InterfaceIdentifier(id))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -276,7 +278,7 @@ func (e interfaceEndpoint) handleDelete() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		id := c.Param("id")
+		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return

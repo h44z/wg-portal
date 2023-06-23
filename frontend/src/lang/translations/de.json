@@ -54,9 +54,8 @@
     "h2-client": "Aktuelle Endpunkte",
     "tableHeadings": [
       "Name",
-      "Kennung",
       "Benutzer",
-      "IPs",
+      "IP's",
       "Endpunkt",
       "Handschlag"
     ],

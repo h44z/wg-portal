@@ -1,10 +1,13 @@
 package filetemplate
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/yeqown/go-qrcode/v2"
+	"github.com/yeqown/go-qrcode/writer/standard"
 	"io"
 )
 
@@ -50,3 +53,41 @@ func (m Manager) GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (i
 
 	return m.tplHandler.GetPeerConfig(peer)
 }
+
+func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error) {
+	peer, err := m.wg.GetPeer(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch peer %s: %w", id, err)
+	}
+
+	cfgData, err := m.tplHandler.GetPeerConfig(peer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get peer config for %s: %w", id, err)
+	}
+
+	configBytes, err := io.ReadAll(cfgData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read peer config for %s: %w", id, err)
+	}
+
+	code, err := qrcode.New(string(configBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to initializeqr code for %s: %w", id, err)
+	}
+
+	buf := bytes.NewBuffer(nil)
+	wr := nopCloser{Writer: buf}
+	qrWriter := standard.NewWithWriter(wr, standard.WithQRWidth(40), standard.WithBuiltinImageEncoder(standard.PNG_FORMAT))
+	err = code.Save(qrWriter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write code for %s: %w", id, err)
+	}
+
+	return buf, nil
+}
+
+type nopCloser struct {
+	io.Writer
+}
+
+func (nopCloser) Close() error { return nil }

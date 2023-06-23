@@ -36,7 +36,7 @@ const title = computed(() => {
 watch(() => props.visible, async (newValue, oldValue) => {
       if (oldValue === false && newValue === true) { // if modal is shown
         console.log(selectedInterface.value)
-        await interfaces.InterfaceConfig(selectedInterface.value.Identifier)
+        await interfaces.LoadInterfaceConfig(selectedInterface.value.Identifier)
         configString.value = interfaces.configuration
       }
     }

@@ -272,9 +272,8 @@ onMounted(async () => {
         <th scope="col">{{ $t('interfaces.tableHeadings[0]') }}</th>
         <th scope="col">{{ $t('interfaces.tableHeadings[1]') }}</th>
         <th scope="col">{{ $t('interfaces.tableHeadings[2]') }}</th>
-        <th scope="col">{{ $t('interfaces.tableHeadings[3]') }}</th>
-        <th v-if="interfaces.GetSelected.Mode==='client'" scope="col">{{ $t('interfaces.tableHeadings[4]') }}</th>
-        <th scope="col">{{ $t('interfaces.tableHeadings[5]') }}</th>
+        <th v-if="interfaces.GetSelected.Mode==='client'" scope="col">{{ $t('interfaces.tableHeadings[3]') }}</th>
+        <th scope="col">{{ $t('interfaces.tableHeadings[4]') }}</th>
         <th scope="col"></th><!-- Actions -->
       </tr>
       </thead>
@@ -284,10 +283,9 @@ onMounted(async () => {
             <input id="flexCheckDefault" class="form-check-input" type="checkbox" value="">
           </th>
           <td>{{peer.DisplayName}}</td>
-          <td>{{peer.Identifier}}</td>
           <td>{{peer.UserIdentifier}}</td>
           <td>
-            <span v-for="ip in peer.Addresses" :key="ip" class="badge rounded-pill bg-light">{{ ip }}</span>
+            <span v-for="ip in peer.Addresses" :key="ip" class="badge bg-light me-1">{{ ip }}</span>
           </td>
           <td v-if="interfaces.GetSelected.Mode==='client'">{{peer.Endpoint.Value}}</td>
           <td>{{peer.LastConnected}}</td>

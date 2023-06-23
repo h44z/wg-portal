@@ -51,9 +51,8 @@
     "h2-client": "Current Endpoints",
     "tableHeadings": [
       "Name",
-      "Identifier",
       "User",
-      "IPs",
+      "IP's",
       "Endpoint",
       "Handshake"
     ],

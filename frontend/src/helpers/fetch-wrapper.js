@@ -2,6 +2,7 @@ import { authStore } from '../stores/auth';
 import { securityStore } from '../stores/security';
 
 export const fetchWrapper = {
+    url: apiUrl(),
     get: request('GET'),
     post: request('POST'),
     put: request('PUT'),
@@ -9,6 +10,7 @@ export const fetchWrapper = {
 };
 
 export const apiWrapper = {
+    url: apiUrl(),
     get: apiRequest('GET'),
     post: apiRequest('POST'),
     put: apiRequest('PUT'),
@@ -43,6 +45,13 @@ function apiRequest(method) {
             requestOptions.body = JSON.stringify(body);
         }
         return fetch(url, requestOptions).then(handleResponse);
+    }
+}
+
+// apiUrl uses WGPORTAL_BACKEND_BASE_URL as base URL
+function apiUrl() {
+    return (path) => {
+        return WGPORTAL_BACKEND_BASE_URL + path
     }
 }
 

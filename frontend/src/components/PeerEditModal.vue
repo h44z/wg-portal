@@ -9,7 +9,7 @@ import Vue3TagsInput from "vue3-tags-input";
 import { validateCIDR, validateIP, validateDomain } from '@/helpers/validators';
 import isCidr from "is-cidr";
 import {isIP} from 'is-ip';
-import { freshPeer } from '@/helpers/models';
+import { freshPeer, freshInterface } from '@/helpers/models';
 
 const { t } = useI18n()
 
@@ -31,10 +31,7 @@ const selectedInterface = computed(() => {
   let i = interfaces.GetSelected;
 
   if (!i) {
-    i = { // dummy interface to avoid 'undefined' exceptions
-      Identifier: "none",
-      Mode: "server"
-    }
+    i = freshInterface() // dummy interface to avoid 'undefined' exceptions
   }
 
   return i

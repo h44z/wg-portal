@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import {apiWrapper} from "@/helpers/fetch-wrapper";
 import {notify} from "@kyvg/vue3-notification";
+import { base64_url_encode } from '@/helpers/encoding';
 
 const baseUrl = `/user`
 
@@ -91,7 +92,7 @@ export const userStore = defineStore({
     },
     async DeleteUser(id) {
       this.fetching = true
-      return apiWrapper.delete(`${baseUrl}/${encodeURIComponent(id)}`)
+      return apiWrapper.delete(`${baseUrl}/${base64_url_encode(id)}`)
         .then(() => {
           this.users = this.users.filter(u => u.Identifier !== id)
           this.fetching = false
@@ -104,7 +105,7 @@ export const userStore = defineStore({
     },
     async UpdateUser(id, formData) {
       this.fetching = true
-      return apiWrapper.put(`${baseUrl}/${encodeURIComponent(id)}`, formData)
+      return apiWrapper.put(`${baseUrl}/${base64_url_encode(id)}`, formData)
         .then(user => {
           let idx = this.users.findIndex((u) => u.Identifier === id)
           this.users[idx] = user
@@ -131,7 +132,7 @@ export const userStore = defineStore({
     },
     async LoadUserPeers(id) {
       this.fetching = true
-      return apiWrapper.get(`${baseUrl}/${encodeURIComponent(id)}/peers`)
+      return apiWrapper.get(`${baseUrl}/${base64_url_encode(id)}/peers`)
         .then(this.setUserPeers)
         .catch(error => {
           this.setUserPeers([])

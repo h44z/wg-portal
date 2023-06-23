@@ -3,6 +3,7 @@ import {apiWrapper} from "../helpers/fetch-wrapper";
 import {notify} from "@kyvg/vue3-notification";
 import {interfaceStore} from "./interfaces";
 import { freshPeer } from '@/helpers/models';
+import { base64_url_encode } from '@/helpers/encoding';
 
 const baseUrl = `/peer`
 
@@ -12,6 +13,7 @@ export const peerStore = defineStore({
     peers: [],
     peer: freshPeer(),
     prepared: freshPeer(),
+    configuration: "",
     filter: "",
     pageSize: 10,
     pageOffset: 0,
@@ -36,6 +38,9 @@ export const peerStore = defineStore({
     },
     FilteredAndPaged: (state) => {
       return state.Filtered.slice(state.pageOffset, state.pageOffset + state.pageSize)
+    },
+    ConfigQrUrl: (state) => {
+      return (id) => apiWrapper.url(`${baseUrl}/config-qr/${base64_url_encode(id)}`)
     },
     isFetching: (state) => state.fetching,
     hasNextPage: (state) => state.pageOffset < (state.FilteredCount - state.pageSize),
@@ -82,8 +87,11 @@ export const peerStore = defineStore({
     setPreparedPeer(peer) {
       this.prepared = peer;
     },
+    setPeerConfig(config) {
+      this.configuration = config;
+    },
     async PreparePeer(interfaceId) {
-      return apiWrapper.get(`${baseUrl}/iface/${encodeURIComponent(interfaceId)}/prepare`)
+      return apiWrapper.get(`${baseUrl}/iface/${base64_url_encode(interfaceId)}/prepare`)
         .then(this.setPreparedPeer)
         .catch(error => {
           this.prepared = freshPeer()
@@ -94,9 +102,21 @@ export const peerStore = defineStore({
           })
         })
     },
+    async LoadPeerConfig(id) {
+      return apiWrapper.get(`${baseUrl}/config/${base64_url_encode(id)}`)
+        .then(this.setPeerConfig)
+        .catch(error => {
+          this.configuration = ""
+          console.log("Failed to load peer configuration: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to load peer configuration!",
+          })
+        })
+    },
     async LoadPeer(id) {
       this.fetching = true
-      return apiWrapper.get(`${baseUrl}/${encodeURIComponent(id)}`)
+      return apiWrapper.get(`${baseUrl}/${base64_url_encode(id)}`)
         .then(this.setPeer)
         .catch(error => {
           this.setPeers([])
@@ -109,7 +129,7 @@ export const peerStore = defineStore({
     },
     async DeletePeer(id) {
       this.fetching = true
-      return apiWrapper.delete(`${baseUrl}/${encodeURIComponent(id)}`)
+      return apiWrapper.delete(`${baseUrl}/${base64_url_encode(id)}`)
         .then(() => {
           this.peers = this.peers.filter(p => p.Identifier !== id)
           this.fetching = false
@@ -122,7 +142,7 @@ export const peerStore = defineStore({
     },
     async UpdatePeer(id, formData) {
       this.fetching = true
-      return apiWrapper.put(`${baseUrl}/${encodeURIComponent(id)}`, formData)
+      return apiWrapper.put(`${baseUrl}/${base64_url_encode(id)}`, formData)
         .then(peer => {
           let idx = this.peers.findIndex((p) => p.Identifier === id)
           this.peers[idx] = peer
@@ -136,7 +156,7 @@ export const peerStore = defineStore({
     },
     async CreatePeer(interfaceId, formData) {
       this.fetching = true
-      return apiWrapper.post(`${baseUrl}/iface/${encodeURIComponent(interfaceId)}/new`, formData)
+      return apiWrapper.post(`${baseUrl}/iface/${base64_url_encode(interfaceId)}/new`, formData)
         .then(peer => {
           this.peers.push(peer)
           this.fetching = false
@@ -157,7 +177,7 @@ export const peerStore = defineStore({
       }
       this.fetching = true
 
-      return apiWrapper.get(`${baseUrl}/iface/${encodeURIComponent(interfaceId)}/all`)
+      return apiWrapper.get(`${baseUrl}/iface/${base64_url_encode(interfaceId)}/all`)
         .then(this.setPeers)
         .catch(error => {
           this.setPeers([])

@@ -39,7 +39,9 @@ func (e userEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 // @Router /user/all [get]
 func (e userEndpoint) handleAllGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		users, err := e.app.GetAllUsers(c.Request.Context())
+		ctx := domain.SetUserInfoFromGin(c)
+
+		users, err := e.app.GetAllUsers(ctx)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
@@ -63,7 +65,7 @@ func (e userEndpoint) handleSingleGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		id := c.Param("id")
+		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
@@ -95,7 +97,7 @@ func (e userEndpoint) handleUpdatePut() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		id := c.Param("id")
+		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
@@ -166,13 +168,15 @@ func (e userEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Router /user/{id}/peers [get]
 func (e userEndpoint) handlePeersGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		interfaceId := c.Param("id")
+		ctx := domain.SetUserInfoFromGin(c)
+
+		interfaceId := Base64UrlDecode(c.Param("id"))
 		if interfaceId == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
 			return
 		}
 
-		peers, err := e.app.GetUserPeers(c.Request.Context(), domain.UserIdentifier(interfaceId))
+		peers, err := e.app.GetUserPeers(ctx, domain.UserIdentifier(interfaceId))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
@@ -197,7 +201,7 @@ func (e userEndpoint) handleDelete() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		id := c.Param("id")
+		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return

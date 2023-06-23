@@ -51,4 +51,5 @@ type StatisticsCollector interface {
 type TemplateManager interface {
 	GetInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) (io.Reader, error)
 	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
 }

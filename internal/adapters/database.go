@@ -380,7 +380,7 @@ func (r *SqlRepo) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domai
 func (r *SqlRepo) GetInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.Peer, error) {
 	var peers []domain.Peer
 
-	err := r.db.WithContext(ctx).Where("interface_identifier = ?", id).Find(&peers).Error
+	err := r.db.WithContext(ctx).Preload("Addresses").Where("interface_identifier = ?", id).Find(&peers).Error
 	if err != nil {
 		return nil, err
 	}

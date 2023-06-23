@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import {apiWrapper} from '@/helpers/fetch-wrapper'
 import {notify} from "@kyvg/vue3-notification";
 import { freshInterface } from '@/helpers/models';
+import { base64_url_encode } from '@/helpers/encoding';
 
 const baseUrl = `/interface`
 
@@ -66,21 +67,21 @@ export const interfaceStore = defineStore({
           })
         })
     },
-    async InterfaceConfig(id) {
-      return apiWrapper.get(`${baseUrl}/config/${encodeURIComponent(id)}`)
-          .then(this.setInterfaceConfig)
-          .catch(error => {
-              this.prepared = {}
-              console.log("Failed to load interface configuration: ", error)
-              notify({
-                  title: "Backend Connection Failure",
-                  text: "Failed to load interface configuration!",
-              })
+    async LoadInterfaceConfig(id) {
+      return apiWrapper.get(`${baseUrl}/config/${base64_url_encode(id)}`)
+        .then(this.setInterfaceConfig)
+        .catch(error => {
+          this.configuration = ""
+          console.log("Failed to load interface configuration: ", error)
+          notify({
+              title: "Backend Connection Failure",
+              text: "Failed to load interface configuration!",
           })
+        })
     },
     async DeleteInterface(id) {
       this.fetching = true
-      return apiWrapper.delete(`${baseUrl}/${encodeURIComponent(id)}`)
+      return apiWrapper.delete(`${baseUrl}/${base64_url_encode(id)}`)
         .then(() => {
           this.interfaces = this.interfaces.filter(i => i.Identifier !== id)
           if (this.interfaces.length > 0) {
@@ -98,7 +99,7 @@ export const interfaceStore = defineStore({
     },
     async UpdateInterface(id, formData) {
       this.fetching = true
-      return apiWrapper.put(`${baseUrl}/${encodeURIComponent(id)}`, formData)
+      return apiWrapper.put(`${baseUrl}/${base64_url_encode(id)}`, formData)
         .then(iface => {
           let idx = this.interfaces.findIndex((i) => i.Identifier === id)
           this.interfaces[idx] = iface

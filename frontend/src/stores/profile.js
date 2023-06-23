@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import {apiWrapper} from "@/helpers/fetch-wrapper";
 import {notify} from "@kyvg/vue3-notification";
 import {authStore} from "@/stores/auth";
+import { base64_url_encode } from '@/helpers/encoding';
 
 
 const baseUrl = `/user`
@@ -79,7 +80,7 @@ export const profileStore = defineStore({
     async LoadPeers() {
       this.fetching = true
       let currentUser = authStore().user.Identifier
-      return apiWrapper.get(`${baseUrl}/${encodeURIComponent(currentUser)}/peers`)
+      return apiWrapper.get(`${baseUrl}/${base64_url_encode(currentUser)}/peers`)
         .then(this.setPeers)
         .catch(error => {
           this.setPeers([])
@@ -93,7 +94,7 @@ export const profileStore = defineStore({
     async LoadUser() {
       this.fetching = true
       let currentUser = authStore().user.Identifier
-      return apiWrapper.get(`${baseUrl}/${encodeURIComponent(currentUser)}`)
+      return apiWrapper.get(`${baseUrl}/${base64_url_encode(currentUser)}`)
         .then(this.setUser)
         .catch(error => {
           this.setUser({})
