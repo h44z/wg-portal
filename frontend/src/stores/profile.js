@@ -79,7 +79,7 @@ export const profileStore = defineStore({
     async LoadPeers() {
       this.fetching = true
       let currentUser = authStore().user.Identifier
-      return apiWrapper.get(`${baseUrl}/${currentUser}/peers`)
+      return apiWrapper.get(`${baseUrl}/${encodeURIComponent(currentUser)}/peers`)
         .then(this.setPeers)
         .catch(error => {
           this.setPeers([])
@@ -93,7 +93,7 @@ export const profileStore = defineStore({
     async LoadUser() {
       this.fetching = true
       let currentUser = authStore().user.Identifier
-      return apiWrapper.get(`${baseUrl}/${currentUser}`)
+      return apiWrapper.get(`${baseUrl}/${encodeURIComponent(currentUser)}`)
         .then(this.setUser)
         .catch(error => {
           this.setUser({})

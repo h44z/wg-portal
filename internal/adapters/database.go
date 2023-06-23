@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/utils"
 	"os"
@@ -317,7 +318,12 @@ func (r *SqlRepo) DeleteInterface(ctx context.Context, id domain.InterfaceIdenti
 			return err
 		}
 
-		err = r.db.WithContext(ctx).Delete(&domain.Interface{}, id).Error
+		err = r.db.WithContext(ctx).Delete(&domain.InterfaceStatus{InterfaceId: id}).Error
+		if err != nil {
+			return err
+		}
+
+		err = r.db.WithContext(ctx).Debug().Select(clause.Associations).Delete(&domain.Interface{Identifier: id}).Error
 		if err != nil {
 			return err
 		}
@@ -359,7 +365,11 @@ func (r *SqlRepo) GetInterfaceIps(ctx context.Context) (map[domain.InterfaceIden
 func (r *SqlRepo) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error) {
 	var peer domain.Peer
 
-	err := r.db.WithContext(ctx).Where("identifier = ?", id).Find(&peer).Error
+	err := r.db.WithContext(ctx).Preload("Addresses").First(&peer, id).Error
+
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, domain.ErrNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -478,12 +488,84 @@ func (r *SqlRepo) upsertPeer(tx *gorm.DB, peer *domain.Peer) error {
 }
 
 func (r *SqlRepo) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error {
-	err := r.db.WithContext(ctx).Delete(&domain.Peer{}, id).Error
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := r.db.WithContext(ctx).Delete(&domain.PeerStatus{PeerId: id}).Error
+		if err != nil {
+			return err
+		}
+
+		err = r.db.WithContext(ctx).Select(clause.Associations).Delete(&domain.Peer{Identifier: id}).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (r *SqlRepo) GetPeerIps(ctx context.Context) (map[domain.PeerIdentifier][]domain.Cidr, error) {
+	var ips []struct {
+		domain.Cidr
+		PeerId domain.PeerIdentifier `gorm:"column:peer_identifier"`
+	}
+
+	err := r.db.WithContext(ctx).
+		Table("peer_addresses").
+		Joins("LEFT JOIN cidrs ON peer_addresses.cidr_cidr = cidrs.cidr").
+		Scan(&ips).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[domain.PeerIdentifier][]domain.Cidr)
+	for _, ip := range ips {
+		result[ip.PeerId] = append(result[ip.PeerId], ip.Cidr)
+	}
+	return result, nil
+}
+
+func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context) (map[domain.Cidr][]domain.Cidr, error) {
+	var peerIps []struct {
+		domain.Cidr
+		PeerId domain.PeerIdentifier `gorm:"column:peer_identifier"`
+	}
+
+	err := r.db.WithContext(ctx).
+		Table("peer_addresses").
+		Joins("LEFT JOIN cidrs ON peer_addresses.cidr_cidr = cidrs.cidr").
+		Scan(&peerIps).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch peer IP's: %w", err)
+	}
+
+	var interfaceIps []struct {
+		domain.Cidr
+		InterfaceId domain.InterfaceIdentifier `gorm:"column:interface_identifier"`
+	}
+
+	err = r.db.WithContext(ctx).
+		Table("interface_addresses").
+		Joins("LEFT JOIN cidrs ON interface_addresses.cidr_cidr = cidrs.cidr").
+		Scan(&interfaceIps).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch interface IP's: %w", err)
+	}
+
+	result := make(map[domain.Cidr][]domain.Cidr)
+	for _, ip := range interfaceIps {
+		networkAddr := ip.Cidr.NetworkAddr()
+		result[networkAddr] = append(result[networkAddr], ip.Cidr)
+	}
+	for _, ip := range peerIps {
+		networkAddr := ip.Cidr.NetworkAddr()
+		result[networkAddr] = append(result[networkAddr], ip.Cidr)
+	}
+	return result, nil
 }
 
 // endregion peers

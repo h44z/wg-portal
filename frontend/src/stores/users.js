@@ -91,7 +91,7 @@ export const userStore = defineStore({
     },
     async DeleteUser(id) {
       this.fetching = true
-      return apiWrapper.delete(`${baseUrl}/` + id)
+      return apiWrapper.delete(`${baseUrl}/${encodeURIComponent(id)}`)
         .then(() => {
           this.users = this.users.filter(u => u.Identifier !== id)
           this.fetching = false
@@ -104,7 +104,7 @@ export const userStore = defineStore({
     },
     async UpdateUser(id, formData) {
       this.fetching = true
-      return apiWrapper.put(`${baseUrl}/` + id, formData)
+      return apiWrapper.put(`${baseUrl}/${encodeURIComponent(id)}`, formData)
         .then(user => {
           let idx = this.users.findIndex((u) => u.Identifier === id)
           this.users[idx] = user
@@ -131,7 +131,7 @@ export const userStore = defineStore({
     },
     async LoadUserPeers(id) {
       this.fetching = true
-      return apiWrapper.get(`${baseUrl}/${id}/peers`)
+      return apiWrapper.get(`${baseUrl}/${encodeURIComponent(id)}/peers`)
         .then(this.setUserPeers)
         .catch(error => {
           this.setUserPeers([])

@@ -5,6 +5,11 @@ import {interfaceStore} from "@/stores/interfaces";
 import {computed, ref, watch} from "vue";
 import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
+import Vue3TagsInput from "vue3-tags-input";
+import { validateCIDR, validateIP, validateDomain } from '@/helpers/validators';
+import isCidr from "is-cidr";
+import {isIP} from 'is-ip';
+import { freshPeer } from '@/helpers/models';
 
 const { t } = useI18n()
 
@@ -52,83 +57,7 @@ const title = computed(() => {
   }
 })
 
-const formData = ref(freshFormData())
-
-
-function freshFormData() {
-  return {
-    Disabled: false,
-    IgnoreGlobalSettings: true,
-
-    Endpoint: {
-      Value: "",
-      Overridable: false,
-    },
-    AllowedIPsStr: {
-      Value: "",
-      Overridable: false,
-    },
-    ExtraAllowedIPsStr: "",
-    PrivateKey: "",
-    PublicKey: "",
-    PresharedKey: "",
-    PersistentKeepalive: {
-      Value: 0,
-      Overridable: false,
-    },
-
-    DisplayName: "",
-    Identifier: "",
-    UserIdentifier: "",
-
-    InterfaceConfig: {
-      PublicKey: {
-        Value: "",
-        Overridable: false,
-      },
-      AddressStr: {
-        Value: "",
-        Overridable: false,
-      },
-      DnsStr: {
-        Value: "",
-        Overridable: false,
-      },
-      DnsSearchStr: {
-        Value: "",
-        Overridable: false,
-      },
-      Mtu: {
-        Value: 0,
-        Overridable: false,
-      },
-      FirewallMark: {
-        Value: 0,
-        Overridable: false,
-      },
-      RoutingTable: {
-        Value: "",
-        Overridable: false,
-      },
-      PreUp: {
-        Value: "",
-        Overridable: false,
-      },
-      PostUp: {
-        Value: "",
-        Overridable: false,
-      },
-      PreDown: {
-        Value: "",
-        Overridable: false,
-      },
-      PostDown: {
-        Value: "",
-        Overridable: false,
-      },
-    }
-  }
-}
+const formData = ref(freshPeer())
 
 // functions
 
@@ -139,14 +68,72 @@ watch(() => props.visible, async (newValue, oldValue) => {
         if (!selectedPeer.value) {
           await peers.PreparePeer(selectedInterface.value.Identifier)
 
-          formData.value.Disabled = peers.Prepared.Disabled
           formData.value.Identifier = peers.Prepared.Identifier
           formData.value.DisplayName = peers.Prepared.DisplayName
+          formData.value.UserIdentifier = peers.Prepared.UserIdentifier
+          formData.value.InterfaceIdentifier = peers.Prepared.InterfaceIdentifier
+          formData.value.Disabled = peers.Prepared.Disabled
+          formData.value.ExpiresAt = peers.Prepared.ExpiresAt
+          formData.value.Notes = peers.Prepared.Notes
+
+          formData.value.Endpoint = peers.Prepared.Endpoint
+          formData.value.EndpointPublicKey = peers.Prepared.EndpointPublicKey
+          formData.value.AllowedIPs = peers.Prepared.AllowedIPs
+          formData.value.ExtraAllowedIPs = peers.Prepared.ExtraAllowedIPs
+          formData.value.PresharedKey = peers.Prepared.PresharedKey
+          formData.value.PersistentKeepalive = peers.Prepared.PersistentKeepalive
+
+          formData.value.PrivateKey = peers.Prepared.PrivateKey
+          formData.value.PublicKey = peers.Prepared.PublicKey
+
+          formData.value.Mode = peers.Prepared.Mode
+
+          formData.value.Addresses = peers.Prepared.Addresses
+          formData.value.CheckAliveAddress = peers.Prepared.CheckAliveAddress
+          formData.value.Dns = peers.Prepared.Dns
+          formData.value.DnsSearch = peers.Prepared.DnsSearch
+          formData.value.Mtu = peers.Prepared.Mtu
+          formData.value.FirewallMark = peers.Prepared.FirewallMark
+          formData.value.RoutingTable = peers.Prepared.RoutingTable
+
+          formData.value.PreUp = peers.Prepared.PreUp
+          formData.value.PostUp = peers.Prepared.PostUp
+          formData.value.PreDown = peers.Prepared.PreDown
+          formData.value.PostDown = peers.Prepared.PostDown
 
         } else { // fill existing data
-          formData.value.Disabled = selectedPeer.value.Disabled
           formData.value.Identifier = selectedPeer.value.Identifier
           formData.value.DisplayName = selectedPeer.value.DisplayName
+          formData.value.UserIdentifier = selectedPeer.value.UserIdentifier
+          formData.value.InterfaceIdentifier = selectedPeer.value.InterfaceIdentifier
+          formData.value.Disabled = selectedPeer.value.Disabled
+          formData.value.ExpiresAt = selectedPeer.value.ExpiresAt
+          formData.value.Notes = selectedPeer.value.Notes
+
+          formData.value.Endpoint = selectedPeer.value.Endpoint
+          formData.value.EndpointPublicKey = selectedPeer.value.EndpointPublicKey
+          formData.value.AllowedIPs = selectedPeer.value.AllowedIPs
+          formData.value.ExtraAllowedIPs = selectedPeer.value.ExtraAllowedIPs
+          formData.value.PresharedKey = selectedPeer.value.PresharedKey
+          formData.value.PersistentKeepalive = selectedPeer.value.PersistentKeepalive
+
+          formData.value.PrivateKey = selectedPeer.value.PrivateKey
+          formData.value.PublicKey = selectedPeer.value.PublicKey
+
+          formData.value.Mode = selectedPeer.value.Mode
+
+          formData.value.Addresses = selectedPeer.value.Addresses
+          formData.value.CheckAliveAddress = selectedPeer.value.CheckAliveAddress
+          formData.value.Dns = selectedPeer.value.Dns
+          formData.value.DnsSearch = selectedPeer.value.DnsSearch
+          formData.value.Mtu = selectedPeer.value.Mtu
+          formData.value.FirewallMark = selectedPeer.value.FirewallMark
+          formData.value.RoutingTable = selectedPeer.value.RoutingTable
+
+          formData.value.PreUp = selectedPeer.value.PreUp
+          formData.value.PostUp = selectedPeer.value.PostUp
+          formData.value.PreDown = selectedPeer.value.PreDown
+          formData.value.PostDown = selectedPeer.value.PostDown
 
         }
       }
@@ -154,8 +141,112 @@ watch(() => props.visible, async (newValue, oldValue) => {
 )
 
 function close() {
-  formData.value = freshFormData()
+  formData.value = freshPeer()
   emit('close')
+}
+
+function handleChangeAddresses(tags) {
+  let validInput = true
+  tags.forEach(tag => {
+    if(isCidr(tag) === 0) {
+      validInput = false
+      notify({
+        title: "Invalid CIDR",
+        text: tag + " is not a valid IP address",
+        type: 'error',
+      })
+    }
+  })
+  if(validInput) {
+    formData.value.Addresses = tags
+  }
+}
+
+function handleChangeAllowedIPs(tags) {
+  let validInput = true
+  tags.forEach(tag => {
+    if(isCidr(tag) === 0) {
+      validInput = false
+      notify({
+        title: "Invalid CIDR",
+        text: tag + " is not a valid IP address",
+        type: 'error',
+      })
+    }
+  })
+  if(validInput) {
+    formData.value.AllowedIPs = tags
+  }
+}
+
+function handleChangeExtraAllowedIPs(tags) {
+  let validInput = true
+  tags.forEach(tag => {
+    if(isCidr(tag) === 0) {
+      validInput = false
+      notify({
+        title: "Invalid CIDR",
+        text: tag + " is not a valid IP address",
+        type: 'error',
+      })
+    }
+  })
+  if(validInput) {
+    formData.value.ExtraAllowedIPs = tags
+  }
+}
+
+function handleChangeDns(tags) {
+  let validInput = true
+  tags.forEach(tag => {
+    if(!isIP(tag)) {
+      validInput = false
+      notify({
+        title: "Invalid IP",
+        text: tag + " is not a valid IP address",
+        type: 'error',
+      })
+    }
+  })
+  if(validInput) {
+    formData.value.Dns = tags
+  }
+}
+
+function handleChangeDnsSearch(tags) {
+  formData.value.DnsSearch = tags
+}
+
+async function save() {
+  try {
+    if (props.peerId!=='#NEW#') {
+      await peers.UpdatePeer(selectedPeer.value.Identifier, formData.value)
+    } else {
+      await peers.CreatePeer(selectedInterface.value.Identifier, formData.value)
+    }
+    close()
+  } catch (e) {
+    console.log(e)
+    notify({
+      title: "Backend Connection Failure",
+      text: "Failed to save peer!",
+      type: 'error',
+    })
+  }
+}
+
+async function del() {
+  try {
+    await peers.DeletePeer(selectedPeer.value.Identifier)
+    close()
+  } catch (e) {
+    console.log(e)
+    notify({
+      title: "Backend Connection Failure",
+      text: "Failed to delete peer!",
+      type: 'error',
+    })
+  }
 }
 
 </script>
@@ -188,6 +279,10 @@ function close() {
           <label class="form-label mt-4">{{ $t('modals.peeredit.presharedkey') }}</label>
           <input type="email" class="form-control" placeholder="Optional pre-shared key" v-model="formData.PresharedKey">
         </div>
+        <div class="form-group" v-if="formData.Mode==='client'">
+          <label class="form-label mt-4">{{ $t('modals.peeredit.endpointpublickey') }}</label>
+          <input type="text" class="form-control" placeholder="Endpoint Public Key" v-model="formData.EndpointPublicKey.Value">
+        </div>
       </fieldset>
       <fieldset>
         <legend class="mt-4">Networking</legend>
@@ -197,19 +292,43 @@ function close() {
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peeredit.ips') }}</label>
-          <input type="text" class="form-control" placeholder="Client IP Address" v-model="formData.InterfaceConfig.AddressStr.Value">
+          <vue3-tags-input class="form-control" :tags="formData.Addresses"
+                           placeholder="IP Addresses (CIDR format)"
+                           :add-tag-on-keys="[13, 188, 32, 9]"
+                           :validate="validateCIDR"
+                           @on-tags-changed="handleChangeAddresses"/>
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peeredit.allowedips') }}</label>
-          <input type="text" class="form-control" placeholder="Allowed IP Address" v-model="formData.AllowedIPsStr.Value">
+          <vue3-tags-input class="form-control" :tags="formData.AllowedIPs.Value"
+                           placeholder="Allowed IP Addresses (CIDR format)"
+                           :add-tag-on-keys="[13, 188, 32, 9]"
+                           :validate="validateCIDR"
+                           @on-tags-changed="handleChangeAllowedIPs"/>
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peeredit.extraallowedips') }}</label>
-          <input type="text" class="form-control" placeholder="Extra Allowed IP's (Server Sided)" v-model="formData.ExtraAllowedIPsStr.Value">
+          <vue3-tags-input class="form-control" :tags="formData.ExtraAllowedIPs"
+                           placeholder="Extra allowed IP's (Server Sided)"
+                           :add-tag-on-keys="[13, 188, 32, 9]"
+                           :validate="validateCIDR"
+                           @on-tags-changed="handleChangeExtraAllowedIPs"/>
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peeredit.dns') }}</label>
-          <input type="text" class="form-control" placeholder="Client DNS Servers" v-model="formData.InterfaceConfig.DnsStr.Value">
+          <vue3-tags-input class="form-control" :tags="formData.Dns.Value"
+                           placeholder="DNS Servers"
+                           :add-tag-on-keys="[13, 188, 32, 9]"
+                           :validate="validateIP"
+                           @on-tags-changed="handleChangeDns"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label mt-4">{{ $t('modals.peeredit.dnssearch') }}</label>
+          <vue3-tags-input class="form-control" :tags="formData.DnsSearch.Value"
+                           placeholder="DNS Search prefixes"
+                           :add-tag-on-keys="[13, 188, 32, 9]"
+                           :validate="validateDomain"
+                           @on-tags-changed="handleChangeDnsSearch"/>
         </div>
         <div class="row">
           <div class="form-group col-md-6">
@@ -218,7 +337,7 @@ function close() {
           </div>
           <div class="form-group col-md-6">
             <label class="form-label mt-4">{{ $t('modals.peeredit.mtu') }}</label>
-            <input type="number" class="form-control" placeholder="Client MTU (0 = default)" v-model="formData.InterfaceConfig.Mtu.Value">
+            <input type="number" class="form-control" placeholder="Client MTU (0 = default)" v-model="formData.Mtu.Value">
           </div>
         </div>
       </fieldset>
@@ -228,18 +347,14 @@ function close() {
           <input class="form-check-input" type="checkbox" v-model="formData.Disabled">
           <label class="form-check-label" >Disabled</label>
         </div>
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" checked="" v-model="formData.IgnoreGlobalSettings">
-          <label class="form-check-label">Ignore global settings</label>
-        </div>
       </fieldset>
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button type="button" class="btn btn-danger me-1">Delete</button>
+        <button v-if="props.peerId!=='#NEW#'" class="btn btn-danger me-1" type="button" @click.prevent="del">Delete</button>
       </div>
-      <button type="button" class="btn btn-primary me-1">Save</button>
-      <button @click.prevent="close" type="button" class="btn btn-secondary">Discard</button>
+      <button class="btn btn-primary me-1" type="button" @click.prevent="save">Save</button>
+      <button class="btn btn-secondary" type="button" @click.prevent="close">Discard</button>
     </template>
   </Modal>
 </template>

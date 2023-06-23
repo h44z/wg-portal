@@ -13,11 +13,11 @@ type Peer struct {
 	InterfaceIdentifier string     `json:"InterfaceIdentifier"`                  // the interface id
 	Disabled            bool       `json:"Disabled"`                             // flag that specifies if the peer is enabled (up) or not (down)
 	DisabledReason      string     `json:"DisabledReason"`                       // the reason why the peer has been disabled
-	ExpiresAt           *time.Time `json:"column:expires_at"`                    // expiry dates for peers
-	Notes               string     `json:"notes"`                                // a note field for peers
+	ExpiresAt           *time.Time `json:"ExpiresAt"`                            // expiry dates for peers
+	Notes               string     `json:"Notes"`                                // a note field for peers
 
 	Endpoint            StringConfigOption      `json:"Endpoint"`            // the endpoint address
-	EndpointPublicKey   string                  `json:"EndpointPublicKey"`   // the endpoint public key
+	EndpointPublicKey   StringConfigOption      `json:"EndpointPublicKey"`   // the endpoint public key
 	AllowedIPs          StringSliceConfigOption `json:"AllowedIPs"`          // all allowed ip subnets, comma seperated
 	ExtraAllowedIPs     []string                `json:"ExtraAllowedIPs"`     // all allowed ip subnets on the server side, comma seperated
 	PresharedKey        string                  `json:"PresharedKey"`        // the pre-shared Key of the peer
@@ -53,7 +53,7 @@ func NewPeer(src *domain.Peer) *Peer {
 		ExpiresAt:           src.ExpiresAt,
 		Notes:               src.Notes,
 		Endpoint:            StringConfigOptionFromDomain(src.Endpoint),
-		EndpointPublicKey:   src.EndpointPublicKey,
+		EndpointPublicKey:   StringConfigOptionFromDomain(src.EndpointPublicKey),
 		AllowedIPs:          StringSliceConfigOptionFromDomain(src.AllowedIPsStr),
 		ExtraAllowedIPs:     internal.SliceString(src.ExtraAllowedIPsStr),
 		PresharedKey:        string(src.PresharedKey),
@@ -92,7 +92,7 @@ func NewDomainPeer(src *Peer) *domain.Peer {
 	res := &domain.Peer{
 		BaseModel:           domain.BaseModel{},
 		Endpoint:            StringConfigOptionToDomain(src.Endpoint),
-		EndpointPublicKey:   src.EndpointPublicKey,
+		EndpointPublicKey:   StringConfigOptionToDomain(src.EndpointPublicKey),
 		AllowedIPsStr:       StringSliceConfigOptionToDomain(src.AllowedIPs),
 		ExtraAllowedIPsStr:  internal.SliceToString(src.ExtraAllowedIPs),
 		PresharedKey:        domain.PreSharedKey(src.PresharedKey),

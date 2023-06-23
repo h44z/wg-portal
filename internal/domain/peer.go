@@ -28,7 +28,7 @@ type Peer struct {
 	// WireGuard specific (for the [peer] section of the config file)
 
 	Endpoint            StringConfigOption `gorm:"embedded;embeddedPrefix:endpoint_"`        // the endpoint address
-	EndpointPublicKey   string             `gorm:"column:endpoint_pubkey"`                   // the endpoint public key
+	EndpointPublicKey   StringConfigOption `gorm:"embedded;embeddedPrefix:endpoint_pubkey_"` // the endpoint public key
 	AllowedIPsStr       StringConfigOption `gorm:"embedded;embeddedPrefix:allowed_ips_str_"` // all allowed ip subnets, comma seperated
 	ExtraAllowedIPsStr  string             // all allowed ip subnets on the server side, comma seperated
 	PresharedKey        PreSharedKey       // the pre-shared Key of the peer
@@ -49,11 +49,11 @@ type Peer struct {
 	Interface PeerInterfaceConfig `gorm:"embedded"`
 }
 
-func (p Peer) IsDisabled() bool {
+func (p *Peer) IsDisabled() bool {
 	return p.Disabled != nil
 }
 
-func (p Peer) CheckAliveAddress() string {
+func (p *Peer) CheckAliveAddress() string {
 	if p.Interface.CheckAliveAddress != "" {
 		return p.Interface.CheckAliveAddress
 	}
@@ -63,6 +63,10 @@ func (p Peer) CheckAliveAddress() string {
 	}
 
 	return ""
+}
+
+func (p *Peer) CopyCalculatedAttributes(src *Peer) {
+	p.BaseModel = src.BaseModel
 }
 
 type PeerInterfaceConfig struct {
@@ -149,7 +153,7 @@ func (p PhysicalPeer) GetAllowedIPs() ([]net.IPNet, error) {
 func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 	peer := &Peer{
 		Endpoint:            StringConfigOption{Value: pp.Endpoint, Overridable: true},
-		EndpointPublicKey:   "",
+		EndpointPublicKey:   StringConfigOption{Value: "", Overridable: true},
 		AllowedIPsStr:       StringConfigOption{Value: "", Overridable: true},
 		ExtraAllowedIPsStr:  "",
 		PresharedKey:        pp.PresharedKey,

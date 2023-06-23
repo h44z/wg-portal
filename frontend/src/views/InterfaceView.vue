@@ -289,7 +289,7 @@ onMounted(async () => {
           <td>
             <span v-for="ip in peer.Addresses" :key="ip" class="badge rounded-pill bg-light">{{ ip }}</span>
           </td>
-          <td v-if="interfaces.GetSelected.Mode==='client'">{{peer.Endpoint}}</td>
+          <td v-if="interfaces.GetSelected.Mode==='client'">{{peer.Endpoint.Value}}</td>
           <td>{{peer.LastConnected}}</td>
           <td class="text-center">
             <a href="#" title="Show peer" @click.prevent="viewedPeerId=peer.Identifier"><i class="fas fa-eye me-2"></i></a>

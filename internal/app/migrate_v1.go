@@ -320,7 +320,9 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 			Endpoint: domain.StringConfigOption{
 				Value: oldPeer.Endpoint, Overridable: !oldPeer.IgnoreGlobalSettings,
 			},
-			EndpointPublicKey: iface.PublicKey,
+			EndpointPublicKey: domain.StringConfigOption{
+				Value: iface.PublicKey, Overridable: !oldPeer.IgnoreGlobalSettings,
+			},
 			AllowedIPsStr: domain.StringConfigOption{
 				Value: oldPeer.AllowedIPsStr, Overridable: !oldPeer.IgnoreGlobalSettings,
 			},
@@ -333,7 +335,6 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 			Identifier:          domain.PeerIdentifier(oldPeer.PublicKey),
 			UserIdentifier:      user.Identifier,
 			InterfaceIdentifier: iface.Identifier,
-			Temporary:           nil,
 			Disabled:            disableTime,
 			DisabledReason:      disableReason,
 			ExpiresAt:           expiryTime,

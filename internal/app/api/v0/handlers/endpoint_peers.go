@@ -194,12 +194,12 @@ func (e peerEndpoint) handleUpdatePut() gin.HandlerFunc {
 			return
 		}
 
-		if p.InterfaceIdentifier != peerId {
+		if p.Identifier != peerId {
 			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "peer id mismatch"})
 			return
 		}
 
-		updatedPeer, err := e.app.UpdateInterface(ctx, model.NewDomainPeer(&p))
+		updatedPeer, err := e.app.UpdatePeer(ctx, model.NewDomainPeer(&p))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
@@ -232,9 +232,7 @@ func (e peerEndpoint) handleDelete() gin.HandlerFunc {
 
 		err := e.app.DeletePeer(ctx, domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
-				Code: http.StatusInternalServerError, Message: err.Error(),
-			})
+			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 

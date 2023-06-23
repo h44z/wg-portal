@@ -21,6 +21,10 @@ func (c Cidr) String() string {
 	return c.Prefix().String()
 }
 
+func (c Cidr) IsValid() bool {
+	return c.Prefix().IsValid()
+}
+
 func CidrFromString(str string) (Cidr, error) {
 	prefix, err := netip.ParsePrefix(strings.TrimSpace(str))
 	if err != nil {
@@ -141,16 +145,20 @@ func (c Cidr) NetworkAddr() Cidr {
 
 func (c Cidr) NextAddr() Cidr {
 	prefix := c.Prefix()
+	nextAddr := prefix.Addr().Next()
 	return Cidr{
-		Addr:      prefix.Addr().Next().String(),
+		Cidr:      netip.PrefixFrom(nextAddr, c.NetLength).String(),
+		Addr:      nextAddr.String(),
 		NetLength: prefix.Bits(),
 	}
 }
 
 func (c Cidr) NextSubnet() Cidr {
 	prefix := c.Prefix()
+	nextAddr := c.BroadcastAddr().Prefix().Addr().Next()
 	return Cidr{
-		Addr:      c.BroadcastAddr().Prefix().Addr().Next().String(),
+		Cidr:      netip.PrefixFrom(nextAddr, c.NetLength).String(),
+		Addr:      nextAddr.String(),
 		NetLength: prefix.Bits(),
 	}
 }

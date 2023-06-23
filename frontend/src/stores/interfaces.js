@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 import {apiWrapper} from '@/helpers/fetch-wrapper'
 import {notify} from "@kyvg/vue3-notification";
+import { freshInterface } from '@/helpers/models';
 
 const baseUrl = `/interface`
 
@@ -9,12 +10,9 @@ export const interfaceStore = defineStore({
   id: 'interfaces',
   state: () => ({
     interfaces: [],
-    prepared: {
-        Identifier: "",
-        Type: "server",
-    },
+    prepared: freshInterface(),
     configuration: "",
-    selected: "wg0",
+    selected: "",
     fetching: false,
   }),
   getters: {
@@ -30,6 +28,11 @@ export const interfaceStore = defineStore({
   actions: {
     setInterfaces(interfaces) {
       this.interfaces = interfaces
+      if (this.interfaces.length > 0) {
+        this.selected = this.interfaces[0].Identifier
+      } else {
+        this.selected = ""
+      }
       this.fetching = false
     },
     async LoadInterfaces() {
@@ -55,7 +58,7 @@ export const interfaceStore = defineStore({
       return apiWrapper.get(`${baseUrl}/prepare`)
         .then(this.setPreparedInterface)
         .catch(error => {
-          this.prepared = {}
+          this.prepared = freshInterface()
           console.log("Failed to load prepared interface: ", error)
           notify({
             title: "Backend Connection Failure",
@@ -64,7 +67,7 @@ export const interfaceStore = defineStore({
         })
     },
     async InterfaceConfig(id) {
-      return apiWrapper.get(`${baseUrl}/config/${id}`)
+      return apiWrapper.get(`${baseUrl}/config/${encodeURIComponent(id)}`)
           .then(this.setInterfaceConfig)
           .catch(error => {
               this.prepared = {}
@@ -77,9 +80,14 @@ export const interfaceStore = defineStore({
     },
     async DeleteInterface(id) {
       this.fetching = true
-      return apiWrapper.delete(`${baseUrl}/${id}`)
+      return apiWrapper.delete(`${baseUrl}/${encodeURIComponent(id)}`)
         .then(() => {
           this.interfaces = this.interfaces.filter(i => i.Identifier !== id)
+          if (this.interfaces.length > 0) {
+            this.selected = this.interfaces[0].Identifier
+          } else {
+            this.selected = ""
+          }
           this.fetching = false
         })
         .catch(error => {
@@ -90,7 +98,7 @@ export const interfaceStore = defineStore({
     },
     async UpdateInterface(id, formData) {
       this.fetching = true
-      return apiWrapper.put(`${baseUrl}/${id}`, formData)
+      return apiWrapper.put(`${baseUrl}/${encodeURIComponent(id)}`, formData)
         .then(iface => {
           let idx = this.interfaces.findIndex((i) => i.Identifier === id)
           this.interfaces[idx] = iface

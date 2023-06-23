@@ -6,8 +6,8 @@ import (
 )
 
 type StringConfigOption struct {
-	Value       string `json:"value"`
-	Overridable bool   `json:"overridable"`
+	Value       string `json:"Value"`
+	Overridable bool   `json:"Overridable"`
 }
 
 func NewStringConfigOption(value string, overridable bool) StringConfigOption {
@@ -32,8 +32,8 @@ func StringConfigOptionToDomain(opt StringConfigOption) domain.StringConfigOptio
 }
 
 type StringSliceConfigOption struct {
-	Value       []string `json:"value"`
-	Overridable bool     `json:"overridable"`
+	Value       []string `json:"Value"`
+	Overridable bool     `json:"Overridable"`
 }
 
 func NewStringSliceConfigOption(value []string, overridable bool) StringSliceConfigOption {
@@ -58,8 +58,8 @@ func StringSliceConfigOptionToDomain(opt StringSliceConfigOption) domain.StringC
 }
 
 type IntConfigOption struct {
-	Value       int  `json:"value"`
-	Overridable bool `json:"overridable"`
+	Value       int  `json:"Value"`
+	Overridable bool `json:"Overridable"`
 }
 
 func NewIntConfigOption(value int, overridable bool) IntConfigOption {
@@ -84,8 +84,8 @@ func IntConfigOptionToDomain(opt IntConfigOption) domain.IntConfigOption {
 }
 
 type Int32ConfigOption struct {
-	Value       int32 `json:"value"`
-	Overridable bool  `json:"overridable"`
+	Value       int32 `json:"Value"`
+	Overridable bool  `json:"Overridable"`
 }
 
 func NewInt32ConfigOption(value int32, overridable bool) Int32ConfigOption {
@@ -110,8 +110,8 @@ func Int32ConfigOptionToDomain(opt Int32ConfigOption) domain.Int32ConfigOption {
 }
 
 type BoolConfigOption struct {
-	Value       bool `json:"value"`
-	Overridable bool `json:"overridable"`
+	Value       bool `json:"Value"`
+	Overridable bool `json:"Overridable"`
 }
 
 func NewBoolConfigOption(value bool, overridable bool) BoolConfigOption {

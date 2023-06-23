@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/h44z/wg-portal/internal/app"
 	"time"
 
@@ -154,7 +153,7 @@ func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain
 	}
 
 	peer.InterfaceIdentifier = in.Identifier
-	peer.EndpointPublicKey = in.PublicKey
+	peer.EndpointPublicKey = domain.StringConfigOption{Value: in.PublicKey, Overridable: true}
 	peer.AllowedIPsStr = domain.StringConfigOption{Value: in.PeerDefAllowedIPsStr, Overridable: true}
 	peer.Interface.Addresses = p.AllowedIPs // use allowed IP's as the peer IP's
 	peer.Interface.DnsStr = domain.StringConfigOption{Value: in.PeerDefDnsStr, Overridable: true}
@@ -298,7 +297,7 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 		return nil, fmt.Errorf("failed to generate new identifier: %w", err)
 	}
 
-	ipv4, ipv6, err := m.getFreshIpConfig(ctx)
+	ipv4, ipv6, err := m.getFreshInterfaceIpConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate new ip config: %w", err)
 	}
@@ -390,7 +389,7 @@ func (m Manager) getNewInterfaceName(ctx context.Context) (domain.InterfaceIdent
 	return name, nil
 }
 
-func (m Manager) getFreshIpConfig(ctx context.Context) (ipV4, ipV6 domain.Cidr, err error) {
+func (m Manager) getFreshInterfaceIpConfig(ctx context.Context) (ipV4, ipV6 domain.Cidr, err error) {
 	ips, err := m.db.GetInterfaceIps(ctx)
 	if err != nil {
 		err = fmt.Errorf("failed to get existing IP addresses: %w", err)
@@ -401,33 +400,48 @@ func (m Manager) getFreshIpConfig(ctx context.Context) (ipV4, ipV6 domain.Cidr, 
 	ipV4, _ = domain.CidrFromString(m.cfg.Advanced.StartCidrV4)
 	ipV6, _ = domain.CidrFromString(m.cfg.Advanced.StartCidrV6)
 
+	netV4 := ipV4.NetworkAddr()
+	netV6 := ipV6.NetworkAddr()
 	for {
-		ipV4Conflict := false
-		ipV6Conflict := false
+		v4Conflict := false
+		v6Conflict := false
 		for _, usedIps := range ips {
-			for _, ip := range usedIps {
-				if ipV4 == ip {
-					ipV4Conflict = true
+			for _, usedIp := range usedIps {
+				usedNetwork := usedIp.NetworkAddr()
+				if netV4 == usedNetwork {
+					v4Conflict = true
 				}
 
-				if ipV6 == ip {
-					ipV6Conflict = true
+				if netV6 == usedNetwork {
+					v6Conflict = true
 				}
 			}
 		}
 
-		if !ipV4Conflict && (!useV6 || !ipV6Conflict) {
+		if !v4Conflict && (!useV6 || !v6Conflict) {
 			break
 		}
 
-		if ipV4Conflict {
-			ipV4 = ipV4.NextSubnet()
+		if v4Conflict {
+			netV4 = netV4.NextSubnet()
 		}
 
-		if ipV6Conflict && useV6 {
-			ipV6 = ipV6.NextSubnet()
+		if v6Conflict && useV6 {
+			netV6 = netV6.NextSubnet()
+		}
+
+		if !netV4.IsValid() {
+			return domain.Cidr{}, domain.Cidr{}, fmt.Errorf("IPv4 space exhausted")
+		}
+
+		if useV6 && !netV6.IsValid() {
+			return domain.Cidr{}, domain.Cidr{}, fmt.Errorf("IPv6 space exhausted")
 		}
 	}
+
+	// use first address in network for interface
+	ipV4 = netV4.NextAddr()
+	ipV6 = netV6.NextAddr()
 
 	return
 }
@@ -471,7 +485,7 @@ func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*do
 		return nil, fmt.Errorf("interface %s already exists", in.Identifier)
 	}
 
-	if err := m.validateCreation(ctx, existingInterface, in); err != nil {
+	if err := m.validateInterfaceCreation(ctx, existingInterface, in); err != nil {
 		return nil, fmt.Errorf("creation not allowed: %w", err)
 	}
 
@@ -501,7 +515,7 @@ func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*do
 		return nil, fmt.Errorf("unable to load existing interface %s: %w", in.Identifier, err)
 	}
 
-	if err := m.validateModifications(ctx, existingInterface, in); err != nil {
+	if err := m.validateInterfaceModifications(ctx, existingInterface, in); err != nil {
 		return nil, fmt.Errorf("update not allowed: %w", err)
 	}
 
@@ -531,7 +545,7 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		return fmt.Errorf("unable to find interface %s: %w", id, err)
 	}
 
-	if err := m.validateDeletion(ctx, existingInterface); err != nil {
+	if err := m.validateInterfaceDeletion(ctx, existingInterface); err != nil {
 		return fmt.Errorf("deletion not allowed: %w", err)
 	}
 
@@ -553,7 +567,7 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 	return nil
 }
 
-func (m Manager) validateModifications(ctx context.Context, old, new *domain.Interface) error {
+func (m Manager) validateInterfaceModifications(ctx context.Context, old, new *domain.Interface) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin {
@@ -563,7 +577,7 @@ func (m Manager) validateModifications(ctx context.Context, old, new *domain.Int
 	return nil
 }
 
-func (m Manager) validateCreation(ctx context.Context, old, new *domain.Interface) error {
+func (m Manager) validateInterfaceCreation(ctx context.Context, old, new *domain.Interface) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if new.Identifier == "" {
@@ -577,7 +591,7 @@ func (m Manager) validateCreation(ctx context.Context, old, new *domain.Interfac
 	return nil
 }
 
-func (m Manager) validateDeletion(ctx context.Context, del *domain.Interface) error {
+func (m Manager) validateInterfaceDeletion(ctx context.Context, del *domain.Interface) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin {
@@ -615,6 +629,11 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 		return nil, fmt.Errorf("unable to find interface %s: %w", id, err)
 	}
 
+	ips, err := m.getFreshPeerIpConfig(ctx, iface)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get fresh ip addresses: %w", err)
+	}
+
 	kp, err := domain.NewFreshKeypair()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate keys: %w", err)
@@ -630,7 +649,7 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 		peerMode = domain.InterfaceTypeServer
 	}
 
-	peerId := domain.PeerIdentifier(uuid.New().String())
+	peerId := domain.PeerIdentifier(kp.PublicKey)
 	freshPeer := &domain.Peer{
 		BaseModel: domain.BaseModel{
 			CreatedBy: string(currentUser.Id),
@@ -639,7 +658,7 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 			UpdatedAt: time.Now(),
 		},
 		Endpoint:            domain.NewStringConfigOption(iface.PeerDefEndpoint, true),
-		EndpointPublicKey:   iface.PublicKey,
+		EndpointPublicKey:   domain.NewStringConfigOption(iface.PublicKey, true),
 		AllowedIPsStr:       domain.NewStringConfigOption(iface.PeerDefAllowedIPsStr, true),
 		ExtraAllowedIPsStr:  "",
 		PresharedKey:        pk,
@@ -655,7 +674,7 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 		Interface: domain.PeerInterfaceConfig{
 			KeyPair:           kp,
 			Type:              peerMode,
-			Addresses:         nil, // TODO
+			Addresses:         ips,
 			CheckAliveAddress: "",
 			DnsStr:            domain.NewStringConfigOption(iface.PeerDefDnsStr, true),
 			DnsSearchStr:      domain.NewStringConfigOption(iface.PeerDefDnsSearchStr, true),
@@ -670,6 +689,121 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 	}
 
 	return freshPeer, nil
+}
+
+func (m Manager) getFreshPeerIpConfig(ctx context.Context, iface *domain.Interface) (ips []domain.Cidr, err error) {
+	networks, err := domain.CidrsFromString(iface.PeerDefNetworkStr)
+	if err != nil {
+		err = fmt.Errorf("failed to parse default network address: %w", err)
+		return
+	}
+
+	existingIps, err := m.db.GetUsedIpsPerSubnet(ctx)
+	if err != nil {
+		err = fmt.Errorf("failed to get existing IP addresses: %w", err)
+		return
+	}
+
+	for _, network := range networks {
+		ip := network.NextAddr()
+
+		for {
+			ipConflict := false
+			for _, usedIp := range existingIps[network] {
+				if usedIp == ip {
+					ipConflict = true
+				}
+			}
+
+			if !ipConflict {
+				break
+			}
+
+			ip = ip.NextAddr()
+
+			if !ip.IsValid() {
+				return nil, fmt.Errorf("ip space on subnet %s is exhausted", network.String())
+			}
+		}
+
+		ips = append(ips, ip)
+	}
+
+	return
+}
+
+func (m Manager) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error) {
+	peer, err := m.db.GetPeer(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find peer %s: %w", id, err)
+	}
+
+	return peer, nil
+}
+
+func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error) {
+	existingPeer, err := m.db.GetPeer(ctx, peer.Identifier)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, fmt.Errorf("unable to load existing peer %s: %w", peer.Identifier, err)
+	}
+	if existingPeer != nil {
+		return nil, fmt.Errorf("peer %s already exists", peer.Identifier)
+	}
+
+	if err := m.validatePeerCreation(ctx, existingPeer, peer); err != nil {
+		return nil, fmt.Errorf("creation not allowed: %w", err)
+	}
+
+	err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+		peer.CopyCalculatedAttributes(p)
+
+		err = m.wg.SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
+			func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
+				domain.MergeToPhysicalPeer(pp, peer)
+				return pp, nil
+			})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create wireguard peer %s: %w", peer.Identifier, err)
+		}
+
+		return peer, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creation failure: %w", err)
+	}
+
+	return peer, nil
+}
+
+func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error) {
+	existingPeer, err := m.db.GetPeer(ctx, peer.Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load existing peer %s: %w", peer.Identifier, err)
+	}
+
+	if err := m.validatePeerModifications(ctx, existingPeer, peer); err != nil {
+		return nil, fmt.Errorf("update not allowed: %w", err)
+	}
+
+	err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+		peer.CopyCalculatedAttributes(p)
+
+		err = m.wg.SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
+			func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
+				domain.MergeToPhysicalPeer(pp, peer)
+				return pp, nil
+			})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update wireguard peer %s: %w", peer.Identifier, err)
+		}
+
+		return peer, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("update failure: %w", err)
+	}
+
+	return peer, nil
 }
 
 func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error {
@@ -691,11 +825,36 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	return nil
 }
 
-func (m Manager) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error) {
-	peer, err := m.db.GetPeer(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("unable to find peer %s: %w", id, err)
+func (m Manager) validatePeerModifications(ctx context.Context, old, new *domain.Peer) error {
+	currentUser := domain.GetUserInfo(ctx)
+
+	if !currentUser.IsAdmin {
+		return fmt.Errorf("insufficient permissions")
 	}
 
-	return peer, nil
+	return nil
+}
+
+func (m Manager) validatePeerCreation(ctx context.Context, old, new *domain.Peer) error {
+	currentUser := domain.GetUserInfo(ctx)
+
+	if new.Identifier == "" {
+		return fmt.Errorf("invalid peer identifier")
+	}
+
+	if !currentUser.IsAdmin {
+		return fmt.Errorf("insufficient permissions")
+	}
+
+	return nil
+}
+
+func (m Manager) validatePeerDeletion(ctx context.Context, del *domain.Peer) error {
+	currentUser := domain.GetUserInfo(ctx)
+
+	if !currentUser.IsAdmin {
+		return fmt.Errorf("insufficient permissions")
+	}
+
+	return nil
 }

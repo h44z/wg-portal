@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import {apiWrapper} from "../helpers/fetch-wrapper";
 import {notify} from "@kyvg/vue3-notification";
 import {interfaceStore} from "./interfaces";
+import { freshPeer } from '@/helpers/models';
 
 const baseUrl = `/peer`
 
@@ -9,9 +10,8 @@ export const peerStore = defineStore({
   id: 'peers',
   state: () => ({
     peers: [],
-    prepared: {
-      Identifier: "",
-    },
+    peer: freshPeer(),
+    prepared: freshPeer(),
     filter: "",
     pageSize: 10,
     pageOffset: 0,
@@ -75,14 +75,18 @@ export const peerStore = defineStore({
       this.calculatePages()
       this.fetching = false
     },
+    setPeer(peer) {
+      this.peer = peer
+      this.fetching = false
+    },
     setPreparedPeer(peer) {
       this.prepared = peer;
     },
     async PreparePeer(interfaceId) {
-      return apiWrapper.get(`${baseUrl}/iface/${iface.Identifier}/prepare`)
+      return apiWrapper.get(`${baseUrl}/iface/${encodeURIComponent(interfaceId)}/prepare`)
         .then(this.setPreparedPeer)
         .catch(error => {
-          this.prepared = {}
+          this.prepared = freshPeer()
           console.log("Failed to load prepared peer: ", error)
           notify({
             title: "Backend Connection Failure",
@@ -90,14 +94,70 @@ export const peerStore = defineStore({
           })
         })
     },
-    async LoadPeers() {
-      let iface = interfaceStore().GetSelected
-      if (!iface) {
-        return // no interface, nothing to load
+    async LoadPeer(id) {
+      this.fetching = true
+      return apiWrapper.get(`${baseUrl}/${encodeURIComponent(id)}`)
+        .then(this.setPeer)
+        .catch(error => {
+          this.setPeers([])
+          console.log("Failed to load peer: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to load peer!",
+          })
+        })
+    },
+    async DeletePeer(id) {
+      this.fetching = true
+      return apiWrapper.delete(`${baseUrl}/${encodeURIComponent(id)}`)
+        .then(() => {
+          this.peers = this.peers.filter(p => p.Identifier !== id)
+          this.fetching = false
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log(error)
+          throw new Error(error)
+        })
+    },
+    async UpdatePeer(id, formData) {
+      this.fetching = true
+      return apiWrapper.put(`${baseUrl}/${encodeURIComponent(id)}`, formData)
+        .then(peer => {
+          let idx = this.peers.findIndex((p) => p.Identifier === id)
+          this.peers[idx] = peer
+          this.fetching = false
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log(error)
+          throw new Error(error)
+        })
+    },
+    async CreatePeer(interfaceId, formData) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/iface/${encodeURIComponent(interfaceId)}/new`, formData)
+        .then(peer => {
+          this.peers.push(peer)
+          this.fetching = false
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log(error)
+          throw new Error(error)
+        })
+    },
+    async LoadPeers(interfaceId) {
+      // if no interfaceId is given, use the currently selected interface
+      if (!interfaceId) {
+        interfaceId = interfaceStore().GetSelected.Identifier
+        if (!interfaceId) {
+          return // no interface, nothing to load
+        }
       }
       this.fetching = true
 
-      return apiWrapper.get(`${baseUrl}/iface/${iface.Identifier}/all`)
+      return apiWrapper.get(`${baseUrl}/iface/${encodeURIComponent(interfaceId)}/all`)
         .then(this.setPeers)
         .catch(error => {
           this.setPeers([])

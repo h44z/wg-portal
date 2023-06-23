@@ -5,8 +5,10 @@ import {computed, ref, watch} from "vue";
 import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
 import Vue3TagsInput from 'vue3-tags-input';
+import { validateCIDR, validateIP, validateDomain } from '@/helpers/validators';
 import isCidr from "is-cidr";
 import {isIP} from 'is-ip';
+import { freshInterface } from '@/helpers/models';
 
 const { t } = useI18n()
 
@@ -34,53 +36,9 @@ const title = computed(() => {
   return t("interfaces.interface.new")
 })
 
-const formData = ref(freshFormData())
+const formData = ref(freshInterface())
 
 // functions
-
-function freshFormData() {
-  return {
-    Disabled: false,
-    DisplayName: "",
-    Identifier: "",
-    Mode: "server",
-
-    PublicKey: "",
-    PrivateKey: "",
-
-    ListenPort:  51820,
-    Addresses: [],
-    DnsStr: [],
-    DnsSearch: [],
-
-    Mtu: 0,
-    FirewallMark: 0,
-    RoutingTable: "",
-
-    PreUp: "",
-    PostUp: "",
-    PreDown: "",
-    PostDown: "",
-
-    SaveConfig: false,
-
-    // Peer defaults
-
-    PeerDefNetwork: [],
-    PeerDefDns: [],
-    PeerDefDnsSearch: [],
-    PeerDefEndpoint: "",
-    PeerDefAllowedIPs: [],
-    PeerDefMtu: 0,
-    PeerDefPersistentKeepalive: 0,
-    PeerDefFirewallMark: 0,
-    PeerDefRoutingTable: "",
-    PeerDefPreUp: "",
-    PeerDefPostUp: "",
-    PeerDefPreDown: "",
-    PeerDefPostDown: ""
-  }
-}
 
 watch(() => props.visible, async (newValue, oldValue) => {
       if (oldValue === false && newValue === true) { // if modal is shown
@@ -170,7 +128,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
 )
 
 function close() {
-  formData.value = freshFormData()
+  formData.value = freshInterface()
   emit('close')
 }
 
@@ -264,20 +222,7 @@ function handleChangePeerDefDns(tags) {
 }
 
 function handleChangePeerDefDnsSearch(tags) {
-  formData.value.DnsSearch = tags
-}
-
-function validateCIDR(value) {
-  return isCidr(value) !== 0
-}
-
-function validateIP(value) {
-  return isIP(value)
-}
-
-function validateDomain(value) {
-  console.log("validating: ", value)
-  return true
+  formData.value.PeerDefDnsSearch = tags
 }
 
 async function save() {
@@ -289,6 +234,7 @@ async function save() {
     }
     close()
   } catch (e) {
+    console.log(e)
     notify({
       title: "Backend Connection Failure",
       text: "Failed to save interface!",
@@ -302,6 +248,7 @@ async function del() {
     await interfaces.DeleteInterface(selectedInterface.value.Identifier)
     close()
   } catch (e) {
+    console.log(e)
     notify({
       title: "Backend Connection Failure",
       text: "Failed to delete interface!",

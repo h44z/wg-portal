@@ -69,7 +69,6 @@ func main() {
 
 	backend, err := app.New(cfg, eventBus, authenticator, userManager, wireGuardManager,
 		statisticsCollector, templateManager)
-
 	internal.AssertNoError(err)
 	err = backend.Startup(ctx)
 	internal.AssertNoError(err)
