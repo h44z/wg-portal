@@ -429,7 +429,6 @@ func (s *Server) PostUserCreatePeer(c *gin.Context) {
 	}
 
 	formPeer.Email = currentSession.Email
-	formPeer.Identifier = currentSession.Email
 	formPeer.DeviceType = wireguard.DeviceTypeServer
 
 	if err := c.ShouldBind(&formPeer); err != nil {

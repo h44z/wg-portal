@@ -23,6 +23,10 @@
             <input type="hidden" name="uid" value="{{.Peer.UID}}">
             <div class="form-row">
                 <div class="form-group required col-md-12">
+                    <label for="server_Identifier">Identifier</label>
+                    <input type="text" name="identifier" class="form-control" id="server_Identifier" value="{{.Peer.Identifier}}" required>
+                </div>
+                <div class="form-group required col-md-12">
                     <label for="server_PublicKey">Public Key</label>
                     <input type="text" name="pubkey" class="form-control" id="server_PublicKey" value="{{.Peer.PublicKey}}" required>
                 </div>
