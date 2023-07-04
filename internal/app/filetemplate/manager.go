@@ -7,7 +7,6 @@ import (
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/yeqown/go-qrcode/v2"
-	"github.com/yeqown/go-qrcode/writer/standard"
 	"io"
 )
 
@@ -77,7 +76,11 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 
 	buf := bytes.NewBuffer(nil)
 	wr := nopCloser{Writer: buf}
-	qrWriter := standard.NewWithWriter(wr, standard.WithQRWidth(40), standard.WithBuiltinImageEncoder(standard.PNG_FORMAT))
+	option := Option{
+		Padding:   8, // padding pixels around the qr code.
+		BlockSize: 4, // block pixels which represents a bit data.
+	}
+	qrWriter := NewCompressedWriter(wr, &option)
 	err = code.Save(qrWriter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write code for %s: %w", id, err)

@@ -66,6 +66,29 @@ watch(() => props.visible, async (newValue, oldValue) => {
     }
 )
 
+function download() {
+  // credit: https://www.bitdegree.org/learn/javascript-download
+  let filename = 'WireGuard-Tunnel.conf'
+  if (selectedPeer.value.DisplayName) {
+    filename = selectedPeer.value.DisplayName
+        .replace(/ /g,"_")
+        .replace(/[^a-zA-Z0-9-_]/g,"")
+        .substring(0, 16)
+        + ".conf"
+  }
+  let text = configString.value
+
+  let element = document.createElement('a')
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text))
+  element.setAttribute('download', filename)
+
+  element.style.display = 'none'
+  document.body.appendChild(element)
+
+  element.click()
+  document.body.removeChild(element)
+}
+
 </script>
 
 <template>
@@ -116,7 +139,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button type="button" class="btn btn-primary me-1">Download</button>
+        <button @click.prevent="download" type="button" class="btn btn-primary me-1">Download</button>
         <button type="button" class="btn btn-primary me-1">Email</button>
       </div>
       <button @click.prevent="close" type="button" class="btn btn-secondary">Close</button>

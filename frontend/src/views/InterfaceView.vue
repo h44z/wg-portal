@@ -24,6 +24,24 @@ function calculateInterfaceName(id, name) {
   return result
 }
 
+async function download() {
+  await interfaces.LoadInterfaceConfig(interfaces.GetSelected.Identifier)
+
+  // credit: https://www.bitdegree.org/learn/javascript-download
+  let filename = interfaces.GetSelected.Identifier + ".conf"
+  let text = interfaces.configuration
+
+  let element = document.createElement('a')
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text))
+  element.setAttribute('download', filename)
+
+  element.style.display = 'none'
+  document.body.appendChild(element)
+
+  element.click()
+  document.body.removeChild(element)
+}
+
 onMounted(async () => {
   await interfaces.LoadInterfaces()
   await peers.LoadPeers()
@@ -80,7 +98,7 @@ onMounted(async () => {
             </div>
             <div class="col-12 col-lg-4 text-lg-end">
               <a class="btn-link" href="#" title="Show interface configuration" @click.prevent="viewedInterfaceId=interfaces.GetSelected.Identifier"><i class="fas fa-eye"></i></a>
-              <a class="ms-5 btn-link" href="#" title="Download interface configuration"><i class="fas fa-download"></i></a>
+              <a class="ms-5 btn-link" href="#" title="Download interface configuration" @click.prevent="download"><i class="fas fa-download"></i></a>
               <a class="ms-5 btn-link" href="#" title="Write interface configuration file"><i class="fas fa-save"></i></a>
               <a class="ms-5 btn-link" href="#" title="Edit interface settings" @click.prevent="editInterfaceId=interfaces.GetSelected.Identifier"><i class="fas fa-cog"></i></a>
             </div>
