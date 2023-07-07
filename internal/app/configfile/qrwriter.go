@@ -1,4 +1,4 @@
-package filetemplate
+package configfile
 
 // waiting for https://github.com/yeqown/go-qrcode/pull/85 to get merged
 // meanwhile we use our own writer implementation

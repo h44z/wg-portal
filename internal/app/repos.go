@@ -49,8 +49,12 @@ type StatisticsCollector interface {
 	StartBackgroundJobs(ctx context.Context)
 }
 
-type TemplateManager interface {
+type ConfigFileManager interface {
 	GetInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) (io.Reader, error)
 	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
 	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+}
+
+type MailManager interface {
+	SendPeerEmail(ctx context.Context, linkOnly bool, peers ...domain.PeerIdentifier) error
 }

@@ -26,6 +26,7 @@ func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 	apiGroup.POST("/iface/:iface/new", e.handleCreatePost())
 	apiGroup.POST("/iface/:iface/multiplenew", e.handleCreateMultiplePost())
 	apiGroup.GET("/config-qr/:id", e.handleQrCodeGet())
+	apiGroup.POST("/config-mail", e.handleEmailPost())
 	apiGroup.GET("/config/:id", e.handleConfigGet())
 	apiGroup.GET("/:id", e.handleSingleGet())
 	apiGroup.PUT("/:id", e.handleUpdatePut())
@@ -289,6 +290,7 @@ func (e peerEndpoint) handleDelete() gin.HandlerFunc {
 // @Tags Peer
 // @Summary Get peer configuration as string.
 // @Produce json
+// @Param id path string true "The peer identifier"
 // @Success 200 {object} string
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
@@ -329,6 +331,7 @@ func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
 // @Tags Peer
 // @Summary Get peer configuration as qr code.
 // @Produce json
+// @Param id path string true "The peer identifier"
 // @Success 200 {object} string
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
@@ -360,5 +363,44 @@ func (e peerEndpoint) handleQrCodeGet() gin.HandlerFunc {
 		}
 
 		c.Data(http.StatusOK, "image/png", configData)
+	}
+}
+
+// handleEmailPost returns a gorm handler function.
+//
+// @ID peers_handleEmailPost
+// @Tags Peer
+// @Summary Send peer configuration via email.
+// @Produce json
+// @Param request body model.PeerMailRequest true "The peer mail request data"
+// @Success 204 "No content if mail sending was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /peer/config-mail [post]
+func (e peerEndpoint) handleEmailPost() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req model.PeerMailRequest
+		err := c.BindJSON(&req)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		if len(req.Identifiers) == 0 {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing peer identifiers"})
+			return
+		}
+
+		peerIds := make([]domain.PeerIdentifier, len(req.Identifiers))
+		for i := range req.Identifiers {
+			peerIds[i] = domain.PeerIdentifier(req.Identifiers[i])
+		}
+		err = e.app.SendPeerEmail(c.Request.Context(), req.LinkOnly, peerIds...)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		c.Status(http.StatusNoContent)
 	}
 }

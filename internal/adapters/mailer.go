@@ -5,24 +5,24 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"time"
-
+	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 	mail "github.com/xhit/go-simple-mail/v2"
+	"io"
+	"time"
 )
 
-type mailRepo struct {
+type MailRepo struct {
 	cfg *config.MailConfig
 }
 
-func NewSmtpMailRepo(cfg *config.MailConfig) *mailRepo {
-	return &mailRepo{cfg: cfg}
+func NewSmtpMailRepo(cfg config.MailConfig) MailRepo {
+	return MailRepo{cfg: &cfg}
 }
 
 // Send sends a mail.
-func (r *mailRepo) Send(_ context.Context, subject, body string, to []string, options *domain.MailOptions) error {
+func (r MailRepo) Send(_ context.Context, subject, body string, to []string, options *domain.MailOptions) error {
 	if options == nil {
 		options = &domain.MailOptions{}
 	}
@@ -32,7 +32,7 @@ func (r *mailRepo) Send(_ context.Context, subject, body string, to []string, op
 		return errors.New("missing email recipient")
 	}
 
-	uniqueTo := r.uniqueAddresses(to)
+	uniqueTo := internal.UniqueStringSlice(to)
 	email := mail.NewMSG()
 	email.SetFrom(r.cfg.From).
 		AddTo(uniqueTo...).
@@ -43,23 +43,23 @@ func (r *mailRepo) Send(_ context.Context, subject, body string, to []string, op
 	if len(options.Cc) > 0 {
 		// the underlying mail library does not allow the same address to appear in TO and CC... so filter entries that are already included
 		// in the TO addresses
-		cc := r.removeDuplicates(r.uniqueAddresses(options.Cc), uniqueTo)
+		cc := RemoveDuplicates(internal.UniqueStringSlice(options.Cc), uniqueTo)
 		email.AddCc(cc...)
 	}
 	if len(options.Bcc) > 0 {
 		// the underlying mail library does not allow the same address to appear in TO or CC and BCC... so filter entries that are already
-		//included in the TO and CC addresses
-		bcc := r.removeDuplicates(r.uniqueAddresses(options.Bcc), uniqueTo)
-		bcc = r.removeDuplicates(bcc, options.Cc)
+		// included in the TO and CC addresses
+		bcc := RemoveDuplicates(internal.UniqueStringSlice(options.Bcc), uniqueTo)
+		bcc = RemoveDuplicates(bcc, options.Cc)
 
-		email.AddCc(r.uniqueAddresses(options.Bcc)...)
+		email.AddCc(internal.UniqueStringSlice(options.Bcc)...)
 	}
 	if options.HtmlBody != "" {
 		email.AddAlternative(mail.TextHTML, options.HtmlBody)
 	}
 
 	for _, attachment := range options.Attachments {
-		attachmentData, err := ioutil.ReadAll(attachment.Data)
+		attachmentData, err := io.ReadAll(attachment.Data)
 		if err != nil {
 			return fmt.Errorf("failed to read attachment data for %s: %w", attachment.Name, err)
 		}
@@ -86,13 +86,13 @@ func (r *mailRepo) Send(_ context.Context, subject, body string, to []string, op
 	return nil
 }
 
-func (r *mailRepo) setDefaultOptions(sender string, options *domain.MailOptions) {
+func (r MailRepo) setDefaultOptions(sender string, options *domain.MailOptions) {
 	if options.ReplyTo == "" {
 		options.ReplyTo = sender
 	}
 }
 
-func (r *mailRepo) getMailServer() *mail.SMTPServer {
+func (r MailRepo) getMailServer() *mail.SMTPServer {
 	srv := mail.NewSMTPClient()
 
 	srv.ConnectTimeout = 30 * time.Second
@@ -123,20 +123,8 @@ func (r *mailRepo) getMailServer() *mail.SMTPServer {
 	return srv
 }
 
-// uniqueAddresses removes duplicates in the given string slice
-func (r *mailRepo) uniqueAddresses(slice []string) []string {
-	keys := make(map[string]struct{})
-	uniqueSlice := make([]string, 0, len(slice))
-	for _, entry := range slice {
-		if _, exists := keys[entry]; !exists {
-			keys[entry] = struct{}{}
-			uniqueSlice = append(uniqueSlice, entry)
-		}
-	}
-	return uniqueSlice
-}
-
-func (r *mailRepo) removeDuplicates(slice []string, remove []string) []string {
+// RemoveDuplicates removes addresses from the given string slice which are contained in the remove slice.
+func RemoveDuplicates(slice []string, remove []string) []string {
 	uniqueSlice := make([]string, 0, len(slice))
 
 	for _, i := range remove {

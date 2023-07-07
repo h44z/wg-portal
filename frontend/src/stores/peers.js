@@ -102,6 +102,22 @@ export const peerStore = defineStore({
           })
         })
     },
+    async MailPeerConfig(linkOnly, ids) {
+      return apiWrapper.post(`${baseUrl}/config-mail`, {
+          Identifiers: ids,
+          LinkOnly: linkOnly
+        })
+        .then(() => {
+          notify({
+            title: "Peer Configuration sent",
+            text: "Email sent to linked user!",
+          })
+        })
+        .catch(error => {
+          console.log("Failed to send peer configuration: ", error)
+          throw new Error(error)
+        })
+    },
     async LoadPeerConfig(id) {
       return apiWrapper.get(`${baseUrl}/config/${base64_url_encode(id)}`)
         .then(this.setPeerConfig)

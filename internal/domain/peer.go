@@ -1,7 +1,11 @@
 package domain
 
 import (
+	"fmt"
+	"github.com/h44z/wg-portal/internal"
 	"net"
+	"regexp"
+	"strings"
 	"time"
 
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
@@ -67,6 +71,25 @@ func (p *Peer) CheckAliveAddress() string {
 
 func (p *Peer) CopyCalculatedAttributes(src *Peer) {
 	p.BaseModel = src.BaseModel
+}
+
+func (p *Peer) GetConfigFileName() string {
+	filename := ""
+	reg := regexp.MustCompile("[^a-zA-Z0-9-_]+")
+
+	if p.DisplayName != "" {
+		filename = p.DisplayName
+		filename = strings.ReplaceAll(filename, " ", "_")
+		filename = reg.ReplaceAllString(filename, "")
+		filename = internal.TruncateString(filename, 16)
+		filename += ".conf"
+	} else {
+		filename = fmt.Sprintf("wg_%s", p.Identifier[0:8])
+		filename = reg.ReplaceAllString(filename, "")
+		filename += ".conf"
+	}
+
+	return filename
 }
 
 type PeerInterfaceConfig struct {

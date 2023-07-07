@@ -6,6 +6,7 @@ import {computed, ref, watch} from "vue";
 import {useI18n} from "vue-i18n";
 import { freshInterface, freshPeer } from '@/helpers/models';
 import Prism from "vue-prism-component";
+import {notify} from "@kyvg/vue3-notification";
 
 const { t } = useI18n()
 
@@ -89,6 +90,16 @@ function download() {
   document.body.removeChild(element)
 }
 
+function email() {
+  peers.MailPeerConfig(false, [selectedPeer.value.Identifier]).catch(error => {
+    notify({
+      title: "Peer email failure",
+      text: "Failed to send mail with peer configuration!",
+      type: 'error',
+    })
+  })
+}
+
 </script>
 
 <template>
@@ -140,7 +151,7 @@ function download() {
     <template #footer>
       <div class="flex-fill text-start">
         <button @click.prevent="download" type="button" class="btn btn-primary me-1">Download</button>
-        <button type="button" class="btn btn-primary me-1">Email</button>
+        <button @click.prevent="email"  type="button" class="btn btn-primary me-1">Email</button>
       </div>
       <button @click.prevent="close" type="button" class="btn btn-secondary">Close</button>
 

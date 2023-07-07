@@ -409,7 +409,7 @@ func (r *SqlRepo) FindInterfacePeers(ctx context.Context, id domain.InterfaceIde
 func (r *SqlRepo) GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error) {
 	var peers []domain.Peer
 
-	err := r.db.WithContext(ctx).Where("user_identifier = ?", id).Find(&peers).Error
+	err := r.db.WithContext(ctx).Preload("Addresses").Where("user_identifier = ?", id).Find(&peers).Error
 	if err != nil {
 		return nil, err
 	}

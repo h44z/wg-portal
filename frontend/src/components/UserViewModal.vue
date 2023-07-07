@@ -112,6 +112,7 @@ function close() {
             <thead>
             <tr>
               <th scope="col">{{ $t('user.peers.name') }}</th>
+              <th scope="col">{{ $t('user.peers.interface') }}</th>
               <th scope="col">{{ $t('user.peers.ips') }}</th>
               <th scope="col"></th><!-- Actions -->
             </tr>
@@ -119,6 +120,7 @@ function close() {
             <tbody>
             <tr v-for="peer in userPeers" :key="peer.Identifier">
               <td>{{peer.DisplayName}}</td>
+              <td>{{peer.InterfaceIdentifier}}</td>
               <td>
                 <span v-for="ip in peer.Addresses" :key="ip" class="badge rounded-pill bg-light">{{ ip }}</span>
               </td>

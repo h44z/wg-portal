@@ -119,3 +119,10 @@ func SliceString(str string) []string {
 func SliceToString(slice []string) string {
 	return strings.Join(slice, ",")
 }
+
+func TruncateString(s string, max int) string {
+	if max > len(s) {
+		return s
+	}
+	return s[:max]
+}

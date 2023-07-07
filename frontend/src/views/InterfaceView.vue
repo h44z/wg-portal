@@ -274,7 +274,7 @@ onMounted(async () => {
       </div>
     </div>
     <div class="col-12 col-lg-3 text-lg-end">
-      <a v-if="interfaces.GetSelected.Mode==='server' && peers.Count!==0" class="btn btn-primary" href="#" title="Send mail to all peers"><i class="fa fa-paper-plane"></i></a>
+      <!--a v-if="interfaces.GetSelected.Mode==='server' && peers.Count!==0" class="btn btn-primary" href="#" title="Send mail to all peers"><i class="fa fa-paper-plane"></i></a-->
       <a class="btn btn-primary ms-2" href="#" title="Add multiple peers" @click.prevent="multiCreatePeerId='#NEW#'"><i class="fa fa-plus me-1"></i><i class="fa fa-users"></i></a>
       <a class="btn btn-primary ms-2" href="#" title="Add a peer" @click.prevent="editPeerId='#NEW#'"><i class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
     </div>

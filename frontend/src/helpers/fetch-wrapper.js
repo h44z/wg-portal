@@ -86,7 +86,7 @@ function handleResponse(response) {
                 auth.Logout();
             }
 
-            const error = (data && data.message) || response.statusText;
+            const error = (data && data.Message) || response.statusText;
             return Promise.reject(error);
         }
 

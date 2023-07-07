@@ -1,4 +1,4 @@
-package filetemplate
+package configfile
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ type Manager struct {
 	wg    WireguardDatabaseRepo
 }
 
-func NewTemplateManager(cfg *config.Config, users UserDatabaseRepo, wg WireguardDatabaseRepo) (*Manager, error) {
+func NewConfigFileManager(cfg *config.Config, users UserDatabaseRepo, wg WireguardDatabaseRepo) (*Manager, error) {
 	tplHandler, err := newTemplateHandler()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template handler: %w", err)

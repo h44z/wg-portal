@@ -45,7 +45,7 @@ function editUser(user) {
       </div>
     </div>
     <div class="col-12 col-lg-3 text-lg-end">
-      <a class="btn btn-primary" href="#" title="Send mail to selected users"><i class="fa fa-paper-plane"></i></a>
+      <!--a class="btn btn-primary" href="#" title="Send mail to selected users"><i class="fa fa-paper-plane"></i></a-->
       <!--a class="btn btn-primary ms-2" href="#" title="Add multiple users"><i class="fa fa-plus me-1"></i><i
           class="fa fa-users"></i></a-->
       <a class="btn btn-primary ms-2" href="#" title="Add a user" @click.prevent="editUserId='#NEW#'"><i class="fa fa-plus me-1"></i><i
@@ -89,7 +89,7 @@ function editUser(user) {
             <span v-else><i class="fa fa-circle-xmark"></i></span>
           </td>
           <td class="text-center">
-            <a href="#" title="Show user" @click.prevent="viewedUserId=user.Identifier"><i class="fa-solid fa-magnifying-glass me-2"></i></a>
+            <a href="#" title="Show user" @click.prevent="viewedUserId=user.Identifier"><i class="fas fa-eye me-2"></i></a>
             <a :class="{disabled:user.Source!=='db'}" href="#" title="Edit user" @click.prevent="editUser(user)"><i class="fas fa-cog me-2"></i></a>
           </td>
         </tr>

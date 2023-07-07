@@ -5,7 +5,8 @@ import (
 	"github.com/h44z/wg-portal/internal/app/api/core"
 	handlersV0 "github.com/h44z/wg-portal/internal/app/api/v0/handlers"
 	"github.com/h44z/wg-portal/internal/app/auth"
-	"github.com/h44z/wg-portal/internal/app/filetemplate"
+	"github.com/h44z/wg-portal/internal/app/configfile"
+	"github.com/h44z/wg-portal/internal/app/mail"
 	"github.com/h44z/wg-portal/internal/app/users"
 	"github.com/h44z/wg-portal/internal/app/wireguard"
 	"os"
@@ -38,6 +39,8 @@ func main() {
 
 	wireGuard := adapters.NewWireGuardRepository()
 
+	mailer := adapters.NewSmtpMailRepo(cfg.Mail)
+
 	shouldExit, err := app.HandleProgramArgs(cfg, rawDb)
 	switch {
 	case shouldExit && err == nil:
@@ -64,11 +67,14 @@ func main() {
 	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, database, wireGuard)
 	internal.AssertNoError(err)
 
-	templateManager, err := filetemplate.NewTemplateManager(cfg, database, database)
+	cfgFileManager, err := configfile.NewConfigFileManager(cfg, database, database)
+	internal.AssertNoError(err)
+
+	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)
 	internal.AssertNoError(err)
 
 	backend, err := app.New(cfg, eventBus, authenticator, userManager, wireGuardManager,
-		statisticsCollector, templateManager)
+		statisticsCollector, cfgFileManager, mailManager)
 	internal.AssertNoError(err)
 	err = backend.Startup(ctx)
 	internal.AssertNoError(err)

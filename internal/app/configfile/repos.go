@@ -1,4 +1,4 @@
-package filetemplate
+package configfile
 
 import (
 	"context"
