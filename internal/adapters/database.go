@@ -136,6 +136,8 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to open sqlite database: %w", err)
 		}
+		sqlDB, _ := gormDb.DB()
+		sqlDB.SetMaxOpenConns(1)
 	}
 
 	return gormDb, nil

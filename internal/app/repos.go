@@ -40,6 +40,7 @@ type WireGuardManager interface {
 	PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error)
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 	CreatePeer(ctx context.Context, p *domain.Peer) (*domain.Peer, error)
+	CreateMultiplePeers(ctx context.Context, id domain.InterfaceIdentifier, r *domain.PeerCreationRequest) ([]domain.Peer, error)
 	UpdatePeer(ctx context.Context, p *domain.Peer) (*domain.Peer, error)
 	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 }

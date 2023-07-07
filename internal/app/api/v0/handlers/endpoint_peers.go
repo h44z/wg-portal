@@ -24,6 +24,7 @@ func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 	apiGroup.GET("/iface/:iface/all", e.handleAllGet())
 	apiGroup.GET("/iface/:iface/prepare", e.handlePrepareGet())
 	apiGroup.POST("/iface/:iface/new", e.handleCreatePost())
+	apiGroup.POST("/iface/:iface/multiplenew", e.handleCreateMultiplePost())
 	apiGroup.GET("/config-qr/:id", e.handleQrCodeGet())
 	apiGroup.GET("/config/:id", e.handleConfigGet())
 	apiGroup.GET("/:id", e.handleSingleGet())
@@ -165,6 +166,45 @@ func (e peerEndpoint) handleCreatePost() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, model.NewPeer(newPeer))
+	}
+}
+
+// handleCreateMultiplePost returns a gorm handler function.
+//
+// @ID peers_handleCreateMultiplePost
+// @Tags Peer
+// @Summary Create multiple new peers for the given interface.
+// @Produce json
+// @Param iface path string true "The interface identifier"
+// @Param request body model.MultiPeerRequest true "The peer creation request data"
+// @Success 200 {object} []model.Peer
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /peer/iface/{iface}/multiplenew [post]
+func (e peerEndpoint) handleCreateMultiplePost() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
+		interfaceId := Base64UrlDecode(c.Param("iface"))
+		if interfaceId == "" {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
+			return
+		}
+
+		var req model.MultiPeerRequest
+		err := c.BindJSON(&req)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		newPeers, err := e.app.CreateMultiplePeers(ctx, domain.InterfaceIdentifier(interfaceId), model.NewDomainPeerCreationRequest(&req))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, model.NewPeers(newPeers))
 	}
 }
 

@@ -167,6 +167,19 @@ export const peerStore = defineStore({
           throw new Error(error)
         })
     },
+    async CreateMultiplePeers(interfaceId, formData) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/iface/${base64_url_encode(interfaceId)}/multiplenew`, formData)
+          .then(peers => {
+            this.peers.push(...peers)
+            this.fetching = false
+          })
+          .catch(error => {
+            this.fetching = false
+            console.log(error)
+            throw new Error(error)
+          })
+    },
     async LoadPeers(interfaceId) {
       // if no interfaceId is given, use the currently selected interface
       if (!interfaceId) {

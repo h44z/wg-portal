@@ -181,3 +181,8 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 	pp.PublicKey = p.Interface.PublicKey
 	pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()
 }
+
+type PeerCreationRequest struct {
+	Identifiers []string
+	Suffix      string
+}

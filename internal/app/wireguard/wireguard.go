@@ -775,6 +775,33 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 	return peer, nil
 }
 
+func (m Manager) CreateMultiplePeers(ctx context.Context, interfaceId domain.InterfaceIdentifier, r *domain.PeerCreationRequest) ([]domain.Peer, error) {
+	var newPeers []domain.Peer
+
+	for _, id := range r.Identifiers {
+		freshPeer, err := m.PreparePeer(ctx, interfaceId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare peer for interface %s: %w", interfaceId, err)
+		}
+
+		freshPeer.UserIdentifier = domain.UserIdentifier(id) // use id as user identifier. peers are allowed to have invalid user identifiers
+		if r.Suffix != "" {
+			freshPeer.DisplayName += " " + r.Suffix
+		}
+
+		newPeers = append(newPeers, *freshPeer)
+	}
+
+	for i, peer := range newPeers {
+		_, err := m.CreatePeer(ctx, &newPeers[i])
+		if err != nil {
+			return nil, fmt.Errorf("failed to create peer %s (uid: %s) for interface %s: %w", peer.Identifier, peer.UserIdentifier, interfaceId, err)
+		}
+	}
+
+	return newPeers, nil
+}
+
 func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error) {
 	existingPeer, err := m.db.GetPeer(ctx, peer.Identifier)
 	if err != nil {

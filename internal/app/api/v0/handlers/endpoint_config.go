@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app"
 	"html/template"
+	"net"
 	"net/http"
+	"net/url"
 )
 
 //go:embed frontend_config.js.gotpl
@@ -52,7 +54,14 @@ func (e configEndpoint) handleConfigJsGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		backendUrl := fmt.Sprintf("%s/api/v0", e.app.Config.Web.ExternalUrl)
 		if c.GetHeader("x-wg-dev") != "" {
-			backendUrl = "http://localhost:5000/api/v0" // override if reqest comes from frontend started with npm run dev
+			referer := c.Request.Header.Get("Referer")
+			host := "localhost"
+			port := "5000"
+			parsedReferer, err := url.Parse(referer)
+			if err == nil {
+				host, port, _ = net.SplitHostPort(parsedReferer.Host)
+			}
+			backendUrl = fmt.Sprintf("http://%s:%s/api/v0", host, port) // override if request comes from frontend started with npm run dev
 		}
 		buf := &bytes.Buffer{}
 		err := e.tpl.ExecuteTemplate(buf, "frontend_config.js.gotpl", gin.H{

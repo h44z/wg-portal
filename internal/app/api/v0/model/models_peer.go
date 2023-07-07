@@ -131,3 +131,15 @@ func NewDomainPeer(src *Peer) *domain.Peer {
 
 	return res
 }
+
+type MultiPeerRequest struct {
+	Identifiers []string `json:"Identifiers"`
+	Suffix      string   `json:"Suffix"`
+}
+
+func NewDomainPeerCreationRequest(src *MultiPeerRequest) *domain.PeerCreationRequest {
+	return &domain.PeerCreationRequest{
+		Identifiers: src.Identifiers,
+		Suffix:      src.Suffix,
+	}
+}
