@@ -132,10 +132,10 @@ type PhysicalPeer struct {
 }
 
 func (p PhysicalPeer) GetPresharedKey() *wgtypes.Key {
-	if p.PrivateKey == "" {
+	if p.PresharedKey == "" {
 		return nil
 	}
-	key, err := wgtypes.ParseKey(p.PrivateKey)
+	key, err := wgtypes.ParseKey(string(p.PresharedKey))
 	if err != nil {
 		return nil
 	}

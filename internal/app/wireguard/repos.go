@@ -8,6 +8,7 @@ import (
 type InterfaceAndPeerDatabaseRepo interface {
 	GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error)
 	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
+	GetPeersStats(ctx context.Context, ids ...domain.PeerIdentifier) ([]domain.PeerStatus, error)
 	GetAllInterfaces(ctx context.Context) ([]domain.Interface, error)
 	FindInterfaces(ctx context.Context, search string) ([]domain.Interface, error)
 	GetInterfaceIps(ctx context.Context) (map[domain.InterfaceIdentifier][]domain.Cidr, error)

@@ -118,3 +118,16 @@ export function freshPeer() {
     }
   }
 }
+
+export function freshStats() {
+  return {
+    IsConnected: false,
+    IsPingable: false,
+    LastHandshake: null,
+    LastPing: null,
+    LastSessionStart: null,
+    BytesTransmitted: 0,
+    BytesReceived: 0,
+    EndpointAddress: ""
+  }
+}

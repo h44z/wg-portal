@@ -31,6 +31,7 @@ type WireGuardManager interface {
 	RestoreInterfaceState(ctx context.Context, updateDbOnError bool, filter ...domain.InterfaceIdentifier) error
 	CreateDefaultPeer(ctx context.Context, user *domain.User) error
 	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
+	GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error)
 	GetAllInterfaces(ctx context.Context) ([]domain.Interface, error)
 	GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error)
 	PrepareInterface(ctx context.Context) (*domain.Interface, error)

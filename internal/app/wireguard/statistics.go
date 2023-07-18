@@ -137,8 +137,8 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 	}
 }
 
-func getSessionStartTime(oldStats domain.PeerStatus, newReceived, newTransmitted uint64, lastHandshake *time.Time) *time.Time {
-	if lastHandshake == nil {
+func getSessionStartTime(oldStats domain.PeerStatus, newReceived, newTransmitted uint64, latestHandshake *time.Time) *time.Time {
+	if latestHandshake == nil {
 		return nil // currently not connected
 	}
 
@@ -146,16 +146,19 @@ func getSessionStartTime(oldStats domain.PeerStatus, newReceived, newTransmitted
 	switch {
 	// old session was never initiated
 	case oldStats.BytesReceived == 0 && oldStats.BytesTransmitted == 0 && (newReceived > 0 || newTransmitted > 0):
-		return lastHandshake
+		return latestHandshake
 	// session never received bytes -> first receive
 	case oldStats.BytesReceived == 0 && newReceived > 0 && (oldStats.LastHandshake == nil || oldStats.LastHandshake.Before(oldestHandshakeTime)):
-		return lastHandshake
+		return latestHandshake
 	// session never transmitted bytes -> first transmit
 	case oldStats.BytesTransmitted == 0 && newTransmitted > 0 && (oldStats.LastSessionStart == nil || oldStats.LastHandshake.Before(oldestHandshakeTime)):
-		return lastHandshake
+		return latestHandshake
 	// session restarted as newer send or transmit counts are lower
 	case (newReceived != 0 && newReceived < oldStats.BytesReceived) || (newTransmitted != 0 && newTransmitted < oldStats.BytesTransmitted):
-		return lastHandshake
+		return latestHandshake
+	// session initiated (but some bytes were already transmitted
+	case oldStats.LastSessionStart == nil && (newReceived > oldStats.BytesReceived || newTransmitted > oldStats.BytesTransmitted):
+		return latestHandshake
 	default:
 		return oldStats.LastSessionStart
 	}

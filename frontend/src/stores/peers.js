@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import {apiWrapper} from "../helpers/fetch-wrapper";
 import {notify} from "@kyvg/vue3-notification";
 import {interfaceStore} from "./interfaces";
-import { freshPeer } from '@/helpers/models';
+import {freshPeer, freshStats} from '@/helpers/models';
 import { base64_url_encode } from '@/helpers/encoding';
 
 const baseUrl = `/peer`
@@ -11,6 +11,8 @@ export const peerStore = defineStore({
   id: 'peers',
   state: () => ({
     peers: [],
+    stats: {},
+    statsEnabled: false,
     peer: freshPeer(),
     prepared: freshPeer(),
     configuration: "",
@@ -24,6 +26,7 @@ export const peerStore = defineStore({
     Find: (state) => {
       return (id) => state.peers.find((p) => p.Identifier === id)
     },
+
     Count: (state) => state.peers.length,
     Prepared: (state) => {console.log("STATE:", state.prepared); return state.prepared},
     FilteredCount: (state) => state.Filtered.length,
@@ -46,6 +49,11 @@ export const peerStore = defineStore({
     hasNextPage: (state) => state.pageOffset < (state.FilteredCount - state.pageSize),
     hasPrevPage: (state) => state.pageOffset > 0,
     currentPage: (state) => (state.pageOffset / state.pageSize)+1,
+    Statistics: (state) => {
+      return (id) => state.statsEnabled && (id in state.stats) ? state.stats[id] : freshStats()
+    },
+    hasStatistics: (state) => state.statsEnabled,
+
   },
   actions: {
     afterPageSizeChange() {
@@ -89,6 +97,14 @@ export const peerStore = defineStore({
     },
     setPeerConfig(config) {
       this.configuration = config;
+    },
+    setStats(statsResponse) {
+      if (!statsResponse) {
+        this.stats = {}
+        this.statsEnabled = false
+      }
+      this.stats = statsResponse.Stats
+      this.statsEnabled = statsResponse.Enabled
     },
     async PreparePeer(interfaceId) {
       return apiWrapper.get(`${baseUrl}/iface/${base64_url_encode(interfaceId)}/prepare`)
@@ -140,6 +156,27 @@ export const peerStore = defineStore({
           notify({
             title: "Backend Connection Failure",
             text: "Failed to load peer!",
+          })
+        })
+    },
+    async LoadStats(interfaceId) {
+      // if no interfaceId is given, use the currently selected interface
+      if (!interfaceId) {
+        interfaceId = interfaceStore().GetSelected.Identifier
+        if (!interfaceId) {
+          return // no interface, nothing to load
+        }
+      }
+      this.fetching = true
+
+      return apiWrapper.get(`${baseUrl}/iface/${base64_url_encode(interfaceId)}/stats`)
+        .then(this.setStats)
+        .catch(error => {
+          this.setStats(undefined)
+          console.log("Failed to load peer stats: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to load peer stats!",
           })
         })
     },

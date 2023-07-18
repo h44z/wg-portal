@@ -22,6 +22,7 @@ func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 	apiGroup := g.Group("/peer", e.authenticator.LoggedIn())
 
 	apiGroup.GET("/iface/:iface/all", e.handleAllGet())
+	apiGroup.GET("/iface/:iface/stats", e.handleStatsGet())
 	apiGroup.GET("/iface/:iface/prepare", e.handlePrepareGet())
 	apiGroup.POST("/iface/:iface/new", e.handleCreatePost())
 	apiGroup.POST("/iface/:iface/multiplenew", e.handleCreateMultiplePost())
@@ -402,5 +403,36 @@ func (e peerEndpoint) handleEmailPost() gin.HandlerFunc {
 		}
 
 		c.Status(http.StatusNoContent)
+	}
+}
+
+// handleStatsGet returns a gorm handler function.
+//
+// @ID peers_handleStatsGet
+// @Tags Peer
+// @Summary Get peer stats for the given interface.
+// @Produce json
+// @Param iface path string true "The interface identifier"
+// @Success 200 {object} model.PeerStats
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /peer/iface/{iface}/stats [get]
+func (e peerEndpoint) handleStatsGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
+		interfaceId := Base64UrlDecode(c.Param("iface"))
+		if interfaceId == "" {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
+			return
+		}
+
+		stats, err := e.app.GetPeerStats(ctx, domain.InterfaceIdentifier(interfaceId))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, model.NewPeerStats(true, stats))
 	}
 }

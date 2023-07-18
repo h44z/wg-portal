@@ -6,6 +6,38 @@ import (
 	"time"
 )
 
+const ExpiryDateTimeLayout = "\"2006-01-02\""
+
+type ExpiryDate struct {
+	*time.Time
+}
+
+// UnmarshalJSON will unmarshal using 2006-01-02 layout
+func (d *ExpiryDate) UnmarshalJSON(b []byte) error {
+	if len(b) == 0 || string(b) == "null" {
+		return nil
+	}
+	parsed, err := time.Parse(ExpiryDateTimeLayout, string(b))
+	if err != nil {
+		return err
+	}
+
+	if !parsed.IsZero() {
+		d.Time = &parsed
+	}
+	return nil
+}
+
+// MarshalJSON will marshal using 2006-01-02 layout
+func (d *ExpiryDate) MarshalJSON() ([]byte, error) {
+	if d == nil || d.Time == nil {
+		return []byte("null"), nil
+	}
+
+	s := d.Format(ExpiryDateTimeLayout)
+	return []byte(s), nil
+}
+
 type Peer struct {
 	Identifier          string     `json:"Identifier" example:"super_nice_peer"` // peer unique identifier
 	DisplayName         string     `json:"DisplayName"`                          // a nice display name/ description for the peer
@@ -13,7 +45,7 @@ type Peer struct {
 	InterfaceIdentifier string     `json:"InterfaceIdentifier"`                  // the interface id
 	Disabled            bool       `json:"Disabled"`                             // flag that specifies if the peer is enabled (up) or not (down)
 	DisabledReason      string     `json:"DisabledReason"`                       // the reason why the peer has been disabled
-	ExpiresAt           *time.Time `json:"ExpiresAt"`                            // expiry dates for peers
+	ExpiresAt           ExpiryDate `json:"ExpiresAt,omitempty"`                  // expiry dates for peers
 	Notes               string     `json:"Notes"`                                // a note field for peers
 
 	Endpoint            StringConfigOption      `json:"Endpoint"`            // the endpoint address
@@ -50,7 +82,7 @@ func NewPeer(src *domain.Peer) *Peer {
 		InterfaceIdentifier: string(src.InterfaceIdentifier),
 		Disabled:            src.IsDisabled(),
 		DisabledReason:      src.DisabledReason,
-		ExpiresAt:           src.ExpiresAt,
+		ExpiresAt:           ExpiryDate{src.ExpiresAt},
 		Notes:               src.Notes,
 		Endpoint:            StringConfigOptionFromDomain(src.Endpoint),
 		EndpointPublicKey:   StringConfigOptionFromDomain(src.EndpointPublicKey),
@@ -103,7 +135,7 @@ func NewDomainPeer(src *Peer) *domain.Peer {
 		InterfaceIdentifier: domain.InterfaceIdentifier(src.InterfaceIdentifier),
 		Disabled:            nil, // set below
 		DisabledReason:      src.DisabledReason,
-		ExpiresAt:           src.ExpiresAt,
+		ExpiresAt:           src.ExpiresAt.Time,
 		Notes:               src.Notes,
 		Interface: domain.PeerInterfaceConfig{
 			KeyPair: domain.KeyPair{
@@ -147,4 +179,46 @@ func NewDomainPeerCreationRequest(src *MultiPeerRequest) *domain.PeerCreationReq
 type PeerMailRequest struct {
 	Identifiers []string `json:"Identifiers"`
 	LinkOnly    bool     `json:"LinkOnly"`
+}
+
+type PeerStats struct {
+	Enabled bool `json:"Enabled" example:"true"` // peer stats tracking enabled
+
+	Stats map[string]PeerStatData `json:"Stats"` // stats, map key = Peer identifier
+}
+
+func NewPeerStats(enabled bool, src []domain.PeerStatus) *PeerStats {
+	stats := make(map[string]PeerStatData, len(src))
+
+	for _, srcStat := range src {
+		stats[string(srcStat.PeerId)] = PeerStatData{
+			IsConnected:      srcStat.IsConnected(),
+			IsPingable:       srcStat.IsPingable,
+			LastPing:         srcStat.LastPing,
+			BytesReceived:    srcStat.BytesReceived,
+			BytesTransmitted: srcStat.BytesTransmitted,
+			LastHandshake:    srcStat.LastHandshake,
+			EndpointAddress:  srcStat.Endpoint,
+			LastSessionStart: srcStat.LastSessionStart,
+		}
+	}
+
+	return &PeerStats{
+		Enabled: enabled,
+		Stats:   stats,
+	}
+}
+
+type PeerStatData struct {
+	IsConnected bool `json:"IsConnected"`
+
+	IsPingable bool       `json:"IsPingable"`
+	LastPing   *time.Time `json:"LastPing"`
+
+	BytesReceived    uint64 `json:"BytesReceived"`
+	BytesTransmitted uint64 `json:"BytesTransmitted"`
+
+	LastHandshake    *time.Time `json:"LastHandshake"`
+	EndpointAddress  string     `json:"EndpointAddress"`
+	LastSessionStart *time.Time `json:"LastSessionStart"`
 }

@@ -4,7 +4,7 @@ import {peerStore} from "@/stores/peers";
 import {interfaceStore} from "@/stores/interfaces";
 import {computed, ref, watch} from "vue";
 import {useI18n} from "vue-i18n";
-import { freshInterface, freshPeer } from '@/helpers/models';
+import {freshInterface, freshPeer, freshStats} from '@/helpers/models';
 import Prism from "vue-prism-component";
 import {notify} from "@kyvg/vue3-notification";
 
@@ -34,6 +34,16 @@ const selectedPeer = computed(() => {
   }
 
   return p
+})
+
+const selectedStats = computed(() => {
+  let s = peers.Statistics(props.peerId)
+
+  if (!s) {
+    s = freshStats() // dummy peer to avoid 'undefined' exceptions
+  }
+
+  return s
 })
 
 const selectedInterface = computed(() => {
@@ -105,14 +115,14 @@ function email() {
 <template>
   <Modal :title="title" :visible="visible" @close="close">
     <template #default>
-      <div class="accordion">
+      <div class="accordion" id="peerInformation">
         <div class="accordion-item">
           <h2 class="accordion-header">
-            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetails" aria-expanded="true" aria-controls="collapseDetails">
               Peer Information
             </button>
           </h2>
-          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample" style="">
+          <div id="collapseDetails" class="accordion-collapse collapse show" aria-labelledby="headingDetails" data-bs-parent="#peerInformation" style="">
             <div class="accordion-body">
               <div class="row">
                 <div class="col-md-8">
@@ -122,9 +132,8 @@ function email() {
                     <li>IP Addresses: <span v-for="ip in selectedPeer.Addresses" :key="ip" class="badge rounded-pill bg-light">{{ ip }}</span></li>
                     <li>Linked User: {{ selectedPeer.UserIdentifier }}</li>
                     <li>Notes: {{ selectedPeer.Notes }}</li>
+                    <li>Expires At: {{ selectedPeer.ExpiresAt }}</li>
                   </ul>
-                  <h4>Traffic</h4>
-                  <p><i class="fas fa-long-arrow-alt-down"></i> 1.5 MB / <i class="fas fa-long-arrow-alt-up"></i> 3.9 MB</p>
                 </div>
                 <div class="col-md-4">
                   <img class="config-qr-img" :src="peers.ConfigQrUrl(props.peerId)" loading="lazy" alt="Configuration QR Code">
@@ -133,19 +142,42 @@ function email() {
             </div>
           </div>
         </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingStatus">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStatus" aria-expanded="false" aria-controls="collapseStatus">
+              Current Status
+            </button>
+          </h2>
+          <div id="collapseStatus" class="accordion-collapse collapse" aria-labelledby="headingStatus" data-bs-parent="#peerInformation" style="">
+            <div class="accordion-body">
+              <div class="row">
+                <div class="col-md-12">
+                  <h4>Traffic</h4>
+                  <p><i class="fas fa-long-arrow-alt-down"></i> {{ selectedStats.BytesReceived }} Bytes / <i class="fas fa-long-arrow-alt-up"></i> {{ selectedStats.BytesTransmitted }} Bytes</p>
+                  <h4>Connection Stats</h4>
+                  <ul>
+                    <li>Pingable: {{ selectedStats.IsPingable }}</li>
+                    <li>Last Handshake: {{ selectedStats.LastHandshake }}</li>
+                    <li>Connected Since: {{ selectedStats.LastSessionStart }}</li>
+                    <li>Endpoint: {{ selectedStats.EndpointAddress }}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div v-if="selectedInterface.Mode==='server'" class="accordion-item">
-          <h2 class="accordion-header" id="headingTwo">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+          <h2 class="accordion-header" id="headingConfig">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig">
               Peer Configuration
             </button>
           </h2>
-          <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample" style="">
+          <div id="collapseConfig" class="accordion-collapse collapse" aria-labelledby="headingConfig" data-bs-parent="#peerInformation" style="">
             <div class="accordion-body">
               <Prism language="ini" :code="configString"></Prism>
             </div>
           </div>
         </div>
-
       </div>
     </template>
     <template #footer>

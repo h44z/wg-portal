@@ -54,6 +54,16 @@ func Test_getSessionStartTime(t *testing.T) {
 			want: &now,
 		},
 		{
+			name: "freshly connected (no prev session but bytes)",
+			args: args{
+				oldStats:       domain.PeerStatus{LastSessionStart: nil, BytesReceived: 10, BytesTransmitted: 20},
+				newReceived:    100,
+				newTransmitted: 100,
+				lastHandshake:  &now,
+			},
+			want: &now,
+		},
+		{
 			name: "still connected",
 			args: args{
 				oldStats:       domain.PeerStatus{LastSessionStart: &nowMinus1, BytesReceived: 10, BytesTransmitted: 10},

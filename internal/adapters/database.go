@@ -230,6 +230,21 @@ func (r *SqlRepo) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceI
 	return in, peers, nil
 }
 
+func (r *SqlRepo) GetPeersStats(ctx context.Context, ids ...domain.PeerIdentifier) ([]domain.PeerStatus, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var stats []domain.PeerStatus
+
+	err := r.db.WithContext(ctx).Where("identifier IN ?", ids).Find(&stats).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
 func (r *SqlRepo) GetAllInterfaces(ctx context.Context) ([]domain.Interface, error) {
 	var interfaces []domain.Interface
 

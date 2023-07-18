@@ -46,7 +46,8 @@ async function download() {
 
 onMounted(async () => {
   await interfaces.LoadInterfaces()
-  await peers.LoadPeers()
+  await peers.LoadPeers(undefined) // use default interface
+  await peers.LoadStats(undefined) // use default interface
 })
 </script>
 
@@ -294,7 +295,7 @@ onMounted(async () => {
         <th scope="col">{{ $t('interfaces.tableHeadings[1]') }}</th>
         <th scope="col">{{ $t('interfaces.tableHeadings[2]') }}</th>
         <th v-if="interfaces.GetSelected.Mode==='client'" scope="col">{{ $t('interfaces.tableHeadings[3]') }}</th>
-        <th scope="col">{{ $t('interfaces.tableHeadings[4]') }}</th>
+        <th v-if="peers.hasStatistics" scope="col">{{ $t('interfaces.tableHeadings[4]') }}</th>
         <th scope="col"></th><!-- Actions -->
       </tr>
       </thead>
@@ -309,7 +310,14 @@ onMounted(async () => {
             <span v-for="ip in peer.Addresses" :key="ip" class="badge bg-light me-1">{{ ip }}</span>
           </td>
           <td v-if="interfaces.GetSelected.Mode==='client'">{{peer.Endpoint.Value}}</td>
-          <td>{{peer.LastConnected}}</td>
+          <td v-if="peers.hasStatistics">
+            <div v-if="peers.Statistics(peer.Identifier).IsConnected">
+              <span class="badge rounded-pill bg-success"><i class="fa-solid fa-link"></i></span> <span :title="peers.Statistics(peer.Identifier).LastHandshake">Connected</span>
+            </div>
+            <div v-else>
+              <span class="badge rounded-pill bg-light"><i class="fa-solid fa-link-slash"></i></span>
+            </div>
+          </td>
           <td class="text-center">
             <a href="#" title="Show peer" @click.prevent="viewedPeerId=peer.Identifier"><i class="fas fa-eye me-2"></i></a>
             <a href="#" title="Edit peer" @click.prevent="editPeerId=peer.Identifier"><i class="fas fa-cog"></i></a>

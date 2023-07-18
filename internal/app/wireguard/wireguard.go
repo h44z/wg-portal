@@ -269,7 +269,7 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 
 func (m Manager) CreateDefaultPeer(ctx context.Context, user *domain.User) error {
 	// TODO: implement
-	return nil
+	return fmt.Errorf("IMPLEMENT ME")
 }
 
 func (m Manager) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error) {
@@ -884,4 +884,18 @@ func (m Manager) validatePeerDeletion(ctx context.Context, del *domain.Peer) err
 	}
 
 	return nil
+}
+
+func (m Manager) GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error) {
+	_, peers, err := m.db.GetInterfaceAndPeers(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch peers for interface %s: %w", id, err)
+	}
+
+	peerIds := make([]domain.PeerIdentifier, len(peers))
+	for i, peer := range peers {
+		peerIds[i] = peer.Identifier
+	}
+
+	return m.db.GetPeersStats(ctx, peerIds...)
 }
