@@ -7,7 +7,9 @@
     "firstname": "Firstname",
     "lastname": "Lastname",
     "login": "Login",
-    "lang": "Toggle Language"
+    "lang": "Toggle Language",
+    "profile": "My Profile",
+    "logout": "Logout"
   },
   "home": {
     "h1": "WireGuard® VPN Portal",
@@ -49,13 +51,13 @@
     "h1": "Interface Administration",
     "h2": "Current VPN Peers",
     "h2-client": "Current Endpoints",
-    "tableHeadings": [
-      "Name",
-      "User",
-      "IP's",
-      "Endpoint",
-      "Handshake"
-    ],
+    "tableHeadings": {
+      "name": "Name",
+      "user": "User",
+      "ip": "IP's",
+      "endpoint": "Endpoint",
+      "stats": "Status"
+    },
     "noInterface": {
       "h1": "No interfaces found...",
       "message": "Click the plus button above to create a new WireGuard interface."
@@ -78,10 +80,6 @@
     "noPeerSelect": {
       "h4": "No peers for the selected interface...",
       "message": "Click the plus button above to create a new WireGuard interface."
-    },
-    "pagination": {
-      "size": "Number of Elements",
-      "all": "All (slow)"
     },
     "peer": {
       "new": "Create new peer",
@@ -116,9 +114,24 @@
     "addUser": "Add User",
     "addMulti": "Add Multiple Users"
   },
+  "profile": {
+    "h2-clients": "My VPN Peers",
+    "tableHeadings": {
+      "name": "Name",
+      "ip": "IP's",
+      "stats": "Status",
+      "interface": "Server Interface"
+    }
+  },
   "modals": {
     "peeredit": {
       "privatekey": "Private Key"
+    }
+  },
+  "general": {
+    "pagination": {
+      "size": "Number of Elements",
+      "all": "All (slow)"
     }
   }
 }

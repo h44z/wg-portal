@@ -43,7 +43,7 @@ export const peerStore = defineStore({
       return state.Filtered.slice(state.pageOffset, state.pageOffset + state.pageSize)
     },
     ConfigQrUrl: (state) => {
-      return (id) => apiWrapper.url(`${baseUrl}/config-qr/${base64_url_encode(id)}`)
+      return (id) => state.peers.find((p) => p.Identifier === id) ? apiWrapper.url(`${baseUrl}/config-qr/${base64_url_encode(id)}`) : ''
     },
     isFetching: (state) => state.fetching,
     hasNextPage: (state) => state.pageOffset < (state.FilteredCount - state.pageSize),

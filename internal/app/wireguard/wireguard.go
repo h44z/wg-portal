@@ -899,3 +899,44 @@ func (m Manager) GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier
 
 	return m.db.GetPeersStats(ctx, peerIds...)
 }
+
+func (m Manager) GetUserPeerStats(ctx context.Context, id domain.UserIdentifier) ([]domain.PeerStatus, error) {
+	peers, err := m.db.GetUserPeers(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch peers for user %s: %w", id, err)
+	}
+
+	peerIds := make([]domain.PeerIdentifier, len(peers))
+	for i, peer := range peers {
+		peerIds[i] = peer.Identifier
+	}
+
+	return m.db.GetPeersStats(ctx, peerIds...)
+}
+
+func (m Manager) ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error {
+	existingInterface, err := m.db.GetInterface(ctx, in.Identifier)
+	if err != nil {
+		return fmt.Errorf("unable to load existing interface %s: %w", in.Identifier, err)
+	}
+
+	if err := m.validateInterfaceModifications(ctx, existingInterface, in); err != nil {
+		return fmt.Errorf("update not allowed: %w", err)
+	}
+
+	peers, err := m.db.GetInterfacePeers(ctx, in.Identifier)
+	if err != nil {
+		return fmt.Errorf("failed to find peers for interface %s: %w", in.Identifier, err)
+	}
+
+	for i := range peers {
+		(&peers[i]).ApplyInterfaceDefaults(in)
+
+		_, err := m.UpdatePeer(ctx, &peers[i])
+		if err != nil {
+			return fmt.Errorf("failed to apply interface defaults to peer %s: %w", peers[i].Identifier, err)
+		}
+	}
+
+	return nil
+}

@@ -28,6 +28,8 @@ func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *aut
 	apiGroup.DELETE("/:id", e.handleDelete())
 	apiGroup.POST("/new", e.handleCreatePost())
 	apiGroup.GET("/config/:id", e.handleConfigGet())
+	apiGroup.POST("/:id/save-config", e.handleSaveConfigPost())
+	apiGroup.POST("/:id/apply-peer-defaults", e.handleApplyPeerDefaultsPost())
 
 	apiGroup.GET("/peers/:id", e.handlePeersGet())
 }
@@ -285,6 +287,79 @@ func (e interfaceEndpoint) handleDelete() gin.HandlerFunc {
 		}
 
 		err := e.app.DeleteInterface(ctx, domain.InterfaceIdentifier(id))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
+
+		c.Status(http.StatusNoContent)
+	}
+}
+
+// handleSaveConfigPost returns a gorm handler function.
+//
+// @ID interfaces_handleSaveConfigPost
+// @Tags Interface
+// @Summary Save the interface configuration in wg-quick format to a file.
+// @Produce json
+// @Param id path string true "The interface identifier"
+// @Success 204 "No content if saving the configuration was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /interface/{id}/save-config [post]
+func (e interfaceEndpoint) handleSaveConfigPost() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		//ctx := domain.SetUserInfoFromGin(c)
+
+		id := Base64UrlDecode(c.Param("id"))
+		if id == "" {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			return
+		}
+
+		// TODO: implement
+
+		c.Status(http.StatusNoContent)
+	}
+}
+
+// handleApplyPeerDefaultsPost returns a gorm handler function.
+//
+// @ID interfaces_handleApplyPeerDefaultsPost
+// @Tags Interface
+// @Summary Apply all peer defaults to the available peers.
+// @Produce json
+// @Param id path string true "The interface identifier"
+// @Param request body model.Interface true "The interface data"
+// @Success 204 "No content if applying peer defaults was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /interface/{id}/apply-peer-defaults [post]
+func (e interfaceEndpoint) handleApplyPeerDefaultsPost() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
+		id := Base64UrlDecode(c.Param("id"))
+		if id == "" {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			return
+		}
+
+		var in model.Interface
+		err := c.BindJSON(&in)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		if id != in.Identifier {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
+			return
+		}
+
+		err = e.app.ApplyPeerDefaults(ctx, model.NewDomainInterface(&in))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),

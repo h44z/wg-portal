@@ -131,8 +131,9 @@ function email() {
                     <li>Identifier: {{ selectedPeer.PublicKey }}</li>
                     <li>IP Addresses: <span v-for="ip in selectedPeer.Addresses" :key="ip" class="badge rounded-pill bg-light">{{ ip }}</span></li>
                     <li>Linked User: {{ selectedPeer.UserIdentifier }}</li>
-                    <li>Notes: {{ selectedPeer.Notes }}</li>
-                    <li>Expires At: {{ selectedPeer.ExpiresAt }}</li>
+                    <li v-if="selectedPeer.Notes">Notes: {{ selectedPeer.Notes }}</li>
+                    <li v-if="selectedPeer.ExpiresAt">Expires At: {{ selectedPeer.ExpiresAt }}</li>
+                    <li v-if="selectedPeer.Disabled">Disabled Reason: {{ selectedPeer.DisabledReason }}</li>
                   </ul>
                 </div>
                 <div class="col-md-4">

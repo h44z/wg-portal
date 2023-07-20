@@ -1,6 +1,7 @@
 package configfile
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/yeqown/go-qrcode/v2"
 	"io"
+	"strings"
 )
 
 type Manager struct {
@@ -64,12 +66,21 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 		return nil, fmt.Errorf("failed to get peer config for %s: %w", id, err)
 	}
 
-	configBytes, err := io.ReadAll(cfgData)
-	if err != nil {
+	// remove comments from qr-code config as it is not needed
+	sb := strings.Builder{}
+	scanner := bufio.NewScanner(cfgData)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if !strings.HasPrefix(line, "#") {
+			sb.WriteString(line)
+			sb.WriteString("\n")
+		}
+	}
+	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read peer config for %s: %w", id, err)
 	}
 
-	code, err := qrcode.New(string(configBytes))
+	code, err := qrcode.New(sb.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to initializeqr code for %s: %w", id, err)
 	}

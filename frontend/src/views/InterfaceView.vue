@@ -8,6 +8,7 @@ import InterfaceViewModal from "../components/InterfaceViewModal.vue";
 import {onMounted, ref} from "vue";
 import {peerStore} from "../stores/peers";
 import {interfaceStore} from "../stores/interfaces";
+import {notify} from "@kyvg/vue3-notification";
 
 const interfaces = interfaceStore()
 const peers = peerStore()
@@ -42,6 +43,25 @@ async function download() {
 
   element.click()
   document.body.removeChild(element)
+}
+
+async function saveConfig() {
+  try {
+    await interfaces.SaveConfiguration(interfaces.GetSelected.Identifier)
+
+    notify({
+      title: "Interface configuration persisted to file",
+      text: "The interface configuration has been written to the wg-quick configuration file.",
+      type: 'success',
+    })
+  } catch (e) {
+    console.log(e)
+    notify({
+      title: "Backend Connection Failure",
+      text: "Failed to persist interface configuration file!",
+      type: 'error',
+    })
+  }
 }
 
 onMounted(async () => {
@@ -99,11 +119,12 @@ onMounted(async () => {
           <div class="row">
             <div class="col-12 col-lg-8">
               {{ $t('interfaces.statusBox.h1') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{interfaces.GetSelected.Mode}} {{ $t('interfaces.statusBox.mode') }})
+              <span v-if="interfaces.GetSelected.Disabled" class="text-danger"><i class="fa fa-circle-xmark" :title="interfaces.GetSelected.DisabledReason"></i></span>
             </div>
             <div class="col-12 col-lg-4 text-lg-end">
               <a class="btn-link" href="#" title="Show interface configuration" @click.prevent="viewedInterfaceId=interfaces.GetSelected.Identifier"><i class="fas fa-eye"></i></a>
               <a class="ms-5 btn-link" href="#" title="Download interface configuration" @click.prevent="download"><i class="fas fa-download"></i></a>
-              <a class="ms-5 btn-link" href="#" title="Write interface configuration file"><i class="fas fa-save"></i></a>
+              <a class="ms-5 btn-link" href="#" title="Write interface configuration file" @click.prevent="saveConfig"><i class="fas fa-save"></i></a>
               <a class="ms-5 btn-link" href="#" title="Edit interface settings" @click.prevent="editInterfaceId=interfaces.GetSelected.Identifier"><i class="fas fa-cog"></i></a>
             </div>
           </div>
@@ -152,7 +173,7 @@ onMounted(async () => {
                   <td>{{interfaces.GetSelected.Mtu}}</td>
                 </tr>
                 <tr>
-                  <td>{{ $t('interfaces.statusBox.intervall') }}:</td>
+                  <td>{{ $t('interfaces.statusBox.interval') }}:</td>
                   <td>{{interfaces.GetSelected.PeerDefPersistentKeepalive}}</td>
                 </tr>
                 <tr>
@@ -248,7 +269,7 @@ onMounted(async () => {
                   <td>{{interfaces.GetSelected.Mtu}}</td>
                 </tr>
                 <tr>
-                  <td>{{ $t('interfaces.statusBox.intervall') }}:</td>
+                  <td>{{ $t('interfaces.statusBox.interval') }}:</td>
                   <td>{{interfaces.GetSelected.PeerDefPersistentKeepalive}}</td>
                 </tr>
                 </tbody>
@@ -291,11 +312,12 @@ onMounted(async () => {
         <th scope="col">
           <input id="flexCheckDefault" class="form-check-input" title="Select all" type="checkbox" value="">
         </th><!-- select -->
-        <th scope="col">{{ $t('interfaces.tableHeadings[0]') }}</th>
-        <th scope="col">{{ $t('interfaces.tableHeadings[1]') }}</th>
-        <th scope="col">{{ $t('interfaces.tableHeadings[2]') }}</th>
-        <th v-if="interfaces.GetSelected.Mode==='client'" scope="col">{{ $t('interfaces.tableHeadings[3]') }}</th>
-        <th v-if="peers.hasStatistics" scope="col">{{ $t('interfaces.tableHeadings[4]') }}</th>
+        <th scope="col"></th><!-- status -->
+        <th scope="col">{{ $t('interfaces.tableHeadings.name') }}</th>
+        <th scope="col">{{ $t('interfaces.tableHeadings.user') }}</th>
+        <th scope="col">{{ $t('interfaces.tableHeadings.ip') }}</th>
+        <th v-if="interfaces.GetSelected.Mode==='client'" scope="col">{{ $t('interfaces.tableHeadings.endpoint') }}</th>
+        <th v-if="peers.hasStatistics" scope="col">{{ $t('interfaces.tableHeadings.stats') }}</th>
         <th scope="col"></th><!-- Actions -->
       </tr>
       </thead>
@@ -304,7 +326,11 @@ onMounted(async () => {
           <th scope="row">
             <input id="flexCheckDefault" class="form-check-input" type="checkbox" value="">
           </th>
-          <td>{{peer.DisplayName}}</td>
+          <td class="text-center">
+            <span v-if="peer.Disabled" class="text-danger"><i class="fa fa-circle-xmark" :title="peer.DisabledReason"></i></span>
+            <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning"><i class="fas fa-hourglass-end expiring-peer" :title="peer.ExpiresAt"></i></span>
+          </td>
+          <td><span v-if="peer.DisplayName" :title="peer.Identifier">{{peer.DisplayName}}</span><span v-else :title="peer.Identifier">{{ $filters.truncate(peer.Identifier, 10)}}</span></td>
           <td>{{peer.UserIdentifier}}</td>
           <td>
             <span v-for="ip in peer.Addresses" :key="ip" class="badge bg-light me-1">{{ ip }}</span>
@@ -346,14 +372,14 @@ onMounted(async () => {
       </div>
       <div class="col-6">
         <div class="form-group row">
-          <label class="col-sm-6 col-form-label text-end" for="paginationSelector">{{ $t('interfaces.pagination.size') }}:</label>
+          <label class="col-sm-6 col-form-label text-end" for="paginationSelector">{{ $t('general.pagination.size') }}:</label>
           <div class="col-sm-6">
             <select v-model.number="peers.pageSize" class="form-select" @click="peers.afterPageSizeChange()">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
               <option value="100">100</option>
-              <option value="999999999">{{ $t('interfaces.pagination.all') }}</option>
+              <option value="999999999">{{ $t('general.pagination.all') }}</option>
             </select>
           </div>
         </div>

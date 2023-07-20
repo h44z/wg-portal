@@ -433,6 +433,6 @@ func (e peerEndpoint) handleStatsGet() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewPeerStats(true, stats))
+		c.JSON(http.StatusOK, model.NewPeerStats(e.app.Config.Statistics.CollectPeerData, stats))
 	}
 }

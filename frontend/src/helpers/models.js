@@ -115,7 +115,10 @@ export function freshPeer() {
     PostDown: {
       Value: "",
       Overridable: true,
-    }
+    },
+
+    // Internal value
+    IgnoreGlobalSettings: false
   }
 }
 

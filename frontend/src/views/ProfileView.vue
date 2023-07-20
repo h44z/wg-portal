@@ -12,6 +12,7 @@ const editPeerId = ref("")
 onMounted(async () => {
   await profile.LoadUser()
   await profile.LoadPeers()
+  await profile.LoadStats()
 })
 </script>
 
@@ -46,11 +47,11 @@ onMounted(async () => {
         <th scope="col">
           <input id="flexCheckDefault" class="form-check-input" title="Select all" type="checkbox" value="">
         </th><!-- select -->
-        <th scope="col">{{ $t('profile.tableHeadings[0]') }}</th>
-        <th scope="col">{{ $t('profile.tableHeadings[1]') }}</th>
-        <th scope="col">{{ $t('profile.tableHeadings[2]') }}</th>
-        <th scope="col">{{ $t('profile.tableHeadings[3]') }}</th>
-        <th scope="col">{{ $t('profile.tableHeadings[4]') }}</th>
+        <th scope="col"></th><!-- status -->
+        <th scope="col">{{ $t('profile.tableHeadings.name') }}</th>
+        <th scope="col">{{ $t('profile.tableHeadings.ip') }}</th>
+        <th v-if="profile.hasStatistics" scope="col">{{ $t('profile.tableHeadings.stats') }}</th>
+        <th scope="col">{{ $t('profile.tableHeadings.interface') }}</th>
         <th scope="col"></th><!-- Actions -->
       </tr>
       </thead>
@@ -59,13 +60,23 @@ onMounted(async () => {
           <th scope="row">
             <input id="flexCheckDefault" class="form-check-input" type="checkbox" value="">
           </th>
-          <td>{{peer.DisplayName}}</td>
-          <td>{{peer.Identifier}}</td>
-          <td>{{peer.UserIdentifier}}</td>
+          <td class="text-center">
+            <span v-if="peer.Disabled" class="text-danger"><i class="fa fa-circle-xmark" :title="peer.DisabledReason"></i></span>
+            <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning"><i class="fas fa-hourglass-end" :title="peer.ExpiresAt"></i></span>
+          </td>
+          <td><span v-if="peer.DisplayName" :title="peer.Identifier">{{peer.DisplayName}}</span><span v-else :title="peer.Identifier">{{$filters.truncate(peer.Identifier, 10)}}</span></td>
           <td>
             <span v-for="ip in peer.Addresses" :key="ip" class="badge rounded-pill bg-light">{{ ip }}</span>
           </td>
-          <td>{{peer.LastConnected}}</td>
+          <td v-if="profile.hasStatistics">
+            <div v-if="profile.Statistics(peer.Identifier).IsConnected">
+              <span class="badge rounded-pill bg-success"><i class="fa-solid fa-link"></i></span> <span :title="peers.Statistics(peer.Identifier).LastHandshake">Connected</span>
+            </div>
+            <div v-else>
+              <span class="badge rounded-pill bg-light"><i class="fa-solid fa-link-slash"></i></span>
+            </div>
+          </td>
+          <td>{{peer.InterfaceIdentifier}}</td>
           <td class="text-center">
             <a href="#" title="Show peer" @click.prevent="viewedPeerId=peer.Identifier"><i class="fas fa-eye me-2"></i></a>
             <a href="#" title="Edit peer" @click.prevent="editPeerId=peer.Identifier"><i class="fas fa-cog"></i></a>
@@ -94,14 +105,14 @@ onMounted(async () => {
       </div>
       <div class="col-6">
         <div class="form-group row">
-          <label class="col-sm-6 col-form-label text-end" for="paginationSelector">{{ $t('profile.pagination.size') }}:</label>
+          <label class="col-sm-6 col-form-label text-end" for="paginationSelector">{{ $t('general.pagination.size') }}:</label>
           <div class="col-sm-6">
             <select v-model.number="profile.pageSize" class="form-select" @click="profile.afterPageSizeChange()">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
               <option value="100">100</option>
-              <option value="999999999">{{ $t('profile.pagination.all') }}</option>
+              <option value="999999999">{{ $t('general.pagination.all') }}</option>
             </select>
           </div>
         </div>

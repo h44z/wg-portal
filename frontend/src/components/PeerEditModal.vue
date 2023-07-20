@@ -132,8 +132,40 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.PreDown = selectedPeer.value.PreDown
           formData.value.PostDown = selectedPeer.value.PostDown
 
+          if (!formData.value.Endpoint.Overridable ||
+              !formData.value.EndpointPublicKey.Overridable ||
+              !formData.value.AllowedIPs.Overridable ||
+              !formData.value.PersistentKeepalive.Overridable ||
+              !formData.value.Dns.Overridable ||
+              !formData.value.DnsSearch.Overridable ||
+              !formData.value.Mtu.Overridable ||
+              !formData.value.FirewallMark.Overridable ||
+              !formData.value.RoutingTable.Overridable ||
+              !formData.value.PreUp.Overridable ||
+              !formData.value.PostUp.Overridable ||
+              !formData.value.PreDown.Overridable ||
+              !formData.value.PostDown.Overridable) {
+            formData.value.IgnoreGlobalSettings = true
+          }
         }
       }
+    }
+)
+
+watch(() => formData.value.IgnoreGlobalSettings, async (newValue, oldValue) => {
+      formData.value.Endpoint.Overridable = !newValue
+      formData.value.EndpointPublicKey.Overridable = !newValue
+      formData.value.AllowedIPs.Overridable = !newValue
+      formData.value.PersistentKeepalive.Overridable = !newValue
+      formData.value.Dns.Overridable = !newValue
+      formData.value.DnsSearch.Overridable = !newValue
+      formData.value.Mtu.Overridable = !newValue
+      formData.value.FirewallMark.Overridable = !newValue
+      formData.value.RoutingTable.Overridable = !newValue
+      formData.value.PreUp.Overridable = !newValue
+      formData.value.PostUp.Overridable = !newValue
+      formData.value.PreDown.Overridable = !newValue
+      formData.value.PostDown.Overridable = !newValue
     }
 )
 
@@ -345,6 +377,10 @@ async function del() {
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" v-model="formData.Disabled">
               <label class="form-check-label" >Disabled</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" v-model="formData.IgnoreGlobalSettings">
+              <label class="form-check-label">Ignore global settings</label>
             </div>
           </div>
           <div class="form-group col-md-6">

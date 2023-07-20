@@ -32,4 +32,15 @@ app.use(createPinia());
 app.use(router);
 app.use(Notifications);
 
+app.config.globalProperties.$filters = {
+  truncate(value, maxLength, suffix) {
+    suffix = suffix || '...'
+    if (value.length > maxLength) {
+      return value.substring(0, maxLength) + suffix;
+    } else {
+      return value;
+    }
+  }
+}
+
 app.mount("#app");

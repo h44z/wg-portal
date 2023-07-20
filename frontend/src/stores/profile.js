@@ -3,7 +3,7 @@ import {apiWrapper} from "@/helpers/fetch-wrapper";
 import {notify} from "@kyvg/vue3-notification";
 import {authStore} from "@/stores/auth";
 import { base64_url_encode } from '@/helpers/encoding';
-
+import {freshStats} from "@/helpers/models";
 
 const baseUrl = `/user`
 
@@ -11,6 +11,8 @@ export const profileStore = defineStore({
   id: 'profile',
   state: () => ({
     peers: [],
+    stats: {},
+    statsEnabled: false,
     user: {},
     filter: "",
     pageSize: 10,
@@ -40,6 +42,10 @@ export const profileStore = defineStore({
     hasNextPage: (state) => state.pageOffset < (state.FilteredPeerCount - state.pageSize),
     hasPrevPage: (state) => state.pageOffset > 0,
     currentPage: (state) => (state.pageOffset / state.pageSize)+1,
+    Statistics: (state) => {
+      return (id) => state.statsEnabled && (id in state.stats) ? state.stats[id] : freshStats()
+    },
+    hasStatistics: (state) => state.statsEnabled,
   },
   actions: {
     afterPageSizeChange() {
@@ -77,6 +83,14 @@ export const profileStore = defineStore({
       this.user = user
       this.fetching = false
     },
+    setStats(statsResponse) {
+      if (!statsResponse) {
+        this.stats = {}
+        this.statsEnabled = false
+      }
+      this.stats = statsResponse.Stats
+      this.statsEnabled = statsResponse.Enabled
+    },
     async LoadPeers() {
       this.fetching = true
       let currentUser = authStore().user.Identifier
@@ -88,6 +102,20 @@ export const profileStore = defineStore({
           notify({
             title: "Backend Connection Failure",
             text: "Failed to load user peers!",
+          })
+        })
+    },
+    async LoadStats() {
+      this.fetching = true
+      let currentUser = authStore().user.Identifier
+      return apiWrapper.get(`${baseUrl}/${base64_url_encode(currentUser)}/stats`)
+        .then(this.setStats)
+        .catch(error => {
+          this.setStats(undefined)
+          console.log("Failed to load peer stats: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to load peer stats!",
           })
         })
     },

@@ -26,6 +26,7 @@ func (e userEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 	apiGroup.DELETE("/:id", e.handleDelete())
 	apiGroup.POST("/new", e.handleCreatePost())
 	apiGroup.GET("/:id/peers", e.handlePeersGet())
+	apiGroup.GET("/:id/stats", e.handleStatsGet())
 }
 
 // handleAllGet returns a gorm handler function.
@@ -164,6 +165,7 @@ func (e userEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Summary Get peers for the given user.
 // @Produce json
 // @Success 200 {object} []model.Peer
+// @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /user/{id}/peers [get]
 func (e userEndpoint) handlePeersGet() gin.HandlerFunc {
@@ -183,6 +185,36 @@ func (e userEndpoint) handlePeersGet() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, model.NewPeers(peers))
+	}
+}
+
+// handleStatsGet returns a gorm handler function.
+//
+// @ID users_handleStatsGet
+// @Tags Users
+// @Summary Get peer stats for the given user.
+// @Produce json
+// @Success 200 {object} model.PeerStats
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/{id}/stats [get]
+func (e userEndpoint) handleStatsGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
+		userId := Base64UrlDecode(c.Param("id"))
+		if userId == "" {
+			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
+			return
+		}
+
+		stats, err := e.app.GetUserPeerStats(ctx, domain.UserIdentifier(userId))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, model.NewPeerStats(e.app.Config.Statistics.CollectPeerData, stats))
 	}
 }
 

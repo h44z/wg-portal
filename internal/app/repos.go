@@ -32,6 +32,7 @@ type WireGuardManager interface {
 	CreateDefaultPeer(ctx context.Context, user *domain.User) error
 	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
 	GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error)
+	GetUserPeerStats(ctx context.Context, id domain.UserIdentifier) ([]domain.PeerStatus, error)
 	GetAllInterfaces(ctx context.Context) ([]domain.Interface, error)
 	GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error)
 	PrepareInterface(ctx context.Context) (*domain.Interface, error)
@@ -44,6 +45,7 @@ type WireGuardManager interface {
 	CreateMultiplePeers(ctx context.Context, id domain.InterfaceIdentifier, r *domain.PeerCreationRequest) ([]domain.Peer, error)
 	UpdatePeer(ctx context.Context, p *domain.Peer) (*domain.Peer, error)
 	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
+	ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error
 }
 
 type StatisticsCollector interface {

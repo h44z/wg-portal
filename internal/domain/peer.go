@@ -92,6 +92,22 @@ func (p *Peer) GetConfigFileName() string {
 	return filename
 }
 
+func (p *Peer) ApplyInterfaceDefaults(in *Interface) {
+	p.Endpoint.TrySetValue(in.PeerDefEndpoint)
+	p.EndpointPublicKey.TrySetValue(in.PublicKey)
+	p.AllowedIPsStr.TrySetValue(in.PeerDefAllowedIPsStr)
+	p.PersistentKeepalive.TrySetValue(in.PeerDefPersistentKeepalive)
+	p.Interface.DnsStr.TrySetValue(in.PeerDefDnsStr)
+	p.Interface.DnsSearchStr.TrySetValue(in.PeerDefDnsSearchStr)
+	p.Interface.Mtu.TrySetValue(in.PeerDefMtu)
+	p.Interface.FirewallMark.TrySetValue(in.PeerDefFirewallMark)
+	p.Interface.RoutingTable.TrySetValue(in.PeerDefRoutingTable)
+	p.Interface.PreUp.TrySetValue(in.PeerDefPreUp)
+	p.Interface.PostUp.TrySetValue(in.PeerDefPostUp)
+	p.Interface.PreDown.TrySetValue(in.PeerDefPreDown)
+	p.Interface.PostDown.TrySetValue(in.PeerDefPostDown)
+}
+
 type PeerInterfaceConfig struct {
 	KeyPair // private/public Key of the peer
 

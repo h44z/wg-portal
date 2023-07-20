@@ -123,6 +123,30 @@ export const interfaceStore = defineStore({
           console.log(error)
           throw new Error(error)
         })
+    },
+    async ApplyPeerDefaults(id, formData) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/${base64_url_encode(id)}/apply-peer-defaults`, formData)
+        .then(() => {
+          this.fetching = false
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log(error)
+          throw new Error(error)
+        })
+    },
+    async SaveConfiguration(id) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/${base64_url_encode(id)}/save-config`)
+        .then(() => {
+          this.fetching = false
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log(error)
+          throw new Error(error)
+        })
     }
   }
 })

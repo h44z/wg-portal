@@ -9,10 +9,12 @@ import { validateCIDR, validateIP, validateDomain } from '@/helpers/validators';
 import isCidr from "is-cidr";
 import {isIP} from 'is-ip';
 import { freshInterface } from '@/helpers/models';
+import {peerStore} from "@/stores/peers";
 
 const { t } = useI18n()
 
 const interfaces = interfaceStore()
+const peers = peerStore()
 
 const props = defineProps({
   interfaceId: String,
@@ -243,6 +245,31 @@ async function save() {
   }
 }
 
+async function applyPeerDefaults() {
+  if (props.interfaceId==='#NEW#') {
+    return; // do nothing for new interfaces
+  }
+
+  try {
+    await interfaces.ApplyPeerDefaults(selectedInterface.value.Identifier, formData.value)
+
+    notify({
+      title: "Peer Defaults Applied",
+      text: "Applied current peer defaults to all available peers.",
+      type: 'success',
+    })
+
+    await peers.LoadPeers(selectedInterface.value.Identifier) // reload all peers after applying the defaults
+  } catch (e) {
+    console.log(e)
+    notify({
+      title: "Backend Connection Failure",
+      text: "Failed to apply peer defaults!",
+      type: 'error',
+    })
+  }
+}
+
 async function del() {
   try {
     await interfaces.DeleteInterface(selectedInterface.value.Identifier)
@@ -312,11 +339,11 @@ async function del() {
                                :validate="validateCIDR"
                                @on-tags-changed="handleChangeAddresses"/>
             </div>
-            <div v-if="formData.Type==='server'" class="form-group">
+            <div v-if="formData.Mode==='server'" class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.listenport') }}</label>
-              <input v-model="formData.ListenPort" class="form-control" placeholder="Listen Port" type="text">
+              <input v-model="formData.ListenPort" class="form-control" placeholder="Listen Port" type="number">
             </div>
-            <div class="form-group">
+            <div v-if="formData.Mode!=='server'" class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.dns') }}</label>
               <vue3-tags-input class="form-control" :tags="formData.Dns"
                                placeholder="DNS Servers"
@@ -324,7 +351,7 @@ async function del() {
                                :validate="validateIP"
                                @on-tags-changed="handleChangeDns"/>
             </div>
-            <div class="form-group">
+            <div v-if="formData.Mode!=='server'" class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.dnssearch') }}</label>
               <vue3-tags-input class="form-control" :tags="formData.DnsSearch"
                                placeholder="DNS Search prefixes"
@@ -462,6 +489,10 @@ async function del() {
               <label class="form-label mt-4">{{ $t('modals.interfaceedit.defaults.postdown') }}</label>
               <textarea v-model="formData.PeerDefPostDown" class="form-control" rows="2"></textarea>
             </div>
+          </fieldset>
+          <fieldset v-if="props.interfaceId!=='#NEW#'" class="text-end">
+            <hr class="mt-4">
+            <button class="btn btn-primary me-1" type="button" @click.prevent="applyPeerDefaults">Apply Peer Defaults</button>
           </fieldset>
         </div>
       </div>
