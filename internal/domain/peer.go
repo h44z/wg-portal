@@ -57,6 +57,16 @@ func (p *Peer) IsDisabled() bool {
 	return p.Disabled != nil
 }
 
+func (p *Peer) IsExpired() bool {
+	if p.ExpiresAt == nil {
+		return false
+	}
+	if p.ExpiresAt.Before(time.Now()) {
+		return true
+	}
+	return false
+}
+
 func (p *Peer) CheckAliveAddress() string {
 	if p.Interface.CheckAliveAddress != "" {
 		return p.Interface.CheckAliveAddress
@@ -84,7 +94,7 @@ func (p *Peer) GetConfigFileName() string {
 		filename = internal.TruncateString(filename, 16)
 		filename += ".conf"
 	} else {
-		filename = fmt.Sprintf("wg_%s", p.Identifier[0:8])
+		filename = fmt.Sprintf("wg_%s", internal.TruncateString(string(p.Identifier), 8))
 		filename = reg.ReplaceAllString(filename, "")
 		filename += ".conf"
 	}

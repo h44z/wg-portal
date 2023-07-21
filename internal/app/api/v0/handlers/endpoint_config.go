@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"html/template"
 	"net"
 	"net/http"
@@ -40,6 +41,7 @@ func (e configEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authen
 	apiGroup := g.Group("/config")
 
 	apiGroup.GET("/frontend.js", e.handleConfigJsGet())
+	apiGroup.GET("/settings", e.authenticator.LoggedIn(), e.handleSettingsGet())
 }
 
 // handleConfigJsGet returns a gorm handler function.
@@ -65,7 +67,10 @@ func (e configEndpoint) handleConfigJsGet() gin.HandlerFunc {
 		}
 		buf := &bytes.Buffer{}
 		err := e.tpl.ExecuteTemplate(buf, "frontend_config.js.gotpl", gin.H{
-			"BackendUrl": backendUrl,
+			"BackendUrl":      backendUrl,
+			"Version":         "unknown",
+			"SiteTitle":       e.app.Config.Web.SiteTitle,
+			"SiteCompanyName": e.app.Config.Web.SiteCompanyName,
 		})
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -73,5 +78,24 @@ func (e configEndpoint) handleConfigJsGet() gin.HandlerFunc {
 		}
 
 		c.Data(http.StatusOK, "application/javascript", buf.Bytes())
+	}
+}
+
+// handleSettingsGet returns a gorm handler function.
+//
+// @ID config_handleSettingsGet
+// @Tags Configuration
+// @Summary Get the frontend settings object.
+// @Produce json
+// @Success 200 {object} model.Settings
+// @Success 200 string javascript "The JavaScript contents"
+// @Router /config/settings [get]
+func (e configEndpoint) handleSettingsGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, model.Settings{
+			MailLinkOnly:              e.app.Config.Mail.LinkOnly,
+			PersistentConfigSupported: e.app.Config.Advanced.ConfigStoragePath != "",
+			SelfProvisioning:          e.app.Config.Core.SelfProvisioningAllowed,
+		})
 	}
 }

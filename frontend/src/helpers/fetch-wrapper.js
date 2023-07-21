@@ -1,5 +1,5 @@
-import { authStore } from '../stores/auth';
-import { securityStore } from '../stores/security';
+import { authStore } from '@/stores/auth';
+import { securityStore } from '@/stores/security';
 
 export const fetchWrapper = {
     url: apiUrl(),

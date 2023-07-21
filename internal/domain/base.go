@@ -20,3 +20,15 @@ func (PrivateString) MarshalJSON() ([]byte, error) {
 func (PrivateString) String() string {
 	return ""
 }
+
+const (
+	DisabledReasonExpired     = "expired"
+	DisabledReasonUserEdit    = "user edit action"
+	DisabledReasonUserCreate  = "user create action"
+	DisabledReasonAdminEdit   = "admin edit action"
+	DisabledReasonAdminCreate = "admin create action"
+	DisabledReasonApiEdit     = "api edit action"
+	DisabledReasonApiCreate   = "api create action"
+	DisabledReasonLdapMissing = "missing in ldap"
+	DisabledReasonUserMissing = "missing user"
+)

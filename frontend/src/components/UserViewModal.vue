@@ -40,7 +40,6 @@ const userPeers = computed(() => {
 
 watch(() => props.visible, async (newValue, oldValue) => {
       if (oldValue === false && newValue === true) { // if modal is shown
-        console.log(selectedUser.value)
         await users.LoadUserPeers(selectedUser.value.Identifier)
       }
     }

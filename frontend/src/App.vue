@@ -1,12 +1,14 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router';
-import {computed, getCurrentInstance, onMounted} from "vue";
+import {computed, getCurrentInstance, onMounted, ref} from "vue";
 import {authStore} from "./stores/auth";
 import {securityStore} from "./stores/security";
+import {settingsStore} from "@/stores/settings";
 
 const appGlobal = getCurrentInstance().appContext.config.globalProperties
 const auth = authStore()
 const sec = securityStore()
+const settings = settingsStore()
 
 onMounted(async () => {
   console.log("Starting WireGuard Portal frontend...");
@@ -17,8 +19,12 @@ onMounted(async () => {
   let wasLoggedIn = auth.IsAuthenticated;
   try {
     await auth.LoadSession();
+    await settings.LoadSettings(); // only logs errors, does not throw
+
+    console.log("WireGuard Portal session is valid");
   } catch (e) {
     if (wasLoggedIn) {
+      console.log("WireGuard Portal invalid - logging out");
       await auth.Logout();
     }
   }
@@ -41,6 +47,11 @@ const languageFlag = computed(() => {
   }
   return "fi-" + lang;
 })
+
+const companyName = ref(WGPORTAL_SITE_COMPANY_NAME);
+const wgVersion = ref(WGPORTAL_VERSION);
+const currentYear = ref(new Date().getFullYear())
+
 </script>
 
 <template>
@@ -96,7 +107,7 @@ const languageFlag = computed(() => {
   <footer class="page-footer mt-auto">
     <div class="container mt-5">
       <div class="row align-items-center">
-        <div class="col-6">Powered by <img alt="Vue.JS" height="20" src="@/assets/logo.svg" /></div>
+        <div class="col-6">Copyright © {{ companyName }} {{ currentYear }} <span v-if="auth.IsAuthenticated"> - version {{ wgVersion }}</span></div>
         <div class="col-6 text-end">
           <div aria-label="{{ $t('menu.lang') }}" class="btn-group" role="group">
             <div class="btn-group" role="group">
@@ -115,7 +126,4 @@ const languageFlag = computed(() => {
 </template>
 
 <style>
-.vue-notification-group {
-  margin-top:5px;
-}
 </style>

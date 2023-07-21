@@ -238,8 +238,8 @@ async function save() {
   } catch (e) {
     console.log(e)
     notify({
-      title: "Backend Connection Failure",
-      text: "Failed to save interface!",
+      title: "Failed to save interface!",
+      text: e.toString(),
       type: 'error',
     })
   }
@@ -263,8 +263,8 @@ async function applyPeerDefaults() {
   } catch (e) {
     console.log(e)
     notify({
-      title: "Backend Connection Failure",
-      text: "Failed to apply peer defaults!",
+      title: "Failed to apply peer defaults!",
+      text: e.toString(),
       type: 'error',
     })
   }
@@ -277,8 +277,8 @@ async function del() {
   } catch (e) {
     console.log(e)
     notify({
-      title: "Backend Connection Failure",
-      text: "Failed to delete interface!",
+      title: "Failed to delete interface!",
+      text: e.toString(),
       type: 'error',
     })
   }
@@ -508,23 +508,5 @@ async function del() {
 </template>
 
 <style>
-.config-qr-img {
-  max-width: 100%;
-}
-.v3ti .v3ti-tag {
-  background: #fff;
-  color: #343a40;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 0;
-}
 
-.v3ti .v3ti-tag .v3ti-remove-tag {
-  color: #343a40;
-  transition: color .3s;
-}
-
-a.v3ti-remove-tag {
-  cursor: pointer;
-  text-decoration: none;
-}
 </style>

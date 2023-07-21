@@ -117,10 +117,6 @@ github.com/gorilla/sessions v1.1.1/go.mod h1:8KCfur6+4Mqcc6S0FEfKuN15Vl5MgXW92AE
 github.com/gorilla/sessions v1.1.3/go.mod h1:8KCfur6+4Mqcc6S0FEfKuN15Vl5MgXW92AE8ovaJD0w=
 github.com/gorilla/sessions v1.2.1 h1:DHd3rPN5lE3Ts3D8rKkQ8x/0kqfeNmBAaiSi+o7FsgI=
 github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
-github.com/h44z/lightmigrate v1.0.0 h1:wvkXvySwUTUuEMx0MAZaXzLa8vqspy0g5KwVfqLnpWQ=
-github.com/h44z/lightmigrate v1.0.0/go.mod h1:2QbrB1JaoGU+2kWOqf98jeULUSzJtdxovMYbdCwPyaE=
-github.com/h44z/lightmigrate-mysql v0.0.0-20220114152421-d1fec9d056f1 h1:HyKr9mclK5tvGlpipJTG6unzaJs8Jhh/WhcjpBJZM2s=
-github.com/h44z/lightmigrate-mysql v0.0.0-20220114152421-d1fec9d056f1/go.mod h1:xjqn0LXf6ly5GLm+6FDGi3+S20gDSExNYAm0k95rFzo=
 github.com/hashicorp/go-uuid v1.0.2/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.3/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=

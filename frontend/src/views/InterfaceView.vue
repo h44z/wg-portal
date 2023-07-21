@@ -6,10 +6,12 @@ import InterfaceEditModal from "../components/InterfaceEditModal.vue";
 import InterfaceViewModal from "../components/InterfaceViewModal.vue";
 
 import {onMounted, ref} from "vue";
-import {peerStore} from "../stores/peers";
-import {interfaceStore} from "../stores/interfaces";
+import {peerStore} from "@/stores/peers";
+import {interfaceStore} from "@/stores/interfaces";
 import {notify} from "@kyvg/vue3-notification";
+import {settingsStore} from "@/stores/settings";
 
+const settings = settingsStore()
 const interfaces = interfaceStore()
 const peers = peerStore()
 
@@ -57,8 +59,8 @@ async function saveConfig() {
   } catch (e) {
     console.log(e)
     notify({
-      title: "Backend Connection Failure",
-      text: "Failed to persist interface configuration file!",
+      title: "Failed to persist interface configuration file!",
+      text: e.toString(),
       type: 'error',
     })
   }
@@ -124,7 +126,7 @@ onMounted(async () => {
             <div class="col-12 col-lg-4 text-lg-end">
               <a class="btn-link" href="#" title="Show interface configuration" @click.prevent="viewedInterfaceId=interfaces.GetSelected.Identifier"><i class="fas fa-eye"></i></a>
               <a class="ms-5 btn-link" href="#" title="Download interface configuration" @click.prevent="download"><i class="fas fa-download"></i></a>
-              <a class="ms-5 btn-link" href="#" title="Write interface configuration file" @click.prevent="saveConfig"><i class="fas fa-save"></i></a>
+              <a v-if="settings.Setting('PersistentConfigSupported')" class="ms-5 btn-link" href="#" title="Write interface configuration file" @click.prevent="saveConfig"><i class="fas fa-save"></i></a>
               <a class="ms-5 btn-link" href="#" title="Edit interface settings" @click.prevent="editInterfaceId=interfaces.GetSelected.Identifier"><i class="fas fa-cog"></i></a>
             </div>
           </div>

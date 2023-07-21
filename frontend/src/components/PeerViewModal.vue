@@ -7,9 +7,11 @@ import {useI18n} from "vue-i18n";
 import {freshInterface, freshPeer, freshStats} from '@/helpers/models';
 import Prism from "vue-prism-component";
 import {notify} from "@kyvg/vue3-notification";
+import {settingsStore} from "@/stores/settings";
 
 const { t } = useI18n()
 
+const settings = settingsStore()
 const peers = peerStore()
 const interfaces = interfaceStore()
 
@@ -101,10 +103,10 @@ function download() {
 }
 
 function email() {
-  peers.MailPeerConfig(false, [selectedPeer.value.Identifier]).catch(error => {
+  peers.MailPeerConfig(settings.Setting("MailLinkOnly"), [selectedPeer.value.Identifier]).catch(e => {
     notify({
-      title: "Peer email failure",
-      text: "Failed to send mail with peer configuration!",
+      title: "Failed to send mail with peer configuration!",
+      text: e.toString(),
       type: 'error',
     })
   })

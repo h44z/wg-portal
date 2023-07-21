@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"path"
@@ -190,15 +191,21 @@ func (a *Authenticator) passwordAuthentication(ctx context.Context, identifier d
 	existingUser, err := a.users.GetUser(ctx, identifier)
 	if err == nil {
 		userInDatabase = true
-		userSource = domain.UserSourceDatabase
-	} else {
+		userSource = existingUser.Source
+	}
+
+	if !userInDatabase || userSource == domain.UserSourceLdap {
 		// search user in ldap if registration is enabled
 		for _, ldapAuth := range a.ldapAuthenticators {
-			if !ldapAuth.RegistrationEnabled() {
+			if !userInDatabase && !ldapAuth.RegistrationEnabled() {
 				continue
 			}
+
 			rawUserInfo, err := ldapAuth.GetUserInfo(context.Background(), identifier)
 			if err != nil {
+				if !errors.Is(err, domain.ErrNotFound) {
+					logrus.Warnf("failed to fetch ldap user info for %s: %v", identifier, err)
+				}
 				continue // user not found / other ldap error
 			}
 			ldapUserInfo, err = ldapAuth.ParseUserInfo(rawUserInfo)

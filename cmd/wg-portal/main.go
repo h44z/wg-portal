@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/h44z/wg-portal/internal/app/api/core"
 	handlersV0 "github.com/h44z/wg-portal/internal/app/api/v0/handlers"
+	"github.com/h44z/wg-portal/internal/app/audit"
 	"github.com/h44z/wg-portal/internal/app/auth"
 	"github.com/h44z/wg-portal/internal/app/configfile"
 	"github.com/h44z/wg-portal/internal/app/mail"
@@ -30,6 +31,8 @@ func main() {
 	cfg, err := config.GetConfig()
 	internal.AssertNoError(err)
 	setupLogging(cfg)
+
+	cfg.LogStartupValues()
 
 	rawDb, err := adapters.NewDatabase(cfg.Database)
 	internal.AssertNoError(err)
@@ -73,6 +76,10 @@ func main() {
 	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)
 	internal.AssertNoError(err)
 
+	auditRecorder, err := audit.NewAuditRecorder(cfg, eventBus, database)
+	internal.AssertNoError(err)
+	auditRecorder.StartBackgroundJobs(ctx)
+
 	backend, err := app.New(cfg, eventBus, authenticator, userManager, wireGuardManager,
 		statisticsCollector, cfgFileManager, mailManager)
 	internal.AssertNoError(err)
@@ -110,5 +117,17 @@ func setupLogging(cfg *config.Config) {
 		logrus.SetLevel(logrus.ErrorLevel)
 	default:
 		logrus.SetLevel(logrus.WarnLevel)
+	}
+
+	switch {
+	case cfg.Advanced.LogJson:
+		logrus.SetFormatter(&logrus.JSONFormatter{
+			PrettyPrint: cfg.Advanced.LogPretty,
+		})
+	case cfg.Advanced.LogPretty:
+		logrus.SetFormatter(&logrus.TextFormatter{
+			ForceColors:   true,
+			DisableColors: false,
+		})
 	}
 }

@@ -9,8 +9,6 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/glebarez/sqlite v1.8.0
 	github.com/go-ldap/ldap/v3 v3.4.5
-	github.com/h44z/lightmigrate v1.0.0
-	github.com/h44z/lightmigrate-mysql v0.0.0-20220114152421-d1fec9d056f1
 	github.com/prometheus-community/pro-bing v0.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4

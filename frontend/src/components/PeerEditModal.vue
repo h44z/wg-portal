@@ -169,6 +169,13 @@ watch(() => formData.value.IgnoreGlobalSettings, async (newValue, oldValue) => {
     }
 )
 
+watch(() => formData.value.Disabled, async (newValue, oldValue) => {
+      if (oldValue && !newValue && formData.value.ExpiresAt) {
+        formData.value.ExpiresAt = "" // reset expiry date
+      }
+    }
+)
+
 function close() {
   formData.value = freshPeer()
   emit('close')
@@ -257,8 +264,8 @@ async function save() {
   } catch (e) {
     console.log(e)
     notify({
-      title: "Backend Connection Failure",
-      text: "Failed to save peer!",
+      title: "Failed to save peer!",
+      text: e.toString(),
       type: 'error',
     })
   }
@@ -271,8 +278,8 @@ async function del() {
   } catch (e) {
     console.log(e)
     notify({
-      title: "Backend Connection Failure",
-      text: "Failed to delete peer!",
+      title: "Failed to delete peer!",
+      text: e.toString(),
       type: 'error',
     })
   }

@@ -3,7 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import InterfaceView from '../views/InterfaceView.vue'
 
-import {authStore} from '../stores/auth.js'
+import {authStore} from '@/stores/auth'
 import {notify} from "@kyvg/vue3-notification";
 
 const router = createRouter({

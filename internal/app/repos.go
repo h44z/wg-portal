@@ -26,6 +26,7 @@ type UserManager interface {
 }
 
 type WireGuardManager interface {
+	StartBackgroundJobs(ctx context.Context)
 	GetImportableInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error)
 	ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) error
 	RestoreInterfaceState(ctx context.Context, updateDbOnError bool, filter ...domain.InterfaceIdentifier) error
@@ -56,6 +57,7 @@ type ConfigFileManager interface {
 	GetInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) (io.Reader, error)
 	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
 	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	PersistInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) error
 }
 
 type MailManager interface {

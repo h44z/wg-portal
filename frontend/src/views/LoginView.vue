@@ -1,11 +1,13 @@
 <script setup>
 
 import {computed, ref} from "vue";
-import {authStore} from "../stores/auth";
+import {authStore} from "@/stores/auth";
 import router from '../router/index.js'
 import {notify} from "@kyvg/vue3-notification";
+import {settingsStore} from "@/stores/settings";
 
 const auth = authStore()
+const settings = settingsStore()
 
 const loggingIn = ref(false)
 const username = ref("")
@@ -26,6 +28,7 @@ const login = async function () {
           type: 'success',
         });
         loggingIn.value = false;
+        settings.LoadSettings(); // only logs errors, does not throw
         router.push(auth.ReturnUrl);
       })
       .catch(error => {

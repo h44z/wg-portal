@@ -14,7 +14,7 @@ type ExpiryDate struct {
 
 // UnmarshalJSON will unmarshal using 2006-01-02 layout
 func (d *ExpiryDate) UnmarshalJSON(b []byte) error {
-	if len(b) == 0 || string(b) == "null" {
+	if len(b) == 0 || string(b) == "null" || string(b) == "\"\"" {
 		return nil
 	}
 	parsed, err := time.Parse(ExpiryDateTimeLayout, string(b))

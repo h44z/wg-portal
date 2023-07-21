@@ -1,9 +1,12 @@
 <script setup>
 import PeerViewModal from "../components/PeerViewModal.vue";
 
-import {computed, onMounted, ref} from "vue";
+import {onMounted, ref} from "vue";
 import {profileStore} from "@/stores/profile";
+import PeerEditModal from "@/components/PeerEditModal.vue";
+import {settingsStore} from "@/stores/settings";
 
+const settings = settingsStore()
 const profile = profileStore()
 
 const viewedPeerId = ref("")
@@ -18,6 +21,7 @@ onMounted(async () => {
 
 <template>
   <PeerViewModal :peerId="viewedPeerId" :visible="viewedPeerId!==''" @close="viewedPeerId=''"></PeerViewModal>
+  <PeerEditModal :peerId="editPeerId" :visible="editPeerId!==''" @close="editPeerId=''"></PeerEditModal>
 
   <!-- Peer list -->
   <div class="mt-4 row">
@@ -33,7 +37,7 @@ onMounted(async () => {
       </div>
     </div>
     <div class="col-12 col-lg-3 text-lg-end">
-      <a class="btn btn-primary ms-2" href="#" title="Add a peer" @click.prevent="editPeerId='#NEW#'"><i class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
+      <a v-if="settings.Setting('SelfProvisioning')" class="btn btn-primary ms-2" href="#" title="Add a peer" @click.prevent="editPeerId='#NEW#'"><i class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
     </div>
   </div>
   <div class="mt-2 table-responsive">

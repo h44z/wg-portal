@@ -1,6 +1,9 @@
 package domain
 
 import (
+	"fmt"
+	"github.com/h44z/wg-portal/internal"
+	"regexp"
 	"time"
 )
 
@@ -80,6 +83,16 @@ func (i *Interface) AddressStr() string {
 
 func (i *Interface) CopyCalculatedAttributes(src *Interface) {
 	i.BaseModel = src.BaseModel
+}
+
+func (i *Interface) GetConfigFileName() string {
+	reg := regexp.MustCompile("[^a-zA-Z0-9-_]+")
+
+	filename := fmt.Sprintf("%s", internal.TruncateString(string(i.Identifier), 8))
+	filename = reg.ReplaceAllString(filename, "")
+	filename += ".conf"
+
+	return filename
 }
 
 type PhysicalInterface struct {

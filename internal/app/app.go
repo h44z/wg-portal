@@ -61,6 +61,7 @@ func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, 
 func (a *App) Startup(ctx context.Context) error {
 	a.UserManager.StartBackgroundJobs(ctx)
 	a.StatisticsCollector.StartBackgroundJobs(ctx)
+	a.WireGuardManager.StartBackgroundJobs(ctx)
 
 	return nil
 }

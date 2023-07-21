@@ -52,7 +52,7 @@ type LdapProvider struct {
 
 	Synchronize bool `yaml:"synchronize"`
 	// If DisableMissing is false, missing users will be deactivated
-	DisableMissing bool   `yaml:"deactivate_missing"`
+	DisableMissing bool   `yaml:"disable_missing"`
 	SyncFilter     string `yaml:"sync_filter"`
 
 	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.

@@ -2,7 +2,7 @@
 import Modal from "./Modal.vue";
 import {peerStore} from "@/stores/peers";
 import {interfaceStore} from "@/stores/interfaces";
-import {computed, ref, watch} from "vue";
+import {computed, ref} from "vue";
 import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
 import Vue3TagsInput from "vue3-tags-input";
@@ -63,8 +63,8 @@ async function save() {
   } catch (e) {
     console.log(e)
     notify({
-      title: "Backend Connection Failure",
-      text: "Failed to create peers!",
+      title: "Failed to create peers!",
+      text: e.toString(),
       type: 'error',
     })
   }

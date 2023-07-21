@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 
 import { notify } from "@kyvg/vue3-notification";
-import { apiWrapper } from '../helpers/fetch-wrapper.js'
+import { apiWrapper } from '@/helpers/fetch-wrapper'
 import router from '../router'
 
 export const authStore = defineStore({

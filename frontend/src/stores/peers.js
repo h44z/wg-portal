@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import {apiWrapper} from "../helpers/fetch-wrapper";
+import {apiWrapper} from "@/helpers/fetch-wrapper";
 import {notify} from "@kyvg/vue3-notification";
 import {interfaceStore} from "./interfaces";
 import {freshPeer, freshStats} from '@/helpers/models';

@@ -1,10 +1,12 @@
 <script setup>
-import {userStore} from "../stores/users";
+import {userStore} from "@/stores/users";
 import {ref,onMounted} from "vue";
 import UserEditModal from "../components/UserEditModal.vue";
 import UserViewModal from "../components/UserViewModal.vue";
 import {notify} from "@kyvg/vue3-notification";
+import {settingsStore} from "@/stores/settings";
 
+const settings = settingsStore()
 const users = userStore()
 
 const editUserId = ref("")
@@ -45,9 +47,6 @@ function editUser(user) {
       </div>
     </div>
     <div class="col-12 col-lg-3 text-lg-end">
-      <!--a class="btn btn-primary" href="#" title="Send mail to selected users"><i class="fa fa-paper-plane"></i></a-->
-      <!--a class="btn btn-primary ms-2" href="#" title="Add multiple users"><i class="fa fa-plus me-1"></i><i
-          class="fa fa-users"></i></a-->
       <a class="btn btn-primary ms-2" href="#" title="Add a user" @click.prevent="editUserId='#NEW#'"><i class="fa fa-plus me-1"></i><i
           class="fa fa-user"></i></a>
     </div>

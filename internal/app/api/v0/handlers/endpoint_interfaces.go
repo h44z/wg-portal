@@ -311,7 +311,7 @@ func (e interfaceEndpoint) handleDelete() gin.HandlerFunc {
 // @Router /interface/{id}/save-config [post]
 func (e interfaceEndpoint) handleSaveConfigPost() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//ctx := domain.SetUserInfoFromGin(c)
+		ctx := domain.SetUserInfoFromGin(c)
 
 		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
@@ -319,7 +319,13 @@ func (e interfaceEndpoint) handleSaveConfigPost() gin.HandlerFunc {
 			return
 		}
 
-		// TODO: implement
+		err := e.app.PersistInterfaceConfig(ctx, domain.InterfaceIdentifier(id))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
 
 		c.Status(http.StatusNoContent)
 	}

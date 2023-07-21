@@ -17,13 +17,14 @@ const (
 )
 
 type MailConfig struct {
-	Host           string         `envconfig:"EMAIL_HOST"`
-	Port           int            `envconfig:"EMAIL_PORT"`
-	Encryption     MailEncryption `envconfig:"EMAIL_ENCRYPTION"`
-	CertValidation bool           `envconfig:"EMAIL_CERT_VALIDATION"`
-	Username       string         `envconfig:"EMAIL_USERNAME"`
-	Password       string         `envconfig:"EMAIL_PASSWORD"`
-	AuthType       MailAuthType   `envconfig:"EMAIL_AUTHTYPE"`
+	Host           string         `yaml:"host"`
+	Port           int            `yaml:"port"`
+	Encryption     MailEncryption `yaml:"encryption"`
+	CertValidation bool           `yaml:"cert_validation"`
+	Username       string         `yaml:"username"`
+	Password       string         `yaml:"password"`
+	AuthType       MailAuthType   `yaml:"auth_type"`
 
-	From string `envconfig:"EMAIL_FROM"`
+	From     string `yaml:"from"`
+	LinkOnly bool   `yaml:"link_only"`
 }

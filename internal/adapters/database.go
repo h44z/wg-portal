@@ -2,7 +2,6 @@ package adapters
 
 import (
 	"context"
-	"embed"
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -15,8 +14,6 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
-	"github.com/h44z/lightmigrate"
-	"github.com/h44z/lightmigrate-mysql/mysql"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 	gormMySQL "gorm.io/driver/mysql"
@@ -25,9 +22,12 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:embed migrations/*.sql
-var sqlMigrationFs embed.FS
 var SchemaVersion uint64 = 1
+
+type SysStat struct {
+	MigratedAt    time.Time `gorm:"column:migrated_at"`
+	SchemaVersion uint64    `gorm:"primaryKey,column:schema_version"`
+}
 
 // GormLogger is a custom logger for Gorm, making it use logrus.
 type GormLogger struct {
@@ -84,7 +84,7 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	}
 
 	if l.Debug {
-		logrus.WithContext(ctx).WithFields(fields).Debugf("%s", sql)
+		logrus.WithContext(ctx).WithFields(fields).Tracef("%s", sql)
 	}
 }
 
@@ -161,39 +161,25 @@ func NewSqlRepository(db *gorm.DB) (*SqlRepo, error) {
 }
 
 func (r *SqlRepo) migrate() error {
-	// TODO: REMOVE
-	logrus.Debugf("user migration: %v", r.db.AutoMigrate(&domain.User{}))
-	logrus.Debugf("interface migration: %v", r.db.AutoMigrate(&domain.Interface{}))
-	logrus.Debugf("peer migration: %v", r.db.AutoMigrate(&domain.Peer{}))
-	logrus.Debugf("peer status migration: %v", r.db.AutoMigrate(&domain.PeerStatus{}))
-	logrus.Debugf("interface status migration: %v", r.db.AutoMigrate(&domain.InterfaceStatus{}))
-	// TODO: REMOVE THE ABOVE LINES
+	logrus.Tracef("sysstat migration: %v", r.db.AutoMigrate(&SysStat{}))
+	logrus.Tracef("user migration: %v", r.db.AutoMigrate(&domain.User{}))
+	logrus.Tracef("interface migration: %v", r.db.AutoMigrate(&domain.Interface{}))
+	logrus.Tracef("peer migration: %v", r.db.AutoMigrate(&domain.Peer{}))
+	logrus.Tracef("peer status migration: %v", r.db.AutoMigrate(&domain.PeerStatus{}))
+	logrus.Tracef("interface status migration: %v", r.db.AutoMigrate(&domain.InterfaceStatus{}))
+	logrus.Tracef("audit data migration: %v", r.db.AutoMigrate(&domain.AuditEntry{}))
 
-	rawDb, err := r.db.DB()
-	if err != nil {
-		return fmt.Errorf("failed to get raw db handle: %w", err)
-	}
-
-	driver, err := mysql.NewDriver(rawDb, "migration_test_db", mysql.WithLocking(false)) // without locking, the mysql driver also works for sqlite =)
-	if err != nil {
-		return fmt.Errorf("unable to setup driver: %w", err)
-	}
-	defer driver.Close()
-
-	source, err := lightmigrate.NewFsSource(sqlMigrationFs, "migrations")
-	if err != nil {
-		return fmt.Errorf("failed to open migration source fs: %w", err)
-	}
-	defer source.Close()
-
-	migrator, err := lightmigrate.NewMigrator(source, driver, lightmigrate.WithVerboseLogging(true))
-	if err != nil {
-		return fmt.Errorf("unable to setup migrator: %w", err)
-	}
-
-	err = migrator.Migrate(SchemaVersion)
-	if err != nil && !errors.Is(err, lightmigrate.ErrNoChange) {
-		return fmt.Errorf("failed to migrate database schema: %w", err)
+	existingSysStat := SysStat{}
+	r.db.Where("schema_version = ?", SchemaVersion).First(&existingSysStat)
+	if existingSysStat.SchemaVersion == 0 {
+		sysStat := SysStat{
+			MigratedAt:    time.Now(),
+			SchemaVersion: SchemaVersion,
+		}
+		if err := r.db.Create(&sysStat).Error; err != nil {
+			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", SchemaVersion, err)
+		}
+		logrus.Debugf("sysstat entry for schema version %d written", SchemaVersion)
 	}
 
 	return nil
@@ -817,3 +803,16 @@ func (r *SqlRepo) upsertPeerStatus(tx *gorm.DB, in *domain.PeerStatus) error {
 }
 
 // endregion statistics
+
+// region audit
+
+func (r *SqlRepo) SaveAuditEntry(ctx context.Context, entry *domain.AuditEntry) error {
+	err := r.db.WithContext(ctx).Save(entry).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// endregion audit
