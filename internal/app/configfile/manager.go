@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/sirupsen/logrus"
 	"github.com/yeqown/go-qrcode/v2"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -19,11 +17,12 @@ type Manager struct {
 	cfg        *config.Config
 	tplHandler *TemplateHandler
 
-	users UserDatabaseRepo
-	wg    WireguardDatabaseRepo
+	fsRepo FileSystemRepo // can be nil if storing the configuration is disabled
+	users  UserDatabaseRepo
+	wg     WireguardDatabaseRepo
 }
 
-func NewConfigFileManager(cfg *config.Config, users UserDatabaseRepo, wg WireguardDatabaseRepo) (*Manager, error) {
+func NewConfigFileManager(cfg *config.Config, users UserDatabaseRepo, wg WireguardDatabaseRepo, fsRepo FileSystemRepo) (*Manager, error) {
 	tplHandler, err := newTemplateHandler()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template handler: %w", err)
@@ -33,8 +32,9 @@ func NewConfigFileManager(cfg *config.Config, users UserDatabaseRepo, wg Wiregua
 		cfg:        cfg,
 		tplHandler: tplHandler,
 
-		users: users,
-		wg:    wg,
+		fsRepo: fsRepo,
+		users:  users,
+		wg:     wg,
 	}
 
 	if err := m.createStorageDirectory(); err != nil {
@@ -122,7 +122,7 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 }
 
 func (m Manager) PersistInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) error {
-	if m.cfg.Advanced.ConfigStoragePath == "" {
+	if m.fsRepo == nil {
 		return fmt.Errorf("peristing configuration is not supported")
 	}
 
@@ -136,19 +136,7 @@ func (m Manager) PersistInterfaceConfig(ctx context.Context, id domain.Interface
 		return fmt.Errorf("failed to get interface config: %w", err)
 	}
 
-	file, err := os.Create(filepath.Join(m.cfg.Advanced.ConfigStoragePath, iface.GetConfigFileName()))
-	if err != nil {
-		return fmt.Errorf("failed to create interface config file: %w", err)
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			logrus.Warn("failed to close interface config file: %v", err)
-		}
-	}(file)
-
-	_, err = io.Copy(file, cfg)
-	if err != nil {
+	if err := m.fsRepo.WriteFile(iface.GetConfigFileName(), cfg); err != nil {
 		return fmt.Errorf("failed to write interface config: %w", err)
 	}
 

@@ -51,8 +51,8 @@ type Interface struct {
 	TotalPeers   int `json:"TotalPeers"`
 }
 
-func NewInterface(src *domain.Interface) *Interface {
-	return &Interface{
+func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
+	iface := &Interface{
 		Identifier:                 string(src.Identifier),
 		DisplayName:                src.DisplayName,
 		Mode:                       string(src.Type),
@@ -86,15 +86,29 @@ func NewInterface(src *domain.Interface) *Interface {
 		PeerDefPreDown:             src.PeerDefPreDown,
 		PeerDefPostDown:            src.PeerDefPostDown,
 
-		EnabledPeers: 0, // TODO
-		TotalPeers:   0, // TODO
+		EnabledPeers: 0,
+		TotalPeers:   0,
 	}
+
+	if len(peers) > 0 {
+		iface.TotalPeers = len(peers)
+
+		activePeers := 0
+		for _, peer := range peers {
+			if !peer.IsDisabled() {
+				activePeers++
+			}
+		}
+		iface.EnabledPeers = activePeers
+	}
+
+	return iface
 }
 
-func NewInterfaces(src []domain.Interface) []Interface {
+func NewInterfaces(src []domain.Interface, srcPeers [][]domain.Peer) []Interface {
 	results := make([]Interface, len(src))
 	for i := range src {
-		results[i] = *NewInterface(&src[i])
+		results[i] = *NewInterface(&src[i], srcPeers[i])
 	}
 
 	return results

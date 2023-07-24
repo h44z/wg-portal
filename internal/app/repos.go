@@ -28,17 +28,17 @@ type UserManager interface {
 type WireGuardManager interface {
 	StartBackgroundJobs(ctx context.Context)
 	GetImportableInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error)
-	ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) error
+	ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) (int, error)
 	RestoreInterfaceState(ctx context.Context, updateDbOnError bool, filter ...domain.InterfaceIdentifier) error
 	CreateDefaultPeer(ctx context.Context, user *domain.User) error
 	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
 	GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error)
 	GetUserPeerStats(ctx context.Context, id domain.UserIdentifier) ([]domain.PeerStatus, error)
-	GetAllInterfaces(ctx context.Context) ([]domain.Interface, error)
+	GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interface, [][]domain.Peer, error)
 	GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error)
 	PrepareInterface(ctx context.Context) (*domain.Interface, error)
 	CreateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error)
-	UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error)
+	UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, []domain.Peer, error)
 	DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error
 	PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error)
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)

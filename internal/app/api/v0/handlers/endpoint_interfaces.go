@@ -53,7 +53,7 @@ func (e interfaceEndpoint) handlePrepareGet() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterface(in))
+		c.JSON(http.StatusOK, model.NewInterface(in, nil))
 	}
 }
 
@@ -68,7 +68,7 @@ func (e interfaceEndpoint) handlePrepareGet() gin.HandlerFunc {
 // @Router /interface/all [get]
 func (e interfaceEndpoint) handleAllGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		interfaces, err := e.app.GetAllInterfaces(c.Request.Context())
+		interfaces, peers, err := e.app.GetAllInterfacesAndPeers(c.Request.Context())
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -76,7 +76,7 @@ func (e interfaceEndpoint) handleAllGet() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterfaces(interfaces))
+		c.JSON(http.StatusOK, model.NewInterfaces(interfaces, peers))
 	}
 }
 
@@ -100,7 +100,7 @@ func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
 			return
 		}
 
-		iface, _, err := e.app.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(id))
+		iface, peers, err := e.app.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -108,7 +108,7 @@ func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterface(iface))
+		c.JSON(http.StatusOK, model.NewInterface(iface, peers))
 	}
 }
 
@@ -186,7 +186,7 @@ func (e interfaceEndpoint) handleUpdatePut() gin.HandlerFunc {
 			return
 		}
 
-		updatedInterface, err := e.app.UpdateInterface(ctx, model.NewDomainInterface(&in))
+		updatedInterface, peers, err := e.app.UpdateInterface(ctx, model.NewDomainInterface(&in))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -194,7 +194,7 @@ func (e interfaceEndpoint) handleUpdatePut() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterface(updatedInterface))
+		c.JSON(http.StatusOK, model.NewInterface(updatedInterface, peers))
 	}
 }
 
@@ -228,7 +228,7 @@ func (e interfaceEndpoint) handleCreatePost() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterface(newInterface))
+		c.JSON(http.StatusOK, model.NewInterface(newInterface, nil))
 	}
 }
 

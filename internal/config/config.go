@@ -153,7 +153,11 @@ func loadConfigFile(cfg any, filename string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		if err := f.Close(); err != nil {
+			logrus.Errorf("failed to close configuration file %s: %v", filename, err)
+		}
+	}(f)
 
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(cfg)

@@ -13,12 +13,13 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
-type wgRepo struct {
+// WgRepo implements all low-level WireGuard interactions.
+type WgRepo struct {
 	wg lowlevel.WireGuardClient
 	nl lowlevel.NetlinkClient
 }
 
-func NewWireGuardRepository() *wgRepo {
+func NewWireGuardRepository() *WgRepo {
 	wg, err := wgctrl.New()
 	if err != nil {
 		panic("failed to init wgctrl: " + err.Error())
@@ -26,7 +27,7 @@ func NewWireGuardRepository() *wgRepo {
 
 	nl := &lowlevel.NetlinkManager{}
 
-	repo := &wgRepo{
+	repo := &WgRepo{
 		wg: wg,
 		nl: nl,
 	}
@@ -34,7 +35,7 @@ func NewWireGuardRepository() *wgRepo {
 	return repo
 }
 
-func (r *wgRepo) GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, error) {
+func (r *WgRepo) GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, error) {
 	devices, err := r.wg.Devices()
 	if err != nil {
 		return nil, fmt.Errorf("device list error: %w", err)
@@ -52,11 +53,11 @@ func (r *wgRepo) GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, e
 	return interfaces, nil
 }
 
-func (r *wgRepo) GetInterface(_ context.Context, id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error) {
+func (r *WgRepo) GetInterface(_ context.Context, id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error) {
 	return r.getInterface(id)
 }
 
-func (r *wgRepo) GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier) ([]domain.PhysicalPeer, error) {
+func (r *WgRepo) GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier) ([]domain.PhysicalPeer, error) {
 	device, err := r.wg.Device(string(deviceId))
 	if err != nil {
 		return nil, fmt.Errorf("device error: %w", err)
@@ -74,11 +75,11 @@ func (r *wgRepo) GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier
 	return peers, nil
 }
 
-func (r *wgRepo) GetPeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) (*domain.PhysicalPeer, error) {
+func (r *WgRepo) GetPeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) (*domain.PhysicalPeer, error) {
 	return r.getPeer(deviceId, id)
 }
 
-func (r *wgRepo) convertWireGuardInterface(device *wgtypes.Device) (domain.PhysicalInterface, error) {
+func (r *WgRepo) convertWireGuardInterface(device *wgtypes.Device) (domain.PhysicalInterface, error) {
 	// read data from wgctrl interface
 
 	iface := domain.PhysicalInterface{
@@ -122,7 +123,7 @@ func (r *wgRepo) convertWireGuardInterface(device *wgtypes.Device) (domain.Physi
 	return iface, nil
 }
 
-func (r *wgRepo) convertWireGuardPeer(peer *wgtypes.Peer) (domain.PhysicalPeer, error) {
+func (r *WgRepo) convertWireGuardPeer(peer *wgtypes.Peer) (domain.PhysicalPeer, error) {
 	peerModel := domain.PhysicalPeer{
 		Identifier: domain.PeerIdentifier(peer.PublicKey.String()),
 		Endpoint:   "",
@@ -151,7 +152,7 @@ func (r *wgRepo) convertWireGuardPeer(peer *wgtypes.Peer) (domain.PhysicalPeer, 
 	return peerModel, nil
 }
 
-func (r *wgRepo) SaveInterface(_ context.Context, id domain.InterfaceIdentifier, updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error)) error {
+func (r *WgRepo) SaveInterface(_ context.Context, id domain.InterfaceIdentifier, updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error)) error {
 	physicalInterface, err := r.getOrCreateInterface(id)
 	if err != nil {
 		return err
@@ -174,7 +175,7 @@ func (r *wgRepo) SaveInterface(_ context.Context, id domain.InterfaceIdentifier,
 	return nil
 }
 
-func (r *wgRepo) getOrCreateInterface(id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error) {
+func (r *WgRepo) getOrCreateInterface(id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error) {
 	device, err := r.getInterface(id)
 	if err == nil {
 		return device, nil
@@ -192,7 +193,7 @@ func (r *wgRepo) getOrCreateInterface(id domain.InterfaceIdentifier) (*domain.Ph
 	return device, err
 }
 
-func (r *wgRepo) getInterface(id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error) {
+func (r *WgRepo) getInterface(id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error) {
 	device, err := r.wg.Device(string(id))
 	if err != nil {
 		return nil, err
@@ -202,7 +203,7 @@ func (r *wgRepo) getInterface(id domain.InterfaceIdentifier) (*domain.PhysicalIn
 	return &pi, err
 }
 
-func (r *wgRepo) createLowLevelInterface(id domain.InterfaceIdentifier) error {
+func (r *WgRepo) createLowLevelInterface(id domain.InterfaceIdentifier) error {
 	link := &netlink.GenericLink{
 		LinkAttrs: netlink.LinkAttrs{
 			Name: string(id),
@@ -217,7 +218,7 @@ func (r *wgRepo) createLowLevelInterface(id domain.InterfaceIdentifier) error {
 	return nil
 }
 
-func (r *wgRepo) updateLowLevelInterface(pi *domain.PhysicalInterface) error {
+func (r *WgRepo) updateLowLevelInterface(pi *domain.PhysicalInterface) error {
 	link, err := r.nl.LinkByName(string(pi.Identifier))
 	if err != nil {
 		return err
@@ -274,7 +275,7 @@ func (r *wgRepo) updateLowLevelInterface(pi *domain.PhysicalInterface) error {
 	return nil
 }
 
-func (r *wgRepo) updateWireGuardInterface(pi *domain.PhysicalInterface) error {
+func (r *WgRepo) updateWireGuardInterface(pi *domain.PhysicalInterface) error {
 	pKey, err := wgtypes.NewKey(pi.KeyPair.GetPrivateKeyBytes())
 	if err != nil {
 		return err
@@ -297,7 +298,7 @@ func (r *wgRepo) updateWireGuardInterface(pi *domain.PhysicalInterface) error {
 	return nil
 }
 
-func (r *wgRepo) DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error {
+func (r *WgRepo) DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error {
 	if err := r.deleteLowLevelInterface(id); err != nil {
 		return err
 	}
@@ -305,7 +306,7 @@ func (r *wgRepo) DeleteInterface(_ context.Context, id domain.InterfaceIdentifie
 	return nil
 }
 
-func (r *wgRepo) deleteLowLevelInterface(id domain.InterfaceIdentifier) error {
+func (r *WgRepo) deleteLowLevelInterface(id domain.InterfaceIdentifier) error {
 	link, err := r.nl.LinkByName(string(id))
 	if err != nil {
 		return fmt.Errorf("unable to find low level interface: %w", err)
@@ -319,7 +320,7 @@ func (r *wgRepo) deleteLowLevelInterface(id domain.InterfaceIdentifier) error {
 	return nil
 }
 
-func (r *wgRepo) SavePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier, updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error)) error {
+func (r *WgRepo) SavePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier, updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error)) error {
 	physicalPeer, err := r.getOrCreatePeer(deviceId, id)
 	if err != nil {
 		return err
@@ -337,7 +338,7 @@ func (r *wgRepo) SavePeer(_ context.Context, deviceId domain.InterfaceIdentifier
 	return nil
 }
 
-func (r *wgRepo) getOrCreatePeer(deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) (*domain.PhysicalPeer, error) {
+func (r *WgRepo) getOrCreatePeer(deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) (*domain.PhysicalPeer, error) {
 	peer, err := r.getPeer(deviceId, id)
 	if err == nil {
 		return peer, nil
@@ -355,7 +356,7 @@ func (r *wgRepo) getOrCreatePeer(deviceId domain.InterfaceIdentifier, id domain.
 	return peer, nil
 }
 
-func (r *wgRepo) getPeer(deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) (*domain.PhysicalPeer, error) {
+func (r *WgRepo) getPeer(deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) (*domain.PhysicalPeer, error) {
 	if !id.IsPublicKey() {
 		return nil, errors.New("invalid public key")
 	}
@@ -378,7 +379,7 @@ func (r *wgRepo) getPeer(deviceId domain.InterfaceIdentifier, id domain.PeerIden
 	return nil, os.ErrNotExist
 }
 
-func (r *wgRepo) updatePeer(deviceId domain.InterfaceIdentifier, pp *domain.PhysicalPeer) error {
+func (r *WgRepo) updatePeer(deviceId domain.InterfaceIdentifier, pp *domain.PhysicalPeer) error {
 	cfg := wgtypes.PeerConfig{
 		PublicKey:                   pp.GetPublicKey(),
 		Remove:                      false,
@@ -404,7 +405,7 @@ func (r *wgRepo) updatePeer(deviceId domain.InterfaceIdentifier, pp *domain.Phys
 	return nil
 }
 
-func (r *wgRepo) DeletePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error {
+func (r *WgRepo) DeletePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error {
 	if !id.IsPublicKey() {
 		return errors.New("invalid public key")
 	}
@@ -417,7 +418,7 @@ func (r *wgRepo) DeletePeer(_ context.Context, deviceId domain.InterfaceIdentifi
 	return nil
 }
 
-func (r *wgRepo) deletePeer(deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error {
+func (r *WgRepo) deletePeer(deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error {
 	cfg := wgtypes.PeerConfig{
 		PublicKey: id.ToPublicKey(),
 		Remove:    true,

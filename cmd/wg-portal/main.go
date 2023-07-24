@@ -23,6 +23,7 @@ import (
 	evbus "github.com/vardius/message-bus"
 )
 
+// main entry point for WireGuard Portal
 func main() {
 	ctx := internal.SignalAwareContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
@@ -43,6 +44,9 @@ func main() {
 	wireGuard := adapters.NewWireGuardRepository()
 
 	mailer := adapters.NewSmtpMailRepo(cfg.Mail)
+
+	cfgFileSystem, err := adapters.NewFileSystemRepository(cfg.Advanced.ConfigStoragePath)
+	internal.AssertNoError(err)
 
 	shouldExit, err := app.HandleProgramArgs(cfg, rawDb)
 	switch {
@@ -70,7 +74,7 @@ func main() {
 	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, database, wireGuard)
 	internal.AssertNoError(err)
 
-	cfgFileManager, err := configfile.NewConfigFileManager(cfg, database, database)
+	cfgFileManager, err := configfile.NewConfigFileManager(cfg, database, database, cfgFileSystem)
 	internal.AssertNoError(err)
 
 	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)

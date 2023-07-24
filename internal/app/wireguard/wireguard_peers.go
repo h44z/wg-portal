@@ -4,13 +4,47 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
 func (m Manager) CreateDefaultPeer(ctx context.Context, user *domain.User) error {
-	// TODO: implement
-	return fmt.Errorf("IMPLEMENT ME")
+	existingInterfaces, err := m.db.GetAllInterfaces(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch all interfaces: %w", err)
+	}
+
+	var newPeers []domain.Peer
+	for _, iface := range existingInterfaces {
+		if iface.Type != domain.InterfaceTypeServer {
+			continue // only create default peers for server interfaces
+		}
+
+		peer, err := m.PreparePeer(ctx, iface.Identifier)
+		if err != nil {
+			return fmt.Errorf("failed to create default peer for interface %s: %w", iface.Identifier, err)
+		}
+
+		peer.UserIdentifier = user.Identifier
+		peer.DisplayName = fmt.Sprintf("Default Peer %s", internal.TruncateString(string(peer.Identifier), 8))
+		peer.Notes = fmt.Sprintf("Default peer created for user %s", user.Identifier)
+
+		newPeers = append(newPeers, *peer)
+	}
+
+	for i, peer := range newPeers {
+		_, err := m.CreatePeer(ctx, &newPeers[i])
+		if err != nil {
+			return fmt.Errorf("failed to create default peer %s on interface %s: %w",
+				peer.Identifier, peer.InterfaceIdentifier, err)
+		}
+	}
+
+	logrus.Infof("created %d default peers for user %s", len(newPeers), user.Identifier)
+
+	return nil
 }
 
 func (m Manager) GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error) {
@@ -59,7 +93,7 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 		ExtraAllowedIPsStr:  "",
 		PresharedKey:        pk,
 		PersistentKeepalive: domain.NewIntConfigOption(iface.PeerDefPersistentKeepalive, true),
-		DisplayName:         fmt.Sprintf("Peer %s", peerId[0:8]),
+		DisplayName:         fmt.Sprintf("Peer %s", internal.TruncateString(string(peerId), 8)),
 		Identifier:          peerId,
 		UserIdentifier:      currentUser.Id,
 		InterfaceIdentifier: iface.Identifier,
@@ -133,7 +167,7 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 func (m Manager) CreateMultiplePeers(ctx context.Context, interfaceId domain.InterfaceIdentifier, r *domain.PeerCreationRequest) ([]domain.Peer, error) {
 	var newPeers []domain.Peer
 
-	for _, id := range r.Identifiers {
+	for _, id := range r.UserIdentifiers {
 		freshPeer, err := m.PreparePeer(ctx, interfaceId)
 		if err != nil {
 			return nil, fmt.Errorf("failed to prepare peer for interface %s: %w", interfaceId, err)

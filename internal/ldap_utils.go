@@ -3,6 +3,7 @@ package internal
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 
 	"github.com/go-ldap/ldap/v3"
@@ -72,7 +73,9 @@ func LdapConnect(cfg *config.LdapProvider) (*ldap.Conn, error) {
 
 func LdapDisconnect(conn *ldap.Conn) {
 	if conn != nil {
-		conn.Close()
+		if err := conn.Close(); err != nil {
+			logrus.Errorf("failed to close ldap connection: %v", err)
+		}
 	}
 }
 

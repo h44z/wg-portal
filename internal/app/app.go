@@ -72,12 +72,14 @@ func (a *App) importNewInterfaces(ctx context.Context) error {
 		return nil // feature disabled
 	}
 
-	err := a.ImportNewInterfaces(ctx)
+	importedCount, err := a.ImportNewInterfaces(ctx)
 	if err != nil {
 		return err
 	}
 
-	logrus.Trace("potential new interfaces imported")
+	if importedCount > 0 {
+		logrus.Infof("%d new interfaces imported", importedCount)
+	}
 	return nil
 }
 
@@ -92,7 +94,7 @@ func (a *App) restoreInterfaceState(ctx context.Context) error {
 		return err
 	}
 
-	logrus.Trace("interface state restored")
+	logrus.Info("interface state restored")
 	return nil
 }
 
@@ -141,7 +143,7 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 		return err
 	}
 
-	logrus.Tracef("admin user %s created", admin.Identifier)
+	logrus.Infof("admin user %s created", admin.Identifier)
 
 	return nil
 }

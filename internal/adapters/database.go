@@ -22,8 +22,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// SchemaVersion describes the current database schema version. It must be incremented if a manual migration is needed.
 var SchemaVersion uint64 = 1
 
+// SysStat stores the current database schema version and the timestamp when it was applied.
 type SysStat struct {
 	MigratedAt    time.Time `gorm:"column:migrated_at"`
 	SchemaVersion uint64    `gorm:"primaryKey,column:schema_version"`
@@ -143,6 +145,8 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 	return gormDb, nil
 }
 
+// SqlRepo is a SQL database repository implementation.
+// Currently, it supports MySQL, SQLite, Microsoft SQL and Postgresql database systems.
 type SqlRepo struct {
 	db *gorm.DB
 }

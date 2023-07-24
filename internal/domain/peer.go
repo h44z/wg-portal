@@ -232,6 +232,6 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 }
 
 type PeerCreationRequest struct {
-	Identifiers []string
-	Suffix      string
+	UserIdentifiers []string
+	Suffix          string
 }

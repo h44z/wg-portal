@@ -27,10 +27,28 @@ func (m Manager) GetAllInterfaces(ctx context.Context) ([]domain.Interface, erro
 	return m.db.GetAllInterfaces(ctx)
 }
 
-func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) error {
+func (m Manager) GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interface, [][]domain.Peer, error) {
+	interfaces, err := m.db.GetAllInterfaces(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to load all interfaces: %w", err)
+	}
+
+	allPeers := make([][]domain.Peer, len(interfaces))
+	for i, iface := range interfaces {
+		peers, err := m.db.GetInterfacePeers(ctx, iface.Identifier)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to load peers for interface %s: %w", iface.Identifier, err)
+		}
+		allPeers[i] = peers
+	}
+
+	return interfaces, allPeers, nil
+}
+
+func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) (int, error) {
 	physicalInterfaces, err := m.wg.GetInterfaces(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// if no filter is given, exclude already existing interfaces
@@ -38,13 +56,14 @@ func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.Inter
 	if len(filter) == 0 {
 		existingInterfaces, err := m.db.GetAllInterfaces(ctx)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		for _, existingInterface := range existingInterfaces {
 			excludedInterfaces = append(excludedInterfaces, existingInterface.Identifier)
 		}
 	}
 
+	imported := 0
 	for _, physicalInterface := range physicalInterfaces {
 		if internal.SliceContains(excludedInterfaces, physicalInterface.Identifier) {
 			continue
@@ -58,18 +77,19 @@ func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.Inter
 
 		physicalPeers, err := m.wg.GetPeers(ctx, physicalInterface.Identifier)
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		err = m.importInterface(ctx, &physicalInterface, physicalPeers)
 		if err != nil {
-			return fmt.Errorf("import of %s failed: %w", physicalInterface.Identifier, err)
+			return 0, fmt.Errorf("import of %s failed: %w", physicalInterface.Identifier, err)
 		}
 
 		logrus.Infof("imported new interface %s and %d peers", physicalInterface.Identifier, len(physicalPeers))
+		imported++
 	}
 
-	return nil
+	return imported, nil
 }
 
 func (m Manager) ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error {
@@ -117,6 +137,8 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 
 		physicalInterface, err := m.wg.GetInterface(ctx, iface.Identifier)
 		if err != nil {
+			logrus.Debugf("creating missing interface %s...", iface.Identifier)
+
 			// try to create a new interface
 			err := m.wg.SaveInterface(ctx, iface.Identifier, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
 				domain.MergeToPhysicalInterface(pi, &iface)
@@ -148,6 +170,8 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 			}
 		} else {
 			if physicalInterface.DeviceUp != !iface.IsDisabled() {
+				logrus.Debugf("restoring interface state for %s to disabled=%t", iface.Identifier, iface.IsDisabled())
+
 				// try to move interface to stored state
 				err := m.wg.SaveInterface(ctx, iface.Identifier, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
 					pi.DeviceUp = !iface.IsDisabled()
@@ -287,14 +311,14 @@ func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*do
 	return in, nil
 }
 
-func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error) {
-	existingInterface, err := m.db.GetInterface(ctx, in.Identifier)
+func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, []domain.Peer, error) {
+	existingInterface, existingPeers, err := m.db.GetInterfaceAndPeers(ctx, in.Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("unable to load existing interface %s: %w", in.Identifier, err)
+		return nil, nil, fmt.Errorf("unable to load existing interface %s: %w", in.Identifier, err)
 	}
 
 	if err := m.validateInterfaceModifications(ctx, existingInterface, in); err != nil {
-		return nil, fmt.Errorf("update not allowed: %w", err)
+		return nil, nil, fmt.Errorf("update not allowed: %w", err)
 	}
 
 	err = m.db.SaveInterface(ctx, in.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
@@ -311,10 +335,10 @@ func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*do
 		return in, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("update failure: %w", err)
+		return nil, nil, fmt.Errorf("update failure: %w", err)
 	}
 
-	return in, nil
+	return in, existingPeers, nil
 }
 
 func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {

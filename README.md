@@ -140,7 +140,7 @@ The following configuration options are available:
 
  * [Gin, HTTP web framework written in Go](https://github.com/gin-gonic/gin)
  * [Bootstrap, for the HTML templates](https://getbootstrap.com/)
- * [Vue.JS, for the frontend](hhttps://vuejs.org/)
+ * [Vue.JS, for the frontend](https://vuejs.org/)
 
 ## License
 

@@ -20,7 +20,7 @@ import (
 )
 
 // setup WireGuard manager with no linked store
-func setup(t *testing.T) *wgRepo {
+func setup(t *testing.T) *WgRepo {
 	if getProcessOwner() != "root" {
 		t.Fatalf("this tests need to be executed as root user")
 	}

@@ -8,6 +8,11 @@ import (
 
 const CtxUserInfo = "userInfo"
 
+const (
+	CtxSystemAdminId = "_WG_SYS_ADMIN_"
+	CtxUnknownUserId = "_WG_SYS_UNKNOWN_"
+)
+
 type ContextUserInfo struct {
 	Id      UserIdentifier
 	IsAdmin bool
@@ -15,14 +20,14 @@ type ContextUserInfo struct {
 
 func DefaultContextUserInfo() *ContextUserInfo {
 	return &ContextUserInfo{
-		Id:      "_WG_SYS_UNKNOWN_",
+		Id:      CtxUnknownUserId,
 		IsAdmin: false,
 	}
 }
 
 func SystemAdminContextUserInfo() *ContextUserInfo {
 	return &ContextUserInfo{
-		Id:      "_WG_SYS_ADMIN_",
+		Id:      CtxSystemAdminId,
 		IsAdmin: true,
 	}
 }

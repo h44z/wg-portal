@@ -171,8 +171,8 @@ type MultiPeerRequest struct {
 
 func NewDomainPeerCreationRequest(src *MultiPeerRequest) *domain.PeerCreationRequest {
 	return &domain.PeerCreationRequest{
-		Identifiers: src.Identifiers,
-		Suffix:      src.Suffix,
+		UserIdentifiers: src.Identifiers,
+		Suffix:          src.Suffix,
 	}
 }
 
