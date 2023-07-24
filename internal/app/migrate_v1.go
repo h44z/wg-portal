@@ -62,6 +62,8 @@ func migrateFromV1(cfg *config.Config, db *gorm.DB, source, typ string) error {
 		return fmt.Errorf("peer migration failed: %w", err)
 	}
 
+	logrus.Infof("Migrated V1 database with version %s, please restart WireGuard Portal", lastVersion.Version)
+
 	return nil
 }
 
@@ -121,6 +123,8 @@ func migrateV1Users(oldDb, newDb *gorm.DB) error {
 		if err := newDb.Save(&newUser).Error; err != nil {
 			return fmt.Errorf("failed to migrate user %s: %w", oldUser.Email, err)
 		}
+
+		logrus.Debugf(" - User %s migrated", newUser.Identifier)
 	}
 
 	return nil
@@ -213,6 +217,8 @@ func migrateV1Interfaces(oldDb, newDb *gorm.DB) error {
 		if err := newDb.Save(&newInterface).Error; err != nil {
 			return fmt.Errorf("failed to migrate device %s: %w", oldDevice.DeviceName, err)
 		}
+
+		logrus.Debugf(" - Interface %s migrated", newInterface.Identifier)
 	}
 
 	return nil
@@ -302,13 +308,15 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 				ProviderName: "",
 				IsAdmin:      false,
 				Locked:       &now,
-				LockedReason: "migration dummy user",
+				LockedReason: domain.DisabledReasonMigrationDummy,
 				Notes:        "created by migration from v1",
 			}
 
 			if err := newDb.Save(&user).Error; err != nil {
 				return fmt.Errorf("failed to migrate dummy user %s: %w", oldPeer.Email, err)
 			}
+
+			logrus.Debugf(" - Dummy User %s migrated", user.Identifier)
 		}
 		newPeer := domain.Peer{
 			BaseModel: domain.BaseModel{
@@ -379,6 +387,8 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 		if err := newDb.Save(&newPeer).Error; err != nil {
 			return fmt.Errorf("failed to migrate peer %s (%s): %w", oldPeer.Identifier, oldPeer.PublicKey, err)
 		}
+
+		logrus.Debugf(" - Peer %s migrated", newPeer.Identifier)
 	}
 
 	return nil

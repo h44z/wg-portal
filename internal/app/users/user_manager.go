@@ -208,7 +208,7 @@ func (m Manager) validateModifications(ctx context.Context, old, new *domain.Use
 		return fmt.Errorf("insufficient permissions")
 	}
 
-	if err := old.EditAllowed(); err != nil {
+	if err := old.EditAllowed(new); err != nil {
 		return fmt.Errorf("no access: %w", err)
 	}
 
@@ -222,6 +222,10 @@ func (m Manager) validateModifications(ctx context.Context, old, new *domain.Use
 
 	if currentUser.Id == old.Identifier && new.IsDisabled() {
 		return fmt.Errorf("cannot disable own user")
+	}
+
+	if currentUser.Id == old.Identifier && new.IsLocked() {
+		return fmt.Errorf("cannot lock own user")
 	}
 
 	if old.Source != new.Source {
@@ -264,7 +268,7 @@ func (m Manager) validateDeletion(ctx context.Context, del *domain.User) error {
 		return fmt.Errorf("insufficient permissions")
 	}
 
-	if err := del.EditAllowed(); err != nil {
+	if err := del.DeleteAllowed(); err != nil {
 		return fmt.Errorf("no access: %w", err)
 	}
 

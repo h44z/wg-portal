@@ -15,18 +15,6 @@ const viewedUserId = ref("")
 onMounted(() => {
   users.LoadUsers()
 })
-
-function editUser(user) {
-  if(user.Source === 'db') {
-    editUserId.value = user.Identifier
-  } else {
-    notify({
-      title: "Forbidden",
-      text: "You can not edit this user!",
-      type: 'error',
-    })
-  }
-}
 </script>
 
 <template>
@@ -62,6 +50,7 @@ function editUser(user) {
           <th scope="col">
             <input id="flexCheckDefault" class="form-check-input" title="Select all" type="checkbox" value="">
           </th><!-- select -->
+          <th scope="col"></th><!-- status -->
           <th scope="col">{{ $t('user.id') }}</th>
           <th scope="col">{{ $t('user.email') }}</th>
           <th scope="col">{{ $t('user.firstname') }}</th>
@@ -77,6 +66,10 @@ function editUser(user) {
           <th scope="row">
             <input id="flexCheckDefault" class="form-check-input" type="checkbox" value="">
           </th>
+          <td class="text-center">
+            <span v-if="user.Disabled" class="text-danger"><i class="fa fa-circle-xmark" :title="user.DisabledReason"></i></span>
+            <span v-if="user.Locked" class="text-danger"><i class="fas fa-lock" :title="user.LockedReason"></i></span>
+          </td>
           <td>{{user.Identifier}}</td>
           <td>{{user.Email}}</td>
           <td>{{user.Firstname}}</td>
@@ -89,7 +82,7 @@ function editUser(user) {
           </td>
           <td class="text-center">
             <a href="#" title="Show user" @click.prevent="viewedUserId=user.Identifier"><i class="fas fa-eye me-2"></i></a>
-            <a :class="{disabled:user.Source!=='db'}" href="#" title="Edit user" @click.prevent="editUser(user)"><i class="fas fa-cog me-2"></i></a>
+            <a href="#" title="Edit user" @click.prevent="editUserId=user.Identifier"><i class="fas fa-cog me-2"></i></a>
           </td>
         </tr>
       </tbody>

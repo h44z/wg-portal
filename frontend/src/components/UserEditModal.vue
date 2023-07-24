@@ -4,6 +4,7 @@ import {userStore} from "@/stores/users";
 import {computed, ref, watch} from "vue";
 import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
+import {freshUser} from "@/helpers/models";
 
 const { t } = useI18n()
 
@@ -30,34 +31,14 @@ const title = computed(() => {
   return t("users.new")
 })
 
-const formData = ref(freshFormData())
-
-function freshFormData() {
-  return {
-    Identifier: "",
-
-    Email: "",
-    Source: "db",
-    IsAdmin: false,
-
-    Firstname: "",
-    Lastname: "",
-    Phone: "",
-    Department: "",
-    Notes: "",
-
-    Password: "",
-
-    Disabled: false,
-  }
-}
+const formData = ref(freshUser())
 
 // functions
 
 watch(() => props.visible, async (newValue, oldValue) => {
       if (oldValue === false && newValue === true) { // if modal is shown
         if (!selectedUser.value) {
-          formData.value = freshFormData()
+          formData.value = freshUser()
         } else { // fill existing userdata
           formData.value.Identifier = selectedUser.value.Identifier
           formData.value.Email = selectedUser.value.Email
@@ -76,7 +57,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
 )
 
 function close() {
-  formData.value = freshFormData()
+  formData.value = freshUser()
   emit('close')
 }
 
@@ -115,7 +96,7 @@ async function del() {
 <template>
   <Modal :title="title" :visible="visible" @close="close">
     <template #default>
-      <fieldset>
+      <fieldset v-if="formData.Source==='db'">
         <legend class="mt-4">General</legend>
         <div v-if="props.userId==='#NEW#'" class="form-group">
           <label class="form-label mt-4">{{ $t('modals.useredit.identifier') }}</label>
@@ -131,7 +112,7 @@ async function del() {
           <small v-if="props.userId!=='#NEW#'" id="passwordHelp" class="form-text text-muted">Leave this field blank to keep current password.</small>
         </div>
       </fieldset>
-      <fieldset>
+      <fieldset v-if="formData.Source==='db'">
         <legend class="mt-4">User Information</legend>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.useredit.email') }}</label>
@@ -169,9 +150,13 @@ async function del() {
         <legend class="mt-4">State</legend>
         <div class="form-check form-switch">
           <input v-model="formData.Disabled" class="form-check-input" type="checkbox">
-          <label class="form-check-label" >Disabled</label>
+          <label class="form-check-label" >Disabled (no WireGuard connection and no login possible)</label>
         </div>
         <div class="form-check form-switch">
+          <input v-model="formData.Locked" class="form-check-input" type="checkbox">
+          <label class="form-check-label" >Locked (no login possible, WireGuard connections still work)</label>
+        </div>
+        <div class="form-check form-switch" v-if="formData.Source==='db'">
           <input v-model="formData.IsAdmin" checked="" class="form-check-input" type="checkbox">
           <label class="form-check-label">Is Admin</label>
         </div>
@@ -180,7 +165,7 @@ async function del() {
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button v-if="props.userId!=='#NEW#'" class="btn btn-danger me-1" type="button" @click.prevent="del">Delete</button>
+        <button v-if="props.userId!=='#NEW#'&&formData.Source==='db'" class="btn btn-danger me-1" type="button" @click.prevent="del">Delete</button>
       </div>
       <button class="btn btn-primary me-1" type="button" @click.prevent="save">Save</button>
       <button class="btn btn-secondary" type="button" @click.prevent="close">Discard</button>

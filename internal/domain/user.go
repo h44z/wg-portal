@@ -37,16 +37,23 @@ type User struct {
 
 	// optional, integrated password authentication
 	Password       PrivateString `form:"password" binding:"omitempty"`
-	Disabled       *time.Time    `gorm:"index;column:disabled"` // if this field is set, the user is disabled
+	Disabled       *time.Time    `gorm:"index;column:disabled"` // if this field is set, the user is disabled (WireGuard peers are disabled as well)
 	DisabledReason string        // the reason why the user has been disabled
-	Locked         *time.Time    `gorm:"index;column:locked"` // if this field is set, the user is locked and can no longer login
+	Locked         *time.Time    `gorm:"index;column:locked"` // if this field is set, the user is locked and can no longer login (WireGuard peers still can connect)
 	LockedReason   string        // the reason why the user has been locked
 
 	LinkedPeerCount int `gorm:"-"`
 }
 
+// IsDisabled returns true if the user is disabled. In such a case,
+// no login is possible and WireGuard peers associated with the user are disabled.
 func (u *User) IsDisabled() bool {
 	return u.Disabled != nil
+}
+
+// IsLocked returns true if the user is locked. In such a case, no login is possible, WireGuard connections still work.
+func (u *User) IsLocked() bool {
+	return u.Locked != nil
 }
 
 func (u *User) CanChangePassword() error {
@@ -57,12 +64,35 @@ func (u *User) CanChangePassword() error {
 	return errors.New("password change only allowed for database source")
 }
 
-func (u *User) EditAllowed() error {
+func (u *User) EditAllowed(new *User) error {
 	if u.Source == UserSourceDatabase {
 		return nil
 	}
 
-	return errors.New("edit only allowed for database source")
+	// for users which are not database users, only the notes field and the disabled flag can be updated
+	updateOk := true
+	updateOk = updateOk && u.Identifier == new.Identifier
+	updateOk = updateOk && u.Source == new.Source
+	updateOk = updateOk && u.IsAdmin == new.IsAdmin
+	updateOk = updateOk && u.Email == new.Email
+	updateOk = updateOk && u.Firstname == new.Firstname
+	updateOk = updateOk && u.Lastname == new.Lastname
+	updateOk = updateOk && u.Phone == new.Phone
+	updateOk = updateOk && u.Department == new.Department
+
+	if !updateOk {
+		return errors.New("edit only allowed for database source")
+	}
+
+	return nil
+}
+
+func (u *User) DeleteAllowed() error {
+	if u.Source == UserSourceDatabase {
+		return nil
+	}
+
+	return errors.New("delete only allowed for database source")
 }
 
 func (u *User) CheckPassword(password string) error {

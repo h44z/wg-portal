@@ -159,6 +159,10 @@ func (a *Authenticator) IsUserValid(ctx context.Context, id domain.UserIdentifie
 		return false
 	}
 
+	if user.IsLocked() {
+		return false
+	}
+
 	return true
 }
 
@@ -192,6 +196,9 @@ func (a *Authenticator) passwordAuthentication(ctx context.Context, identifier d
 	if err == nil {
 		userInDatabase = true
 		userSource = existingUser.Source
+	}
+	if userInDatabase && (existingUser.IsLocked() || existingUser.IsDisabled()) {
+		return nil, errors.New("user is locked")
 	}
 
 	if !userInDatabase || userSource == domain.UserSourceLdap {
@@ -311,6 +318,10 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 	user, err := a.processUserInfo(ctx, userInfo, domain.UserSourceOauth, oauthProvider.GetName(), oauthProvider.RegistrationEnabled())
 	if err != nil {
 		return nil, fmt.Errorf("unable to process user information: %w", err)
+	}
+
+	if user.IsLocked() || user.IsDisabled() {
+		return nil, errors.New("user is locked")
 	}
 
 	a.bus.Publish(app.TopicAuthLogin, user.Identifier)

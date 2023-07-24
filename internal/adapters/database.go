@@ -263,8 +263,9 @@ func (r *SqlRepo) FindInterfaces(ctx context.Context, search string) ([]domain.I
 }
 
 func (r *SqlRepo) SaveInterface(ctx context.Context, id domain.InterfaceIdentifier, updateFunc func(in *domain.Interface) (*domain.Interface, error)) error {
+	userInfo := domain.GetUserInfo(ctx)
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		in, err := r.getOrCreateInterface(tx, id)
+		in, err := r.getOrCreateInterface(userInfo, tx, id)
 		if err != nil {
 			return err // return any error will roll back
 		}
@@ -274,7 +275,7 @@ func (r *SqlRepo) SaveInterface(ctx context.Context, id domain.InterfaceIdentifi
 			return err
 		}
 
-		err = r.upsertInterface(tx, in)
+		err = r.upsertInterface(userInfo, tx, in)
 		if err != nil {
 			return err
 		}
@@ -289,12 +290,14 @@ func (r *SqlRepo) SaveInterface(ctx context.Context, id domain.InterfaceIdentifi
 	return nil
 }
 
-func (r *SqlRepo) getOrCreateInterface(tx *gorm.DB, id domain.InterfaceIdentifier) (*domain.Interface, error) {
+func (r *SqlRepo) getOrCreateInterface(ui *domain.ContextUserInfo, tx *gorm.DB, id domain.InterfaceIdentifier) (*domain.Interface, error) {
 	var in domain.Interface
 
 	// interfaceDefaults will be applied to newly created interface records
 	interfaceDefaults := domain.Interface{
 		BaseModel: domain.BaseModel{
+			CreatedBy: ui.UserId(),
+			UpdatedBy: ui.UserId(),
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -309,7 +312,10 @@ func (r *SqlRepo) getOrCreateInterface(tx *gorm.DB, id domain.InterfaceIdentifie
 	return &in, nil
 }
 
-func (r *SqlRepo) upsertInterface(tx *gorm.DB, in *domain.Interface) error {
+func (r *SqlRepo) upsertInterface(ui *domain.ContextUserInfo, tx *gorm.DB, in *domain.Interface) error {
+	in.UpdatedBy = ui.UserId()
+	in.UpdatedAt = time.Now()
+
 	err := tx.Save(in).Error
 	if err != nil {
 		return err
@@ -439,8 +445,9 @@ func (r *SqlRepo) FindUserPeers(ctx context.Context, id domain.UserIdentifier, s
 }
 
 func (r *SqlRepo) SavePeer(ctx context.Context, id domain.PeerIdentifier, updateFunc func(in *domain.Peer) (*domain.Peer, error)) error {
+	userInfo := domain.GetUserInfo(ctx)
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		peer, err := r.getOrCreatePeer(tx, id)
+		peer, err := r.getOrCreatePeer(userInfo, tx, id)
 		if err != nil {
 			return err // return any error will roll back
 		}
@@ -450,7 +457,7 @@ func (r *SqlRepo) SavePeer(ctx context.Context, id domain.PeerIdentifier, update
 			return err
 		}
 
-		err = r.upsertPeer(tx, peer)
+		err = r.upsertPeer(userInfo, tx, peer)
 		if err != nil {
 			return err
 		}
@@ -465,12 +472,14 @@ func (r *SqlRepo) SavePeer(ctx context.Context, id domain.PeerIdentifier, update
 	return nil
 }
 
-func (r *SqlRepo) getOrCreatePeer(tx *gorm.DB, id domain.PeerIdentifier) (*domain.Peer, error) {
+func (r *SqlRepo) getOrCreatePeer(ui *domain.ContextUserInfo, tx *gorm.DB, id domain.PeerIdentifier) (*domain.Peer, error) {
 	var peer domain.Peer
 
 	// interfaceDefaults will be applied to newly created interface records
 	interfaceDefaults := domain.Peer{
 		BaseModel: domain.BaseModel{
+			CreatedBy: ui.UserId(),
+			UpdatedBy: ui.UserId(),
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -485,7 +494,10 @@ func (r *SqlRepo) getOrCreatePeer(tx *gorm.DB, id domain.PeerIdentifier) (*domai
 	return &peer, nil
 }
 
-func (r *SqlRepo) upsertPeer(tx *gorm.DB, peer *domain.Peer) error {
+func (r *SqlRepo) upsertPeer(ui *domain.ContextUserInfo, tx *gorm.DB, peer *domain.Peer) error {
+	peer.UpdatedBy = ui.UserId()
+	peer.UpdatedAt = time.Now()
+
 	err := tx.Save(peer).Error
 	if err != nil {
 		return err
@@ -626,7 +638,7 @@ func (r *SqlRepo) SaveUser(ctx context.Context, id domain.UserIdentifier, update
 	userInfo := domain.GetUserInfo(ctx)
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		user, err := r.getOrCreateUser(string(userInfo.Id), tx, id)
+		user, err := r.getOrCreateUser(userInfo, tx, id)
 		if err != nil {
 			return err // return any error will roll back
 		}
@@ -636,10 +648,7 @@ func (r *SqlRepo) SaveUser(ctx context.Context, id domain.UserIdentifier, update
 			return err
 		}
 
-		user.UpdatedAt = time.Now()
-		user.UpdatedBy = string(userInfo.Id)
-
-		err = r.upsertUser(tx, user)
+		err = r.upsertUser(userInfo, tx, user)
 		if err != nil {
 			return err
 		}
@@ -663,14 +672,14 @@ func (r *SqlRepo) DeleteUser(ctx context.Context, id domain.UserIdentifier) erro
 	return nil
 }
 
-func (r *SqlRepo) getOrCreateUser(creator string, tx *gorm.DB, id domain.UserIdentifier) (*domain.User, error) {
+func (r *SqlRepo) getOrCreateUser(ui *domain.ContextUserInfo, tx *gorm.DB, id domain.UserIdentifier) (*domain.User, error) {
 	var user domain.User
 
 	// userDefaults will be applied to newly created user records
 	userDefaults := domain.User{
 		BaseModel: domain.BaseModel{
-			CreatedBy: creator,
-			UpdatedBy: creator,
+			CreatedBy: ui.UserId(),
+			UpdatedBy: ui.UserId(),
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -687,7 +696,10 @@ func (r *SqlRepo) getOrCreateUser(creator string, tx *gorm.DB, id domain.UserIde
 	return &user, nil
 }
 
-func (r *SqlRepo) upsertUser(tx *gorm.DB, user *domain.User) error {
+func (r *SqlRepo) upsertUser(ui *domain.ContextUserInfo, tx *gorm.DB, user *domain.User) error {
+	user.UpdatedBy = ui.UserId()
+	user.UpdatedAt = time.Now()
+
 	err := tx.Save(user).Error
 	if err != nil {
 		return err

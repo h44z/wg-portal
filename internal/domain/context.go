@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,14 @@ const (
 type ContextUserInfo struct {
 	Id      UserIdentifier
 	IsAdmin bool
+}
+
+func (u *ContextUserInfo) String() string {
+	return fmt.Sprintf("%s|%t", u.Id, u.IsAdmin)
+}
+
+func (u *ContextUserInfo) UserId() string {
+	return string(u.Id)
 }
 
 func DefaultContextUserInfo() *ContextUserInfo {

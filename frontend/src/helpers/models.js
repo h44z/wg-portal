@@ -122,6 +122,29 @@ export function freshPeer() {
   }
 }
 
+export function freshUser() {
+  return {
+    Identifier: "",
+
+    Email: "",
+    Source: "db",
+    IsAdmin: false,
+
+    Firstname: "",
+    Lastname: "",
+    Phone: "",
+    Department: "",
+    Notes: "",
+
+    Password: "",
+
+    Disabled: false,
+    DisabledReason: "",
+    Locked: false,
+    LockedReason: ""
+  }
+}
+
 export function freshStats() {
   return {
     IsConnected: false,

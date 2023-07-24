@@ -66,7 +66,7 @@ function close() {
         <div id="user" class="tab-pane fade active show">
           <ul class="list-group list-group-flush">
             <li class="list-group-item">
-              User Information:
+              <h4>User Information:</h4>
               <table class="table table-sm table-borderless device-status-table">
                 <tbody>
                 <tr>
@@ -89,11 +89,19 @@ function close() {
                   <td>{{ $t('users.label.department') }}:</td>
                   <td>{{selectedUser.Department}}</td>
                 </tr>
+                <tr v-if="selectedUser.Disabled">
+                  <td>{{ $t('users.label.disabled') }}:</td>
+                  <td>{{selectedUser.DisabledReason}}</td>
+                </tr>
+                <tr v-if="selectedUser.Locked">
+                  <td>{{ $t('users.label.locked') }}:</td>
+                  <td>{{selectedUser.LockedReason}}</td>
+                </tr>
                 </tbody>
               </table>
             </li>
-            <li class="list-group-item">
-              Notes:
+            <li class="list-group-item" v-if="selectedUser.Notes">
+              <h4>Notes:</h4>
               <table class="table table-sm table-borderless device-status-table">
                 <tbody>
                 <tr><td>{{selectedUser.Notes}}</td></tr>

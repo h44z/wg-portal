@@ -22,13 +22,14 @@ func (PrivateString) String() string {
 }
 
 const (
-	DisabledReasonExpired     = "expired"
-	DisabledReasonUserEdit    = "user edit action"
-	DisabledReasonUserCreate  = "user create action"
-	DisabledReasonAdminEdit   = "admin edit action"
-	DisabledReasonAdminCreate = "admin create action"
-	DisabledReasonApiEdit     = "api edit action"
-	DisabledReasonApiCreate   = "api create action"
-	DisabledReasonLdapMissing = "missing in ldap"
-	DisabledReasonUserMissing = "missing user"
+	DisabledReasonExpired        = "expired"
+	DisabledReasonUserEdit       = "user edit action"
+	DisabledReasonUserCreate     = "user create action"
+	DisabledReasonAdminEdit      = "admin edit action"
+	DisabledReasonAdminCreate    = "admin create action"
+	DisabledReasonApiEdit        = "api edit action"
+	DisabledReasonApiCreate      = "api create action"
+	DisabledReasonLdapMissing    = "missing in ldap"
+	DisabledReasonUserMissing    = "missing user"
+	DisabledReasonMigrationDummy = "migration dummy user"
 )

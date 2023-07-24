@@ -22,6 +22,8 @@ type User struct {
 	Password       string `json:"Password,omitempty"`
 	Disabled       bool   `json:"Disabled"`       // if this field is set, the user is disabled
 	DisabledReason string `json:"DisabledReason"` // the reason why the user has been disabled
+	Locked         bool   `json:"Locked"`         // if this field is set, the user is locked
+	LockedReason   string `json:"LockedReason"`   // the reason why the user has been locked
 
 	// Calculated
 
@@ -43,6 +45,8 @@ func NewUser(src *domain.User) *User {
 		Password:       "", // never fill password
 		Disabled:       src.IsDisabled(),
 		DisabledReason: src.DisabledReason,
+		Locked:         src.IsLocked(),
+		LockedReason:   src.LockedReason,
 
 		PeerCount: src.LinkedPeerCount,
 	}
@@ -73,11 +77,17 @@ func NewDomainUser(src *User) *domain.User {
 		Password:        domain.PrivateString(src.Password),
 		Disabled:        nil, // set below
 		DisabledReason:  src.DisabledReason,
+		Locked:          nil, // set below
+		LockedReason:    src.LockedReason,
 		LinkedPeerCount: src.PeerCount,
 	}
 
 	if src.Disabled {
 		res.Disabled = &now
+	}
+
+	if src.Locked {
+		res.Locked = &now
 	}
 
 	return res

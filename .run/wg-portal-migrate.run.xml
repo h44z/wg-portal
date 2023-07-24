@@ -2,7 +2,7 @@
   <configuration default="false" name="wg-portal-migrate" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="wg-portal" />
     <working_directory value="$PROJECT_DIR$" />
-    <parameters value="-migrateFrom=test_source.db" />
+    <parameters value="-migrateFrom=wg_portal.db" />
     <envs>
       <env name="SESSION_SECRET" value="extremlybad" />
       <env name="LOG_LEVEL" value="trace" />
