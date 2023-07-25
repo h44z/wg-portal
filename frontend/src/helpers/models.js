@@ -39,7 +39,10 @@ export function freshInterface() {
     PeerDefPreUp: "",
     PeerDefPostUp: "",
     PeerDefPreDown: "",
-    PeerDefPostDown: ""
+    PeerDefPostDown: "",
+
+    TotalPeers: 0,
+    EnabledPeers: 0
   }
 }
 
@@ -141,7 +144,9 @@ export function freshUser() {
     Disabled: false,
     DisabledReason: "",
     Locked: false,
-    LockedReason: ""
+    LockedReason: "",
+
+    PeerCount: 0
   }
 }
 

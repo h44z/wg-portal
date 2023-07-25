@@ -63,16 +63,14 @@ const title = computed(() => {
     return "" // otherwise interfaces.GetSelected will die...
   }
   if (selectedInterface.value.Mode === "server") {
-    return t("interfaces.peer.view") + ": " + selectedPeer.value.DisplayName
+    return t("modals.peer-view.headline-peer") + " " + selectedPeer.value.DisplayName
   } else {
-    return t("interfaces.endpoint.view") + ": " + selectedPeer.value.DisplayName
+    return t("modals.peer-view.headline-endpoint") + " " + selectedPeer.value.DisplayName
   }
 })
 
 watch(() => props.visible, async (newValue, oldValue) => {
       if (oldValue === false && newValue === true) { // if modal is shown
-        console.log(selectedInterface.value)
-        console.log(selectedPeer.value)
         await peers.LoadPeerConfig(selectedPeer.value.Identifier)
         configString.value = peers.configuration
       }
@@ -121,21 +119,20 @@ function email() {
         <div class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetails" aria-expanded="true" aria-controls="collapseDetails">
-              Peer Information
+              {{ $t('modals.peer-view.section-info') }}
             </button>
           </h2>
           <div id="collapseDetails" class="accordion-collapse collapse show" aria-labelledby="headingDetails" data-bs-parent="#peerInformation" style="">
             <div class="accordion-body">
               <div class="row">
                 <div class="col-md-8">
-                  <h4>Details</h4>
                   <ul>
-                    <li>Identifier: {{ selectedPeer.PublicKey }}</li>
-                    <li>IP Addresses: <span v-for="ip in selectedPeer.Addresses" :key="ip" class="badge rounded-pill bg-light">{{ ip }}</span></li>
-                    <li>Linked User: {{ selectedPeer.UserIdentifier }}</li>
-                    <li v-if="selectedPeer.Notes">Notes: {{ selectedPeer.Notes }}</li>
-                    <li v-if="selectedPeer.ExpiresAt">Expires At: {{ selectedPeer.ExpiresAt }}</li>
-                    <li v-if="selectedPeer.Disabled">Disabled Reason: {{ selectedPeer.DisabledReason }}</li>
+                    <li>{{ $t('modals.peer-view.identifier') }}: {{ selectedPeer.PublicKey }}</li>
+                    <li>{{ $t('modals.peer-view.ip') }}: <span v-for="ip in selectedPeer.Addresses" :key="ip" class="badge rounded-pill bg-light">{{ ip }}</span></li>
+                    <li>{{ $t('modals.peer-view.user') }}: {{ selectedPeer.UserIdentifier }}</li>
+                    <li v-if="selectedPeer.Notes">{{ $t('modals.peer-view.notes') }}: {{ selectedPeer.Notes }}</li>
+                    <li v-if="selectedPeer.ExpiresAt">{{ $t('modals.peer-view.expiry-status') }}: {{ selectedPeer.ExpiresAt }}</li>
+                    <li v-if="selectedPeer.Disabled">{{ $t('modals.peer-view.disabled-status') }}: {{ selectedPeer.DisabledReason }}</li>
                   </ul>
                 </div>
                 <div class="col-md-4">
@@ -148,21 +145,21 @@ function email() {
         <div class="accordion-item">
           <h2 class="accordion-header" id="headingStatus">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStatus" aria-expanded="false" aria-controls="collapseStatus">
-              Current Status
+              {{ $t('modals.peer-view.section-status') }}
             </button>
           </h2>
           <div id="collapseStatus" class="accordion-collapse collapse" aria-labelledby="headingStatus" data-bs-parent="#peerInformation" style="">
             <div class="accordion-body">
               <div class="row">
                 <div class="col-md-12">
-                  <h4>Traffic</h4>
-                  <p><i class="fas fa-long-arrow-alt-down"></i> {{ selectedStats.BytesReceived }} Bytes / <i class="fas fa-long-arrow-alt-up"></i> {{ selectedStats.BytesTransmitted }} Bytes</p>
-                  <h4>Connection Stats</h4>
+                  <h4>{{ $t('modals.peer-view.traffic') }}</h4>
+                  <p><i class="fas fa-long-arrow-alt-down" :title="$t('modals.peer-view.download')"></i> {{ selectedStats.BytesReceived }} Bytes / <i class="fas fa-long-arrow-alt-up" :title="$t('modals.peer-view.upload')"></i> {{ selectedStats.BytesTransmitted }} Bytes</p>
+                  <h4>{{ $t('modals.peer-view.connection-status') }}</h4>
                   <ul>
-                    <li>Pingable: {{ selectedStats.IsPingable }}</li>
-                    <li>Last Handshake: {{ selectedStats.LastHandshake }}</li>
-                    <li>Connected Since: {{ selectedStats.LastSessionStart }}</li>
-                    <li>Endpoint: {{ selectedStats.EndpointAddress }}</li>
+                    <li>{{ $t('modals.peer-view.pingable') }}: {{ selectedStats.IsPingable }}</li>
+                    <li>{{ $t('modals.peer-view.handshake') }}: {{ selectedStats.LastHandshake }}</li>
+                    <li>{{ $t('modals.peer-view.connected-since') }}: {{ selectedStats.LastSessionStart }}</li>
+                    <li>{{ $t('modals.peer-view.endpoint') }}: {{ selectedStats.EndpointAddress }}</li>
                   </ul>
                 </div>
               </div>
@@ -172,7 +169,7 @@ function email() {
         <div v-if="selectedInterface.Mode==='server'" class="accordion-item">
           <h2 class="accordion-header" id="headingConfig">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig">
-              Peer Configuration
+              {{ $t('modals.peer-view.section-config') }}
             </button>
           </h2>
           <div id="collapseConfig" class="accordion-collapse collapse" aria-labelledby="headingConfig" data-bs-parent="#peerInformation" style="">
@@ -185,10 +182,10 @@ function email() {
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button @click.prevent="download" type="button" class="btn btn-primary me-1">Download</button>
-        <button @click.prevent="email"  type="button" class="btn btn-primary me-1">Email</button>
+        <button @click.prevent="download" type="button" class="btn btn-primary me-1">{{ $t('modals.peer-view.button-download') }}</button>
+        <button @click.prevent="email"  type="button" class="btn btn-primary me-1">{{ $t('modals.peer-view.button-email') }}</button>
       </div>
-      <button @click.prevent="close" type="button" class="btn btn-secondary">Close</button>
+      <button @click.prevent="close" type="button" class="btn btn-secondary">{{ $t('general.close') }}</button>
 
 
     </template>

@@ -3,7 +3,6 @@ import Modal from "./Modal.vue";
 import {userStore} from "../stores/users";
 import {computed, ref, watch} from "vue";
 import { useI18n } from 'vue-i18n';
-import { notify } from "@kyvg/vue3-notification";
 
 const { t } = useI18n()
 
@@ -29,7 +28,7 @@ const title = computed(() => {
   if (!props.visible) {
     return "" // otherwise interfaces.GetSelected will die...
   }
-  return t("users.view") + ": " + selectedUser.value.Identifier
+  return t("modals.user-view.headline") + " " + selectedUser.value.Identifier
 })
 
 const userPeers = computed(() => {
@@ -56,52 +55,52 @@ function close() {
     <template #default>
       <ul class="nav nav-tabs">
         <li class="nav-item">
-          <a class="nav-link active" data-bs-toggle="tab" href="#user">User</a>
+          <a class="nav-link active" data-bs-toggle="tab" href="#user">{{ $t('modals.user-view.tab-user') }}</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="tab" href="#peers">Peers</a>
+          <a class="nav-link" data-bs-toggle="tab" href="#peers">{{ $t('modals.user-view.tab-peers') }}</a>
         </li>
       </ul>
       <div id="interfaceTabs" class="tab-content">
         <div id="user" class="tab-pane fade active show">
           <ul class="list-group list-group-flush">
             <li class="list-group-item">
-              <h4>User Information:</h4>
+              <h4>{{ $t('modals.user-view.headline-info') }}</h4>
               <table class="table table-sm table-borderless device-status-table">
                 <tbody>
                 <tr>
-                  <td>{{ $t('users.label.email') }}:</td>
+                  <td>{{ $t('modals.user-view.email') }}:</td>
                   <td>{{selectedUser.Email}}</td>
                 </tr>
                 <tr>
-                  <td>{{ $t('users.label.firstname') }}:</td>
+                  <td>{{ $t('modals.user-view.firstname') }}:</td>
                   <td>{{selectedUser.Firstname}}</td>
                 </tr>
                 <tr>
-                  <td>{{ $t('users.label.lastname') }}:</td>
+                  <td>{{ $t('modals.user-view.lastname') }}:</td>
                   <td>{{selectedUser.Lastname}}</td>
                 </tr>
                 <tr>
-                  <td>{{ $t('users.label.phone') }}:</td>
+                  <td>{{ $t('modals.user-view.phone') }}:</td>
                   <td>{{selectedUser.Phone}}</td>
                 </tr>
                 <tr>
-                  <td>{{ $t('users.label.department') }}:</td>
+                  <td>{{ $t('modals.user-view.department') }}:</td>
                   <td>{{selectedUser.Department}}</td>
                 </tr>
                 <tr v-if="selectedUser.Disabled">
-                  <td>{{ $t('users.label.disabled') }}:</td>
+                  <td>{{ $t('modals.user-view.disabled') }}:</td>
                   <td>{{selectedUser.DisabledReason}}</td>
                 </tr>
                 <tr v-if="selectedUser.Locked">
-                  <td>{{ $t('users.label.locked') }}:</td>
+                  <td>{{ $t('modals.user-view.locked') }}:</td>
                   <td>{{selectedUser.LockedReason}}</td>
                 </tr>
                 </tbody>
               </table>
             </li>
             <li class="list-group-item" v-if="selectedUser.Notes">
-              <h4>Notes:</h4>
+              <h4>{{ $t('modals.user-view.headline-notes') }}</h4>
               <table class="table table-sm table-borderless device-status-table">
                 <tbody>
                 <tr><td>{{selectedUser.Notes}}</td></tr>
@@ -112,15 +111,15 @@ function close() {
         </div>
         <div id="peers" class="tab-pane fade">
           <ul v-if="userPeers.length===0" class="list-group list-group-flush">
-            <li class="list-group-item">{{ $t('users.nopeers.message') }}</li>
+            <li class="list-group-item">{{ $t('modals.user-view.no-peers') }}</li>
           </ul>
 
           <table v-if="userPeers.length!==0" id="peerTable" class="table table-sm">
             <thead>
             <tr>
-              <th scope="col">{{ $t('user.peers.name') }}</th>
-              <th scope="col">{{ $t('user.peers.interface') }}</th>
-              <th scope="col">{{ $t('user.peers.ips') }}</th>
+              <th scope="col">{{ $t('modals.user-view.peers.name') }}</th>
+              <th scope="col">{{ $t('modals.user-view.peers.interface') }}</th>
+              <th scope="col">{{ $t('modals.user-view.peers.ip') }}</th>
               <th scope="col"></th><!-- Actions -->
             </tr>
             </thead>
@@ -129,7 +128,7 @@ function close() {
               <td>{{peer.DisplayName}}</td>
               <td>{{peer.InterfaceIdentifier}}</td>
               <td>
-                <span v-for="ip in peer.Addresses" :key="ip" class="badge rounded-pill bg-light">{{ ip }}</span>
+                <span v-for="ip in peer.Addresses" :key="ip" class="badge pill bg-light">{{ ip }}</span>
               </td>
             </tr>
             </tbody>
@@ -138,7 +137,7 @@ function close() {
       </div>
     </template>
     <template #footer>
-      <button class="btn btn-primary" type="button" @click.prevent="close">Close</button>
+      <button class="btn btn-primary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
     </template>
   </Modal>
 </template>

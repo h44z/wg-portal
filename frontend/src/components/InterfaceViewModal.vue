@@ -28,7 +28,7 @@ const title = computed(() => {
     return "" // otherwise interfaces.GetSelected will die...
   }
 
-  return t("interfaces.interface.show") + ": " + selectedInterface.value.Identifier
+  return t("modals.interface-view.headline") + " " + selectedInterface.value.Identifier
 })
 
 // functions
@@ -54,7 +54,7 @@ function close() {
       <Prism language="ini" :code="configString"></Prism>
     </template>
     <template #footer>
-      <button class="btn btn-primary" type="button" @click.prevent="close">Close</button>
+      <button class="btn btn-primary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
     </template>
   </Modal>
 </template>

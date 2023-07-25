@@ -109,13 +109,12 @@ const currentYear = ref(new Date().getFullYear())
       <div class="row align-items-center">
         <div class="col-6">Copyright © {{ companyName }} {{ currentYear }} <span v-if="auth.IsAuthenticated"> - version {{ wgVersion }}</span></div>
         <div class="col-6 text-end">
-          <div aria-label="{{ $t('menu.lang') }}" class="btn-group" role="group">
+          <div :aria-label="$t('menu.lang')" class="btn-group" role="group">
             <div class="btn-group" role="group">
               <button aria-expanded="false" aria-haspopup="true" class="btn btn btn-secondary pe-0" data-bs-toggle="dropdown" type="button"><span :class="languageFlag" class="fi"></span></button>
               <div aria-labelledby="btnGroupDrop3" class="dropdown-menu" style="">
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span> English</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span> Deutsch</a>
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('es')"><span class="fi fi-es"></span> Español</a>
               </div>
             </div>
           </div>

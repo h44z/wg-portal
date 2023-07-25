@@ -26,9 +26,9 @@ const title = computed(() => {
     return "" // otherwise interfaces.GetSelected will die...
   }
   if (selectedUser.value) {
-    return t("users.edit") + ": " + selectedUser.value.Identifier
+    return t("modals.user-edit.headline-edit") + " " + selectedUser.value.Identifier
   }
-  return t("users.new")
+  return t("modals.user-edit.headline-new")
 })
 
 const formData = ref(freshUser())
@@ -97,78 +97,78 @@ async function del() {
   <Modal :title="title" :visible="visible" @close="close">
     <template #default>
       <fieldset v-if="formData.Source==='db'">
-        <legend class="mt-4">General</legend>
+        <legend class="mt-4">{{ $t('modals.user-edit.header-general') }}</legend>
         <div v-if="props.userId==='#NEW#'" class="form-group">
-          <label class="form-label mt-4">{{ $t('modals.useredit.identifier') }}</label>
-          <input v-model="formData.Identifier" class="form-control" placeholder="The user id" type="text">
+          <label class="form-label mt-4">{{ $t('modals.user-edit.identifier.label') }}</label>
+          <input v-model="formData.Identifier" class="form-control" :placeholder="$t('modals.user-edit.identifier.placeholder')" type="text">
         </div>
         <div class="form-group">
-          <label class="form-label mt-4">{{ $t('modals.useredit.source') }}</label>
-          <input v-model="formData.Source" class="form-control" disabled="disabled" placeholder="The user source" type="text">
+          <label class="form-label mt-4">{{ $t('modals.user-edit.source.label') }}</label>
+          <input v-model="formData.Source" class="form-control" disabled="disabled" :placeholder="$t('modals.user-edit.source.placeholder')" type="text">
         </div>
         <div v-if="formData.Source==='db'" class="form-group">
-          <label class="form-label mt-4">{{ $t('modals.useredit.password') }}</label>
-          <input v-model="formData.Password" aria-describedby="passwordHelp" class="form-control" placeholder="Password" type="text">
-          <small v-if="props.userId!=='#NEW#'" id="passwordHelp" class="form-text text-muted">Leave this field blank to keep current password.</small>
+          <label class="form-label mt-4">{{ $t('modals.user-edit.password.label') }}</label>
+          <input v-model="formData.Password" aria-describedby="passwordHelp" class="form-control" :placeholder="$t('modals.user-edit.password.placeholder')" type="text">
+          <small v-if="props.userId!=='#NEW#'" id="passwordHelp" class="form-text text-muted">{{ $t('modals.user-edit.password.description') }}</small>
         </div>
       </fieldset>
       <fieldset v-if="formData.Source==='db'">
-        <legend class="mt-4">User Information</legend>
+        <legend class="mt-4">{{ $t('modals.user-edit.header-personal') }}</legend>
         <div class="form-group">
-          <label class="form-label mt-4">{{ $t('modals.useredit.email') }}</label>
-          <input v-model="formData.Email" class="form-control" placeholder="Email" type="email">
+          <label class="form-label mt-4">{{ $t('modals.user-edit.email.label') }}</label>
+          <input v-model="formData.Email" class="form-control" :placeholder="$t('modals.user-edit.email.placeholder')" type="email">
         </div>
         <div class="row">
           <div class="form-group col-md-6">
-            <label class="form-label mt-4">{{ $t('modals.useredit.firstname') }}</label>
-            <input v-model="formData.Firstname" class="form-control" placeholder="Firstname" type="text">
+            <label class="form-label mt-4">{{ $t('modals.user-edit.firstname.label') }}</label>
+            <input v-model="formData.Firstname" class="form-control" :placeholder="$t('modals.user-edit.firstname.placeholder')" type="text">
           </div>
           <div class="form-group col-md-6">
-            <label class="form-label mt-4">{{ $t('modals.useredit.lastname') }}</label>
-            <input v-model="formData.Lastname" class="form-control" placeholder="Lastname" type="text">
+            <label class="form-label mt-4">{{ $t('modals.user-edit.lastname.label') }}</label>
+            <input v-model="formData.Lastname" class="form-control" :placeholder="$t('modals.user-edit.lastname.placeholder')" type="text">
           </div>
         </div>
         <div class="row">
           <div class="form-group col-md-6">
-            <label class="form-label mt-4">{{ $t('modals.useredit.phone') }}</label>
-            <input v-model="formData.Phone" class="form-control" placeholder="Phone" type="text">
+            <label class="form-label mt-4">{{ $t('modals.user-edit.phone.label') }}</label>
+            <input v-model="formData.Phone" class="form-control" :placeholder="$t('modals.user-edit.phone.placeholder')" type="text">
           </div>
           <div class="form-group col-md-6">
-            <label class="form-label mt-4">{{ $t('modals.useredit.department') }}</label>
-            <input v-model="formData.Department" class="form-control" placeholder="Department" type="text">
+            <label class="form-label mt-4">{{ $t('modals.user-edit.department.label') }}</label>
+            <input v-model="formData.Department" class="form-control" :placeholder="$t('modals.user-edit.department.placeholder')" type="text">
           </div>
         </div>
       </fieldset>
       <fieldset>
-        <legend class="mt-4">Notes</legend>
+        <legend class="mt-4">{{ $t('modals.user-edit.header-notes') }}</legend>
         <div class="form-group">
-          <label class="form-label mt-4">{{ $t('modals.useredit.notes') }}</label>
+          <label class="form-label mt-4">{{ $t('modals.user-edit.notes.label') }}</label>
           <textarea v-model="formData.Notes" class="form-control" rows="2"></textarea>
         </div>
       </fieldset>
       <fieldset>
-        <legend class="mt-4">State</legend>
+        <legend class="mt-4">{{ $t('modals.user-edit.header-state') }}</legend>
         <div class="form-check form-switch">
           <input v-model="formData.Disabled" class="form-check-input" type="checkbox">
-          <label class="form-check-label" >Disabled (no WireGuard connection and no login possible)</label>
+          <label class="form-check-label" >{{ $t('modals.user-edit.disabled.label') }}</label>
         </div>
         <div class="form-check form-switch">
           <input v-model="formData.Locked" class="form-check-input" type="checkbox">
-          <label class="form-check-label" >Locked (no login possible, WireGuard connections still work)</label>
+          <label class="form-check-label" >{{ $t('modals.user-edit.locked.label') }}</label>
         </div>
         <div class="form-check form-switch" v-if="formData.Source==='db'">
           <input v-model="formData.IsAdmin" checked="" class="form-check-input" type="checkbox">
-          <label class="form-check-label">Is Admin</label>
+          <label class="form-check-label">{{ $t('modals.user-edit.admin.label') }}</label>
         </div>
       </fieldset>
 
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button v-if="props.userId!=='#NEW#'&&formData.Source==='db'" class="btn btn-danger me-1" type="button" @click.prevent="del">Delete</button>
+        <button v-if="props.userId!=='#NEW#'&&formData.Source==='db'" class="btn btn-danger me-1" type="button" @click.prevent="del">{{ $t('general.delete') }}</button>
       </div>
-      <button class="btn btn-primary me-1" type="button" @click.prevent="save">Save</button>
-      <button class="btn btn-secondary" type="button" @click.prevent="close">Discard</button>
+      <button class="btn btn-primary me-1" type="button" @click.prevent="save">{{ $t('general.save') }}</button>
+      <button class="btn btn-secondary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
     </template>
   </Modal>
 </template>

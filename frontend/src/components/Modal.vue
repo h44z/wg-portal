@@ -2,7 +2,7 @@
   <Teleport to="#modals">
     <div v-show="visible" class="modal-backdrop fade show" @click="closeBackdrop">
       <div class="modal fade show" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"  @click.stop="">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" @click.stop="">
           <div class="modal-content" ref="body">
             <div class="modal-header">
               <h5 class="modal-title">{{ title }}</h5>

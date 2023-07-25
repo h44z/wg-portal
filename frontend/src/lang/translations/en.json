@@ -1,137 +1,278 @@
 {
-  "hello": "Hello World!",
+  "general": {
+    "pagination": {
+      "size": "Number of Elements",
+      "all": "All (slow)"
+    },
+    "search": {
+      "placeholder": "Search...",
+      "button": "Search"
+    },
+    "select-all": "Select all",
+    "yes": "Yes",
+    "no": "No",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete"
+  },
+  "login": {
+    "headline": "Please sign in",
+    "username": {
+      "label": "Username",
+      "placeholder": "Please enter your username"
+    },
+    "password": {
+      "label": "Password",
+      "placeholder": "Please enter your password"
+    },
+    "button": "Sign in"
+  },
   "menu": {
     "home": "Home",
     "interfaces": "Interfaces",
     "users": "Users",
-    "firstname": "Firstname",
-    "lastname": "Lastname",
-    "login": "Login",
     "lang": "Toggle Language",
     "profile": "My Profile",
+    "login": "Login",
     "logout": "Logout"
   },
   "home": {
-    "h1": "WireGuard® VPN Portal",
-    "info": "More Information",
+    "headline": "WireGuard® VPN Portal",
+    "info-headline": "More Information",
     "abstract": "WireGuard® is an extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography. It aims to be faster, simpler, leaner, and more useful than IPsec, while avoiding the massive headache. It intends to be considerably more performant than OpenVPN.",
     "installation": {
-      "instruct": "Installation instructions for client software can be found on the official WireGuard website.",
-      "h1": "WireGuard Installation",
-      "h2": "Installation",
+      "box-header": "WireGuard Installation",
+      "headline": "Installation",
+      "content": "Installation instructions for client software can be found on the official WireGuard website.",
       "btn": "Open Instructions"
     },
     "about-wg": {
-      "instruct": "WireGuard® is an extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography.",
-      "h1": "About WireGuard",
-      "h2": "About",
-      "btn": "More"
+      "box-header": "About WireGuard",
+      "headline": "About",
+      "content": "WireGuard® is an extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography.",
+      "button": "More"
     },
     "about-portal": {
-      "instruct": "WireGuard Portal is a simple, web based configuration portal for WireGuard.",
-      "h1": "About WireGuard Portal",
-      "h2": "WireGuard Portal",
-      "btn": "More"
+      "box-header": "About WireGuard Portal",
+      "headline": "WireGuard Portal",
+      "content": "WireGuard Portal is a simple, web based configuration portal for WireGuard.",
+      "button": "More"
     },
     "profiles": {
-      "h1": "VPN Profiles",
+      "headline": "VPN Profiles",
       "abstract": "You can access and download your personal VPN configurations via your Userprofile.",
-      "instruct": "To find all your configured profiles click on the button below.",
-      "btn": "Open my profile"
+      "content": "To find all your configured profiles click on the button below.",
+      "button": "Open my profile"
     },
     "admin": {
-      "h1": "Administration Area",
+      "headline": "Administration Area",
       "abstract": "In the administration area you can manage WireGuard peers and the server interface as well as users that are allowed to log in to the WireGuard Portal.",
-      "instruct": "To find all your configured profiles click on the button below.",
-      "btn-1": "Open Server Administration",
-      "btn-2": "Open User Administration"
+      "content": "To find all your configured profiles click on the button below.",
+      "button-admin": "Open Server Administration",
+      "button-user": "Open User Administration"
     }
   },
   "interfaces": {
-    "h1": "Interface Administration",
-    "h2": "Current VPN Peers",
-    "h2-client": "Current Endpoints",
-    "tableHeadings": {
+    "headline": "Interface Administration",
+    "headline-peers": "Current VPN Peers",
+    "headline-endpoints": "Current Endpoints",
+    "no-interface": {
+      "default-selection": "No Interface available",
+      "headline": "No interfaces found...",
+      "abstract": "Click the plus button above to create a new WireGuard interface."
+    },
+    "no-peer": {
+      "headline": "No peers available",
+      "abstract": "Currently, there are no peers available for the selected WireGuard interface."
+    },
+    "table-heading": {
       "name": "Name",
       "user": "User",
       "ip": "IP's",
       "endpoint": "Endpoint",
-      "stats": "Status"
+      "status": "Status"
     },
-    "noInterface": {
-      "h1": "No interfaces found...",
-      "message": "Click the plus button above to create a new WireGuard interface."
-    },
-    "notAvailable": "No Interface available",
-    "statusBox": {
-      "h1": "Interface status for",
+    "interface": {
+      "headline": "Interface status for",
       "mode": "mode",
       "key": "Public Key",
       "endpoint": "Public Endpoint",
       "port": "Listening Port",
       "peers": "Enabled Peers",
-      "totalPeers": "Total Peers",
+      "total-peers": "Total Peers",
+      "endpoints": "Enabled Endpoints",
+      "total-endpoints": "Total Endpoints",
       "ip": "IP Address",
-      "allowedIP": "Default allowed IPs",
-      "dnsServers": "DNS Servers",
-      "mtu": "Default MTU",
-      "interval": "Default Keepalive Interval"
+      "default-allowed-ip": "Default allowed IPs",
+      "dns": "DNS Servers",
+      "mtu": "MTU",
+      "default-keep-alive": "Default Keepalive Interval",
+      "button-show-config": "Show configuration",
+      "button-download-config": "Download configuration",
+      "button-store-config": "Store configuration for wg-quick",
+      "button-edit": "Edit interface"
     },
-    "noPeerSelect": {
-      "h4": "No peers for the selected interface...",
-      "message": "Click the plus button above to create a new WireGuard interface."
-    },
-    "peer": {
-      "new": "Create new peer",
-      "edit": "Edit peer"
-    },
-    "interface": {
-      "new": "Create new interface",
-      "edit": "Edit interface"
-    },
-    "endpoint": {
-      "new": "Create new endpoint",
-      "edit": "Edit endpoint"
-    }
+    "button-add-interface": "Add Interface",
+    "button-add-peer": "Add Peer",
+    "button-add-peers": "Add Multiple Peers",
+    "button-show-peer": "Show Peer",
+    "button-edit-peer": "Edit Peer",
+    "peer-disabled": "Peer is disabled, reason:",
+    "peer-expiring": "Peer is expiring at",
+    "peer-connected": "Connected",
+    "peer-not-connected": "Not Connected",
+    "peer-handshake": "Last handshake:"
   },
-  "login": {
-    "please": "Please sign in",
-    "username": "Username",
-    "userMessage": "Please enter your username",
-    "pass": "Password",
-    "passMessage": "Please enter your password",
-    "btn": "Sign in"
-  },
-  "user": {
-    "h1": "User Administration",
-    "id": "ID",
-    "email": "eMail",
-    "firstname": "Firstname",
-    "lastname": "Lastname",
-    "source": "Source",
-    "peers": "Peers",
-    "admin": "Admin",
-    "addUser": "Add User",
-    "addMulti": "Add Multiple Users"
+  "users": {
+    "headline": "User Administration",
+    "table-heading": {
+      "id": "ID",
+      "email": "E-Mail",
+      "firstname": "Firstname",
+      "lastname": "Lastname",
+      "source": "Source",
+      "peers": "Peers",
+      "admin": "Admin"
+    },
+    "no-user": {
+      "headline": "No users available",
+      "abstract": "Currently, there are no users registered with WireGuard Portal."
+    },
+    "button-add-user": "Add User",
+    "button-show-user": "Show User",
+    "button-edit-user": "Edit User",
+    "user-disabled": "User is disabled, reason:",
+    "user-locked": "Account is locked, reason:",
+    "admin": "User has administrator privileges",
+    "no-admin": "User has no administrator privileges"
   },
   "profile": {
-    "h2-clients": "My VPN Peers",
-    "tableHeadings": {
+    "headline": "My VPN Peers",
+    "table-heading": {
       "name": "Name",
       "ip": "IP's",
       "stats": "Status",
       "interface": "Server Interface"
-    }
+    },
+    "no-peer": {
+      "headline": "No peers available",
+      "abstract": "Currently, there are no peers associated with your user profile."
+    },
+    "peer-connected": "Connected",
+    "button-add-peer": "Add Peer",
+    "button-show-peer": "Show Peer",
+    "button-edit-peer": "Edit Peer"
   },
   "modals": {
-    "peeredit": {
+    "user-view": {
+      "headline": "User Account:",
+      "tab-user": "Information",
+      "tab-peers": "Peers",
+      "headline-info": "User Information:",
+      "headline-notes": "Notes:",
+      "email": "E-Mail",
+      "firstname": "Firstname",
+      "lastname": "Lastname",
+      "phone": "Phone number",
+      "department": "Department",
+      "disabled": "Account Disabled",
+      "locked": "Account Locked",
+      "no-peers": "User has no associated peers.",
+      "peers": {
+        "name": "Name",
+        "interface": "Interface",
+        "ip": "IP's"
+      }
+    },
+    "user-edit": {
+      "headline-edit": "Edit user:",
+      "headline-new": "New user",
+      "header-general": "General",
+      "header-personal": "User Information",
+      "header-notes": "Notes",
+      "header-state": "State",
+      "identifier": {
+        "label": "Identifier",
+        "placeholder": "The unique user identifier"
+      },
+      "source": {
+        "label": "Source",
+        "placeholder": "The user source"
+      },
+      "password": {
+        "label": "Password",
+        "placeholder": "A super secret password",
+        "description": "Leave this field blank to keep current password."
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "The email address"
+      },
+      "phone": {
+        "label": "Phone",
+        "placeholder": "The phone number"
+      },
+      "department": {
+        "label": "Department",
+        "placeholder": "The department"
+      },
+      "firstname": {
+        "label": "Firstname",
+        "placeholder": "Firstname"
+      },
+      "lastname": {
+        "label": "Lastname",
+        "placeholder": "Lastname"
+      },
+      "notes": {
+        "label": "Notes",
+        "placeholder": ""
+      },
+      "disabled": {
+        "label": "Disabled (no WireGuard connection and no login possible)"
+      },
+      "locked": {
+        "label": "Locked (no login possible, WireGuard connections still work)"
+      },
+      "admin": {
+        "label": "Is Admin"
+      }
+    },
+    "interface-view": {
+      "headline": "Config for Interface:"
+    },
+    "interface-edit": {
       "privatekey": "Private Key"
-    }
-  },
-  "general": {
-    "pagination": {
-      "size": "Number of Elements",
-      "all": "All (slow)"
+    },
+    "peer-view": {
+      "headline-peer": "Peer:",
+      "headline-endpoint": "Endpoint:",
+      "section-info": "Peer Information",
+      "section-status": "Current Status",
+      "section-config": "Configuration",
+      "identifier": "Identifier",
+      "ip": "IP Addresses",
+      "user": "Associated User",
+      "notes": "Notes",
+      "expiry-status": "Expires At",
+      "disabled-status": "Disabled At",
+      "traffic": "Traffic",
+      "connection-status": "Connection Stats",
+      "upload": "Uploaded Bytes (from Server to Peer)",
+      "download": "Downloaded Bytes (from Peer to Server)",
+      "pingable": "Is Pingable",
+      "handshake": "Last Handshake",
+      "connected-since": "Connected since",
+      "endpoint": "Endpoint",
+      "button-download": "Download configuration",
+      "button-email": "Send configuration via E-Mail"
+    },
+    "peer-edit": {
+      "privatekey": "Private Key"
+    },
+    "peer-multi-create": {
+      "privatekey": "Private Key"
     }
   }
 }

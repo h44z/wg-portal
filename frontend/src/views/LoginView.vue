@@ -61,26 +61,26 @@ const externalLogin = function (provider) {
     <div class="col-lg-3"></div><!-- left spacer -->
     <div class="col-lg-6">
       <div class="card mt-5">
-        <div class="card-header">Please sign in <div class="float-end">
-          <RouterLink :to="{ name: 'home' }" class="nav-link" title="Home"><i class="fas fa-times-circle"></i></RouterLink>
+        <div class="card-header">{{ $t('login.headline') }}<div class="float-end">
+          <RouterLink :to="{ name: 'home' }" class="nav-link" :title="$t('menu.home')"><i class="fas fa-times-circle"></i></RouterLink>
         </div></div>
         <div class="card-body">
           <form method="post">
             <fieldset>
               <div class="form-group">
-                <label class="form-label" for="inputUsername">{{ $t('login.username') }}</label>
+                <label class="form-label" for="inputUsername">{{ $t('login.username.label') }}</label>
                 <div class="input-group mb-3">
                   <span class="input-group-text"><span class="far fa-user p-2"></span></span>
-                  <input id="inputUsername" v-model="username" :class="{'is-invalid':usernameInvalid, 'is-valid':!usernameInvalid}" :placeholder="$t('login.userMessage')" aria-describedby="usernameHelp"
+                  <input id="inputUsername" v-model="username" :class="{'is-invalid':usernameInvalid, 'is-valid':!usernameInvalid}" :placeholder="$t('login.username.placeholder')" aria-describedby="usernameHelp"
                          class="form-control"
                          name="username" type="text">
                 </div>
               </div>
               <div class="form-group">
-                <label class="form-label" for="inputPassword">{{ $t('login.pass') }}</label>
+                <label class="form-label" for="inputPassword">{{ $t('login.password.label') }}</label>
                 <div class="input-group mb-3">
                   <span class="input-group-text"><span class="fas fa-lock p-2"></span></span>
-                  <input id="inputPassword" v-model="password" :class="{'is-invalid':passwordInvalid, 'is-valid':!passwordInvalid}" :placeholder="$t('login.passMessage')" class="form-control"
+                  <input id="inputPassword" v-model="password" :class="{'is-invalid':passwordInvalid, 'is-valid':!passwordInvalid}" :placeholder="$t('login.password.placeholder')" class="form-control"
                          name="password" type="password">
                 </div>
               </div>
@@ -88,7 +88,7 @@ const externalLogin = function (provider) {
               <div class="row mt-5 d-flex">
                 <div :class="{'col-lg-4':auth.LoginProviders.length < 3, 'col-lg-12':auth.LoginProviders.length >= 3}" class="d-flex mb-2">
                   <button :disabled="disableLoginBtn" class="btn btn-primary flex-fill" type="submit" @click.prevent="login">
-                    {{ $t('login.btn') }} <div v-if="loggingIn" class="d-inline"><i class="ms-2 fa-solid fa-circle-notch fa-spin"></i></div>
+                    {{ $t('login.button') }} <div v-if="loggingIn" class="d-inline"><i class="ms-2 fa-solid fa-circle-notch fa-spin"></i></div>
                   </button>
                 </div>
                 <div :class="{'col-lg-8':auth.LoginProviders.length < 3, 'col-lg-12':auth.LoginProviders.length >= 3}" class="d-flex mb-2">

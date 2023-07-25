@@ -26,36 +26,36 @@ onMounted(async () => {
   <!-- Peer list -->
   <div class="mt-4 row">
     <div class="col-12 col-lg-5">
-      <h2 class="mt-2">{{ $t('profile.h2-clients') }}</h2>
+      <h2 class="mt-2">{{ $t('profile.headline') }}</h2>
     </div>
     <div class="col-12 col-lg-4 text-lg-end">
       <div class="form-group d-inline">
         <div class="input-group mb-3">
-          <input v-model="profile.filter" class="form-control" placeholder="Search..." type="text" @keyup="profile.afterPageSizeChange">
-          <button class="input-group-text btn btn-primary" title="Search"><i class="fa-solid fa-search"></i></button>
+          <input v-model="profile.filter" class="form-control" :placeholder="$t('general.search.placeholder')" type="text" @keyup="profile.afterPageSizeChange">
+          <button class="input-group-text btn btn-primary" :title="$t('general.search.button')"><i class="fa-solid fa-search"></i></button>
         </div>
       </div>
     </div>
     <div class="col-12 col-lg-3 text-lg-end">
-      <a v-if="settings.Setting('SelfProvisioning')" class="btn btn-primary ms-2" href="#" title="Add a peer" @click.prevent="editPeerId='#NEW#'"><i class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
+      <a v-if="settings.Setting('SelfProvisioning')" class="btn btn-primary ms-2" href="#" :title="$t('general.search.button-add-peer')" @click.prevent="editPeerId='#NEW#'"><i class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
     </div>
   </div>
   <div class="mt-2 table-responsive">
     <div v-if="profile.CountPeers===0">
-    <h4>{{ $t('profile.noPeerSelect.h4') }}</h4>
-    <p>{{ $t('profile.noPeerSelect.message') }}</p>
+    <h4>{{ $t('profile.no-peer.headline') }}</h4>
+    <p>{{ $t('profile.no-peer.abstract') }}</p>
     </div>
     <table v-if="profile.CountPeers!==0" id="peerTable" class="table table-sm">
       <thead>
       <tr>
         <th scope="col">
-          <input id="flexCheckDefault" class="form-check-input" title="Select all" type="checkbox" value="">
+          <input id="flexCheckDefault" class="form-check-input" :title="$t('general.select-all')" type="checkbox" value="">
         </th><!-- select -->
         <th scope="col"></th><!-- status -->
-        <th scope="col">{{ $t('profile.tableHeadings.name') }}</th>
-        <th scope="col">{{ $t('profile.tableHeadings.ip') }}</th>
-        <th v-if="profile.hasStatistics" scope="col">{{ $t('profile.tableHeadings.stats') }}</th>
-        <th scope="col">{{ $t('profile.tableHeadings.interface') }}</th>
+        <th scope="col">{{ $t('profile.table-heading.name') }}</th>
+        <th scope="col">{{ $t('profile.table-heading.ip') }}</th>
+        <th v-if="profile.hasStatistics" scope="col">{{ $t('profile.table-heading.stats') }}</th>
+        <th scope="col">{{ $t('profile.table-heading.interface') }}</th>
         <th scope="col"></th><!-- Actions -->
       </tr>
       </thead>
@@ -74,7 +74,7 @@ onMounted(async () => {
           </td>
           <td v-if="profile.hasStatistics">
             <div v-if="profile.Statistics(peer.Identifier).IsConnected">
-              <span class="badge rounded-pill bg-success"><i class="fa-solid fa-link"></i></span> <span :title="peers.Statistics(peer.Identifier).LastHandshake">Connected</span>
+              <span class="badge rounded-pill bg-success"><i class="fa-solid fa-link"></i></span> <span :title="peers.Statistics(peer.Identifier).LastHandshake">{{ $t('profile.peer-connected') }}</span>
             </div>
             <div v-else>
               <span class="badge rounded-pill bg-light"><i class="fa-solid fa-link-slash"></i></span>
@@ -82,8 +82,8 @@ onMounted(async () => {
           </td>
           <td>{{peer.InterfaceIdentifier}}</td>
           <td class="text-center">
-            <a href="#" title="Show peer" @click.prevent="viewedPeerId=peer.Identifier"><i class="fas fa-eye me-2"></i></a>
-            <a href="#" title="Edit peer" @click.prevent="editPeerId=peer.Identifier"><i class="fas fa-cog"></i></a>
+            <a href="#" :title="$t('profile.button-show-peer')" @click.prevent="viewedPeerId=peer.Identifier"><i class="fas fa-eye me-2"></i></a>
+            <a href="#" :title="$t('profile.button-edit-peer')" @click.prevent="editPeerId=peer.Identifier"><i class="fas fa-cog"></i></a>
           </td>
         </tr>
       </tbody>

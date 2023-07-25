@@ -24,40 +24,41 @@ onMounted(() => {
   <!-- User list -->
   <div class="mt-4 row">
     <div class="col-12 col-lg-5">
-      <h1>{{ $t('user.h1') }}</h1>
+      <h1>{{ $t('users.headline') }}</h1>
     </div>
     <div class="col-12 col-lg-4 text-lg-end">
       <div class="form-group d-inline">
         <div class="input-group mb-3">
-          <input v-model="users.filter" class="form-control" placeholder="Search..." type="text" @keyup="users.afterPageSizeChange">
-          <button class="input-group-text btn btn-primary" title="Search"><i class="fa-solid fa-search"></i></button>
+          <input v-model="users.filter" class="form-control" :placeholder="$t('general.search.placeholder')" type="text" @keyup="users.afterPageSizeChange">
+          <button class="input-group-text btn btn-primary" :title="$t('general.search.button')"><i class="fa-solid fa-search"></i></button>
         </div>
       </div>
     </div>
     <div class="col-12 col-lg-3 text-lg-end">
-      <a class="btn btn-primary ms-2" href="#" title="Add a user" @click.prevent="editUserId='#NEW#'"><i class="fa fa-plus me-1"></i><i
-          class="fa fa-user"></i></a>
+      <a class="btn btn-primary ms-2" href="#" :title="$t('users.button-add-user')" @click.prevent="editUserId='#NEW#'">
+        <i class="fa fa-plus me-1"></i><i class="fa fa-user"></i>
+      </a>
     </div>
   </div>
   <div class="mt-2 table-responsive">
     <div v-if="users.Count===0">
-      <h4>{{ $t('users.noUsers.h4') }}</h4>
-      <p>{{ $t('users.noUsers.message') }}</p>
+      <h4>{{ $t('users.no-user.headline') }}</h4>
+      <p>{{ $t('users.no-user.abstract') }}</p>
     </div>
     <table v-if="users.Count!==0"  id="userTable" class="table table-sm">
       <thead>
         <tr>
           <th scope="col">
-            <input id="flexCheckDefault" class="form-check-input" title="Select all" type="checkbox" value="">
+            <input id="flexCheckDefault" class="form-check-input" :title="$t('general.select-all')" type="checkbox" value="">
           </th><!-- select -->
           <th scope="col"></th><!-- status -->
-          <th scope="col">{{ $t('user.id') }}</th>
-          <th scope="col">{{ $t('user.email') }}</th>
-          <th scope="col">{{ $t('user.firstname') }}</th>
-          <th scope="col">{{ $t('user.lastname') }}</th>
-          <th class="text-center" scope="col">{{ $t('user.source') }}</th>
-          <th class="text-center" scope="col">{{ $t('user.peers') }}</th>
-          <th class="text-center" scope="col">{{ $t('user.admin') }}</th>
+          <th scope="col">{{ $t('users.table-heading.id') }}</th>
+          <th scope="col">{{ $t('users.table-heading.email') }}</th>
+          <th scope="col">{{ $t('users.table-heading.firstname') }}</th>
+          <th scope="col">{{ $t('users.table-heading.lastname') }}</th>
+          <th class="text-center" scope="col">{{ $t('users.table-heading.source') }}</th>
+          <th class="text-center" scope="col">{{ $t('users.table-heading.peers') }}</th>
+          <th class="text-center" scope="col">{{ $t('users.table-heading.admin') }}</th>
           <th scope="col"></th><!-- Actions -->
         </tr>
       </thead>
@@ -67,8 +68,8 @@ onMounted(() => {
             <input id="flexCheckDefault" class="form-check-input" type="checkbox" value="">
           </th>
           <td class="text-center">
-            <span v-if="user.Disabled" class="text-danger"><i class="fa fa-circle-xmark" :title="user.DisabledReason"></i></span>
-            <span v-if="user.Locked" class="text-danger"><i class="fas fa-lock" :title="user.LockedReason"></i></span>
+            <span v-if="user.Disabled" class="text-danger" :title="$t('users.user-disabled') + ' ' + user.DisabledReason"><i class="fa fa-circle-xmark"></i></span>
+            <span v-if="user.Locked" class="text-danger" :title="$t('users.user-locked') + ' ' + user.LockedReason"><i class="fas fa-lock"></i></span>
           </td>
           <td>{{user.Identifier}}</td>
           <td>{{user.Email}}</td>
@@ -77,12 +78,12 @@ onMounted(() => {
           <td class="text-center"><span class="badge rounded-pill bg-light">{{user.Source}}</span></td>
           <td class="text-center">{{user.PeerCount}}</td>
           <td class="text-center">
-            <span v-if="user.IsAdmin" class="text-danger"><i class="fa fa-check-circle"></i></span>
-            <span v-else><i class="fa fa-circle-xmark"></i></span>
+            <span v-if="user.IsAdmin" class="text-danger" :title="$t('users.admin')"><i class="fa fa-check-circle"></i></span>
+            <span v-else><i class="fa fa-circle-xmark" :title="$t('users.no-admin')"></i></span>
           </td>
           <td class="text-center">
-            <a href="#" title="Show user" @click.prevent="viewedUserId=user.Identifier"><i class="fas fa-eye me-2"></i></a>
-            <a href="#" title="Edit user" @click.prevent="editUserId=user.Identifier"><i class="fas fa-cog me-2"></i></a>
+            <a href="#" :title="$t('users.button-show-user')" @click.prevent="viewedUserId=user.Identifier"><i class="fas fa-eye me-2"></i></a>
+            <a href="#" :title="$t('users.button-edit-user')" @click.prevent="editUserId=user.Identifier"><i class="fas fa-cog me-2"></i></a>
           </td>
         </tr>
       </tbody>
