@@ -70,8 +70,8 @@ func TestWireGuardCreateInterface(t *testing.T) {
 
 	err := mgr.SaveInterface(context.Background(), interfaceName, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
 		pi.Addresses = []domain.Cidr{
-			{Ip: domain.IpAddress(net.ParseIP(ipAddress)), NetLength: 24, Bits: 32},
-			{Ip: domain.IpAddress(net.ParseIP(ipV6Address)), NetLength: 64, Bits: 128},
+			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipAddress), Mask: net.CIDRMask(24, 32)}),
+			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipV6Address), Mask: net.CIDRMask(64, 128)}),
 		}
 		return pi, nil
 	})
@@ -104,8 +104,8 @@ func TestWireGuardUpdateInterface(t *testing.T) {
 	ipV6Address := "1337:d34d:b33f::2"
 	err = mgr.SaveInterface(context.Background(), interfaceName, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
 		pi.Addresses = []domain.Cidr{
-			{Ip: domain.IpAddress(net.ParseIP(ipAddress)), NetLength: 24, Bits: 32},
-			{Ip: domain.IpAddress(net.ParseIP(ipV6Address)), NetLength: 64, Bits: 128},
+			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipAddress), Mask: net.CIDRMask(24, 32)}),
+			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipV6Address), Mask: net.CIDRMask(64, 128)}),
 		}
 		return pi, nil
 	})
@@ -114,6 +114,45 @@ func TestWireGuardUpdateInterface(t *testing.T) {
 	// Validate that the interface has been updated
 	cmd = exec.Command("ip", "addr")
 	out, err = cmd.CombinedOutput()
+	assert.NoError(t, err)
+	assert.Contains(t, string(out), interfaceName)
+	assert.Contains(t, string(out), ipAddress)
+	assert.Contains(t, string(out), ipV6Address)
+}
+
+func TestWireGuardCreateInterfaceWithRoutes(t *testing.T) {
+	mgr := setup(t)
+
+	interfaceName := domain.InterfaceIdentifier("wg_test_001")
+	ipAddress := "10.11.12.13"
+	ipV6Address := "1337:d34d:b33f::2"
+	defer mgr.DeleteInterface(context.Background(), interfaceName)
+
+	iface := &domain.Interface{
+		Identifier: interfaceName,
+		//RoutingTable: "1234",
+	}
+	peers := []domain.Peer{
+		{
+			Interface: domain.PeerInterfaceConfig{
+				Addresses: domain.CidrsMust(domain.CidrsFromString("10.11.12.14/32,10.22.33.44/32")),
+			},
+		},
+	}
+
+	err := mgr.SaveInterface2(context.Background(), iface, peers, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
+		pi.Addresses = []domain.Cidr{
+			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipAddress), Mask: net.CIDRMask(24, 32)}),
+			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipV6Address), Mask: net.CIDRMask(64, 128)}),
+		}
+		pi.DeviceUp = true
+		return pi, nil
+	})
+	assert.NoError(t, err)
+
+	// Validate that the interface has been created
+	cmd := exec.Command("ip", "addr")
+	out, err := cmd.CombinedOutput()
 	assert.NoError(t, err)
 	assert.Contains(t, string(out), interfaceName)
 	assert.Contains(t, string(out), ipAddress)

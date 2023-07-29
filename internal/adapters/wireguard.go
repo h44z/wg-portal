@@ -4,19 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/h44z/wg-portal/internal/lowlevel"
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"os"
 )
 
 // WgRepo implements all low-level WireGuard interactions.
 type WgRepo struct {
-	wg lowlevel.WireGuardClient
-	nl lowlevel.NetlinkClient
+	wg    lowlevel.WireGuardClient
+	nl    lowlevel.NetlinkClient
+	quick *WgQuickRepo
 }
 
 func NewWireGuardRepository() *WgRepo {
@@ -28,8 +30,9 @@ func NewWireGuardRepository() *WgRepo {
 	nl := &lowlevel.NetlinkManager{}
 
 	repo := &WgRepo{
-		wg: wg,
-		nl: nl,
+		wg:    wg,
+		nl:    nl,
+		quick: NewWgQuickRepo(),
 	}
 
 	return repo
@@ -152,16 +155,38 @@ func (r *WgRepo) convertWireGuardPeer(peer *wgtypes.Peer) (domain.PhysicalPeer, 
 	return peerModel, nil
 }
 
-func (r *WgRepo) SaveInterface(_ context.Context, id domain.InterfaceIdentifier, updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error)) error {
-	physicalInterface, err := r.getOrCreateInterface(id)
+func (r *WgRepo) SaveInterface(_ context.Context, iface *domain.Interface, peers []domain.Peer, updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error)) error {
+	physicalInterface, err := r.getOrCreateInterface(iface.Identifier)
 	if err != nil {
 		return err
 	}
 
+	wasUp := physicalInterface.DeviceUp
 	if updateFunc != nil {
 		physicalInterface, err = updateFunc(physicalInterface)
 		if err != nil {
 			return err
+		}
+	}
+	stateChanged := wasUp != physicalInterface.DeviceUp
+
+	if stateChanged {
+		if physicalInterface.DeviceUp {
+			if err := r.quick.SetDNS(iface.Identifier, iface.DnsStr, iface.DnsSearchStr); err != nil {
+				return fmt.Errorf("failed to update dns settings: %w", err)
+			}
+
+			if err := r.quick.ExecuteInterfaceHook(iface.Identifier, iface.PreUp); err != nil {
+				return fmt.Errorf("failed to execute pre-up hook: %w", err)
+			}
+		} else {
+			if err := r.quick.UnsetDNS(iface.Identifier); err != nil {
+				return fmt.Errorf("failed to clear dns settings: %w", err)
+			}
+
+			if err := r.quick.ExecuteInterfaceHook(iface.Identifier, iface.PreDown); err != nil {
+				return fmt.Errorf("failed to execute pre-down hook: %w", err)
+			}
 		}
 	}
 
@@ -170,6 +195,21 @@ func (r *WgRepo) SaveInterface(_ context.Context, id domain.InterfaceIdentifier,
 	}
 	if err := r.updateWireGuardInterface(physicalInterface); err != nil {
 		return err
+	}
+	if err := r.updateRoutes(iface.Identifier, iface.GetRoutingTable(), iface.GetAllowedIPs(peers)); err != nil {
+		return err
+	}
+
+	if stateChanged {
+		if physicalInterface.DeviceUp {
+			if err := r.quick.ExecuteInterfaceHook(iface.Identifier, iface.PostUp); err != nil {
+				return fmt.Errorf("failed to execute post-up hook: %w", err)
+			}
+		} else {
+			if err := r.quick.ExecuteInterfaceHook(iface.Identifier, iface.PostDown); err != nil {
+				return fmt.Errorf("failed to execute post-down hook: %w", err)
+			}
+		}
 	}
 
 	return nil
@@ -298,6 +338,72 @@ func (r *WgRepo) updateWireGuardInterface(pi *domain.PhysicalInterface) error {
 	return nil
 }
 
+func (r *WgRepo) updateRoutes(interfaceId domain.InterfaceIdentifier, table int, allowedIPs []domain.Cidr) error {
+	if table == -1 {
+		logrus.Trace("ignoring route update")
+		return nil
+	}
+
+	link, err := r.nl.LinkByName(string(interfaceId))
+	if err != nil {
+		return err
+	}
+
+	if link.Attrs().OperState == netlink.OperDown {
+		return nil // cannot set route for interface that is down
+	}
+
+	// try to mimic wg-quick (https://git.zx2c4.com/wireguard-tools/tree/src/wg-quick/linux.bash)
+	for _, allowedIP := range allowedIPs {
+		if allowedIP.Prefix().Bits() == 0 { // default route
+			// TODO
+		} else {
+			err := r.nl.RouteReplace(&netlink.Route{
+				LinkIndex: link.Attrs().Index,
+				Dst:       allowedIP.IpNet(),
+				Table:     table,
+				Scope:     unix.RT_SCOPE_LINK,
+				Type:      unix.RTN_UNICAST,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to add/update route %s: %w", allowedIP.String(), err)
+			}
+		}
+	}
+
+	// Remove unwanted routes
+	rawRoutes, err := r.nl.RouteListFiltered(netlink.FAMILY_ALL, &netlink.Route{
+		LinkIndex: link.Attrs().Index,
+		Table:     unix.RT_TABLE_UNSPEC, // all tables
+		Scope:     unix.RT_SCOPE_LINK,
+		Type:      unix.RTN_UNICAST,
+	}, netlink.RT_FILTER_TABLE|netlink.RT_FILTER_TYPE|netlink.RT_FILTER_OIF)
+	if err != nil {
+		return fmt.Errorf("failed to fetch raw routes: %w", err)
+	}
+	for _, rawRoute := range rawRoutes {
+		netlinkAddr := domain.CidrFromIpNet(*rawRoute.Dst)
+		remove := true
+		for _, allowedIP := range allowedIPs {
+			if netlinkAddr == allowedIP {
+				remove = false
+				break
+			}
+		}
+
+		if !remove {
+			continue
+		}
+
+		err := r.nl.RouteDel(&rawRoute)
+		if err != nil {
+			return fmt.Errorf("failed to remove deprecated route %s: %w", netlinkAddr.String(), err)
+		}
+	}
+
+	return nil
+}
+
 func (r *WgRepo) DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error {
 	if err := r.deleteLowLevelInterface(id); err != nil {
 		return err
@@ -388,16 +494,10 @@ func (r *WgRepo) updatePeer(deviceId domain.InterfaceIdentifier, pp *domain.Phys
 		Endpoint:                    pp.GetEndpointAddress(),
 		PersistentKeepaliveInterval: pp.GetPersistentKeepaliveTime(),
 		ReplaceAllowedIPs:           true,
-		AllowedIPs:                  nil,
+		AllowedIPs:                  pp.GetAllowedIPs(),
 	}
 
-	ips, err := pp.GetAllowedIPs()
-	if err != nil {
-		return err
-	}
-	cfg.AllowedIPs = ips
-
-	err = r.wg.ConfigureDevice(string(deviceId), wgtypes.Config{ReplacePeers: false, Peers: []wgtypes.PeerConfig{cfg}})
+	err := r.wg.ConfigureDevice(string(deviceId), wgtypes.Config{ReplacePeers: false, Peers: []wgtypes.PeerConfig{cfg}})
 	if err != nil {
 		return err
 	}

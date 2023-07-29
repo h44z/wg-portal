@@ -190,13 +190,13 @@ func (p PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
 	return &keepAliveDuration
 }
 
-func (p PhysicalPeer) GetAllowedIPs() ([]net.IPNet, error) {
+func (p PhysicalPeer) GetAllowedIPs() []net.IPNet {
 	allowedIPs := make([]net.IPNet, len(p.AllowedIPs))
 	for i, ip := range p.AllowedIPs {
 		allowedIPs[i] = *ip.IpNet()
 	}
 
-	return allowedIPs, nil
+	return allowedIPs
 }
 
 func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
@@ -223,9 +223,15 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 	pp.Identifier = p.Identifier
 	pp.Endpoint = p.Endpoint.GetValue()
-	allowedIPs, _ := CidrsFromString(p.AllowedIPsStr.GetValue())
-	extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
-	pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
+	if p.Interface.Type == InterfaceTypeServer {
+		allowedIPs, _ := CidrsFromString(p.AllowedIPsStr.GetValue())
+		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
+		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
+	} else {
+		allowedIPs := p.Interface.Addresses
+		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
+		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
+	}
 	pp.PresharedKey = p.PresharedKey
 	pp.PublicKey = p.Interface.PublicKey
 	pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()

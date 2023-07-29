@@ -163,6 +163,14 @@ func (c Cidr) NextAddr() Cidr {
 	}
 }
 
+func (c Cidr) HostAddr() Cidr {
+	return Cidr{
+		Cidr:      netip.PrefixFrom(c.Prefix().Addr(), c.Prefix().Addr().BitLen()).String(),
+		Addr:      c.Addr,
+		NetLength: c.Prefix().Addr().BitLen(),
+	}
+}
+
 func (c Cidr) NextSubnet() Cidr {
 	prefix := c.Prefix()
 	nextAddr := c.BroadcastAddr().Prefix().Addr().Next()

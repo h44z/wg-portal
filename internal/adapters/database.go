@@ -53,15 +53,15 @@ func (l *GormLogger) LogMode(logger.LogLevel) logger.Interface {
 }
 
 func (l *GormLogger) Info(ctx context.Context, s string, args ...interface{}) {
-	logrus.WithContext(ctx).Infof(s, args)
+	logrus.WithContext(ctx).Infof(s, args...)
 }
 
 func (l *GormLogger) Warn(ctx context.Context, s string, args ...interface{}) {
-	logrus.WithContext(ctx).Warnf(s, args)
+	logrus.WithContext(ctx).Warnf(s, args...)
 }
 
 func (l *GormLogger) Error(ctx context.Context, s string, args ...interface{}) {
-	logrus.WithContext(ctx).Errorf(s, args)
+	logrus.WithContext(ctx).Errorf(s, args...)
 }
 
 func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {

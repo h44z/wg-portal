@@ -306,7 +306,7 @@ func (m Manager) getFreshPeerIpConfig(ctx context.Context, iface *domain.Interfa
 			}
 		}
 
-		ips = append(ips, ip)
+		ips = append(ips, ip.HostAddr())
 	}
 
 	return

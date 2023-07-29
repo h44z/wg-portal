@@ -16,6 +16,14 @@ type NetlinkClient interface {
 	AddrAdd(link netlink.Link, addr *netlink.Addr) error
 	AddrList(link netlink.Link) ([]netlink.Addr, error)
 	AddrDel(link netlink.Link, addr *netlink.Addr) error
+	RouteAdd(route *netlink.Route) error
+	RouteDel(route *netlink.Route) error
+	RouteReplace(route *netlink.Route) error
+	RouteList(link netlink.Link, family int) ([]netlink.Route, error)
+	RouteListFiltered(family int, filter *netlink.Route, filterMask uint64) ([]netlink.Route, error)
+	RuleAdd(rule *netlink.Rule) error
+	RuleDel(rule *netlink.Rule) error
+	RuleList(family int) ([]netlink.Rule, error)
 }
 
 type NetlinkManager struct {
@@ -65,4 +73,36 @@ func (n NetlinkManager) AddrList(link netlink.Link) ([]netlink.Addr, error) {
 
 func (n NetlinkManager) AddrDel(link netlink.Link, addr *netlink.Addr) error {
 	return netlink.AddrDel(link, addr)
+}
+
+func (n NetlinkManager) RouteAdd(route *netlink.Route) error {
+	return netlink.RouteAdd(route)
+}
+
+func (n NetlinkManager) RouteDel(route *netlink.Route) error {
+	return netlink.RouteDel(route)
+}
+
+func (n NetlinkManager) RouteReplace(route *netlink.Route) error {
+	return netlink.RouteReplace(route)
+}
+
+func (n NetlinkManager) RouteList(link netlink.Link, family int) ([]netlink.Route, error) {
+	return netlink.RouteList(link, family)
+}
+
+func (n NetlinkManager) RouteListFiltered(family int, filter *netlink.Route, filterMask uint64) ([]netlink.Route, error) {
+	return netlink.RouteListFiltered(family, filter, filterMask)
+}
+
+func (n NetlinkManager) RuleAdd(rule *netlink.Rule) error {
+	return netlink.RuleAdd(rule)
+}
+
+func (n NetlinkManager) RuleDel(rule *netlink.Rule) error {
+	return netlink.RuleDel(rule)
+}
+
+func (n NetlinkManager) RuleList(family int) ([]netlink.Rule, error) {
+	return netlink.RuleList(family)
 }

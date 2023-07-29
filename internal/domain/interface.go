@@ -3,7 +3,10 @@ package domain
 import (
 	"fmt"
 	"github.com/h44z/wg-portal/internal"
+	"math"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -93,6 +96,47 @@ func (i *Interface) GetConfigFileName() string {
 	filename += ".conf"
 
 	return filename
+}
+
+func (i *Interface) GetAllowedIPs(peers []Peer) []Cidr {
+	var allowedCidrs []Cidr
+
+	for _, peer := range peers {
+		allowedCidrs = append(allowedCidrs, peer.Interface.Addresses...)
+		if peer.ExtraAllowedIPsStr != "" {
+			extraIPs, err := CidrsFromString(peer.ExtraAllowedIPsStr)
+			if err == nil {
+				allowedCidrs = append(allowedCidrs, extraIPs...)
+			}
+		}
+	}
+
+	return allowedCidrs
+}
+
+// GetRoutingTable returns the routing table number or -1 if an error occurred or RoutingTable was set to "off"
+func (i *Interface) GetRoutingTable() int {
+	routingTableStr := strings.ToLower(i.RoutingTable)
+	switch {
+	case routingTableStr == "":
+		return 0
+	case strings.HasPrefix(routingTableStr, "0x"):
+		numberStr := strings.ReplaceAll(routingTableStr, "0x", "")
+		routingTable, err := strconv.ParseUint(numberStr, 16, 64)
+		if err != nil {
+			return -1
+		}
+		if routingTable > math.MaxInt32 {
+			return -1
+		}
+		return int(routingTable)
+	default:
+		routingTable, err := strconv.Atoi(routingTableStr)
+		if err != nil {
+			return -1
+		}
+		return routingTable
+	}
 }
 
 type PhysicalInterface struct {

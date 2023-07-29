@@ -135,12 +135,12 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 			return fmt.Errorf("failed to load peers for %s: %w", iface.Identifier, err)
 		}
 
-		physicalInterface, err := m.wg.GetInterface(ctx, iface.Identifier)
+		_, err = m.wg.GetInterface(ctx, iface.Identifier)
 		if err != nil {
 			logrus.Debugf("creating missing interface %s...", iface.Identifier)
 
 			// try to create a new interface
-			err := m.wg.SaveInterface(ctx, iface.Identifier, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
+			err := m.wg.SaveInterface(ctx, &iface, peers, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
 				domain.MergeToPhysicalInterface(pi, &iface)
 
 				return pi, nil
@@ -169,32 +169,30 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 				}
 			}
 		} else {
-			if physicalInterface.DeviceUp != !iface.IsDisabled() {
-				logrus.Debugf("restoring interface state for %s to disabled=%t", iface.Identifier, iface.IsDisabled())
+			logrus.Debugf("restoring interface state for %s to disabled=%t", iface.Identifier, iface.IsDisabled())
 
-				// try to move interface to stored state
-				err := m.wg.SaveInterface(ctx, iface.Identifier, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
-					pi.DeviceUp = !iface.IsDisabled()
+			// try to move interface to stored state
+			err := m.wg.SaveInterface(ctx, &iface, peers, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
+				pi.DeviceUp = !iface.IsDisabled()
 
-					return pi, nil
-				})
-				if err != nil {
-					if updateDbOnError {
-						// disable interface in database as no physical interface is available
-						_ = m.db.SaveInterface(ctx, iface.Identifier, func(in *domain.Interface) (*domain.Interface, error) {
-							if iface.IsDisabled() {
-								now := time.Now()
-								in.Disabled = &now // set
-								in.DisabledReason = "no physical interface active"
-							} else {
-								in.Disabled = nil
-								in.DisabledReason = ""
-							}
-							return in, nil
-						})
-					}
-					return fmt.Errorf("failed to change physical interface state for %s: %w", iface.Identifier, err)
+				return pi, nil
+			})
+			if err != nil {
+				if updateDbOnError {
+					// disable interface in database as no physical interface is available
+					_ = m.db.SaveInterface(ctx, iface.Identifier, func(in *domain.Interface) (*domain.Interface, error) {
+						if iface.IsDisabled() {
+							now := time.Now()
+							in.Disabled = &now // set
+							in.DisabledReason = "no physical interface active"
+						} else {
+							in.Disabled = nil
+							in.DisabledReason = ""
+						}
+						return in, nil
+					})
 				}
+				return fmt.Errorf("failed to change physical interface state for %s: %w", iface.Identifier, err)
 			}
 		}
 	}
@@ -294,7 +292,7 @@ func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*do
 	err = m.db.SaveInterface(ctx, in.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
 		in.CopyCalculatedAttributes(i)
 
-		err = m.wg.SaveInterface(ctx, in.Identifier, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
+		err = m.wg.SaveInterface(ctx, in, nil, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
 			domain.MergeToPhysicalInterface(pi, in)
 			return pi, nil
 		})
@@ -324,7 +322,7 @@ func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*do
 	err = m.db.SaveInterface(ctx, in.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
 		in.CopyCalculatedAttributes(i)
 
-		err = m.wg.SaveInterface(ctx, in.Identifier, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
+		err = m.wg.SaveInterface(ctx, in, existingPeers, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
 			domain.MergeToPhysicalInterface(pi, in)
 			return pi, nil
 		})
