@@ -114,12 +114,17 @@ func (i *Interface) GetAllowedIPs(peers []Peer) []Cidr {
 	return allowedCidrs
 }
 
-// GetRoutingTable returns the routing table number or -1 if an error occurred or RoutingTable was set to "off"
+// GetRoutingTable returns the routing table number or
+//
+//	-1 if an error occurred
+//	-2 if RoutingTable was set to "off"
 func (i *Interface) GetRoutingTable() int {
 	routingTableStr := strings.ToLower(i.RoutingTable)
 	switch {
 	case routingTableStr == "":
 		return 0
+	case routingTableStr == "off":
+		return -2
 	case strings.HasPrefix(routingTableStr, "0x"):
 		numberStr := strings.ReplaceAll(routingTableStr, "0x", "")
 		routingTable, err := strconv.ParseUint(numberStr, 16, 64)

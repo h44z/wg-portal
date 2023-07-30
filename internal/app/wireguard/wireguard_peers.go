@@ -284,7 +284,7 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 		if err != nil {
 			return fmt.Errorf("failed to load peer interface %s: %w", ifaceId, err)
 		}
-		err = m.wg.SaveRoutes(ctx, iface.Identifier, iface.GetRoutingTable(), iface.GetAllowedIPs(ifacePeers))
+		err = m.wg.SaveRoutes(ctx, iface, ifacePeers)
 		if err != nil {
 			return fmt.Errorf("failed to update peer routes on interface %s: %w", ifaceId, err)
 		}

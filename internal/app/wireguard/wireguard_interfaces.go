@@ -384,7 +384,7 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, pee
 		return nil, fmt.Errorf("failed to save interface: %w", err)
 	}
 
-	err = m.wg.SaveRoutes(ctx, iface.Identifier, iface.GetRoutingTable(), iface.GetAllowedIPs(peers))
+	err = m.wg.SaveRoutes(ctx, iface, peers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save routes: %w", err)
 	}

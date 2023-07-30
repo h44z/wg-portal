@@ -41,7 +41,7 @@ type InterfaceController interface {
 	DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error
 	SavePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier, updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error)) error
 	DeletePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error
-	SaveRoutes(_ context.Context, deviceId domain.InterfaceIdentifier, table int, allowedIPs []domain.Cidr) error
+	SaveRoutes(_ context.Context, iface *domain.Interface, peers []domain.Peer) error
 }
 
 type WgQuickController interface {
