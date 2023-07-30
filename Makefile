@@ -79,20 +79,12 @@ build: build-dependencies
 	 -ldflags "-w -s -extldflags \"-static\" -X 'github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}'" \
 	 cmd/wg-portal/main.go
 
-	CGO_ENABLED=0 $(GOCMD) build -o $(BUILDDIR)/hc \
-	 -ldflags "-w -s -extldflags \"-static\"" \
-	 cmd/hc/main.go
-
 #< build-amd64: Build all executables for AMD64
 .PHONY: build-amd64
 build-amd64: build-dependencies
 	CGO_ENABLED=1 $(GOCMD) build -o $(BUILDDIR)/wg-portal-amd64 \
 	 -ldflags "-w -s -extldflags \"-static\" -X 'github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}'" \
 	 cmd/wg-portal/main.go
-
-	CGO_ENABLED=0 $(GOCMD) build -o $(BUILDDIR)/hc-amd64 \
-	 -ldflags "-w -s -extldflags \"-static\"" \
-	 cmd/hc/main.go
 
 #< build-arm64: Build all executables for ARM64
 .PHONY: build-arm64
@@ -101,20 +93,12 @@ build-arm64: build-dependencies
 	 -ldflags "-w -s -extldflags \"-static\" -X 'github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}'" \
 	 cmd/wg-portal/main.go
 
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOCMD) build -o $(BUILDDIR)/hc-arm64 \
-	 -ldflags "-w -s -extldflags \"-static\"" \
-	 cmd/hc/main.go
-
 #< build-arm: Build all executables for ARM32
 .PHONY: build-arm
 build-arm: build-dependencies
 	CGO_ENABLED=1 CC=arm-linux-gnueabi-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -o $(BUILDDIR)/wg-portal-arm \
 	 -ldflags "-w -s -extldflags \"-static\" -X 'github.com/h44z/wg-portal/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}'" \
 	 cmd/wg-portal/main.go
-
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -o $(BUILDDIR)/hc-arm \
-	 -ldflags "-w -s -extldflags \"-static\"" \
-	 cmd/hc/main.go
 
 #< build-dependencies: Generate the output directory for compiled executables and download dependencies
 .PHONY: build-dependencies
@@ -123,8 +107,13 @@ build-dependencies:
 	@mkdir -p $(BUILDDIR)
 	cp scripts/wg-portal.service $(BUILDDIR)
 	cp scripts/wg-portal.env $(BUILDDIR)
-	cd frontend; $(NPMCMD) install
 
 #< frontend: Build Vue.js frontend
-frontend:
+frontend: frontend-dependencies
 	cd frontend; $(NPMCMD) run build
+
+#< frontend-dependencies: Generate the output directory for compiled executables and download frontend dependencies
+.PHONY: frontend-dependencies
+frontend-dependencies:
+	@mkdir -p $(BUILDDIR)
+	cd frontend; $(NPMCMD) install

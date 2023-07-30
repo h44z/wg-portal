@@ -51,7 +51,7 @@ func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...doma
 
 		user, err := m.users.GetUser(ctx, peer.UserIdentifier)
 		if err != nil {
-			logrus.Debugf("skipping peer email for %s, unable to fetch user: %w", peerId, err)
+			logrus.Debugf("skipping peer email for %s, unable to fetch user: %v", peerId, err)
 			continue
 		}
 

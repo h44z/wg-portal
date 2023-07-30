@@ -134,7 +134,7 @@ func (i *Interface) GetRoutingTable() int {
 		numberStr := strings.ReplaceAll(routingTableStr, "0x", "")
 		routingTable, err := strconv.ParseUint(numberStr, 16, 64)
 		if err != nil {
-			logrus.Errorf("invalid hex routing table %s: %w", routingTableStr, err)
+			logrus.Errorf("invalid hex routing table %s: %v", routingTableStr, err)
 			return -1
 		}
 		if routingTable > math.MaxInt32 {
@@ -145,7 +145,7 @@ func (i *Interface) GetRoutingTable() int {
 	default:
 		routingTable, err := strconv.Atoi(routingTableStr)
 		if err != nil {
-			logrus.Errorf("invalid routing table %s: %w", routingTableStr, err)
+			logrus.Errorf("invalid routing table %s: %v", routingTableStr, err)
 			return -1
 		}
 		return routingTable
