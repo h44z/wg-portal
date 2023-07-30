@@ -127,7 +127,7 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 
 	for _, iface := range interfaces {
 		if len(filter) != 0 && !internal.SliceContains(filter, iface.Identifier) {
-			continue
+			continue // ignore filtered interface
 		}
 
 		peers, err := m.db.GetInterfacePeers(ctx, iface.Identifier)
@@ -140,18 +140,17 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 			logrus.Debugf("creating missing interface %s...", iface.Identifier)
 
 			// try to create a new interface
-			err := m.wg.SaveInterface(ctx, &iface, peers, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
-				domain.MergeToPhysicalInterface(pi, &iface)
-
-				return pi, nil
-			})
+			_, err = m.saveInterface(ctx, &iface, peers)
+			if err != nil {
+				return err
+			}
 			if err != nil {
 				if updateDbOnError {
 					// disable interface in database as no physical interface exists
 					_ = m.db.SaveInterface(ctx, iface.Identifier, func(in *domain.Interface) (*domain.Interface, error) {
 						now := time.Now()
 						in.Disabled = &now // set
-						in.DisabledReason = "no physical interface available"
+						in.DisabledReason = domain.DisabledReasonInterfaceMissing
 						return in, nil
 					})
 				}
@@ -172,11 +171,10 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 			logrus.Debugf("restoring interface state for %s to disabled=%t", iface.Identifier, iface.IsDisabled())
 
 			// try to move interface to stored state
-			err := m.wg.SaveInterface(ctx, &iface, peers, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
-				pi.DeviceUp = !iface.IsDisabled()
-
-				return pi, nil
-			})
+			_, err = m.saveInterface(ctx, &iface, peers)
+			if err != nil {
+				return err
+			}
 			if err != nil {
 				if updateDbOnError {
 					// disable interface in database as no physical interface is available
@@ -184,7 +182,7 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 						if iface.IsDisabled() {
 							now := time.Now()
 							in.Disabled = &now // set
-							in.DisabledReason = "no physical interface active"
+							in.DisabledReason = domain.DisabledReasonInterfaceMissing
 						} else {
 							in.Disabled = nil
 							in.DisabledReason = ""
@@ -289,19 +287,7 @@ func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*do
 		return nil, fmt.Errorf("creation not allowed: %w", err)
 	}
 
-	err = m.db.SaveInterface(ctx, in.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
-		in.CopyCalculatedAttributes(i)
-
-		err = m.wg.SaveInterface(ctx, in, nil, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
-			domain.MergeToPhysicalInterface(pi, in)
-			return pi, nil
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create physical interface %s: %w", in.Identifier, err)
-		}
-
-		return in, nil
-	})
+	in, err = m.saveInterface(ctx, in, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creation failure: %w", err)
 	}
@@ -319,19 +305,7 @@ func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*do
 		return nil, nil, fmt.Errorf("update not allowed: %w", err)
 	}
 
-	err = m.db.SaveInterface(ctx, in.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
-		in.CopyCalculatedAttributes(i)
-
-		err = m.wg.SaveInterface(ctx, in, existingPeers, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
-			domain.MergeToPhysicalInterface(pi, in)
-			return pi, nil
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update physical interface %s: %w", in.Identifier, err)
-		}
-
-		return in, nil
-	})
+	in, err = m.saveInterface(ctx, in, existingPeers)
 	if err != nil {
 		return nil, nil, fmt.Errorf("update failure: %w", err)
 	}
@@ -349,25 +323,134 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		return fmt.Errorf("deletion not allowed: %w", err)
 	}
 
-	err = m.deleteInterfacePeers(ctx, id)
-	if err != nil {
+	now := time.Now()
+	existingInterface.Disabled = &now // simulate a disabled interface
+	existingInterface.DisabledReason = domain.DisabledReasonDeleted
+
+	if err := m.handleInterfacePreSaveHooks(true, existingInterface); err != nil {
+		return fmt.Errorf("pre-delete hooks failed: %w", err)
+	}
+
+	if err := m.handleInterfacePreSaveActions(existingInterface); err != nil {
+		return fmt.Errorf("pre-delete actions failed: %w", err)
+	}
+
+	if err := m.deleteInterfacePeers(ctx, id); err != nil {
 		return fmt.Errorf("peer deletion failure: %w", err)
 	}
 
-	err = m.wg.DeleteInterface(ctx, id)
-	if err != nil {
+	if err := m.wg.DeleteInterface(ctx, id); err != nil {
 		return fmt.Errorf("wireguard deletion failure: %w", err)
 	}
 
-	err = m.db.DeleteInterface(ctx, id)
-	if err != nil {
+	if err := m.db.DeleteInterface(ctx, id); err != nil {
 		return fmt.Errorf("deletion failure: %w", err)
+	}
+
+	if err := m.handleInterfacePostSaveHooks(true, existingInterface); err != nil {
+		return fmt.Errorf("post-delete hooks failed: %w", err)
 	}
 
 	return nil
 }
 
 // region helper-functions
+
+func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, peers []domain.Peer) (*domain.Interface, error) {
+	stateChanged := m.hasInterfaceStateChanged(ctx, iface)
+
+	if err := m.handleInterfacePreSaveHooks(stateChanged, iface); err != nil {
+		return nil, fmt.Errorf("pre-save hooks failed: %w", err)
+	}
+
+	if err := m.handleInterfacePreSaveActions(iface); err != nil {
+		return nil, fmt.Errorf("pre-save actions failed: %w", err)
+	}
+
+	err := m.db.SaveInterface(ctx, iface.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
+		iface.CopyCalculatedAttributes(i)
+
+		err := m.wg.SaveInterface(ctx, iface.Identifier, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
+			domain.MergeToPhysicalInterface(pi, iface)
+			return pi, nil
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to save physical interface %s: %w", iface.Identifier, err)
+		}
+
+		return iface, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to save interface: %w", err)
+	}
+
+	err = m.wg.SaveRoutes(ctx, iface.Identifier, iface.GetRoutingTable(), iface.GetAllowedIPs(peers))
+	if err != nil {
+		return nil, fmt.Errorf("failed to save routes: %w", err)
+	}
+
+	if err := m.handleInterfacePostSaveHooks(stateChanged, iface); err != nil {
+		return nil, fmt.Errorf("post-save hooks failed: %w", err)
+	}
+
+	return iface, nil
+}
+
+func (m Manager) hasInterfaceStateChanged(ctx context.Context, iface *domain.Interface) bool {
+	oldInterface, err := m.db.GetInterface(ctx, iface.Identifier)
+	if err != nil {
+		return false
+	}
+
+	return oldInterface.IsDisabled() != iface.IsDisabled()
+}
+
+func (m Manager) handleInterfacePreSaveActions(iface *domain.Interface) error {
+	if !iface.IsDisabled() {
+		if err := m.quick.SetDNS(iface.Identifier, iface.DnsStr, iface.DnsSearchStr); err != nil {
+			return fmt.Errorf("failed to update dns settings: %w", err)
+		}
+	} else {
+		if err := m.quick.UnsetDNS(iface.Identifier); err != nil {
+			return fmt.Errorf("failed to clear dns settings: %w", err)
+		}
+	}
+	return nil
+}
+
+func (m Manager) handleInterfacePreSaveHooks(stateChanged bool, iface *domain.Interface) error {
+	if !stateChanged {
+		return nil // do nothing if state did not change
+	}
+
+	if !iface.IsDisabled() {
+		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PreUp); err != nil {
+			return fmt.Errorf("failed to execute pre-up hook: %w", err)
+		}
+	} else {
+		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PreDown); err != nil {
+			return fmt.Errorf("failed to execute pre-down hook: %w", err)
+		}
+	}
+	return nil
+}
+
+func (m Manager) handleInterfacePostSaveHooks(stateChanged bool, iface *domain.Interface) error {
+	if !stateChanged {
+		return nil // do nothing if state did not change
+	}
+
+	if !iface.IsDisabled() {
+		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PostUp); err != nil {
+			return fmt.Errorf("failed to execute post-up hook: %w", err)
+		}
+	} else {
+		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PostDown); err != nil {
+			return fmt.Errorf("failed to execute post-down hook: %w", err)
+		}
+	}
+	return nil
+}
 
 func (m Manager) getNewInterfaceName(ctx context.Context) (domain.InterfaceIdentifier, error) {
 	namePrefix := "wg"

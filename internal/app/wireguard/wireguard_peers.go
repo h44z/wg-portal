@@ -143,20 +143,7 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		return nil, fmt.Errorf("creation not allowed: %w", err)
 	}
 
-	err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
-		peer.CopyCalculatedAttributes(p)
-
-		err = m.wg.SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
-			func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
-				domain.MergeToPhysicalPeer(pp, peer)
-				return pp, nil
-			})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create wireguard peer %s: %w", peer.Identifier, err)
-		}
-
-		return peer, nil
-	})
+	err = m.savePeers(ctx, peer)
 	if err != nil {
 		return nil, fmt.Errorf("creation failure: %w", err)
 	}
@@ -165,7 +152,7 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 }
 
 func (m Manager) CreateMultiplePeers(ctx context.Context, interfaceId domain.InterfaceIdentifier, r *domain.PeerCreationRequest) ([]domain.Peer, error) {
-	var newPeers []domain.Peer
+	var newPeers []*domain.Peer
 
 	for _, id := range r.UserIdentifiers {
 		freshPeer, err := m.PreparePeer(ctx, interfaceId)
@@ -178,17 +165,24 @@ func (m Manager) CreateMultiplePeers(ctx context.Context, interfaceId domain.Int
 			freshPeer.DisplayName += " " + r.Suffix
 		}
 
-		newPeers = append(newPeers, *freshPeer)
-	}
-
-	for i, peer := range newPeers {
-		_, err := m.CreatePeer(ctx, &newPeers[i])
-		if err != nil {
-			return nil, fmt.Errorf("failed to create peer %s (uid: %s) for interface %s: %w", peer.Identifier, peer.UserIdentifier, interfaceId, err)
+		if err := m.validatePeerCreation(ctx, nil, freshPeer); err != nil {
+			return nil, fmt.Errorf("creation not allowed: %w", err)
 		}
+
+		newPeers = append(newPeers, freshPeer)
 	}
 
-	return newPeers, nil
+	err := m.savePeers(ctx, newPeers...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new peers: %w", err)
+	}
+
+	createdPeers := make([]domain.Peer, len(newPeers))
+	for i := range newPeers {
+		createdPeers[i] = *newPeers[i]
+	}
+
+	return createdPeers, nil
 }
 
 func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error) {
@@ -201,20 +195,7 @@ func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		return nil, fmt.Errorf("update not allowed: %w", err)
 	}
 
-	err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
-		peer.CopyCalculatedAttributes(p)
-
-		err = m.wg.SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
-			func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
-				domain.MergeToPhysicalPeer(pp, peer)
-				return pp, nil
-			})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update wireguard peer %s: %w", peer.Identifier, err)
-		}
-
-		return peer, nil
-	})
+	err = m.savePeers(ctx, peer)
 	if err != nil {
 		return nil, fmt.Errorf("update failure: %w", err)
 	}
@@ -270,6 +251,47 @@ func (m Manager) GetUserPeerStats(ctx context.Context, id domain.UserIdentifier)
 }
 
 // region helper-functions
+
+func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
+	interfaces := make(map[domain.InterfaceIdentifier]struct{})
+
+	for i := range peers {
+		peer := peers[i]
+		err := m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+			peer.CopyCalculatedAttributes(p)
+
+			err := m.wg.SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
+				func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
+					domain.MergeToPhysicalPeer(pp, peer)
+					return pp, nil
+				})
+			if err != nil {
+				return nil, fmt.Errorf("failed to save wireguard peer %s: %w", peer.Identifier, err)
+			}
+
+			return peer, nil
+		})
+		if err != nil {
+			return fmt.Errorf("save failure for peer %s: %w", peer.Identifier, err)
+		}
+
+		interfaces[peer.InterfaceIdentifier] = struct{}{}
+	}
+
+	// Update routes after peers have changed
+	for ifaceId := range interfaces {
+		iface, ifacePeers, err := m.db.GetInterfaceAndPeers(ctx, ifaceId)
+		if err != nil {
+			return fmt.Errorf("failed to load peer interface %s: %w", ifaceId, err)
+		}
+		err = m.wg.SaveRoutes(ctx, iface.Identifier, iface.GetRoutingTable(), iface.GetAllowedIPs(ifacePeers))
+		if err != nil {
+			return fmt.Errorf("failed to update peer routes on interface %s: %w", ifaceId, err)
+		}
+	}
+
+	return nil
+}
 
 func (m Manager) getFreshPeerIpConfig(ctx context.Context, iface *domain.Interface) (ips []domain.Cidr, err error) {
 	networks, err := domain.CidrsFromString(iface.PeerDefNetworkStr)

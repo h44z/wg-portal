@@ -16,16 +16,18 @@ type Manager struct {
 	cfg *config.Config
 	bus evbus.MessageBus
 
-	db InterfaceAndPeerDatabaseRepo
-	wg InterfaceController
+	db    InterfaceAndPeerDatabaseRepo
+	wg    InterfaceController
+	quick WgQuickController
 }
 
-func NewWireGuardManager(cfg *config.Config, bus evbus.MessageBus, wg InterfaceController, db InterfaceAndPeerDatabaseRepo) (*Manager, error) {
+func NewWireGuardManager(cfg *config.Config, bus evbus.MessageBus, wg InterfaceController, quick WgQuickController, db InterfaceAndPeerDatabaseRepo) (*Manager, error) {
 	m := &Manager{
-		cfg: cfg,
-		bus: bus,
-		wg:  wg,
-		db:  db,
+		cfg:   cfg,
+		bus:   bus,
+		wg:    wg,
+		db:    db,
+		quick: quick,
 	}
 
 	m.connectToMessageBus()

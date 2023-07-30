@@ -16,9 +16,8 @@ import (
 
 // WgRepo implements all low-level WireGuard interactions.
 type WgRepo struct {
-	wg    lowlevel.WireGuardClient
-	nl    lowlevel.NetlinkClient
-	quick *WgQuickRepo
+	wg lowlevel.WireGuardClient
+	nl lowlevel.NetlinkClient
 }
 
 func NewWireGuardRepository() *WgRepo {
@@ -30,9 +29,8 @@ func NewWireGuardRepository() *WgRepo {
 	nl := &lowlevel.NetlinkManager{}
 
 	repo := &WgRepo{
-		wg:    wg,
-		nl:    nl,
-		quick: NewWgQuickRepo(),
+		wg: wg,
+		nl: nl,
 	}
 
 	return repo
@@ -155,38 +153,16 @@ func (r *WgRepo) convertWireGuardPeer(peer *wgtypes.Peer) (domain.PhysicalPeer, 
 	return peerModel, nil
 }
 
-func (r *WgRepo) SaveInterface(_ context.Context, iface *domain.Interface, peers []domain.Peer, updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error)) error {
-	physicalInterface, err := r.getOrCreateInterface(iface.Identifier)
+func (r *WgRepo) SaveInterface(_ context.Context, id domain.InterfaceIdentifier, updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error)) error {
+	physicalInterface, err := r.getOrCreateInterface(id)
 	if err != nil {
 		return err
 	}
 
-	wasUp := physicalInterface.DeviceUp
 	if updateFunc != nil {
 		physicalInterface, err = updateFunc(physicalInterface)
 		if err != nil {
 			return err
-		}
-	}
-	stateChanged := wasUp != physicalInterface.DeviceUp
-
-	if stateChanged {
-		if physicalInterface.DeviceUp {
-			if err := r.quick.SetDNS(iface.Identifier, iface.DnsStr, iface.DnsSearchStr); err != nil {
-				return fmt.Errorf("failed to update dns settings: %w", err)
-			}
-
-			if err := r.quick.ExecuteInterfaceHook(iface.Identifier, iface.PreUp); err != nil {
-				return fmt.Errorf("failed to execute pre-up hook: %w", err)
-			}
-		} else {
-			if err := r.quick.UnsetDNS(iface.Identifier); err != nil {
-				return fmt.Errorf("failed to clear dns settings: %w", err)
-			}
-
-			if err := r.quick.ExecuteInterfaceHook(iface.Identifier, iface.PreDown); err != nil {
-				return fmt.Errorf("failed to execute pre-down hook: %w", err)
-			}
 		}
 	}
 
@@ -195,21 +171,6 @@ func (r *WgRepo) SaveInterface(_ context.Context, iface *domain.Interface, peers
 	}
 	if err := r.updateWireGuardInterface(physicalInterface); err != nil {
 		return err
-	}
-	if err := r.updateRoutes(iface.Identifier, iface.GetRoutingTable(), iface.GetAllowedIPs(peers)); err != nil {
-		return err
-	}
-
-	if stateChanged {
-		if physicalInterface.DeviceUp {
-			if err := r.quick.ExecuteInterfaceHook(iface.Identifier, iface.PostUp); err != nil {
-				return fmt.Errorf("failed to execute post-up hook: %w", err)
-			}
-		} else {
-			if err := r.quick.ExecuteInterfaceHook(iface.Identifier, iface.PostDown); err != nil {
-				return fmt.Errorf("failed to execute post-down hook: %w", err)
-			}
-		}
 	}
 
 	return nil
@@ -338,7 +299,7 @@ func (r *WgRepo) updateWireGuardInterface(pi *domain.PhysicalInterface) error {
 	return nil
 }
 
-func (r *WgRepo) updateRoutes(interfaceId domain.InterfaceIdentifier, table int, allowedIPs []domain.Cidr) error {
+func (r *WgRepo) SaveRoutes(_ context.Context, interfaceId domain.InterfaceIdentifier, table int, allowedIPs []domain.Cidr) error {
 	if table == -1 {
 		logrus.Trace("ignoring route update")
 		return nil
@@ -355,19 +316,16 @@ func (r *WgRepo) updateRoutes(interfaceId domain.InterfaceIdentifier, table int,
 
 	// try to mimic wg-quick (https://git.zx2c4.com/wireguard-tools/tree/src/wg-quick/linux.bash)
 	for _, allowedIP := range allowedIPs {
-		if allowedIP.Prefix().Bits() == 0 { // default route
-			// TODO
-		} else {
-			err := r.nl.RouteReplace(&netlink.Route{
-				LinkIndex: link.Attrs().Index,
-				Dst:       allowedIP.IpNet(),
-				Table:     table,
-				Scope:     unix.RT_SCOPE_LINK,
-				Type:      unix.RTN_UNICAST,
-			})
-			if err != nil {
-				return fmt.Errorf("failed to add/update route %s: %w", allowedIP.String(), err)
-			}
+		// if allowedIP.Prefix().Bits() == 0 { // default route handling - TODO
+		err := r.nl.RouteReplace(&netlink.Route{
+			LinkIndex: link.Attrs().Index,
+			Dst:       allowedIP.IpNet(),
+			Table:     table,
+			Scope:     unix.RT_SCOPE_LINK,
+			Type:      unix.RTN_UNICAST,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to add/update route %s: %w", allowedIP.String(), err)
 		}
 	}
 

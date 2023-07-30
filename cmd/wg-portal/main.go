@@ -43,6 +43,8 @@ func main() {
 
 	wireGuard := adapters.NewWireGuardRepository()
 
+	wgQuick := adapters.NewWgQuickRepo()
+
 	mailer := adapters.NewSmtpMailRepo(cfg.Mail)
 
 	cfgFileSystem, err := adapters.NewFileSystemRepository(cfg.Advanced.ConfigStoragePath)
@@ -68,7 +70,7 @@ func main() {
 	authenticator, err := auth.NewAuthenticator(&cfg.Auth, eventBus, userManager)
 	internal.AssertNoError(err)
 
-	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, database)
+	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, wgQuick, database)
 	internal.AssertNoError(err)
 
 	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, database, wireGuard)

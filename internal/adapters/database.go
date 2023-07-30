@@ -321,6 +321,11 @@ func (r *SqlRepo) upsertInterface(ui *domain.ContextUserInfo, tx *gorm.DB, in *d
 		return err
 	}
 
+	err = tx.Model(in).Association("Addresses").Replace(in.Addresses)
+	if err != nil {
+		return fmt.Errorf("failed to update interface addresses: %w", err)
+	}
+
 	return nil
 }
 
@@ -501,6 +506,11 @@ func (r *SqlRepo) upsertPeer(ui *domain.ContextUserInfo, tx *gorm.DB, peer *doma
 	err := tx.Save(peer).Error
 	if err != nil {
 		return err
+	}
+
+	err = tx.Model(peer).Association("Addresses").Replace(peer.Interface.Addresses)
+	if err != nil {
+		return fmt.Errorf("failed to update peer addresses: %w", err)
 	}
 
 	return nil

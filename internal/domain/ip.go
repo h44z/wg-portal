@@ -84,12 +84,13 @@ func CidrFromIpNet(ipNet net.IPNet) Cidr {
 }
 
 func CidrFromNetlinkAddr(addr netlink.Addr) Cidr {
-	prefix, _ := CidrFromString(addr.String())
+	prefix, _ := CidrFromString(addr.IPNet.String())
 	return prefix
 }
 
 func (c Cidr) IpNet() *net.IPNet {
-	_, cidr, _ := net.ParseCIDR(c.String())
+	ip, cidr, _ := net.ParseCIDR(c.String())
+	cidr.IP = ip
 	return cidr
 }
 
