@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -327,6 +328,8 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 	existingInterface.Disabled = &now // simulate a disabled interface
 	existingInterface.DisabledReason = domain.DisabledReasonDeleted
 
+	physicalInterface, _ := m.wg.GetInterface(ctx, id)
+
 	if err := m.handleInterfacePreSaveHooks(true, existingInterface); err != nil {
 		return fmt.Errorf("pre-delete hooks failed: %w", err)
 	}
@@ -345,6 +348,13 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 
 	if err := m.db.DeleteInterface(ctx, id); err != nil {
 		return fmt.Errorf("deletion failure: %w", err)
+	}
+
+	if physicalInterface != nil {
+		m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
+			FwMark: int(physicalInterface.FirewallMark),
+			Table:  existingInterface.GetRoutingTable(),
+		})
 	}
 
 	if err := m.handleInterfacePostSaveHooks(true, existingInterface); err != nil {
@@ -384,10 +394,7 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, pee
 		return nil, fmt.Errorf("failed to save interface: %w", err)
 	}
 
-	err = m.wg.SaveRoutes(ctx, iface, peers)
-	if err != nil {
-		return nil, fmt.Errorf("failed to save routes: %w", err)
-	}
+	m.bus.Publish(app.TopicRouteUpdate, "interface updated: "+string(iface.Identifier))
 
 	if err := m.handleInterfacePostSaveHooks(stateChanged, iface); err != nil {
 		return nil, fmt.Errorf("post-save hooks failed: %w", err)

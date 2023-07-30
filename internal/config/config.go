@@ -33,6 +33,8 @@ type Config struct {
 		UseIpV6             bool          `yaml:"use_ip_v6"`
 		ConfigStoragePath   string        `yaml:"config_storage_path"` // keep empty to disable config export to file
 		ExpiryCheckInterval time.Duration `yaml:"expiry_check_interval"`
+		RulePrioOffset      int           `yaml:"rule_prio_offset"`
+		RouteTableOffset    int           `yaml:"route_table_offset"`
 	} `yaml:"advanced"`
 
 	Statistics struct {
@@ -106,6 +108,8 @@ func defaultConfig() *Config {
 	cfg.Advanced.StartCidrV6 = "fdfd:d3ad:c0de:1234::0/64"
 	cfg.Advanced.UseIpV6 = true
 	cfg.Advanced.ExpiryCheckInterval = 15 * time.Minute
+	cfg.Advanced.RulePrioOffset = 20000
+	cfg.Advanced.RouteTableOffset = 20000
 
 	cfg.Statistics.UsePingChecks = true
 	cfg.Statistics.PingCheckWorkers = 10

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -279,15 +280,8 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 	}
 
 	// Update routes after peers have changed
-	for ifaceId := range interfaces {
-		iface, ifacePeers, err := m.db.GetInterfaceAndPeers(ctx, ifaceId)
-		if err != nil {
-			return fmt.Errorf("failed to load peer interface %s: %w", ifaceId, err)
-		}
-		err = m.wg.SaveRoutes(ctx, iface, ifacePeers)
-		if err != nil {
-			return fmt.Errorf("failed to update peer routes on interface %s: %w", ifaceId, err)
-		}
+	if len(interfaces) != 0 {
+		m.bus.Publish(app.TopicRouteUpdate, "peers updated")
 	}
 
 	return nil

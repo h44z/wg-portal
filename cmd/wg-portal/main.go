@@ -8,6 +8,7 @@ import (
 	"github.com/h44z/wg-portal/internal/app/auth"
 	"github.com/h44z/wg-portal/internal/app/configfile"
 	"github.com/h44z/wg-portal/internal/app/mail"
+	"github.com/h44z/wg-portal/internal/app/route"
 	"github.com/h44z/wg-portal/internal/app/users"
 	"github.com/h44z/wg-portal/internal/app/wireguard"
 	"os"
@@ -85,6 +86,10 @@ func main() {
 	auditRecorder, err := audit.NewAuditRecorder(cfg, eventBus, database)
 	internal.AssertNoError(err)
 	auditRecorder.StartBackgroundJobs(ctx)
+
+	routeManager, err := route.NewRouteManager(cfg, eventBus, database)
+	internal.AssertNoError(err)
+	routeManager.StartBackgroundJobs(ctx)
 
 	backend, err := app.New(cfg, eventBus, authenticator, userManager, wireGuardManager,
 		statisticsCollector, cfgFileManager, mailManager)

@@ -211,3 +211,12 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 	pi.DeviceUp = !i.IsDisabled()
 	pi.Addresses = i.Addresses
 }
+
+type RoutingTableInfo struct {
+	FwMark int
+	Table  int
+}
+
+func (r RoutingTableInfo) String() string {
+	return fmt.Sprintf("%d -> %d", r.FwMark, r.Table)
+}
