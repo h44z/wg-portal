@@ -3,6 +3,7 @@ package domain
 import (
 	"fmt"
 	"github.com/h44z/wg-portal/internal"
+	"github.com/sirupsen/logrus"
 	"math"
 	"regexp"
 	"strconv"
@@ -34,7 +35,7 @@ type Interface struct {
 
 	Mtu          int    // the device MTU
 	FirewallMark int32  // a firewall mark
-	RoutingTable string // the routing table
+	RoutingTable string // the routing table number or "off" if the routing table should not be managed
 
 	PreUp    string // action that is executed before the device is up
 	PostUp   string // action that is executed after the device is up
@@ -114,30 +115,37 @@ func (i *Interface) GetAllowedIPs(peers []Peer) []Cidr {
 	return allowedCidrs
 }
 
+func (i *Interface) ManageRoutingTable() bool {
+	routingTableStr := strings.ToLower(i.RoutingTable)
+	return routingTableStr != "off"
+}
+
 // GetRoutingTable returns the routing table number or
 //
-//	-1 if an error occurred
-//	-2 if RoutingTable was set to "off"
+//	-1 if RoutingTable was set to "off" or an error occurred
 func (i *Interface) GetRoutingTable() int {
 	routingTableStr := strings.ToLower(i.RoutingTable)
 	switch {
 	case routingTableStr == "":
 		return 0
 	case routingTableStr == "off":
-		return -2
+		return -1
 	case strings.HasPrefix(routingTableStr, "0x"):
 		numberStr := strings.ReplaceAll(routingTableStr, "0x", "")
 		routingTable, err := strconv.ParseUint(numberStr, 16, 64)
 		if err != nil {
+			logrus.Errorf("invalid hex routing table %s: %w", routingTableStr, err)
 			return -1
 		}
 		if routingTable > math.MaxInt32 {
+			logrus.Errorf("invalid routing table %s, too big", routingTableStr)
 			return -1
 		}
 		return int(routingTable)
 	default:
 		routingTable, err := strconv.Atoi(routingTableStr)
 		if err != nil {
+			logrus.Errorf("invalid routing table %s: %w", routingTableStr, err)
 			return -1
 		}
 		return routingTable
@@ -219,4 +227,20 @@ type RoutingTableInfo struct {
 
 func (r RoutingTableInfo) String() string {
 	return fmt.Sprintf("%d -> %d", r.FwMark, r.Table)
+}
+
+func (r RoutingTableInfo) ManagementEnabled() bool {
+	if r.Table == -1 {
+		return false
+	}
+
+	return true
+}
+
+func (r RoutingTableInfo) GetRoutingTable() int {
+	if r.Table <= 0 {
+		return r.FwMark // use the dynamic routing table which has the same number as the firewall mark
+	}
+
+	return r.Table
 }

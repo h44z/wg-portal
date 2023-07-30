@@ -331,17 +331,17 @@ func (r *SqlRepo) upsertInterface(ui *domain.ContextUserInfo, tx *gorm.DB, in *d
 
 func (r *SqlRepo) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		err := r.db.WithContext(ctx).Where("interface_identifier = ?", id).Delete(&domain.Peer{}).Error
+		err := tx.Where("interface_identifier = ?", id).Delete(&domain.Peer{}).Error
 		if err != nil {
 			return err
 		}
 
-		err = r.db.WithContext(ctx).Delete(&domain.InterfaceStatus{InterfaceId: id}).Error
+		err = tx.Delete(&domain.InterfaceStatus{InterfaceId: id}).Error
 		if err != nil {
 			return err
 		}
 
-		err = r.db.WithContext(ctx).Debug().Select(clause.Associations).Delete(&domain.Interface{Identifier: id}).Error
+		err = tx.Select(clause.Associations).Delete(&domain.Interface{Identifier: id}).Error
 		if err != nil {
 			return err
 		}
@@ -518,12 +518,12 @@ func (r *SqlRepo) upsertPeer(ui *domain.ContextUserInfo, tx *gorm.DB, peer *doma
 
 func (r *SqlRepo) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		err := r.db.WithContext(ctx).Delete(&domain.PeerStatus{PeerId: id}).Error
+		err := tx.Delete(&domain.PeerStatus{PeerId: id}).Error
 		if err != nil {
 			return err
 		}
 
-		err = r.db.WithContext(ctx).Select(clause.Associations).Delete(&domain.Peer{Identifier: id}).Error
+		err = tx.Select(clause.Associations).Delete(&domain.Peer{Identifier: id}).Error
 		if err != nil {
 			return err
 		}

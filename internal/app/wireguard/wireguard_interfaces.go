@@ -8,6 +8,7 @@ import (
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
+	"os"
 	"time"
 )
 
@@ -350,12 +351,14 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		return fmt.Errorf("deletion failure: %w", err)
 	}
 
-	if physicalInterface != nil {
-		m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
-			FwMark: int(physicalInterface.FirewallMark),
-			Table:  existingInterface.GetRoutingTable(),
-		})
+	fwMark := int(existingInterface.FirewallMark)
+	if physicalInterface != nil && fwMark == 0 {
+		fwMark = int(physicalInterface.FirewallMark)
 	}
+	m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
+		FwMark: fwMark,
+		Table:  existingInterface.GetRoutingTable(),
+	})
 
 	if err := m.handleInterfacePostSaveHooks(true, existingInterface); err != nil {
 		return fmt.Errorf("post-delete hooks failed: %w", err)
@@ -395,6 +398,17 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, pee
 	}
 
 	m.bus.Publish(app.TopicRouteUpdate, "interface updated: "+string(iface.Identifier))
+	if iface.IsDisabled() {
+		physicalInterface, _ := m.wg.GetInterface(ctx, iface.Identifier)
+		fwMark := int(iface.FirewallMark)
+		if physicalInterface != nil && fwMark == 0 {
+			fwMark = int(physicalInterface.FirewallMark)
+		}
+		m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
+			FwMark: fwMark,
+			Table:  iface.GetRoutingTable(),
+		})
+	}
 
 	if err := m.handleInterfacePostSaveHooks(stateChanged, iface); err != nil {
 		return nil, fmt.Errorf("post-save hooks failed: %w", err)
@@ -668,7 +682,7 @@ func (m Manager) deleteInterfacePeers(ctx context.Context, id domain.InterfaceId
 	}
 	for _, peer := range allPeers {
 		err = m.wg.DeletePeer(ctx, id, peer.Identifier)
-		if err != nil {
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("wireguard peer deletion failure for %s: %w", peer.Identifier, err)
 		}
 

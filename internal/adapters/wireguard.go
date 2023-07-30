@@ -308,6 +308,10 @@ func (r *WgRepo) DeleteInterface(_ context.Context, id domain.InterfaceIdentifie
 func (r *WgRepo) deleteLowLevelInterface(id domain.InterfaceIdentifier) error {
 	link, err := r.nl.LinkByName(string(id))
 	if err != nil {
+		var linkNotFoundError netlink.LinkNotFoundError
+		if errors.As(err, &linkNotFoundError) {
+			return nil // ignore not found error
+		}
 		return fmt.Errorf("unable to find low level interface: %w", err)
 	}
 

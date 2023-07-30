@@ -15,13 +15,16 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
-type defaultRouteRule struct {
-	ifaceId domain.InterfaceIdentifier
-	fwMark  int
-	table   int
-	family  int
+type routeRuleInfo struct {
+	ifaceId    domain.InterfaceIdentifier
+	fwMark     int
+	table      int
+	family     int
+	hasDefault bool
 }
 
+// Manager is try to mimic wg-quick behaviour (https://git.zx2c4.com/wireguard-tools/tree/src/wg-quick/linux.bash)
+// for default routes.
 type Manager struct {
 	cfg *config.Config
 	bus evbus.MessageBus
@@ -55,7 +58,7 @@ func NewRouteManager(cfg *config.Config, bus evbus.MessageBus, db InterfaceAndPe
 
 func (m Manager) connectToMessageBus() {
 	_ = m.bus.Subscribe(app.TopicRouteUpdate, m.handleRouteUpdateEvent)
-	_ = m.bus.Subscribe(app.TopicRouteRemove, m.handleRouteUpdateEvent)
+	_ = m.bus.Subscribe(app.TopicRouteRemove, m.handleRouteRemoveEvent)
 }
 
 func (m Manager) StartBackgroundJobs(ctx context.Context) {
@@ -75,14 +78,14 @@ func (m Manager) handleRouteUpdateEvent(srcDescription string) {
 func (m Manager) handleRouteRemoveEvent(info domain.RoutingTableInfo) {
 	logrus.Debugf("handling route remove event for: %s", info.String())
 
-	if info.Table == -2 {
+	if !info.ManagementEnabled() {
 		return // route management disabled
 	}
 
-	if err := m.removeFwMarkRules(info.FwMark, info.FwMark, netlink.FAMILY_V4); err != nil {
+	if err := m.removeFwMarkRules(info.FwMark, info.GetRoutingTable(), netlink.FAMILY_V4); err != nil {
 		logrus.Errorf("failed to remove v4 fwmark rules: %v", err)
 	}
-	if err := m.removeFwMarkRules(info.FwMark, info.FwMark, netlink.FAMILY_V6); err != nil {
+	if err := m.removeFwMarkRules(info.FwMark, info.GetRoutingTable(), netlink.FAMILY_V6); err != nil {
 		logrus.Errorf("failed to remove v6 fwmark rules: %v", err)
 	}
 
@@ -95,13 +98,16 @@ func (m Manager) syncRoutes(ctx context.Context) error {
 		return fmt.Errorf("failed to find all interfaces: %w", err)
 	}
 
-	rules := map[int][]defaultRouteRule{
+	rules := map[int][]routeRuleInfo{
 		netlink.FAMILY_V4: nil,
 		netlink.FAMILY_V6: nil,
 	}
 	for _, iface := range interfaces {
 		if iface.IsDisabled() {
 			continue // disabled interface does not need route entries
+		}
+		if !iface.ManageRoutingTable() {
+			continue
 		}
 
 		peers, err := m.db.GetInterfacePeers(ctx, iface.Identifier)
@@ -132,20 +138,22 @@ func (m Manager) syncRoutes(ctx context.Context) error {
 			return fmt.Errorf("failed to remove deprecated v6 routes for %s: %w", iface.Identifier, err)
 		}
 
-		if defRouteV4 {
-			rules[netlink.FAMILY_V4] = append(rules[netlink.FAMILY_V4], defaultRouteRule{
-				ifaceId: iface.Identifier,
-				fwMark:  fwmark,
-				table:   table,
-				family:  netlink.FAMILY_V4,
+		if table != 0 {
+			rules[netlink.FAMILY_V4] = append(rules[netlink.FAMILY_V4], routeRuleInfo{
+				ifaceId:    iface.Identifier,
+				fwMark:     fwmark,
+				table:      table,
+				family:     netlink.FAMILY_V4,
+				hasDefault: defRouteV4,
 			})
 		}
-		if defRouteV6 {
-			rules[netlink.FAMILY_V6] = append(rules[netlink.FAMILY_V6], defaultRouteRule{
-				ifaceId: iface.Identifier,
-				fwMark:  fwmark,
-				table:   table,
-				family:  netlink.FAMILY_V6,
+		if table != 0 {
+			rules[netlink.FAMILY_V6] = append(rules[netlink.FAMILY_V6], routeRuleInfo{
+				ifaceId:    iface.Identifier,
+				fwMark:     fwmark,
+				table:      table,
+				family:     netlink.FAMILY_V6,
+				hasDefault: defRouteV6,
 			})
 		}
 	}
@@ -153,7 +161,7 @@ func (m Manager) syncRoutes(ctx context.Context) error {
 	return m.syncRouteRules(rules)
 }
 
-func (m Manager) syncRouteRules(allRules map[int][]defaultRouteRule) error {
+func (m Manager) syncRouteRules(allRules map[int][]routeRuleInfo) error {
 	for family, rules := range allRules {
 		// update fwmark rules
 		if err := m.setFwMarkRules(rules, family); err != nil {
@@ -174,7 +182,7 @@ func (m Manager) syncRouteRules(allRules map[int][]defaultRouteRule) error {
 	return nil
 }
 
-func (m Manager) setFwMarkRules(rules []defaultRouteRule, family int) error {
+func (m Manager) setFwMarkRules(rules []routeRuleInfo, family int) error {
 	for _, rule := range rules {
 		existingRules, err := m.nl.RuleList(family)
 		if err != nil {
@@ -229,8 +237,14 @@ func (m Manager) removeFwMarkRules(fwmark, table int, family int) error {
 	return nil
 }
 
-func (m Manager) setMainRule(rules []defaultRouteRule, family int) error {
-	shouldHaveMainRule := len(rules) != 0
+func (m Manager) setMainRule(rules []routeRuleInfo, family int) error {
+	shouldHaveMainRule := false
+	for _, rule := range rules {
+		if rule.hasDefault == true {
+			shouldHaveMainRule = true
+			break
+		}
+	}
 	if !shouldHaveMainRule {
 		return nil
 	}
@@ -269,13 +283,19 @@ func (m Manager) setMainRule(rules []defaultRouteRule, family int) error {
 	return nil
 }
 
-func (m Manager) cleanupMainRule(rules []defaultRouteRule, family int) error {
+func (m Manager) cleanupMainRule(rules []routeRuleInfo, family int) error {
 	existingRules, err := m.nl.RuleList(family)
 	if err != nil {
 		return fmt.Errorf("failed to get existing rules for family %d: %w", family, err)
 	}
 
-	shouldHaveMainRule := len(rules) != 0
+	shouldHaveMainRule := false
+	for _, rule := range rules {
+		if rule.hasDefault == true {
+			shouldHaveMainRule = true
+			break
+		}
+	}
 
 	mainRules := 0
 	for _, existingRule := range existingRules {
@@ -307,7 +327,7 @@ func (m Manager) cleanupMainRule(rules []defaultRouteRule, family int) error {
 	return nil
 }
 
-func (m Manager) getRulePriority(existingRules []netlink.Rule) int {
+func (m Manager) getMainRulePriority(existingRules []netlink.Rule) int {
 	prio := m.cfg.Advanced.RulePrioOffset
 	for {
 		isFresh := true
@@ -326,7 +346,7 @@ func (m Manager) getRulePriority(existingRules []netlink.Rule) int {
 	return prio
 }
 
-func (m Manager) getMainRulePriority(existingRules []netlink.Rule) int {
+func (m Manager) getRulePriority(existingRules []netlink.Rule) int {
 	prio := 32700 // linux main rule has a prio of 32766
 	for {
 		isFresh := true
@@ -346,7 +366,6 @@ func (m Manager) getMainRulePriority(existingRules []netlink.Rule) int {
 }
 
 func (m Manager) setInterfaceRoutes(link netlink.Link, table int, allowedIPs []domain.Cidr) error {
-	// try to mimic wg-quick (https://git.zx2c4.com/wireguard-tools/tree/src/wg-quick/linux.bash)
 	for _, allowedIP := range allowedIPs {
 		err := m.nl.RouteReplace(&netlink.Route{
 			LinkIndex: link.Attrs().Index,
@@ -374,16 +393,17 @@ func (m Manager) removeDeprecatedRoutes(link netlink.Link, family int, allowedIP
 		return fmt.Errorf("failed to fetch raw routes: %w", err)
 	}
 	for _, rawRoute := range rawRoutes {
-		var netlinkAddr domain.Cidr
-		if rawRoute.Dst == nil {
+		if rawRoute.Dst == nil { // handle default route
+			var netlinkAddr domain.Cidr
 			if family == netlink.FAMILY_V4 {
 				netlinkAddr, _ = domain.CidrFromString("0.0.0.0/0")
 			} else {
 				netlinkAddr, _ = domain.CidrFromString("::/0")
 			}
-		} else {
-			netlinkAddr = domain.CidrFromIpNet(*rawRoute.Dst)
+			rawRoute.Dst = netlinkAddr.IpNet()
 		}
+
+		netlinkAddr := domain.CidrFromIpNet(*rawRoute.Dst)
 		remove := true
 		for _, allowedIP := range allowedIPs {
 			if netlinkAddr == allowedIP {
@@ -405,21 +425,19 @@ func (m Manager) removeDeprecatedRoutes(link netlink.Link, family int, allowedIP
 }
 
 func (m Manager) getRoutingTableAndFwMark(iface *domain.Interface, allowedIPs []domain.Cidr, link netlink.Link) (table, fwmark int, err error) {
-	defRouteV4, defRouteV6 := m.containsDefaultRoute(allowedIPs)
-
 	table = iface.GetRoutingTable()
 	fwmark = int(iface.FirewallMark)
 
-	if (defRouteV4 || defRouteV6) && table <= 0 {
-		table = m.cfg.Advanced.RouteTableOffset + link.Attrs().Index // generate a new routing table base on interface index
-		logrus.Debugf("using routing table %d to handle default routes", table)
-	}
-	if (defRouteV4 || defRouteV6) && fwmark == 0 {
+	if fwmark == 0 {
 		fwmark = m.cfg.Advanced.RouteTableOffset + link.Attrs().Index // generate a new (temporary) firewall mark based on the interface index
-		logrus.Debugf("using fwmark %d to handle default routes", table)
+		logrus.Debugf("using fwmark %d to handle routes", table)
 
-		// apply the fwmark
+		// apply the temporary fwmark to the wireguard interface
 		err = m.setFwMark(iface.Identifier, fwmark)
+	}
+	if table == 0 {
+		table = fwmark // generate a new routing table base on interface index
+		logrus.Debugf("using routing table %d to handle default routes", table)
 	}
 	return
 }
