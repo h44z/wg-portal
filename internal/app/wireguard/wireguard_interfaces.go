@@ -414,6 +414,8 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, pee
 		return nil, fmt.Errorf("post-save hooks failed: %w", err)
 	}
 
+	m.bus.Publish(app.TopicInterfaceUpdated, iface)
+
 	return iface, nil
 }
 

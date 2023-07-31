@@ -2,7 +2,7 @@
 version: '3.6'
 services:
   wg-portal:
-    image: h44z/wg-portal:1.0.16
+    image: h44z/wg-portal:2.0.0-alpha1
     container_name: wg-portal
     restart: unless-stopped
     logging:
@@ -16,4 +16,4 @@ services:
       - /etc/wireguard:/etc/wireguard
       - ./data:/app/data
     environment:
-      - EXTERNAL_URL=http://localhost:8123
+      - EXTERNAL_URL=http://localhost:8888

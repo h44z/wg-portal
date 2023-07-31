@@ -122,13 +122,17 @@ func (c Cidr) BroadcastAddr() Cidr {
 		a16[off+byteNum] |= 1 << uint(bitInByte)
 	}
 	if prefix.Addr().Is4() {
+		addr := netip.AddrFrom16(a16).Unmap()
 		return Cidr{
-			Addr:      netip.AddrFrom16(a16).Unmap().String(),
+			Cidr:      netip.PrefixFrom(addr, prefix.Bits()).String(),
+			Addr:      addr.String(),
 			NetLength: prefix.Bits(),
 		}
 	} else {
+		addr := netip.AddrFrom16(a16) // doesn't unmap
 		return Cidr{
-			Addr:      netip.AddrFrom16(a16).String(), // doesn't unmap
+			Cidr:      netip.PrefixFrom(addr, prefix.Bits()).String(),
+			Addr:      addr.String(), // doesn't unmap
 			NetLength: prefix.Bits(),
 		}
 	}

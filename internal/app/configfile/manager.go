@@ -5,8 +5,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/sirupsen/logrus"
+	evbus "github.com/vardius/message-bus"
 	"github.com/yeqown/go-qrcode/v2"
 	"io"
 	"os"
@@ -15,6 +18,7 @@ import (
 
 type Manager struct {
 	cfg        *config.Config
+	bus        evbus.MessageBus
 	tplHandler *TemplateHandler
 
 	fsRepo FileSystemRepo // can be nil if storing the configuration is disabled
@@ -22,7 +26,7 @@ type Manager struct {
 	wg     WireguardDatabaseRepo
 }
 
-func NewConfigFileManager(cfg *config.Config, users UserDatabaseRepo, wg WireguardDatabaseRepo, fsRepo FileSystemRepo) (*Manager, error) {
+func NewConfigFileManager(cfg *config.Config, bus evbus.MessageBus, users UserDatabaseRepo, wg WireguardDatabaseRepo, fsRepo FileSystemRepo) (*Manager, error) {
 	tplHandler, err := newTemplateHandler()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template handler: %w", err)
@@ -30,6 +34,7 @@ func NewConfigFileManager(cfg *config.Config, users UserDatabaseRepo, wg Wiregua
 
 	m := &Manager{
 		cfg:        cfg,
+		bus:        bus,
 		tplHandler: tplHandler,
 
 		fsRepo: fsRepo,
@@ -56,6 +61,51 @@ func (m Manager) createStorageDirectory() error {
 	}
 
 	return nil
+}
+
+func (m Manager) connectToMessageBus() {
+	if m.fsRepo == nil {
+		return // skip subscription
+	}
+
+	_ = m.bus.Subscribe(app.TopicInterfaceUpdated, m.handleInterfaceUpdatedEvent)
+	_ = m.bus.Subscribe(app.TopicPeerInterfaceUpdated, m.handleInterfaceUpdatedEvent)
+}
+
+func (m Manager) handleInterfaceUpdatedEvent(iface *domain.Interface) {
+	logrus.Errorf("handling interface updated event for %s", iface.Identifier)
+
+	if !iface.SaveConfig || m.fsRepo == nil {
+		return
+	}
+
+	err := m.PersistInterfaceConfig(context.Background(), iface.Identifier)
+	if err != nil {
+		logrus.Errorf("failed to automatically persist interface config for %s: %v", iface.Identifier, err)
+	}
+}
+
+func (m Manager) handlePeerInterfaceUpdatedEvent(id domain.InterfaceIdentifier) {
+	logrus.Errorf("handling interface updated event for %s", id)
+
+	if m.fsRepo == nil {
+		return
+	}
+
+	peerInterface, err := m.wg.GetInterface(context.Background(), id)
+	if err != nil {
+		logrus.Errorf("failed to load interface %s: %v", id, err)
+		return
+	}
+
+	if !peerInterface.SaveConfig {
+		return
+	}
+
+	err = m.PersistInterfaceConfig(context.Background(), peerInterface.Identifier)
+	if err != nil {
+		logrus.Errorf("failed to automatically persist interface config for %s: %v", peerInterface.Identifier, err)
+	}
 }
 
 func (m Manager) GetInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) (io.Reader, error) {

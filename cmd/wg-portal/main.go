@@ -28,7 +28,8 @@ import (
 func main() {
 	ctx := internal.SignalAwareContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
-	logrus.Infof("Starting WireGuard Portal...")
+	logrus.Infof("Starting WireGuard Portal V2...")
+	logrus.Infof("WireGuard Portal version: %s", internal.Version)
 
 	cfg, err := config.GetConfig()
 	internal.AssertNoError(err)
@@ -77,7 +78,7 @@ func main() {
 	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, database, wireGuard)
 	internal.AssertNoError(err)
 
-	cfgFileManager, err := configfile.NewConfigFileManager(cfg, database, database, cfgFileSystem)
+	cfgFileManager, err := configfile.NewConfigFileManager(cfg, eventBus, database, database, cfgFileSystem)
 	internal.AssertNoError(err)
 
 	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)

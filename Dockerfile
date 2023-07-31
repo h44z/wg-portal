@@ -42,12 +42,9 @@ COPY --from=builder /etc/group /etc/group
 
 # Copy binaries
 COPY --from=builder /build/dist/wg-portal /app/wg-portal
-COPY --from=builder /build/dist/hc /app/hc
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
 # Command to run the executable
 CMD [ "/app/wg-portal" ]
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD [ "/app/hc", "http://localhost:11223/health" ]

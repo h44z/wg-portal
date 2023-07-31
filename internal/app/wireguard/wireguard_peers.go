@@ -284,6 +284,10 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 		m.bus.Publish(app.TopicRouteUpdate, "peers updated")
 	}
 
+	for iface := range interfaces {
+		m.bus.Publish(app.TopicPeerInterfaceUpdated, iface)
+	}
+
 	return nil
 }
 

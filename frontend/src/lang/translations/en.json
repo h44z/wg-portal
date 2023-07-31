@@ -243,7 +243,89 @@
       "headline": "Config for Interface:"
     },
     "interface-edit": {
-      "privatekey": "Private Key"
+      "headline-edit": "Edit Interface:",
+      "headline-new": "New Interface",
+      "tab-interface": "Interface",
+      "tab-peerdef": "Peer Defaults",
+      "header-general": "General",
+      "header-network": "Network",
+      "header-crypto": "Cryptography",
+      "header-hooks": "Interface Hooks",
+      "header-peer-hooks": "Hooks",
+      "header-state": "State",
+      "identifier": {
+        "label": "Identifier",
+        "placeholder": "The unique interface identifier"
+      },
+      "mode": {
+        "label": "Interface Mode",
+        "server": "Server Mode",
+        "client": "Client Mode",
+        "any": "Unknown Mode"
+      },
+      "display-name": {
+        "label": "Display Name",
+        "placeholder": "The descriptive name for the interface"
+      },
+      "private-key": {
+        "label": "Private Key",
+        "placeholder": "The private key"
+      },
+      "public-key": {
+        "label": "Public Key",
+        "placeholder": "The public key"
+      },
+      "ip": {
+        "label": "IP Addresses",
+        "placeholder": "IP Addresses (CIDR format)"
+      },
+      "listen-port": {
+        "label": "Listen Port",
+        "placeholder": "The listening port"
+      },
+      "dns": {
+        "label": "DNS Server",
+        "placeholder": "The DNS servers that should be used"
+      },
+      "dns-search": {
+        "label": "DNS Search Domains",
+        "placeholder": "DNS search prefixes"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "The interface MTU (0 = keep default)"
+      },
+      "firewall-mark": {
+        "label": "Firewall Mark",
+        "placeholder": "Firewall mark that is applied to outgoing traffic. (0 = automatic)"
+      },
+      "routing-table": {
+        "label": "Routing Table",
+        "placeholder": "The routing table ID",
+        "description": "Special cases: off = do not manage routes, 0 = automatic"
+      },
+      "pre-up": {
+        "label": "Pre-Up",
+        "placeholder": "One or multiple bash commands"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "One or multiple bash commands"
+      },
+      "pre-down": {
+        "label": "Pre-Down",
+        "placeholder": "One or multiple bash commands"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "One or multiple bash commands"
+      },
+      "disabled": {
+        "label": "Interface Disabled"
+      },
+      "save-config": {
+        "label": "Automatically save wg-quick config"
+      }
     },
     "peer-view": {
       "headline-peer": "Peer:",
