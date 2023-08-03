@@ -68,7 +68,7 @@
     "admin": {
       "headline": "Administration Area",
       "abstract": "In the administration area you can manage WireGuard peers and the server interface as well as users that are allowed to log in to the WireGuard Portal.",
-      "content": "To find all your configured profiles click on the button below.",
+      "content": "",
       "button-admin": "Open Server Administration",
       "button-user": "Open User Administration"
     }
@@ -306,26 +306,52 @@
       },
       "pre-up": {
         "label": "Pre-Up",
-        "placeholder": "One or multiple bash commands"
+        "placeholder": "One or multiple bash commands separated by ;"
       },
       "post-up": {
         "label": "Post-Up",
-        "placeholder": "One or multiple bash commands"
+        "placeholder": "One or multiple bash commands separated by ;"
       },
       "pre-down": {
         "label": "Pre-Down",
-        "placeholder": "One or multiple bash commands"
+        "placeholder": "One or multiple bash commands separated by ;"
       },
       "post-down": {
         "label": "Post-Down",
-        "placeholder": "One or multiple bash commands"
+        "placeholder": "One or multiple bash commands separated by ;"
       },
       "disabled": {
         "label": "Interface Disabled"
       },
       "save-config": {
         "label": "Automatically save wg-quick config"
-      }
+      },
+      "defaults": {
+        "endpoint": {
+          "label": "Endpoint Address",
+          "placeholder": "Endpoint Address",
+          "description": "The endpoint address that peers will connect to."
+        },
+        "networks": {
+          "label": "IP Networks",
+          "placeholder": "Network Addresses",
+          "description": "Peers will get IP addresses from those subnets."
+        },
+        "allowed-ip": {
+          "label": "Allowed IP Addresses",
+          "placeholder": "Default Allowed IP Addresses"
+        },
+        "mtu": {
+          "label": "MTU",
+          "placeholder": "The client MTU (0 = keep default)"
+        },
+        "keep-alive": {
+          "label": "Keep Alive Interval",
+          "placeholder": "Persistent Keepalive (0 = default)"
+        }
+      },
+
+      "button-apply-defaults": "Apply Peer Defaults"
     },
     "peer-view": {
       "headline-peer": "Peer:",
@@ -351,10 +377,113 @@
       "button-email": "Send configuration via E-Mail"
     },
     "peer-edit": {
-      "privatekey": "Private Key"
+      "headline-edit-peer": "Edit peer:",
+      "headline-edit-endpoint": "Edit endpoint:",
+      "headline-new-peer": "Create peer",
+      "headline-new-endpoint": "Create endpoint",
+      "header-general": "General",
+      "header-network": "Network",
+      "header-crypto": "Cryptography",
+      "header-hooks": "Hooks (Executed on Peer)",
+      "header-state": "State",
+      "display-name": {
+        "label": "Display Name",
+        "placeholder": "The descriptive name for the peer"
+      },
+      "linked-user": {
+        "label": "Linked User",
+        "placeholder": "The user account which owns this peer"
+      },
+      "private-key": {
+        "label": "Private Key",
+        "placeholder": "The private key"
+      },
+      "public-key": {
+        "label": "Public Key",
+        "placeholder": "The public key"
+      },
+      "preshared-key": {
+        "label": "Preshared Key",
+        "placeholder": "Optional pre-shared key"
+      },
+      "endpoint-public-key": {
+        "label": "Endpoint public Key",
+        "placeholder": "The public key of the remote endpoint"
+      },
+      "endpoint": {
+        "label": "Endpoint Address",
+        "placeholder": "The address of the remote endpoint"
+      },
+      "ip": {
+        "label": "IP Addresses",
+        "placeholder": "IP Addresses (CIDR format)"
+      },
+      "allowed-ip": {
+        "label": "Allowed IP Addresses",
+        "placeholder": "Allowed IP Addresses (CIDR format)"
+      },
+      "extra-allowed-ip": {
+        "label": "Extra allowed IP Addresses",
+        "placeholder": "Extra allowed IP's (Server Sided)",
+        "description": "Those IP's will be added on the remote WireGuard interface as allowed IP's."
+      },
+      "dns": {
+        "label": "DNS Server",
+        "placeholder": "The DNS servers that should be used"
+      },
+      "dns-search": {
+        "label": "DNS Search Domains",
+        "placeholder": "DNS search prefixes"
+      },
+      "keep-alive": {
+        "label": "Keep Alive Interval",
+        "placeholder": "Persistent Keepalive (0 = default)"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "The client MTU (0 = keep default)"
+      },
+      "pre-up": {
+        "label": "Pre-Up",
+        "placeholder": "One or multiple bash commands separated by ;"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "One or multiple bash commands separated by ;"
+      },
+      "pre-down": {
+        "label": "Pre-Down",
+        "placeholder": "One or multiple bash commands separated by ;"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "One or multiple bash commands separated by ;"
+      },
+      "disabled": {
+        "label": "Peer Disabled"
+      },
+      "ignore-global": {
+        "label": "Ignore global settings"
+      },
+      "expires-at": {
+        "label": "Expiry date"
+      }
     },
     "peer-multi-create": {
-      "privatekey": "Private Key"
+      "headline-peer": "Create multiple peers",
+      "headline-endpoint": "Create multiple endpoints",
+      "identifiers": {
+        "label": "User Identifiers",
+        "placeholder": "User Identifiers",
+        "description": "A user identifier (the username) for which a peer should be created."
+      },
+      "prefix": {
+        "headline-peer": "Peer:",
+        "headline-endpoint": "Endpoint:",
+        "label": "Display Name Prefix",
+        "placeholder": "The prefix",
+        "description": "A prefix that is added to the peers display name."
+      }
     }
   }
 }

@@ -414,86 +414,86 @@ async function del() {
           <fieldset>
             <legend class="mt-4">{{ $t('modals.interface-edit.header-network') }}</legend>
             <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.endpoint') }}</label>
-              <input v-model="formData.PeerDefEndpoint" class="form-control" placeholder="Endpoint Addresses" type="text">
-              <small class="form-text text-muted">The endpoint address that peers will connect to.</small>
+              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.endpoint.label') }}</label>
+              <input v-model="formData.PeerDefEndpoint" class="form-control" :placeholder="$t('modals.interface-edit.defaults.endpoint.placeholder')" type="text">
+              <small class="form-text text-muted">{{ $t('modals.interface-edit.defaults.endpoint.description') }}</small>
             </div>
             <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.networks') }}</label>
+              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.networks.label') }}</label>
               <vue3-tags-input class="form-control" :tags="formData.PeerDefNetwork"
-                               placeholder="Network Addresses"
+                               :placeholder="$t('modals.interface-edit.defaults.networks.placeholder')"
                                :add-tag-on-keys="[13, 188, 32, 9]"
                                :validate="validateCIDR"
                                @on-tags-changed="handleChangePeerDefNetwork"/>
-              <small class="form-text text-muted">Peers will get IP addresses from those subnets.</small>
+              <small class="form-text text-muted">{{ $t('modals.interface-edit.defaults.networks.description') }}</small>
             </div>
             <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.allowedips') }}</label>
+              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.allowed-ip.label') }}</label>
               <vue3-tags-input class="form-control" :tags="formData.PeerDefAllowedIPs"
-                               placeholder="Default Allowed IP Addresses"
+                               :placeholder="$t('modals.interface-edit.defaults.allowed-ip.placeholder')"
                                :add-tag-on-keys="[13, 188, 32, 9]"
                                :validate="validateCIDR"
                                @on-tags-changed="handleChangePeerDefAllowedIPs"/>
             </div>
             <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.dns') }}</label>
+              <label class="form-label mt-4">{{ $t('modals.interface-edit.dns.label') }}</label>
               <vue3-tags-input class="form-control" :tags="formData.PeerDefDns"
-                               placeholder="DNS Servers"
+                               :placeholder="$t('modals.interface-edit.dns.placeholder')"
                                :add-tag-on-keys="[13, 188, 32, 9]"
                                :validate="validateIP"
                                @on-tags-changed="handleChangePeerDefDns"/>
             </div>
             <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.dnssearch') }}</label>
+              <label class="form-label mt-4">{{ $t('modals.interface-edit.dns-search.label') }}</label>
               <vue3-tags-input class="form-control" :tags="formData.PeerDefDnsSearch"
-                               placeholder="DNS Search prefix"
+                               :placeholder="$t('modals.interface-edit.dns-search.placeholder')"
                                :add-tag-on-keys="[13, 188, 32, 9]"
                                :validate="validateDomain"
                                @on-tags-changed="handleChangePeerDefDnsSearch"/>
             </div>
             <div class="row">
               <div class="form-group col-md-6">
-                <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.mtu') }}</label>
-                <input v-model="formData.PeerDefMtu" class="form-control" placeholder="Client MTU (0 = default)" type="number">
+                <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.mtu.label') }}</label>
+                <input v-model="formData.PeerDefMtu" class="form-control" :placeholder="$t('modals.interface-edit.defaults.mtu.placeholder')" type="number">
               </div>
               <div class="form-group col-md-6">
-                <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.firewallmark') }}</label>
-                <input v-model="formData.PeerDefFirewallMark" class="form-control" placeholder="Firewall Mark (0 = default)" type="number">
+                <label class="form-label mt-4">{{ $t('modals.interface-edit.firewall-mark.label') }}</label>
+                <input v-model="formData.PeerDefFirewallMark" class="form-control" :placeholder="$t('modals.interface-edit.firewall-mark.placeholder')" type="number">
               </div>
             </div>
             <div class="row">
               <div class="form-group col-md-6">
-                <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.routingtable') }}</label>
-                <input v-model="formData.PeerDefRoutingTable" class="form-control" placeholder="Routing Table (0 = default)" type="number">
+                <label class="form-label mt-4">{{ $t('modals.interface-edit.routing-table.label') }}</label>
+                <input v-model="formData.PeerDefRoutingTable" class="form-control" :placeholder="$t('modals.interface-edit.routing-table.placeholder')" type="number">
               </div>
               <div class="form-group col-md-6">
-                <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.keepalive') }}</label>
-                <input v-model="formData.PeerDefPersistentKeepalive" class="form-control" placeholder="Persistent Keepalive (0 = default)" type="number">
+                <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.keep-alive.label') }}</label>
+                <input v-model="formData.PeerDefPersistentKeepalive" class="form-control" :placeholder="$t('modals.interface-edit.defaults.keep-alive.placeholder')" type="number">
               </div>
             </div>
           </fieldset>
           <fieldset>
             <legend class="mt-4">{{ $t('modals.interface-edit.header-peer-hooks') }}</legend>
             <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.preup') }}</label>
-              <textarea v-model="formData.PeerDefPreUp" class="form-control" rows="2"></textarea>
+              <label class="form-label mt-4">{{ $t('modals.interface-edit.pre-up.label') }}</label>
+              <textarea v-model="formData.PeerDefPreUp" class="form-control" rows="2" :placeholder="$t('modals.interface-edit.pre-up.placeholder')"></textarea>
             </div>
             <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.postup') }}</label>
-              <textarea v-model="formData.PeerDefPostUp" class="form-control" rows="2"></textarea>
+              <label class="form-label mt-4">{{ $t('modals.interface-edit.post-up.label') }}</label>
+              <textarea v-model="formData.PeerDefPostUp" class="form-control" rows="2" :placeholder="$t('modals.interface-edit.post-up.placeholder')"></textarea>
             </div>
             <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.predown') }}</label>
-              <textarea v-model="formData.PeerDefPreDown" class="form-control" rows="2"></textarea>
+              <label class="form-label mt-4">{{ $t('modals.interface-edit.pre-down.label') }}</label>
+              <textarea v-model="formData.PeerDefPreDown" class="form-control" rows="2" :placeholder="$t('modals.interface-edit.pre-down.placeholder')"></textarea>
             </div>
             <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.postdown') }}</label>
-              <textarea v-model="formData.PeerDefPostDown" class="form-control" rows="2"></textarea>
+              <label class="form-label mt-4">{{ $t('modals.interface-edit.post-down.label') }}</label>
+              <textarea v-model="formData.PeerDefPostDown" class="form-control" rows="2" :placeholder="$t('modals.interface-edit.post-down.placeholder')"></textarea>
             </div>
           </fieldset>
           <fieldset v-if="props.interfaceId!=='#NEW#'" class="text-end">
             <hr class="mt-4">
-            <button class="btn btn-primary me-1" type="button" @click.prevent="applyPeerDefaults">Apply Peer Defaults</button>
+            <button class="btn btn-primary me-1" type="button" @click.prevent="applyPeerDefaults">{{ $t('modals.interface-edit.button-apply-defaults') }}</button>
           </fieldset>
         </div>
       </div>

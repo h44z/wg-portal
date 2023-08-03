@@ -38,6 +38,17 @@ function freshForm() {
 
 const formData = ref(freshForm())
 
+const title = computed(() => {
+  if (!props.visible) {
+    return "" // otherwise interfaces.GetSelected will die...
+  }
+  if (selectedInterface.value.Mode === "server") {
+    return t("modals.peer-multi-create.headline-peer")
+  } else {
+    return t("modals.peer-multi-create.headline-endpoint")
+  }
+})
+
 function close() {
   formData.value = freshForm()
   emit('close')
@@ -73,25 +84,27 @@ async function save() {
 </script>
 
 <template>
-  <Modal :title="t('modals.peerscreate.title')" :visible="visible" @close="close">
+  <Modal :title="title" :visible="visible" @close="close">
     <template #default>
       <fieldset>
         <div class="form-group">
-          <label class="form-label mt-4">{{ $t('modals.peerscreate.identifiers') }}</label>
+          <label class="form-label mt-4">{{ $t('modals.peer-multi-create.identifiers.label') }}</label>
           <vue3-tags-input class="form-control" :tags="formData.Identifiers"
-                           :placeholder="t('modals.peerscreate.identifiers.placeholder')"
+                           :placeholder="$t('modals.peer-multi-create.identifiers.placeholder')"
                            :add-tag-on-keys="[13, 188, 32, 9]"
                            @on-tags-changed="handleChangeUserIdentifiers"/>
+          <small class="form-text text-muted">{{ $t('modals.peer-multi-create.identifiers.description') }}</small>
         </div>
         <div class="form-group">
-          <label class="form-label mt-4">{{ $t('modals.peerscreate.peernamesuffix') }}</label>
-          <input type="text" class="form-control" :placeholder="t('modals.peerscreate.peernamesuffix.placeholder')" v-model="formData.Suffix">
+          <label class="form-label mt-4">{{ $t('modals.peer-multi-create.prefix.label') }}</label>
+          <input type="text" class="form-control" :placeholder="$t('modals.peer-multi-create.prefix.placeholder')" v-model="formData.Suffix">
+          <small class="form-text text-muted">{{ $t('modals.peer-multi-create.prefix.description') }}</small>
         </div>
       </fieldset>
     </template>
     <template #footer>
-      <button class="btn btn-primary me-1" type="button" @click.prevent="save">Create</button>
-      <button class="btn btn-secondary" type="button" @click.prevent="close">Cancel</button>
+      <button class="btn btn-primary me-1" type="button" @click.prevent="save">{{ $t('general.save') }}</button>
+      <button class="btn btn-secondary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
     </template>
   </Modal>
 </template>
