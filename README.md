@@ -9,7 +9,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/h44z/wg-portal/)
 
 > :warning: **IMPORTANT** Version 2 is currently under development and may contain bugs. It is currently not advised to use this version
-in production. Use version [1.0.17](https://github.com/h44z/wg-portal/releases) instead.
+in production. Use version [1.0.18](https://github.com/h44z/wg-portal/releases) instead.
 
 A simple, web based configuration portal for [WireGuard](https://wireguard.com).
 The portal uses the WireGuard [wgctrl](https://github.com/WireGuard/wgctrl-go) library to manage existing VPN
@@ -169,6 +169,20 @@ Ensure that the new database does not contain any data!
  * Documentation
  * Audit UI
 
+
+## Building
+
+To build a standalone application, use the Makefile provided in the repository. 
+Go version 1.20 or higher has to be installed to build WireGuard Portal. 
+If you want to re-compile the frontend, NodeJS 18 and NPM >= 9 is required.
+
+```shell
+# build the frontend (optional)
+make frontend
+
+# build the binary
+make build
+```
 
 ## What is out of scope
  * Automatic generation or application of any `iptables` or `nftables` rules.
