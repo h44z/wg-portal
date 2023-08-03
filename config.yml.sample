@@ -8,3 +8,40 @@ core:
 web:
   external_url: http://localhost:8888
   request_logging: true
+
+auth:
+  callback_url_prefix: http://localhost:8888/api/v0
+  ldap:
+    - id: ldap1
+      provider_name: company ldap
+      display_name: Login with</br>LDAP
+      url: ldap://ldap.yourcompany.local:389
+      bind_user: ldap_wireguard@yourcompany.local
+      bind_pass: super_Secret_PASSWORD
+      base_dn: DC=YOURCOMPANY,DC=LOCAL
+      login_filter: (&(objectClass=organizationalPerson)(mail={{login_identifier}})(!userAccountControl:1.2.840.113556.1.4.803:=2))
+      admin_group: CN=WireGuardAdmins,OU=it,DC=YOURCOMPANY,DC=LOCAL
+      synchronize: false
+      sync_filter: (&(objectClass=organizationalPerson)(!userAccountControl:1.2.840.113556.1.4.803:=2)(mail=*))
+      registration_enabled: true
+  oidc:
+    - id: oidc1
+      provider_name: google
+      display_name: Login with</br>Google
+      base_url: https://accounts.google.com
+      client_id: the-client-id-1234.apps.googleusercontent.com
+      client_secret: A_CLIENT_SECRET
+      extra_scopes:
+        - https://www.googleapis.com/auth/userinfo.email
+        - https://www.googleapis.com/auth/userinfo.profile
+      registration_enabled: true
+    - id: oidc2
+      provider_name: google2
+      display_name: Login with</br>Google2
+      base_url: https://accounts.google.com
+      client_id: another-client-id-1234.apps.googleusercontent.com
+      client_secret: A_CLIENT_SECRET
+      extra_scopes:
+        - https://www.googleapis.com/auth/userinfo.email
+        - https://www.googleapis.com/auth/userinfo.profile
+      registration_enabled: true
