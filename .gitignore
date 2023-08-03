@@ -36,3 +36,5 @@ go.sum
 swagger.json
 swagger.yaml
 /config.yml
+sqlite.db
+node_modules/
