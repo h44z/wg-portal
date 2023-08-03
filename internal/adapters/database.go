@@ -37,6 +37,7 @@ type GormLogger struct {
 	SourceField             string
 	IgnoreErrRecordNotFound bool
 	Debug                   bool
+	Silent                  bool
 }
 
 func NewLogger(slowThreshold time.Duration, debug bool) *GormLogger {
@@ -44,27 +45,46 @@ func NewLogger(slowThreshold time.Duration, debug bool) *GormLogger {
 		SlowThreshold:           slowThreshold,
 		Debug:                   debug,
 		IgnoreErrRecordNotFound: true,
+		Silent:                  false,
 		SourceField:             "src",
 	}
 }
 
-func (l *GormLogger) LogMode(logger.LogLevel) logger.Interface {
+func (l *GormLogger) LogMode(level logger.LogLevel) logger.Interface {
+	if level == logger.Silent {
+		l.Silent = true
+	} else {
+		l.Silent = false
+	}
 	return l
 }
 
 func (l *GormLogger) Info(ctx context.Context, s string, args ...interface{}) {
+	if l.Silent {
+		return
+	}
 	logrus.WithContext(ctx).Infof(s, args...)
 }
 
 func (l *GormLogger) Warn(ctx context.Context, s string, args ...interface{}) {
+	if l.Silent {
+		return
+	}
 	logrus.WithContext(ctx).Warnf(s, args...)
 }
 
 func (l *GormLogger) Error(ctx context.Context, s string, args ...interface{}) {
+	if l.Silent {
+		return
+	}
 	logrus.WithContext(ctx).Errorf(s, args...)
 }
 
 func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+	if l.Silent {
+		return
+	}
+
 	elapsed := time.Since(begin)
 	sql, rows := fc()
 	fields := logrus.Fields{
@@ -156,12 +176,35 @@ func NewSqlRepository(db *gorm.DB) (*SqlRepo, error) {
 		db: db,
 	}
 
-	err := repo.migrate()
-	if err != nil {
+	if err := repo.preCheck(); err != nil {
+		return nil, fmt.Errorf("failed to initialize database: %w", err)
+	}
+
+	if err := repo.migrate(); err != nil {
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
 
 	return repo, nil
+}
+
+func (r *SqlRepo) preCheck() error {
+	// WireGuard Portal v1 database migration table
+	type DatabaseMigrationInfo struct {
+		Version string `gorm:"primaryKey"`
+		Applied time.Time
+	}
+
+	// temporarily disable logger as the next request might fail (intentionally)
+	r.db.Logger.LogMode(logger.Silent)
+	defer func() { r.db.Logger.LogMode(logger.Info) }()
+
+	lastVersion := DatabaseMigrationInfo{}
+	err := r.db.Order("applied desc, version desc").FirstOrInit(&lastVersion).Error
+	if err != nil {
+		return nil // we probably don't have a V1 database =)
+	}
+
+	return fmt.Errorf("detected a WireGuard Portal V1 database (version: %s) - please migrate first", lastVersion.Version)
 }
 
 func (r *SqlRepo) migrate() error {
