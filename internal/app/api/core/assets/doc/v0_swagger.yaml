@@ -1,0 +1,1041 @@
+basePath: /api/v0
+definitions:
+  model.Error:
+    properties:
+      Code:
+        type: integer
+      Message:
+        type: string
+    type: object
+  model.Int32ConfigOption:
+    properties:
+      Overridable:
+        type: boolean
+      Value:
+        type: integer
+    type: object
+  model.IntConfigOption:
+    properties:
+      Overridable:
+        type: boolean
+      Value:
+        type: integer
+    type: object
+  model.Interface:
+    properties:
+      Addresses:
+        description: the interface ip addresses
+        items:
+          type: string
+        type: array
+      Disabled:
+        description: flag that specifies if the interface is enabled (up) or not (down)
+        type: boolean
+      DisabledReason:
+        description: the reason why the interface has been disabled
+        type: string
+      DisplayName:
+        description: a nice display name/ description for the interface
+        type: string
+      Dns:
+        description: the dns server that should be set if the interface is up, comma
+          separated
+        items:
+          type: string
+        type: array
+      DnsSearch:
+        description: the dns search option string that should be set if the interface
+          is up, will be appended to DnsStr
+        items:
+          type: string
+        type: array
+      EnabledPeers:
+        type: integer
+      FirewallMark:
+        description: a firewall mark
+        type: integer
+      Identifier:
+        description: 'device name, for example: wg0'
+        example: wg0
+        type: string
+      ListenPort:
+        description: 'the listening port, for example: 51820'
+        type: integer
+      Mode:
+        description: the interface type, either 'server', 'client' or 'any'
+        example: server
+        type: string
+      Mtu:
+        description: the device MTU
+        type: integer
+      PeerDefAllowedIPs:
+        description: the default allowed IP string for the peer
+        items:
+          type: string
+        type: array
+      PeerDefDns:
+        description: the default dns server for the peer
+        items:
+          type: string
+        type: array
+      PeerDefDnsSearch:
+        description: the default dns search options for the peer
+        items:
+          type: string
+        type: array
+      PeerDefEndpoint:
+        description: the default endpoint for the peer
+        type: string
+      PeerDefFirewallMark:
+        description: default firewall mark
+        type: integer
+      PeerDefMtu:
+        description: the default device MTU
+        type: integer
+      PeerDefNetwork:
+        description: the default subnets from which peers will get their IP addresses,
+          comma seperated
+        items:
+          type: string
+        type: array
+      PeerDefPersistentKeepalive:
+        description: the default persistent keep-alive Value
+        type: integer
+      PeerDefPostDown:
+        description: default action that is executed after the device is down
+        type: string
+      PeerDefPostUp:
+        description: default action that is executed after the device is up
+        type: string
+      PeerDefPreDown:
+        description: default action that is executed before the device is down
+        type: string
+      PeerDefPreUp:
+        description: default action that is executed before the device is up
+        type: string
+      PeerDefRoutingTable:
+        description: the default routing table
+        type: string
+      PostDown:
+        description: action that is executed after the device is down
+        type: string
+      PostUp:
+        description: action that is executed after the device is up
+        type: string
+      PreDown:
+        description: action that is executed before the device is down
+        type: string
+      PreUp:
+        description: action that is executed before the device is up
+        type: string
+      PrivateKey:
+        description: private Key of the server interface
+        example: abcdef==
+        type: string
+      PublicKey:
+        description: public Key of the server interface
+        example: abcdef==
+        type: string
+      RoutingTable:
+        description: the routing table
+        type: string
+      SaveConfig:
+        description: automatically persist config changes to the wgX.conf file
+        type: boolean
+      TotalPeers:
+        type: integer
+    type: object
+  model.LoginProviderInfo:
+    properties:
+      CallbackUrl:
+        example: /auth/google/callback
+        type: string
+      Identifier:
+        example: google
+        type: string
+      Name:
+        example: Login with Google
+        type: string
+      ProviderUrl:
+        example: /auth/google/login
+        type: string
+    type: object
+  model.Peer:
+    properties:
+      Addresses:
+        description: the interface ip addresses
+        items:
+          type: string
+        type: array
+      AllowedIPs:
+        allOf:
+        - $ref: '#/definitions/model.StringSliceConfigOption'
+        description: all allowed ip subnets, comma seperated
+      CheckAliveAddress:
+        description: optional ip address or DNS name that is used for ping checks
+        type: string
+      Disabled:
+        description: flag that specifies if the peer is enabled (up) or not (down)
+        type: boolean
+      DisabledReason:
+        description: the reason why the peer has been disabled
+        type: string
+      DisplayName:
+        description: a nice display name/ description for the peer
+        type: string
+      Dns:
+        allOf:
+        - $ref: '#/definitions/model.StringSliceConfigOption'
+        description: the dns server that should be set if the interface is up, comma
+          separated
+      DnsSearch:
+        allOf:
+        - $ref: '#/definitions/model.StringSliceConfigOption'
+        description: the dns search option string that should be set if the interface
+          is up, will be appended to DnsStr
+      Endpoint:
+        allOf:
+        - $ref: '#/definitions/model.StringConfigOption'
+        description: the endpoint address
+      EndpointPublicKey:
+        allOf:
+        - $ref: '#/definitions/model.StringConfigOption'
+        description: the endpoint public key
+      ExpiresAt:
+        description: expiry dates for peers
+        type: string
+      ExtraAllowedIPs:
+        description: all allowed ip subnets on the server side, comma seperated
+        items:
+          type: string
+        type: array
+      FirewallMark:
+        allOf:
+        - $ref: '#/definitions/model.Int32ConfigOption'
+        description: a firewall mark
+      Identifier:
+        description: peer unique identifier
+        example: super_nice_peer
+        type: string
+      InterfaceIdentifier:
+        description: the interface id
+        type: string
+      Mode:
+        description: the peer interface type (server, client, any)
+        type: string
+      Mtu:
+        allOf:
+        - $ref: '#/definitions/model.IntConfigOption'
+        description: the device MTU
+      Notes:
+        description: a note field for peers
+        type: string
+      PersistentKeepalive:
+        allOf:
+        - $ref: '#/definitions/model.IntConfigOption'
+        description: the persistent keep-alive interval
+      PostDown:
+        allOf:
+        - $ref: '#/definitions/model.StringConfigOption'
+        description: action that is executed after the device is down
+      PostUp:
+        allOf:
+        - $ref: '#/definitions/model.StringConfigOption'
+        description: action that is executed after the device is up
+      PreDown:
+        allOf:
+        - $ref: '#/definitions/model.StringConfigOption'
+        description: action that is executed before the device is down
+      PreUp:
+        allOf:
+        - $ref: '#/definitions/model.StringConfigOption'
+        description: action that is executed before the device is up
+      PresharedKey:
+        description: the pre-shared Key of the peer
+        type: string
+      PrivateKey:
+        description: private Key of the server peer
+        example: abcdef==
+        type: string
+      PublicKey:
+        description: public Key of the server peer
+        example: abcdef==
+        type: string
+      RoutingTable:
+        allOf:
+        - $ref: '#/definitions/model.StringConfigOption'
+        description: the routing table
+      UserIdentifier:
+        description: the owner
+        type: string
+    type: object
+  model.SessionInfo:
+    properties:
+      IsAdmin:
+        type: boolean
+      LoggedIn:
+        type: boolean
+      UserEmail:
+        type: string
+      UserFirstname:
+        type: string
+      UserIdentifier:
+        type: string
+      UserLastname:
+        type: string
+    type: object
+  model.StringConfigOption:
+    properties:
+      Overridable:
+        type: boolean
+      Value:
+        type: string
+    type: object
+  model.StringSliceConfigOption:
+    properties:
+      Overridable:
+        type: boolean
+      Value:
+        items:
+          type: string
+        type: array
+    type: object
+  model.User:
+    properties:
+      Department:
+        type: string
+      Disabled:
+        description: if this field is set, the user is disabled
+        type: boolean
+      DisabledReason:
+        description: the reason why the user has been disabled
+        type: string
+      Email:
+        type: string
+      Firstname:
+        type: string
+      Identifier:
+        type: string
+      IsAdmin:
+        type: boolean
+      Lastname:
+        type: string
+      Notes:
+        type: string
+      Password:
+        type: string
+      PeerCount:
+        type: integer
+      Phone:
+        type: string
+      ProviderName:
+        type: string
+      Source:
+        type: string
+    type: object
+info:
+  contact:
+    name: WireGuard Portal Developers
+    url: https://github.com/h44z/wg-portal
+  description: WireGuard Portal API - a testing API endpoint
+  title: WireGuard Portal API
+  version: "0.0"
+paths:
+  /auth/{provider}/callback:
+    get:
+      operationId: auth_handleOauthCallbackGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.LoginProviderInfo'
+            type: array
+      summary: Handle the OAuth callback.
+      tags:
+      - Authentication
+  /auth/{provider}/init:
+    get:
+      operationId: auth_handleOauthInitiateGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.LoginProviderInfo'
+            type: array
+      summary: Initiate the OAuth login flow.
+      tags:
+      - Authentication
+  /auth/login:
+    post:
+      operationId: auth_handleLoginPost
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.LoginProviderInfo'
+            type: array
+      summary: Get all available external login providers.
+      tags:
+      - Authentication
+  /auth/logout:
+    get:
+      operationId: auth_handleLogoutGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.LoginProviderInfo'
+            type: array
+      summary: Get all available external login providers.
+      tags:
+      - Authentication
+  /auth/providers:
+    get:
+      operationId: auth_handleExternalLoginProvidersGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.LoginProviderInfo'
+            type: array
+      summary: Get all available external login providers.
+      tags:
+      - Authentication
+  /auth/session:
+    get:
+      operationId: auth_handleSessionInfoGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.SessionInfo'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get information about the currently logged-in user.
+      tags:
+      - Authentication
+  /config/frontend.js:
+    get:
+      operationId: config_handleConfigJsGet
+      produces:
+      - text/javascript
+      responses:
+        "200":
+          description: The JavaScript contents
+          schema:
+            type: string
+      summary: Get the dynamic frontend configuration javascript.
+      tags:
+      - Configuration
+  /csrf:
+    get:
+      operationId: base_handleCsrfGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get a CSRF token for the current session.
+      tags:
+      - Security
+  /hostname:
+    get:
+      description: Nothing more to describe...
+      operationId: test_handleHostnameGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get the current host name.
+      tags:
+      - Testing
+  /interface/{id}:
+    delete:
+      operationId: interfaces_handleDelete
+      parameters:
+      - description: The interface identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if deletion was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Delete the interface record.
+      tags:
+      - Interface
+    put:
+      operationId: interfaces_handleUpdatePut
+      parameters:
+      - description: The interface identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The interface data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.Interface'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Interface'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Update the interface record.
+      tags:
+      - Interface
+  /interface/all:
+    get:
+      operationId: interfaces_handleAllGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Interface'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get all available interfaces.
+      tags:
+      - Interface
+  /interface/config/{id}:
+    get:
+      operationId: interfaces_handleConfigGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get interface configuration as string.
+      tags:
+      - Interface
+  /interface/get/{id}:
+    get:
+      operationId: interfaces_handleSingleGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Interface'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get single interface.
+      tags:
+      - Interface
+  /interface/new:
+    post:
+      operationId: interfaces_handleCreatePost
+      parameters:
+      - description: The interface data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.Interface'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Interface'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Create the new interface record.
+      tags:
+      - Interface
+  /interface/peers/{id}:
+    get:
+      operationId: interfaces_handlePeersGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Peer'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get peers for the given interface.
+      tags:
+      - Interface
+  /interface/prepare:
+    get:
+      operationId: interfaces_handlePrepareGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Interface'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Prepare a new interface.
+      tags:
+      - Interface
+  /now:
+    get:
+      description: Nothing more to describe...
+      operationId: test_handleCurrentTimeGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get the current local time.
+      tags:
+      - Testing
+  /peer/{id}:
+    delete:
+      operationId: peers_handleDelete
+      parameters:
+      - description: The peer identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if deletion was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Delete the peer record.
+      tags:
+      - Peer
+    get:
+      operationId: peers_handleSingleGet
+      parameters:
+      - description: The peer identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Peer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get peer for the given identifier.
+      tags:
+      - Peer
+    put:
+      operationId: peers_handleUpdatePut
+      parameters:
+      - description: The peer identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The peer data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.Peer'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Peer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Update the given peer record.
+      tags:
+      - Peer
+  /peer/config-qr/{id}:
+    get:
+      operationId: peers_handleQrCodeGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get peer configuration as qr code.
+      tags:
+      - Peer
+  /peer/config/{id}:
+    get:
+      operationId: peers_handleConfigGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get peer configuration as string.
+      tags:
+      - Peer
+  /peer/iface/{iface}/all:
+    get:
+      operationId: peers_handleAllGet
+      parameters:
+      - description: The interface identifier
+        in: path
+        name: iface
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Peer'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get peers for the given interface.
+      tags:
+      - Peer
+  /peer/iface/{iface}/new:
+    post:
+      operationId: peers_handleCreatePost
+      parameters:
+      - description: The interface identifier
+        in: path
+        name: iface
+        required: true
+        type: string
+      - description: The peer data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.Peer'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Peer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Prepare a new peer for the given interface.
+      tags:
+      - Peer
+  /peer/iface/{iface}/prepare:
+    get:
+      operationId: peers_handlePrepareGet
+      parameters:
+      - description: The interface identifier
+        in: path
+        name: iface
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Peer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Prepare a new peer for the given interface.
+      tags:
+      - Peer
+  /user/{id}:
+    delete:
+      operationId: users_handleDelete
+      parameters:
+      - description: The user identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if deletion was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Delete the user record.
+      tags:
+      - Users
+    get:
+      operationId: users_handleSingleGet
+      parameters:
+      - description: The user identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get a single user record.
+      tags:
+      - Users
+    put:
+      operationId: users_handleUpdatePut
+      parameters:
+      - description: The user identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The user data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Update the user record.
+      tags:
+      - Users
+  /user/{id}/peers:
+    get:
+      operationId: users_handlePeersGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Peer'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get peers for the given user.
+      tags:
+      - Users
+  /user/all:
+    get:
+      operationId: users_handleAllGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.User'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get all user records.
+      tags:
+      - Users
+  /user/new:
+    post:
+      operationId: users_handleCreatePost
+      parameters:
+      - description: The user data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Create the new user record.
+      tags:
+      - Users
+swagger: "2.0"

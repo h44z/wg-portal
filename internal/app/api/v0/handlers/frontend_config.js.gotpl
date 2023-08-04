@@ -1,0 +1,6 @@
+WGPORTAL_BACKEND_BASE_URL="{{ $.BackendUrl }}";
+WGPORTAL_VERSION="{{ $.Version }}";
+WGPORTAL_SITE_TITLE="{{ $.SiteTitle }}";
+WGPORTAL_SITE_COMPANY_NAME="{{ $.SiteCompanyName }}";
+
+document.title = "{{ $.SiteTitle }}";

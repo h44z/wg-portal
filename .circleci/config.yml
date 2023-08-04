@@ -8,6 +8,10 @@ jobs:
           keys:
             - go-mod-latest-v4-{{ checksum "go.sum" }}
       - run:
+          name: Build Frontend
+          command: |
+            make frontend
+      - run:
           name: Install Dependencies
           command: |
             make build-dependencies
@@ -51,42 +55,13 @@ jobs:
             fi
     working_directory: ~/repo
     docker:
-      - image: cimg/go:1.19
-  build-118: # just to validate compatibility with minimum go version
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - go-mod-118-v4-{{ checksum "go.sum" }}
-      - run:
-          name: Install Dependencies
-          command: |
-            make build-dependencies
-      - save_cache:
-          key: go-mod-118-v4-{{ checksum "go.sum" }}
-          paths:
-            - "~/go/pkg/mod"
-      - run:
-          name: Build
-          command: |
-            VERSION=$CIRCLE_BRANCH
-            if [ ! -z "${CIRCLE_TAG}" ]; then VERSION=$CIRCLE_TAG; fi
-            make ENV_BUILD_IDENTIFIER=$VERSION ENV_BUILD_VERSION=$(echo $CIRCLE_SHA1 | cut -c1-7) build
-    working_directory: ~/repo118
-    docker:
-      - image: cimg/go:1.18
+      - image: cimg/go:1.20-node
 
 workflows:
   build-and-release:
     jobs:
       #--------------- BUILD ---------------#
       - build-latest:
-          filters:
-            tags:
-              only: /^v.*/
-      - build-118:
-          requires:
-            - build-latest
           filters:
             tags:
               only: /^v.*/

@@ -2,103 +2,144 @@ package main
 
 import (
 	"context"
-	"io"
+	"github.com/h44z/wg-portal/internal/app/api/core"
+	handlersV0 "github.com/h44z/wg-portal/internal/app/api/v0/handlers"
+	"github.com/h44z/wg-portal/internal/app/audit"
+	"github.com/h44z/wg-portal/internal/app/auth"
+	"github.com/h44z/wg-portal/internal/app/configfile"
+	"github.com/h44z/wg-portal/internal/app/mail"
+	"github.com/h44z/wg-portal/internal/app/route"
+	"github.com/h44z/wg-portal/internal/app/users"
+	"github.com/h44z/wg-portal/internal/app/wireguard"
 	"os"
-	"os/signal"
-	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
-	"git.prolicht.digital/golib/healthcheck"
-	"github.com/h44z/wg-portal/internal/server"
+	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/adapters"
+	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/sirupsen/logrus"
+	evbus "github.com/vardius/message-bus"
 )
 
+// main entry point for WireGuard Portal
 func main() {
-	_ = setupLogger(logrus.StandardLogger())
+	ctx := internal.SignalAwareContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	logrus.Infof("Starting WireGuard Portal V2...")
+	logrus.Infof("WireGuard Portal version: %s", internal.Version)
 
-	logrus.Infof("sysinfo: os=%s, arch=%s", runtime.GOOS, runtime.GOARCH)
-	logrus.Infof("starting WireGuard Portal Server [%s]...", server.Version)
+	cfg, err := config.GetConfig()
+	internal.AssertNoError(err)
+	setupLogging(cfg)
 
-	// Context for clean shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	cfg.LogStartupValues()
 
-	// start health check service on port 11223
-	healthcheck.New(healthcheck.ListenOn("127.0.0.1:11223")).StartWithContext(ctx)
+	rawDb, err := adapters.NewDatabase(cfg.Database)
+	internal.AssertNoError(err)
 
-	service := server.Server{}
-	if err := service.Setup(ctx); err != nil {
-		logrus.Fatalf("setup failed: %v", err)
+	database, err := adapters.NewSqlRepository(rawDb)
+	internal.AssertNoError(err)
+
+	wireGuard := adapters.NewWireGuardRepository()
+
+	wgQuick := adapters.NewWgQuickRepo()
+
+	mailer := adapters.NewSmtpMailRepo(cfg.Mail)
+
+	cfgFileSystem, err := adapters.NewFileSystemRepository(cfg.Advanced.ConfigStoragePath)
+	internal.AssertNoError(err)
+
+	shouldExit, err := app.HandleProgramArgs(cfg, rawDb)
+	switch {
+	case shouldExit && err == nil:
+		return
+	case shouldExit && err != nil:
+		logrus.Errorf("Failed to process program args: %v", err)
+		os.Exit(1)
+	case !shouldExit:
+		internal.AssertNoError(err)
 	}
 
-	// Attach signal handlers to context
-	go func() {
-		osCall := <-c
-		logrus.Tracef("received system call: %v", osCall)
-		cancel() // cancel the context
-	}()
+	queueSize := 100
+	eventBus := evbus.New(queueSize)
 
-	// Start main process in background
-	go service.Run()
+	userManager, err := users.NewUserManager(cfg, eventBus, database, database)
+	internal.AssertNoError(err)
 
-	<-ctx.Done() // Wait until the context gets canceled
+	authenticator, err := auth.NewAuthenticator(&cfg.Auth, eventBus, userManager)
+	internal.AssertNoError(err)
 
-	// Give goroutines some time to stop gracefully
-	logrus.Info("stopping WireGuard Portal Server...")
-	time.Sleep(2 * time.Second)
+	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, wgQuick, database)
+	internal.AssertNoError(err)
 
-	logrus.Infof("stopped WireGuard Portal Server...")
-	logrus.Exit(0)
+	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, database, wireGuard)
+	internal.AssertNoError(err)
+
+	cfgFileManager, err := configfile.NewConfigFileManager(cfg, eventBus, database, database, cfgFileSystem)
+	internal.AssertNoError(err)
+
+	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)
+	internal.AssertNoError(err)
+
+	auditRecorder, err := audit.NewAuditRecorder(cfg, eventBus, database)
+	internal.AssertNoError(err)
+	auditRecorder.StartBackgroundJobs(ctx)
+
+	routeManager, err := route.NewRouteManager(cfg, eventBus, database)
+	internal.AssertNoError(err)
+	routeManager.StartBackgroundJobs(ctx)
+
+	backend, err := app.New(cfg, eventBus, authenticator, userManager, wireGuardManager,
+		statisticsCollector, cfgFileManager, mailManager)
+	internal.AssertNoError(err)
+	err = backend.Startup(ctx)
+	internal.AssertNoError(err)
+
+	apiFrontend := handlersV0.NewRestApi(cfg, backend)
+
+	webSrv, err := core.NewServer(cfg, apiFrontend)
+	internal.AssertNoError(err)
+
+	go webSrv.Run(ctx, cfg.Web.ListeningAddress)
+
+	// wait until context gets cancelled
+	<-ctx.Done()
+
+	logrus.Infof("Stopping WireGuard Portal")
+
+	time.Sleep(5 * time.Second) // wait for (most) goroutines to finish gracefully
+
+	logrus.Infof("Stopped WireGuard Portal")
 }
 
-func setupLogger(logger *logrus.Logger) error {
-	// Check environment variables for logrus settings
-	level, ok := os.LookupEnv("LOG_LEVEL")
-	if !ok {
-		level = "debug" // Default logrus level
-	}
-
-	useJSON, ok := os.LookupEnv("LOG_JSON")
-	if !ok {
-		useJSON = "false" // Default use human readable logging
-	}
-
-	useColor, ok := os.LookupEnv("LOG_COLOR")
-	if !ok {
-		useColor = "true"
-	}
-
-	switch level {
-	case "off":
-		logger.SetOutput(io.Discard)
-	case "info":
-		logger.SetLevel(logrus.InfoLevel)
-	case "debug":
-		logger.SetLevel(logrus.DebugLevel)
+func setupLogging(cfg *config.Config) {
+	switch strings.ToLower(cfg.Advanced.LogLevel) {
 	case "trace":
-		logger.SetLevel(logrus.TraceLevel)
+		logrus.SetLevel(logrus.TraceLevel)
+	case "debug":
+		logrus.SetLevel(logrus.DebugLevel)
+	case "info", "information":
+		logrus.SetLevel(logrus.InfoLevel)
+	case "warn", "warning":
+		logrus.SetLevel(logrus.WarnLevel)
+	case "error":
+		logrus.SetLevel(logrus.ErrorLevel)
+	default:
+		logrus.SetLevel(logrus.WarnLevel)
 	}
 
-	var formatter logrus.Formatter
-	if useJSON == "false" {
-		f := new(logrus.TextFormatter)
-		f.TimestampFormat = "2006-01-02 15:04:05"
-		f.FullTimestamp = true
-		if useColor == "true" {
-			f.ForceColors = true
-		}
-		formatter = f
-	} else {
-		f := new(logrus.JSONFormatter)
-		f.TimestampFormat = "2006-01-02 15:04:05"
-		formatter = f
+	switch {
+	case cfg.Advanced.LogJson:
+		logrus.SetFormatter(&logrus.JSONFormatter{
+			PrettyPrint: cfg.Advanced.LogPretty,
+		})
+	case cfg.Advanced.LogPretty:
+		logrus.SetFormatter(&logrus.TextFormatter{
+			ForceColors:   true,
+			DisableColors: false,
+		})
 	}
-
-	logger.SetFormatter(formatter)
-
-	return nil
 }
