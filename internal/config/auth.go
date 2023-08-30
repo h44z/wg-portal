@@ -51,7 +51,7 @@ type LdapProvider struct {
 	ParsedAdminGroupDN *ldap.DN `yaml:"-"`
 
 	Synchronize bool `yaml:"synchronize"`
-	// If DisableMissing is false, missing users will be deactivated
+	// If DisableMissing is true, missing users will be deactivated
 	DisableMissing bool   `yaml:"disable_missing"`
 	SyncFilter     string `yaml:"sync_filter"`
 
