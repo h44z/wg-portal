@@ -46,10 +46,12 @@ func (m Manager) connectToMessageBus() {
 func (m Manager) handleUserCreationEvent(user *domain.User) {
 	logrus.Errorf("handling new user event for %s", user.Identifier)
 
-	err := m.CreateDefaultPeer(context.Background(), user)
-	if err != nil {
-		logrus.Errorf("failed to create default peer for %s: %v", user.Identifier, err)
-		return
+	if m.cfg.Core.CreateDefaultPeer {
+		err := m.CreateDefaultPeer(context.Background(), user)
+		if err != nil {
+			logrus.Errorf("failed to create default peer for %s: %v", user.Identifier, err)
+			return
+		}
 	}
 }
 
