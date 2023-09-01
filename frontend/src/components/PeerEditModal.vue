@@ -245,12 +245,12 @@ function handleChangeDns(tags) {
     }
   })
   if(validInput) {
-    formData.value.Dns = tags
+    formData.value.Dns.Value = tags
   }
 }
 
 function handleChangeDnsSearch(tags) {
-  formData.value.DnsSearch = tags
+  formData.value.DnsSearch.Value = tags
 }
 
 async function save() {
