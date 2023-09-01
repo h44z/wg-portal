@@ -644,7 +644,7 @@ func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain
 	peer.InterfaceIdentifier = in.Identifier
 	peer.EndpointPublicKey = domain.StringConfigOption{Value: in.PublicKey, Overridable: true}
 	peer.AllowedIPsStr = domain.StringConfigOption{Value: in.PeerDefAllowedIPsStr, Overridable: true}
-	peer.Interface.Addresses = p.AllowedIPs // use allowed IP's as the peer IP's
+	peer.Interface.Addresses = p.AllowedIPs // use allowed IP's as the peer IP's TODO: Should this also match server interface address' prefix length?
 	peer.Interface.DnsStr = domain.StringConfigOption{Value: in.PeerDefDnsStr, Overridable: true}
 	peer.Interface.DnsSearchStr = domain.StringConfigOption{Value: in.PeerDefDnsSearchStr, Overridable: true}
 	peer.Interface.Mtu = domain.IntConfigOption{Value: in.PeerDefMtu, Overridable: true}

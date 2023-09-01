@@ -228,7 +228,10 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
 		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
 	} else {
-		allowedIPs := p.Interface.Addresses
+		allowedIPs := make([]Cidr, len(p.Interface.Addresses))
+		for i, ip := range p.Interface.Addresses {
+			allowedIPs[i] = ip.HostAddr()
+		}
 		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
 		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
 	}
