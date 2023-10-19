@@ -84,7 +84,7 @@ func LdapConvertEntries(sr *ldap.SearchResult, fields *config.LdapFields) []RawL
 
 	for i, entry := range sr.Entries {
 		userData := make(RawLdapUser)
-		userData[fields.UserIdentifier] = entry.DN
+		userData[fields.UserIdentifier] = entry.GetAttributeValue(fields.UserIdentifier)
 		userData[fields.Email] = entry.GetAttributeValue(fields.Email)
 		userData[fields.Firstname] = entry.GetAttributeValue(fields.Firstname)
 		userData[fields.Lastname] = entry.GetAttributeValue(fields.Lastname)
