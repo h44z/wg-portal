@@ -310,8 +310,9 @@ func (m Manager) getFreshPeerIpConfig(ctx context.Context, iface *domain.Interfa
 		for {
 			ipConflict := false
 			for _, usedIp := range existingIps[network] {
-				if usedIp == ip {
+				if usedIp.Addr == ip.Addr {
 					ipConflict = true
+					break
 				}
 			}
 
@@ -326,7 +327,7 @@ func (m Manager) getFreshPeerIpConfig(ctx context.Context, iface *domain.Interfa
 			}
 		}
 
-		ips = append(ips, ip.HostAddr())
+		ips = append(ips, ip)
 	}
 
 	return

@@ -103,7 +103,9 @@ func (i *Interface) GetAllowedIPs(peers []Peer) []Cidr {
 	var allowedCidrs []Cidr
 
 	for _, peer := range peers {
-		allowedCidrs = append(allowedCidrs, peer.Interface.Addresses...)
+		for _, ip := range peer.Interface.Addresses {
+			allowedCidrs = append(allowedCidrs, ip.HostAddr())
+		}
 		if peer.ExtraAllowedIPsStr != "" {
 			extraIPs, err := CidrsFromString(peer.ExtraAllowedIPsStr)
 			if err == nil {
