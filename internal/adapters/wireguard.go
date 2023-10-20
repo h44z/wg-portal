@@ -282,7 +282,8 @@ func (r *WgRepo) updateWireGuardInterface(pi *domain.PhysicalInterface) error {
 
 	var fwMark *int
 	if pi.FirewallMark != 0 {
-		*fwMark = int(pi.FirewallMark)
+		intFwMark := int(pi.FirewallMark)
+		fwMark = &intFwMark
 	}
 	err = r.wg.ConfigureDevice(string(pi.Identifier), wgtypes.Config{
 		PrivateKey:   &pKey,
