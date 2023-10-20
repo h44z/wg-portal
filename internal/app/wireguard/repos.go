@@ -21,7 +21,7 @@ type InterfaceAndPeerDatabaseRepo interface {
 	SavePeer(ctx context.Context, id domain.PeerIdentifier, updateFunc func(in *domain.Peer) (*domain.Peer, error)) error
 	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
-	GetUsedIpsPerSubnet(ctx context.Context) (map[domain.Cidr][]domain.Cidr, error)
+	GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (map[domain.Cidr][]domain.Cidr, error)
 }
 
 type StatisticsDatabaseRepo interface {

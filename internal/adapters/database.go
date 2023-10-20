@@ -601,7 +601,7 @@ func (r *SqlRepo) GetPeerIps(ctx context.Context) (map[domain.PeerIdentifier][]d
 	return result, nil
 }
 
-func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context) (map[domain.Cidr][]domain.Cidr, error) {
+func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (map[domain.Cidr][]domain.Cidr, error) {
 	var peerIps []struct {
 		domain.Cidr
 		PeerId domain.PeerIdentifier `gorm:"column:peer_identifier"`
@@ -628,14 +628,26 @@ func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context) (map[domain.Cidr][]do
 		return nil, fmt.Errorf("failed to fetch interface IP's: %w", err)
 	}
 
-	result := make(map[domain.Cidr][]domain.Cidr)
+	result := make(map[domain.Cidr][]domain.Cidr, len(subnets))
 	for _, ip := range interfaceIps {
-		networkAddr := ip.Cidr.NetworkAddr()
-		result[networkAddr] = append(result[networkAddr], ip.Cidr)
+		var subnet domain.Cidr // default empty subnet (if no subnet matches, we will add the IP to the empty subnet group)
+		for _, s := range subnets {
+			if s.Contains(ip.Cidr) {
+				subnet = s
+				break
+			}
+		}
+		result[subnet] = append(result[subnet], ip.Cidr)
 	}
 	for _, ip := range peerIps {
-		networkAddr := ip.Cidr.NetworkAddr()
-		result[networkAddr] = append(result[networkAddr], ip.Cidr)
+		var subnet domain.Cidr // default empty subnet (if no subnet matches, we will add the IP to the empty subnet group)
+		for _, s := range subnets {
+			if s.Contains(ip.Cidr) {
+				subnet = s
+				break
+			}
+		}
+		result[subnet] = append(result[subnet], ip.Cidr)
 	}
 	return result, nil
 }

@@ -199,3 +199,10 @@ func CidrsToStringSlice(slice []Cidr) []string {
 
 	return cidrs
 }
+
+func (c Cidr) Contains(other Cidr) bool {
+	_, subnet, _ := net.ParseCIDR(c.String())
+	otherIP, _, _ := net.ParseCIDR(other.String())
+
+	return subnet.Contains(otherIP)
+}
