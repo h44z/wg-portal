@@ -92,7 +92,7 @@ func (i *Interface) CopyCalculatedAttributes(src *Interface) {
 func (i *Interface) GetConfigFileName() string {
 	reg := regexp.MustCompile("[^a-zA-Z0-9-_]+")
 
-	filename := fmt.Sprintf("%s", internal.TruncateString(string(i.Identifier), 8))
+	filename := internal.TruncateString(string(i.Identifier), 8)
 	filename = reg.ReplaceAllString(filename, "")
 	filename += ".conf"
 
