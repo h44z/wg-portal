@@ -87,7 +87,7 @@ func defaultConfig() *Config {
 
 	cfg.Database = DatabaseConfig{
 		Type: "sqlite",
-		DSN:  "sqlite.db",
+		DSN:  "data/sqlite.db",
 	}
 
 	cfg.Web = WebConfig{
@@ -140,7 +140,7 @@ func GetConfig() (*Config, error) {
 
 	// override config values from YAML file
 
-	cfgFileName := "config.yml"
+	cfgFileName := "config/config.yml"
 	if envCfgFileName := os.Getenv("WG_PORTAL_CONFIG"); envCfgFileName != "" {
 		cfgFileName = envCfgFileName
 	}

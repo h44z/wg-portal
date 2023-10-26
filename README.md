@@ -1,4 +1,4 @@
-# WireGuard Portal (V2 - alpha testing)
+# WireGuard Portal (v2 - testing)
 
 [![Build Status](https://travis-ci.com/h44z/wg-portal.svg?token=q4pSqaqT58Jzpxdx62xk&branch=master)](https://travis-ci.com/h44z/wg-portal)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -6,10 +6,13 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/h44z/wg-portal)](https://goreportcard.com/report/github.com/h44z/wg-portal)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/h44z/wg-portal)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/h44z/wg-portal)
-[![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/h44z/wg-portal/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/wgportal/wg-portal/)
 
 > :warning: **IMPORTANT** Version 2 is currently under development and may contain bugs. It is currently not advised to use this version
-in production. Use version [1.0.18](https://github.com/h44z/wg-portal/releases) instead.
+in production. Use version [v1](https://github.com/h44z/wg-portal/tree/stable) instead.
+
+Since the project was accepted by the Docker-Sponsored Open Source Program, the Docker image location has moved to: https://hub.docker.com/r/wgportal/wg-portal.
+Please update the Docker image from **h44z/wg-portal** to **wgportal/wg-portal**.
 
 A simple, web based configuration portal for [WireGuard](https://wireguard.com).
 The portal uses the WireGuard [wgctrl](https://github.com/WireGuard/wgctrl-go) library to manage existing VPN
@@ -41,9 +44,11 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL or Post
 
 ## Configuration
 You can configure WireGuard Portal using a yaml configuration file.
-The filepath of the yaml configuration file defaults to **config.yml** in the working directory of the executable.
+The filepath of the yaml configuration file defaults to **config/config.yml** in the working directory of the executable.
 It is possible to override the configuration filepath using the environment variable **WG_PORTAL_CONFIG**.
 For example: `WG_PORTAL_CONFIG=/home/test/config.yml ./wg-portal-amd64`.
+
+By default, WireGuard Portal uses a SQLite database. The database is stored in **data/sqlite.db** in the working directory of the executable.
 
 ### Configuration Options
 The following configuration options are available:
@@ -128,7 +133,7 @@ The following configuration options are available:
 | debug                     | database   | false                                      | Debug database statements (log each statement).                                                                                      |
 | slow_query_threshold      | database   |                                            | A threshold for slow database queries. If the threshold is exceeded, a warning message will be logged.                               |
 | type                      | database   | sqlite                                     | The database type. Allowed values: sqlite, mssql, mysql or postgres.                                                                 |
-| dsn                       | database   | sqlite.db                                  | The database DSN. For example: user:pass@tcp(1.2.3.4:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local                           |
+| dsn                       | database   | data/sqlite.db                             | The database DSN. For example: user:pass@tcp(1.2.3.4:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local                           |
 | request_logging           | web        | false                                      | Log all HTTP requests.                                                                                                               |
 | external_url              | web        | http://localhost:8888                      | The URL where a client can access WireGuard Portal.                                                                                  |
 | listening_address         | web        | :8888                                      | The listening port of the web server.                                                                                                |

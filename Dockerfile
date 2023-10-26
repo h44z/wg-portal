@@ -4,7 +4,7 @@
 ######-
 # Start from the latest golang base image as builder image (only used to compile the code)
 ######-
-FROM golang:1.20 as builder
+FROM golang:1.21 as builder
 
 ARG BUILD_IDENTIFIER
 ENV ENV_BUILD_IDENTIFIER=$BUILD_IDENTIFIER
@@ -46,5 +46,11 @@ COPY --from=builder /build/dist/wg-portal /app/wg-portal
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
+# by default, the web-portal is reachable on port 8888
+EXPOSE 8888/tcp
+
+# the database and config file can be mounted from the host
+VOLUME [ "/app/data", "/app/config" ]
+
 # Command to run the executable
-CMD [ "/app/wg-portal" ]
+ENTRYPOINT [ "/app/wg-portal" ]

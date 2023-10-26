@@ -2,7 +2,7 @@
 version: '3.6'
 services:
   wg-portal:
-    image: h44z/wg-portal:2.0.0-alpha1
+    image: h44z/wg-portal:v2
     container_name: wg-portal
     restart: unless-stopped
     logging:
@@ -15,5 +15,7 @@ services:
     volumes:
       - /etc/wireguard:/etc/wireguard
       - ./data:/app/data
-    environment:
-      - EXTERNAL_URL=http://localhost:8888
+      - ./config:/app/config
+#    restart: no
+#    command: ["-migrateFrom=/app/data/wg_portal.db"]
+
