@@ -50,15 +50,16 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: h44z/wg-portal
+          images: wgportal/wg-portal
           flavor: |
-            latest=true
+            latest=false
             prefix=
             suffix=
           tags: |
             type=ref,event=branch
-            type=ref,event=tag
             type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
