@@ -93,10 +93,10 @@ type Peer struct {
 	Peer   *wgtypes.Peer `gorm:"-" json:"-"` // WireGuard peer
 	Config string        `gorm:"-" json:"-"`
 
-	UID                  string     `form:"uid" binding:"required,alphanum"` // uid for html identification
-	DeviceName           string     `gorm:"index" form:"device" binding:"required"`
-	DeviceType           DeviceType `gorm:"-" form:"devicetype" binding:"required,oneof=client server"`
-	Identifier           string     `form:"identifier" binding:"required,max=64"` // Identifier AND Email make a WireGuard peer unique
+	UID                  string     `form:"uid" binding:"required,alphanum"`                            // uid for html identification
+	DeviceName           string     `gorm:"index" form:"device" binding:"required"`                     // server interface name
+	DeviceType           DeviceType `gorm:"-" form:"devicetype" binding:"required,oneof=client server"` // the device type of the server (not the peer device)
+	Identifier           string     `form:"identifier" binding:"required,max=64"`                       // Identifier AND Email make a WireGuard peer unique
 	Email                string     `gorm:"index" form:"mail" binding:"required,email"`
 	IgnoreGlobalSettings bool       `form:"ignoreglobalsettings"`
 
@@ -601,9 +601,12 @@ func (m *PeerManager) validateOrCreateDevice(dev wgtypes.Device, ipAddresses []s
 
 // populatePeerData enriches the peer struct with WireGuard live data like last handshake, ...
 func (m *PeerManager) populatePeerData(peer *Peer) {
+	device := m.GetDevice(peer.DeviceName)
+
 	// Set config file
-	tmpCfg, _ := peer.GetConfigFile(m.GetDevice(peer.DeviceName))
+	tmpCfg, _ := peer.GetConfigFile(device)
 	peer.Config = string(tmpCfg)
+	peer.DeviceType = device.Type
 
 	// set data from WireGuard interface
 	peer.Peer, _ = m.wg.GetPeer(peer.DeviceName, peer.PublicKey)
