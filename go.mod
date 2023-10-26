@@ -3,7 +3,6 @@ module github.com/h44z/wg-portal
 go 1.18
 
 require (
-	git.prolicht.digital/golib/healthcheck v1.1.1
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/gin-contrib/sessions v0.0.5
 	github.com/gin-gonic/gin v1.8.2
