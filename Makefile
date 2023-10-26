@@ -110,7 +110,6 @@ build-dependencies:
 	@$(GOCMD) mod download -x
 	@mkdir -p $(BUILDDIR)
 	cp scripts/wg-portal.service $(BUILDDIR)
-	cp scripts/wg-portal.env $(BUILDDIR)
 
 #< frontend: Build Vue.js frontend
 frontend: frontend-dependencies
