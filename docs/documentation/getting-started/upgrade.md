@@ -1,0 +1,25 @@
+For production deployments of WireGuard Portal, we strongly recommend using version 1. 
+If you want to use version 2, please be aware that it is still in beta and not feature complete.
+
+## Upgrade from v1 to v2
+
+> :warning: Before upgrading from V1, make sure that you have a backup of your currently working configuration files and database!
+
+To start the upgrade process, start the wg-portal binary with the **-migrateFrom** parameter.
+The configuration (config.yml) for WireGuard Portal must be updated and valid before starting the upgrade.
+
+To upgrade from a previous SQLite database, start wg-portal like:
+
+```shell
+./wg-portal-amd64 -migrateFrom=old_wg_portal.db
+```
+
+You can also specify the database type using the parameter **-migrateFromType**, supported types: mysql, mssql, postgres or sqlite.
+For example:
+
+```shell
+./wg-portal-amd64 -migrateFromType=mysql -migrateFrom=user:pass@tcp(1.2.3.4:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local
+```
+
+The upgrade will transform the old, existing database and store the values in the new database specified in the **config.yml** configuration file.
+Ensure that the new database does not contain any data!

@@ -1,0 +1,55 @@
+# build with MkDocs 1.5.3, mkdocs-material-9.4.7
+
+site_name: WireGuard Portal
+site_description: 'Manage WireGuard Peers and Interface using a beautiful and simple web UI.'
+site_url: https://wgportal.org
+repo_name: 'h44z/wg-portal'
+repo_url: 'https://github.com/h44z/wg-portal'
+copyright: 'Copyright &copy; 2023 WireGuard Portal Project'
+extra_css:
+  - stylesheets/extra.css
+theme:
+  name: material
+  custom_dir: docs/theme-overrides
+  palette:
+    primary: white
+  font: false
+  logo: assets/images/logo.svg
+  favicon: assets/images/favicon-large.png
+  language: en
+  features:
+    - tabs
+    - instant
+    - navigation.tabs
+
+plugins:
+  - search
+  - social
+
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/h44z
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/chris_h44z
+
+markdown_extensions:
+  - admonition
+  - meta
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tilde
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+nav:
+  - Home: index.md
+  - Documentation:
+      - Overview: documentation/overview.md
+      - Getting Started:
+          - Building: documentation/getting-started/building.md
+          - Docker Container: documentation/getting-started/docker.md
+          - Upgrade from V1: documentation/getting-started/upgrade.md
