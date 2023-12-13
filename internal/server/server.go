@@ -128,6 +128,7 @@ func (s *Server) Setup(ctx context.Context) error {
 	s.server.Use(sessions.Sessions("authsession", cookieStore))
 	s.server.SetFuncMap(template.FuncMap{
 		"formatDate":  common.FormatDateHTML,
+		"formatTime":  common.FormatToUnixTime,
 		"formatBytes": common.ByteCountSI,
 		"urlEncode":   url.QueryEscape,
 		"startsWith":  strings.HasPrefix,

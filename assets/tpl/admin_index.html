@@ -181,7 +181,15 @@
                         {{if eq $.Device.Type "client"}}
                         <td>{{$p.Endpoint}}</td>
                         {{end}}
-                        <td><span data-toggle="tooltip" data-placement="left" title="" data-original-title="{{$p.LastHandshakeTime}}">{{$p.LastHandshakeRelativeTime}}</span></td>
+                        <td>
+                            <span
+                                data-toggle="tooltip"
+                                data-placement="left"
+                                title=""
+                                data-original-title="{{if $p.LastHandshakeTime.IsZero}}Never connected, or user is disabled.{{else}}{{formatTime $p.LastHandshakeTime}}{{end}}">
+                                {{$p.LastHandshakeRelativeTime}}
+                            </span>
+                        </td>
                         <td>
                             {{if eq $.Session.IsAdmin true}}
                                 <a href="/admin/peer/edit?pkey={{$p.PublicKey}}" title="Edit peer"><i class="fas fa-cog"></i></a>

@@ -93,3 +93,11 @@ func FormatDateHTML(t *time.Time) string {
 
 	return t.Format("2006-01-02")
 }
+
+func FormatToUnixTime(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+
+	return t.Format(time.UnixDate)
+}
