@@ -100,10 +100,10 @@ type Peer struct {
 	Email                string     `gorm:"index" form:"mail" binding:"required,email"`
 	IgnoreGlobalSettings bool       `form:"ignoreglobalsettings"`
 
-	IsOnline          bool   `gorm:"-" json:"-"`
-	IsNew             bool   `gorm:"-" json:"-"`
-	LastHandshake     string `gorm:"-" json:"-"`
-	LastHandshakeTime string `gorm:"-" json:"-"`
+	IsOnline                  bool      `gorm:"-" json:"-"`
+	IsNew                     bool      `gorm:"-" json:"-"`
+	LastHandshakeTime         time.Time `gorm:"-"`
+	LastHandshakeRelativeTime string    `gorm:"-" json:"-"`
 
 	// Core WireGuard Settings
 	PublicKey           string `gorm:"primaryKey" form:"pubkey" binding:"required,base64"` // the public key of the peer itself
@@ -610,8 +610,7 @@ func (m *PeerManager) populatePeerData(peer *Peer) {
 
 	// set data from WireGuard interface
 	peer.Peer, _ = m.wg.GetPeer(peer.DeviceName, peer.PublicKey)
-	peer.LastHandshake = "never"
-	peer.LastHandshakeTime = "Never connected, or user is disabled."
+	peer.LastHandshakeRelativeTime = "never"
 	if peer.Peer != nil {
 		since := time.Since(peer.Peer.LastHandshakeTime)
 		sinceSeconds := int(since.Round(time.Second).Seconds())
@@ -619,13 +618,13 @@ func (m *PeerManager) populatePeerData(peer *Peer) {
 		sinceSeconds -= sinceMinutes * 60
 
 		if sinceMinutes > 2*10080 { // 2 weeks
-			peer.LastHandshake = "a while ago"
+			peer.LastHandshakeRelativeTime = "a while ago"
 		} else if sinceMinutes > 10080 { // 1 week
-			peer.LastHandshake = "a week ago"
+			peer.LastHandshakeRelativeTime = "a week ago"
 		} else {
-			peer.LastHandshake = fmt.Sprintf("%02dm %02ds", sinceMinutes, sinceSeconds)
+			peer.LastHandshakeRelativeTime = fmt.Sprintf("%02dm %02ds", sinceMinutes, sinceSeconds)
 		}
-		peer.LastHandshakeTime = peer.Peer.LastHandshakeTime.Format(time.UnixDate)
+		peer.LastHandshakeTime = peer.Peer.LastHandshakeTime
 	}
 	peer.IsOnline = false
 }

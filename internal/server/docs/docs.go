@@ -1512,6 +1512,9 @@ const docTemplate = `{
                 "IgnoreGlobalSettings": {
                     "type": "boolean"
                 },
+                "LastHandshakeTime": {
+                    "type": "string"
+                },
                 "Mtu": {
                     "description": "Global Device Settings (can be ignored, only make sense if device is in server mode)",
                     "type": "integer",
