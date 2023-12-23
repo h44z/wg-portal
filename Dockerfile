@@ -30,15 +30,13 @@ RUN echo "Building version '$ENV_BUILD_IDENTIFIER-$ENV_BUILD_VERSION' for platfo
 ######-
 # Here starts the main image
 ######-
-FROM scratch
+FROM alpine:3.19
+
+# Install OS-level dependencies
+RUN apk add --no-cache bash openresolv
 
 # Setup timezone
 ENV TZ=Europe/Vienna
-
-# Import linux stuff from builder.
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/group /etc/group
 
 # Copy binaries
 COPY --from=builder /build/dist/wg-portal /app/wg-portal
