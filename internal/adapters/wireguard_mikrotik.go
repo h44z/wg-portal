@@ -14,6 +14,7 @@ import (
 var MikrotikDeviceType = "mikrotik"
 
 // WgMikrotikRepo implements all low-level WireGuard interactions using the Mikrotik REST API.
+// It uses the API endpoints described in https://help.mikrotik.com/docs/display/ROS/REST+API
 type WgMikrotikRepo struct {
 	apiClient *http.Client
 	baseUrl   string
@@ -112,6 +113,30 @@ func (w *WgMikrotikRepo) fetchObject(ctx context.Context, endpoint string) (map[
 	}
 
 	return restData, nil
+}
+
+func (w *WgMikrotikRepo) deleteObject(ctx context.Context, endpoint string) error {
+	req, err := w.getRequest(ctx, http.MethodDelete, endpoint)
+	if err != nil {
+		return fmt.Errorf("failed to build REST request for endpoint %s: %w", endpoint, err)
+	}
+
+	response, err := w.apiClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to execute REST request %s: %w", req.URL.String(), err)
+	}
+	defer closeHttpResponse(response)
+
+	if response.StatusCode != http.StatusNoContent {
+		errData := parseResponseError(response)
+		return fmt.Errorf("REST request %s returned status %d: %v", req.URL.String(), response.StatusCode, errData)
+	}
+
+	return nil
+}
+
+func (w *WgMikrotikRepo) createObject(ctx context.Context, endpoint string, data map[string]string) (map[string]string, error) {
+	panic("implement me")
 }
 
 func (w *WgMikrotikRepo) GetInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
@@ -315,9 +340,51 @@ func (w *WgMikrotikRepo) SaveInterface(_ context.Context, id domain.InterfaceIde
 	panic("implement me")
 }
 
-func (w *WgMikrotikRepo) DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error {
-	//TODO implement me
-	panic("implement me")
+func (w *WgMikrotikRepo) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {
+	restIPv4, err := w.fetchList(ctx, "/ip/address?interface="+string(id))
+	if err != nil {
+		return fmt.Errorf("failed to get IPv4 addresses: %w", err)
+	}
+	for _, addr := range restIPv4 {
+		err = w.deleteObject(ctx, "/ip/address/"+addr[".id"])
+		if err != nil {
+			return fmt.Errorf("failed to delete IPv4 address %s: %w", addr["address"], err)
+		}
+	}
+
+	restIPv6, err := w.fetchList(ctx, "/ipv6/address?interface="+string(id))
+	if err != nil {
+		return fmt.Errorf("failed to get IPv6 addresses: %w", err)
+	}
+	for _, addr := range restIPv6 {
+		err = w.deleteObject(ctx, "/ipv6/address/"+addr[".id"])
+		if err != nil {
+			return fmt.Errorf("failed to delete IPv6 address %s: %w", addr["address"], err)
+		}
+	}
+
+	restPeers, err := w.fetchList(ctx, "/interface/wireguard/peers?interface="+string(id))
+	if err != nil {
+		return fmt.Errorf("failed to get peers for %s: %w", id, err)
+	}
+	for _, restPeer := range restPeers {
+		err = w.DeletePeer(ctx, id, domain.PeerIdentifier(restPeer["public-key"]))
+		if err != nil {
+			return fmt.Errorf("failed to delete peer %s: %w", restPeer["public-key"], err)
+		}
+	}
+
+	restInterface, err := w.fetchObject(ctx, "/interface/wireguard/"+string(id)+"?.proplist=.id")
+	if err != nil {
+		return fmt.Errorf("failed to get interface %s: %w", id, err)
+	}
+
+	err = w.deleteObject(ctx, "/interface/wireguard/"+restInterface[".id"])
+	if err != nil {
+		return fmt.Errorf("failed to delete interface %s: %w", id, err)
+	}
+
+	return nil
 }
 
 func (w *WgMikrotikRepo) SavePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier, updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error)) error {
@@ -326,6 +393,21 @@ func (w *WgMikrotikRepo) SavePeer(_ context.Context, deviceId domain.InterfaceId
 }
 
 func (w *WgMikrotikRepo) DeletePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error {
-	//TODO implement me
-	panic("implement me")
+	restPeers, err := w.fetchList(context.Background(), "/interface/wireguard/peers?interface="+string(deviceId)+"&public-key="+string(id)+"&.proplist=.id")
+	if err != nil {
+		return fmt.Errorf("failed to get peer %s on device %s: %w", id, deviceId, err)
+	}
+
+	if len(restPeers) != 1 {
+		return fmt.Errorf("failed to get peer %s on device %s: got %d entries", id, deviceId, len(restPeers))
+	}
+
+	restPeer := restPeers[0]
+
+	err = w.deleteObject(context.Background(), "/interface/wireguard/peers/"+restPeer[".id"])
+	if err != nil {
+		return fmt.Errorf("failed to delete peer %s on device %s: %w", id, deviceId, err)
+	}
+
+	return nil
 }

@@ -42,3 +42,15 @@ func TestWgMikrotikRepo_GetPeer(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equalf(t, domain.PeerIdentifier("Ytfq6plqkOo95HAUYGrjiG3GU352NahLYLnE1cItDkI="), got.Identifier, "GetPeer()")
 }
+
+func TestWgMikrotikRepo_DeleteInterface(t *testing.T) {
+	w := NewWgMikrotikRepo(MikrotikUrl, MikrotikUser, MikrotikPass)
+	err := w.DeleteInterface(context.Background(), "wgTest")
+	assert.NoError(t, err)
+}
+
+func TestWgMikrotikRepo_DeletePeer(t *testing.T) {
+	w := NewWgMikrotikRepo(MikrotikUrl, MikrotikUser, MikrotikPass)
+	err := w.DeletePeer(context.Background(), "wgTest", "qlFPZUOwt+SheTatRdIr0yGrTffyPEvzE3EeKVArgn8=")
+	assert.NoError(t, err)
+}
