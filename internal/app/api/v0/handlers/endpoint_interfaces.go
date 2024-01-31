@@ -19,7 +19,7 @@ func (e interfaceEndpoint) GetName() string {
 }
 
 func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
-	apiGroup := g.Group("/interface", e.authenticator.LoggedIn())
+	apiGroup := g.Group("/interface", e.authenticator.LoggedIn(ScopeAdmin))
 
 	apiGroup.GET("/prepare", e.handlePrepareGet())
 	apiGroup.GET("/all", e.handleAllGet())
@@ -45,7 +45,8 @@ func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *aut
 // @Router /interface/prepare [get]
 func (e interfaceEndpoint) handlePrepareGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		in, err := e.app.PrepareInterface(c.Request.Context())
+		ctx := domain.SetUserInfoFromGin(c)
+		in, err := e.app.PrepareInterface(ctx)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -68,7 +69,8 @@ func (e interfaceEndpoint) handlePrepareGet() gin.HandlerFunc {
 // @Router /interface/all [get]
 func (e interfaceEndpoint) handleAllGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		interfaces, peers, err := e.app.GetAllInterfacesAndPeers(c.Request.Context())
+		ctx := domain.SetUserInfoFromGin(c)
+		interfaces, peers, err := e.app.GetAllInterfacesAndPeers(ctx)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -92,6 +94,7 @@ func (e interfaceEndpoint) handleAllGet() gin.HandlerFunc {
 // @Router /interface/get/{id} [get]
 func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
 		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{
@@ -100,7 +103,7 @@ func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
 			return
 		}
 
-		iface, peers, err := e.app.GetInterfaceAndPeers(c.Request.Context(), domain.InterfaceIdentifier(id))
+		iface, peers, err := e.app.GetInterfaceAndPeers(ctx, domain.InterfaceIdentifier(id))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -124,6 +127,7 @@ func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
 // @Router /interface/config/{id} [get]
 func (e interfaceEndpoint) handleConfigGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
 		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{
@@ -132,7 +136,7 @@ func (e interfaceEndpoint) handleConfigGet() gin.HandlerFunc {
 			return
 		}
 
-		config, err := e.app.GetInterfaceConfig(c.Request.Context(), domain.InterfaceIdentifier(id))
+		config, err := e.app.GetInterfaceConfig(ctx, domain.InterfaceIdentifier(id))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),

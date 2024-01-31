@@ -43,6 +43,10 @@ func NewUserManager(cfg *config.Config, bus evbus.MessageBus, users UserDatabase
 }
 
 func (m Manager) RegisterUser(ctx context.Context, user *domain.User) error {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return err
+	}
+
 	err := m.NewUser(ctx, user)
 	if err != nil {
 		return err
@@ -56,6 +60,10 @@ func (m Manager) RegisterUser(ctx context.Context, user *domain.User) error {
 func (m Manager) NewUser(ctx context.Context, user *domain.User) error {
 	if user.Identifier == "" {
 		return errors.New("missing user identifier")
+	}
+
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return err
 	}
 
 	err := m.users.SaveUser(ctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
@@ -83,6 +91,10 @@ func (m Manager) StartBackgroundJobs(ctx context.Context) {
 }
 
 func (m Manager) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+	if err := domain.ValidateUserAccessRights(ctx, id); err != nil {
+		return nil, err
+	}
+
 	user, err := m.users.GetUser(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load peer %s: %w", id, err)
@@ -95,6 +107,10 @@ func (m Manager) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain
 }
 
 func (m Manager) GetAllUsers(ctx context.Context) ([]domain.User, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
 	users, err := m.users.GetAllUsers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load users: %w", err)
@@ -123,6 +139,10 @@ func (m Manager) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 }
 
 func (m Manager) UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
+	if err := domain.ValidateUserAccessRights(ctx, user.Identifier); err != nil {
+		return nil, err
+	}
+
 	existingUser, err := m.users.GetUser(ctx, user.Identifier)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load existing user %s: %w", user.Identifier, err)
@@ -153,6 +173,10 @@ func (m Manager) UpdateUser(ctx context.Context, user *domain.User) (*domain.Use
 }
 
 func (m Manager) CreateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
 	existingUser, err := m.users.GetUser(ctx, user.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return nil, fmt.Errorf("unable to load existing user %s: %w", user.Identifier, err)
@@ -182,6 +206,10 @@ func (m Manager) CreateUser(ctx context.Context, user *domain.User) (*domain.Use
 }
 
 func (m Manager) DeleteUser(ctx context.Context, id domain.UserIdentifier) error {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return err
+	}
+
 	existingUser, err := m.users.GetUser(ctx, id)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return fmt.Errorf("unable to find user %s: %w", id, err)

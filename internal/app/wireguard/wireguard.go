@@ -47,7 +47,8 @@ func (m Manager) handleUserCreationEvent(user *domain.User) {
 	logrus.Errorf("handling new user event for %s", user.Identifier)
 
 	if m.cfg.Core.CreateDefaultPeer {
-		err := m.CreateDefaultPeer(context.Background(), user)
+		ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+		err := m.CreateDefaultPeer(ctx, user)
 		if err != nil {
 			logrus.Errorf("failed to create default peer for %s: %v", user.Identifier, err)
 			return

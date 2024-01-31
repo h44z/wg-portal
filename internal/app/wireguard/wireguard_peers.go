@@ -12,6 +12,10 @@ import (
 )
 
 func (m Manager) CreateDefaultPeer(ctx context.Context, user *domain.User) error {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return err
+	}
+
 	existingInterfaces, err := m.db.GetAllInterfaces(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch all interfaces: %w", err)
@@ -49,10 +53,18 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, user *domain.User) error
 }
 
 func (m Manager) GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error) {
+	if err := domain.ValidateUserAccessRights(ctx, id); err != nil {
+		return nil, err
+	}
+
 	return m.db.GetUserPeers(ctx, id)
 }
 
 func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err // TODO: self provisioning?
+	}
+
 	currentUser := domain.GetUserInfo(ctx)
 
 	iface, err := m.db.GetInterface(ctx, id)
@@ -128,10 +140,18 @@ func (m Manager) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain
 		return nil, fmt.Errorf("unable to find peer %s: %w", id, err)
 	}
 
+	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+		return nil, err
+	}
+
 	return peer, nil
 }
 
 func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error) {
+	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+		return nil, err
+	}
+
 	existingPeer, err := m.db.GetPeer(ctx, peer.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return nil, fmt.Errorf("unable to load existing peer %s: %w", peer.Identifier, err)
@@ -153,6 +173,10 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 }
 
 func (m Manager) CreateMultiplePeers(ctx context.Context, interfaceId domain.InterfaceIdentifier, r *domain.PeerCreationRequest) ([]domain.Peer, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
 	var newPeers []*domain.Peer
 
 	for _, id := range r.UserIdentifiers {
@@ -192,6 +216,10 @@ func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		return nil, fmt.Errorf("unable to load existing peer %s: %w", peer.Identifier, err)
 	}
 
+	if err := domain.ValidateUserAccessRights(ctx, existingPeer.UserIdentifier); err != nil {
+		return nil, err
+	}
+
 	if err := m.validatePeerModifications(ctx, existingPeer, peer); err != nil {
 		return nil, fmt.Errorf("update not allowed: %w", err)
 	}
@@ -208,6 +236,10 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	peer, err := m.db.GetPeer(ctx, id)
 	if err != nil {
 		return fmt.Errorf("unable to find peer %s: %w", id, err)
+	}
+
+	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+		return err
 	}
 
 	err = m.wg.DeletePeer(ctx, peer.InterfaceIdentifier, id)
@@ -231,6 +263,10 @@ func (m Manager) GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier
 
 	peerIds := make([]domain.PeerIdentifier, len(peers))
 	for i, peer := range peers {
+		if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+			return nil, err
+		}
+
 		peerIds[i] = peer.Identifier
 	}
 
@@ -238,6 +274,10 @@ func (m Manager) GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier
 }
 
 func (m Manager) GetUserPeerStats(ctx context.Context, id domain.UserIdentifier) ([]domain.PeerStatus, error) {
+	if err := domain.ValidateUserAccessRights(ctx, id); err != nil {
+		return nil, err
+	}
+
 	peers, err := m.db.GetUserPeers(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch peers for user %s: %w", id, err)

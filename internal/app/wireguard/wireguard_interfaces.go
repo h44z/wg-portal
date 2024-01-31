@@ -13,6 +13,10 @@ import (
 )
 
 func (m Manager) GetImportableInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
 	physicalInterfaces, err := m.wg.GetInterfaces(ctx)
 	if err != nil {
 		return nil, err
@@ -22,14 +26,26 @@ func (m Manager) GetImportableInterfaces(ctx context.Context) ([]domain.Physical
 }
 
 func (m Manager) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, nil, err
+	}
+
 	return m.db.GetInterfaceAndPeers(ctx, id)
 }
 
 func (m Manager) GetAllInterfaces(ctx context.Context) ([]domain.Interface, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
 	return m.db.GetAllInterfaces(ctx)
 }
 
 func (m Manager) GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interface, [][]domain.Peer, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, nil, err
+	}
+
 	interfaces, err := m.db.GetAllInterfaces(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to load all interfaces: %w", err)
@@ -48,6 +64,10 @@ func (m Manager) GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interfa
 }
 
 func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) (int, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return 0, err
+	}
+
 	physicalInterfaces, err := m.wg.GetInterfaces(ctx)
 	if err != nil {
 		return 0, err
@@ -95,6 +115,10 @@ func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.Inter
 }
 
 func (m Manager) ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return err
+	}
+
 	existingInterface, err := m.db.GetInterface(ctx, in.Identifier)
 	if err != nil {
 		return fmt.Errorf("unable to load existing interface %s: %w", in.Identifier, err)
@@ -122,6 +146,10 @@ func (m Manager) ApplyPeerDefaults(ctx context.Context, in *domain.Interface) er
 }
 
 func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool, filter ...domain.InterfaceIdentifier) error {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return err
+	}
+
 	interfaces, err := m.db.GetAllInterfaces(ctx)
 	if err != nil {
 		return err
@@ -201,6 +229,10 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 }
 
 func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
 	currentUser := domain.GetUserInfo(ctx)
 
 	kp, err := domain.NewFreshKeypair()
@@ -277,6 +309,10 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 }
 
 func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
 	existingInterface, err := m.db.GetInterface(ctx, in.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return nil, fmt.Errorf("unable to load existing interface %s: %w", in.Identifier, err)
@@ -298,6 +334,10 @@ func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*do
 }
 
 func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, []domain.Peer, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, nil, err
+	}
+
 	existingInterface, existingPeers, err := m.db.GetInterfaceAndPeers(ctx, in.Identifier)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to load existing interface %s: %w", in.Identifier, err)
@@ -316,6 +356,10 @@ func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*do
 }
 
 func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return err
+	}
+
 	existingInterface, err := m.db.GetInterface(ctx, id)
 	if err != nil {
 		return fmt.Errorf("unable to find interface %s: %w", id, err)

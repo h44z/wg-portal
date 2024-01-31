@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 )
@@ -71,4 +72,30 @@ func GetUserInfo(ctx context.Context) *ContextUserInfo {
 	}
 
 	return DefaultContextUserInfo()
+}
+
+func ValidateUserAccessRights(ctx context.Context, requiredUser UserIdentifier) error {
+	sessionUser := GetUserInfo(ctx)
+
+	if sessionUser.IsAdmin {
+		return nil // Admins can do everything
+	}
+
+	if sessionUser.Id == requiredUser {
+		return nil // User can access own data
+	}
+
+	logrus.Warnf("insufficient permissions for %s (want %s), stack: %s", sessionUser.Id, requiredUser, GetStackTrace())
+	return fmt.Errorf("insufficient permissions")
+}
+
+func ValidateAdminAccessRights(ctx context.Context) error {
+	sessionUser := GetUserInfo(ctx)
+
+	if sessionUser.IsAdmin {
+		return nil
+	}
+
+	logrus.Warnf("insufficient admin permissions for %s, stack: %s", sessionUser.Id, GetStackTrace())
+	return fmt.Errorf("insufficient permissions")
 }

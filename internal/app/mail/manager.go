@@ -44,6 +44,10 @@ func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...doma
 			return fmt.Errorf("failed to fetch peer %s: %w", peerId, err)
 		}
 
+		if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+			return err
+		}
+
 		if peer.UserIdentifier == "" {
 			logrus.Debugf("skipping peer email for %s, no user linked", peerId)
 			continue

@@ -21,11 +21,11 @@ func (e peerEndpoint) GetName() string {
 func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
 	apiGroup := g.Group("/peer", e.authenticator.LoggedIn())
 
-	apiGroup.GET("/iface/:iface/all", e.handleAllGet())
-	apiGroup.GET("/iface/:iface/stats", e.handleStatsGet())
-	apiGroup.GET("/iface/:iface/prepare", e.handlePrepareGet())
-	apiGroup.POST("/iface/:iface/new", e.handleCreatePost())
-	apiGroup.POST("/iface/:iface/multiplenew", e.handleCreateMultiplePost())
+	apiGroup.GET("/iface/:iface/all", e.authenticator.LoggedIn(ScopeAdmin), e.handleAllGet())
+	apiGroup.GET("/iface/:iface/stats", e.authenticator.LoggedIn(ScopeAdmin), e.handleStatsGet())
+	apiGroup.GET("/iface/:iface/prepare", e.authenticator.LoggedIn(ScopeAdmin), e.handlePrepareGet())
+	apiGroup.POST("/iface/:iface/new", e.authenticator.LoggedIn(ScopeAdmin), e.handleCreatePost())
+	apiGroup.POST("/iface/:iface/multiplenew", e.authenticator.LoggedIn(ScopeAdmin), e.handleCreateMultiplePost())
 	apiGroup.GET("/config-qr/:id", e.handleQrCodeGet())
 	apiGroup.POST("/config-mail", e.handleEmailPost())
 	apiGroup.GET("/config/:id", e.handleConfigGet())
@@ -298,6 +298,8 @@ func (e peerEndpoint) handleDelete() gin.HandlerFunc {
 // @Router /peer/config/{id} [get]
 func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
 		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{
@@ -306,7 +308,7 @@ func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
 			return
 		}
 
-		config, err := e.app.GetPeerConfig(c.Request.Context(), domain.PeerIdentifier(id))
+		config, err := e.app.GetPeerConfig(ctx, domain.PeerIdentifier(id))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -339,6 +341,7 @@ func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
 // @Router /peer/config-qr/{id} [get]
 func (e peerEndpoint) handleQrCodeGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
 		id := Base64UrlDecode(c.Param("id"))
 		if id == "" {
 			c.JSON(http.StatusBadRequest, model.Error{
@@ -347,7 +350,7 @@ func (e peerEndpoint) handleQrCodeGet() gin.HandlerFunc {
 			return
 		}
 
-		config, err := e.app.GetPeerConfigQrCode(c.Request.Context(), domain.PeerIdentifier(id))
+		config, err := e.app.GetPeerConfigQrCode(ctx, domain.PeerIdentifier(id))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -392,11 +395,13 @@ func (e peerEndpoint) handleEmailPost() gin.HandlerFunc {
 			return
 		}
 
+		ctx := domain.SetUserInfoFromGin(c)
+
 		peerIds := make([]domain.PeerIdentifier, len(req.Identifiers))
 		for i := range req.Identifiers {
 			peerIds[i] = domain.PeerIdentifier(req.Identifiers[i])
 		}
-		err = e.app.SendPeerEmail(c.Request.Context(), req.LinkOnly, peerIds...)
+		err = e.app.SendPeerEmail(ctx, req.LinkOnly, peerIds...)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return

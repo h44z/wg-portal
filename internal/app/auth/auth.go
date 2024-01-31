@@ -150,6 +150,7 @@ func (a *Authenticator) GetExternalLoginProviders(_ context.Context) []domain.Lo
 }
 
 func (a *Authenticator) IsUserValid(ctx context.Context, id domain.UserIdentifier) bool {
+	ctx = domain.SetUserInfo(ctx, domain.SystemAdminContextUserInfo()) // switch to admin user context
 	user, err := a.users.GetUser(ctx, id)
 	if err != nil {
 		return false
@@ -187,6 +188,8 @@ func (a *Authenticator) PlainLogin(ctx context.Context, username, password strin
 }
 
 func (a *Authenticator) passwordAuthentication(ctx context.Context, identifier domain.UserIdentifier, password string) (*domain.User, error) {
+	ctx = domain.SetUserInfo(ctx, domain.SystemAdminContextUserInfo()) // switch to admin user context to check if user exists
+
 	var ldapUserInfo *domain.AuthenticatorUserInfo
 	var ldapProvider domain.LdapAuthenticator
 
@@ -315,6 +318,7 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 		return nil, fmt.Errorf("unable to parse user information: %w", err)
 	}
 
+	ctx = domain.SetUserInfo(ctx, domain.SystemAdminContextUserInfo()) // switch to admin user context to check if user exists
 	user, err := a.processUserInfo(ctx, userInfo, domain.UserSourceOauth, oauthProvider.GetName(), oauthProvider.RegistrationEnabled())
 	if err != nil {
 		return nil, fmt.Errorf("unable to process user information: %w", err)

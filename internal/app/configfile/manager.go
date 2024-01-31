@@ -109,6 +109,10 @@ func (m Manager) handlePeerInterfaceUpdatedEvent(id domain.InterfaceIdentifier) 
 }
 
 func (m Manager) GetInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) (io.Reader, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
 	iface, peers, err := m.wg.GetInterfaceAndPeers(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch interface %s: %w", id, err)
@@ -123,6 +127,10 @@ func (m Manager) GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (i
 		return nil, fmt.Errorf("failed to fetch peer %s: %w", id, err)
 	}
 
+	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+		return nil, err
+	}
+
 	return m.tplHandler.GetPeerConfig(peer)
 }
 
@@ -130,6 +138,10 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 	peer, err := m.wg.GetPeer(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch peer %s: %w", id, err)
+	}
+
+	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+		return nil, err
 	}
 
 	cfgData, err := m.tplHandler.GetPeerConfig(peer)
@@ -172,6 +184,10 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 }
 
 func (m Manager) PersistInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) error {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return err
+	}
+
 	if m.fsRepo == nil {
 		return fmt.Errorf("peristing configuration is not supported")
 	}

@@ -44,7 +44,8 @@ func (e authEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 // @Router /auth/providers [get]
 func (e authEndpoint) handleExternalLoginProvidersGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		providers := e.app.Authenticator.GetExternalLoginProviders(c.Request.Context())
+		ctx := domain.SetUserInfoFromGin(c)
+		providers := e.app.Authenticator.GetExternalLoginProviders(ctx)
 
 		c.JSON(http.StatusOK, model.NewLoginProviderInfos(providers))
 	}
@@ -69,7 +70,7 @@ func (e authEndpoint) handleSessionInfoGet() gin.HandlerFunc {
 		var email *string
 
 		if currentSession.LoggedIn {
-			uid := string(currentSession.UserIdentifier)
+			uid := currentSession.UserIdentifier
 			f := currentSession.Firstname
 			l := currentSession.Lastname
 			e := currentSession.Email
@@ -134,7 +135,8 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 			return
 		}
 
-		authCodeUrl, state, nonce, err := e.app.Authenticator.OauthLoginStep1(c.Request.Context(), provider)
+		ctx := domain.SetUserInfoFromGin(c)
+		authCodeUrl, state, nonce, err := e.app.Authenticator.OauthLoginStep1(ctx, provider)
 		if err != nil {
 			if autoRedirect {
 				redirectToReturn()
@@ -292,7 +294,8 @@ func (e authEndpoint) handleLoginPost() gin.HandlerFunc {
 			return
 		}
 
-		user, err := e.app.Authenticator.PlainLogin(c.Request.Context(), loginData.Username, loginData.Password)
+		ctx := domain.SetUserInfoFromGin(c)
+		user, err := e.app.Authenticator.PlainLogin(ctx, loginData.Username, loginData.Password)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, model.Error{Code: http.StatusUnauthorized, Message: "login failed"})
 			return

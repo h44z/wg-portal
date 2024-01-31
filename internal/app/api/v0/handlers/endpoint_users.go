@@ -20,13 +20,13 @@ func (e userEndpoint) GetName() string {
 func (e userEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
 	apiGroup := g.Group("/user", e.authenticator.LoggedIn())
 
-	apiGroup.GET("/all", e.handleAllGet())
-	apiGroup.GET("/:id", e.handleSingleGet())
-	apiGroup.PUT("/:id", e.handleUpdatePut())
-	apiGroup.DELETE("/:id", e.handleDelete())
-	apiGroup.POST("/new", e.handleCreatePost())
-	apiGroup.GET("/:id/peers", e.handlePeersGet())
-	apiGroup.GET("/:id/stats", e.handleStatsGet())
+	apiGroup.GET("/all", e.authenticator.LoggedIn(ScopeAdmin), e.handleAllGet())
+	apiGroup.GET("/:id", e.authenticator.UserIdMatch("id"), e.handleSingleGet())
+	apiGroup.PUT("/:id", e.authenticator.UserIdMatch("id"), e.handleUpdatePut())
+	apiGroup.DELETE("/:id", e.authenticator.UserIdMatch("id"), e.handleDelete())
+	apiGroup.POST("/new", e.authenticator.LoggedIn(ScopeAdmin), e.handleCreatePost())
+	apiGroup.GET("/:id/peers", e.authenticator.UserIdMatch("id"), e.handlePeersGet())
+	apiGroup.GET("/:id/stats", e.authenticator.UserIdMatch("id"), e.handleStatsGet())
 }
 
 // handleAllGet returns a gorm handler function.

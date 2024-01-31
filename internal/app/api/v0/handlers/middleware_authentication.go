@@ -58,6 +58,31 @@ func (h authenticationHandler) LoggedIn(scopes ...Scope) gin.HandlerFunc {
 	}
 }
 
+// UserIdMatch checks if the user id in the session matches the user id in the request. If not, the request is aborted.
+func (h authenticationHandler) UserIdMatch(idParameter string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := h.Session.GetData(c)
+
+		if session.IsAdmin {
+			c.Next() // Admins can do everything
+			return
+		}
+
+		sessionUserId := domain.UserIdentifier(session.UserIdentifier)
+		requestUserId := domain.UserIdentifier(Base64UrlDecode(c.Param(idParameter)))
+
+		if sessionUserId != requestUserId {
+			// Abort the request with the appropriate error code
+			c.Abort()
+			c.JSON(http.StatusForbidden, model.Error{Code: http.StatusForbidden, Message: "not enough permissions"})
+			return
+		}
+
+		// Continue down the chain to handler etc
+		c.Next()
+	}
+}
+
 func UserHasScopes(session SessionData, scopes ...Scope) bool {
 	// No scopes give, so the check should succeed
 	if len(scopes) == 0 {
