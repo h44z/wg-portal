@@ -1,9 +1,9 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router';
-import {computed, getCurrentInstance, onMounted, ref} from "vue";
-import {authStore} from "./stores/auth";
-import {securityStore} from "./stores/security";
-import {settingsStore} from "@/stores/settings";
+import { computed, getCurrentInstance, onMounted, ref } from "vue";
+import { authStore } from "./stores/auth";
+import { securityStore } from "./stores/security";
+import { settingsStore } from "@/stores/settings";
 
 const appGlobal = getCurrentInstance().appContext.config.globalProperties
 const auth = authStore()
@@ -80,10 +80,11 @@ const currentYear = ref(new Date().getFullYear())
 
         <div class="navbar-nav d-flex justify-content-end">
           <div v-if="auth.IsAuthenticated" class="nav-item dropdown">
-            <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#"
-              role="button">{{ auth.User.Firstname }} {{ auth.User.Lastname }}</a>
+            <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+              href="#" role="button">{{ auth.User.Firstname }} {{ auth.User.Lastname }}</a>
             <div class="dropdown-menu">
-              <RouterLink :to="{ name: 'profile' }" class="dropdown-item"><i class="fas fa-user"></i> {{ $t('menu.profile') }}</RouterLink>
+              <RouterLink :to="{ name: 'profile' }" class="dropdown-item"><i class="fas fa-user"></i> {{
+                $t('menu.profile') }}</RouterLink>
               <div class="dropdown-divider"></div>
               <a class="dropdown-item" href="#" @click.prevent="auth.Logout">
                 <i class="fas fa-sign-out-alt"></i> {{ $t('menu.logout') }}
@@ -107,22 +108,24 @@ const currentYear = ref(new Date().getFullYear())
   <footer class="page-footer mt-auto">
     <div class="container mt-5">
       <div class="row align-items-center">
-        <div class="col-6">Copyright © {{ companyName }} {{ currentYear }} <span v-if="auth.IsAuthenticated"> - version {{ wgVersion }}</span></div>
+        <div class="col-6">Copyright © {{ companyName }} {{ currentYear }} <span v-if="auth.IsAuthenticated"> - version {{
+          wgVersion }}</span></div>
         <div class="col-6 text-end">
           <div :aria-label="$t('menu.lang')" class="btn-group" role="group">
             <div class="btn-group" role="group">
-              <button aria-expanded="false" aria-haspopup="true" class="btn btn btn-secondary pe-0" data-bs-toggle="dropdown" type="button"><span :class="languageFlag" class="fi"></span></button>
+              <button aria-expanded="false" aria-haspopup="true" class="btn btn btn-secondary pe-0"
+                data-bs-toggle="dropdown" type="button"><span :class="languageFlag" class="fi"></span></button>
               <div aria-labelledby="btnGroupDrop3" class="dropdown-menu" style="">
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span> English</a>
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span> Deutsch</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span>
+                  English</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span>
+                  Русский</a>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </footer>
-</template>
+  </footer></template>
 
-<style>
-</style>
+<style></style>

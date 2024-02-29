@@ -1,8 +1,8 @@
 <script setup>
-  import {authStore} from "@/stores/auth";
-  import {RouterLink} from "vue-router";
+import { authStore } from "@/stores/auth";
+import { RouterLink } from "vue-router";
 
-  const auth = authStore()
+const auth = authStore()
 </script>
 
 <template>
@@ -29,7 +29,8 @@
     <hr class="my-4">
     <p>{{ $t('home.admin.content') }}</p>
     <p class="lead">
-      <RouterLink :to="{ name: 'interfaces' }" class="btn btn-primary btn-lg me-2">{{ $t('home.admin.button-admin') }}</RouterLink>
+      <RouterLink :to="{ name: 'interfaces' }" class="btn btn-primary btn-lg me-2">{{ $t('home.admin.button-admin') }}
+      </RouterLink>
       <RouterLink :to="{ name: 'users' }" class="btn btn-primary btn-lg">{{ $t('home.admin.button-user') }}</RouterLink>
     </p>
   </div>

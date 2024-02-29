@@ -54,7 +54,7 @@ func generateApi(basePath, apiPath, version string) error {
 		OutputDir:           filepath.Join(basePath, "core/assets/doc"),
 		OutputTypes:         []string{"json", "yaml"},
 		ParseVendor:         false,
-		ParseDependency:     true,
+		ParseDependency:     3,
 		MarkdownFilesDir:    "",
 		ParseInternal:       true,
 		GeneratedTime:       false,
