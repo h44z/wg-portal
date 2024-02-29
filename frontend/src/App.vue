@@ -83,18 +83,13 @@ const currentYear = ref(new Date().getFullYear())
             <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
               href="#" role="button">{{ auth.User.Firstname }} {{ auth.User.Lastname }}</a>
             <div class="dropdown-menu">
-              <RouterLink :to="{ name: 'profile' }" class="dropdown-item"><i class="fas fa-user"></i> {{
-                $t('menu.profile') }}</RouterLink>
+              <RouterLink :to="{ name: 'profile' }" class="dropdown-item"><i class="fas fa-user"></i> {{ $t('menu.profile') }}</RouterLink>
               <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="#" @click.prevent="auth.Logout">
-                <i class="fas fa-sign-out-alt"></i> {{ $t('menu.logout') }}
-              </a>
+              <a class="dropdown-item" href="#" @click.prevent="auth.Logout"><i class="fas fa-sign-out-alt"></i> {{ $t('menu.logout') }}</a>
             </div>
           </div>
           <div v-if="!auth.IsAuthenticated" class="nav-item">
-            <RouterLink :to="{ name: 'login' }" class="nav-link">
-              <i class="fas fa-sign-in-alt fa-sm fa-fw me-2"></i>{{ $t('menu.login') }}
-            </RouterLink>
+            <RouterLink :to="{ name: 'login' }" class="nav-link"><i class="fas fa-sign-in-alt fa-sm fa-fw me-2"></i>{{ $t('menu.login') }}</RouterLink>
           </div>
         </div>
       </div>
@@ -108,26 +103,16 @@ const currentYear = ref(new Date().getFullYear())
   <footer class="page-footer mt-auto">
     <div class="container mt-5">
       <div class="row align-items-center">
-        <div class="col-6">Copyright © {{ companyName }} {{ currentYear }} <span v-if="auth.IsAuthenticated"> - version {{
-          wgVersion }}</span></div>
+        <div class="col-6">Copyright © {{ companyName }} {{ currentYear }} <span v-if="auth.IsAuthenticated"> - version {{ wgVersion }}</span></div>
         <div class="col-6 text-end">
           <div :aria-label="$t('menu.lang')" class="btn-group" role="group">
             <div class="btn-group" role="group">
               <button aria-expanded="false" aria-haspopup="true" class="btn btn btn-secondary pe-0"
                 data-bs-toggle="dropdown" type="button"><span :class="languageFlag" class="fi"></span></button>
               <div aria-labelledby="btnGroupDrop3" class="dropdown-menu" style="">
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')">
-                  <span class="fi fi-us"></span>
-                  English
-                </a>
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')">
-                  <span class="fi fi-de"></span>
-                  Deutsch
-                </a>
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')">
-                  <span class="fi fi-ru"></span>
-                  Русский
-                </a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span>English</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span>Deutsch</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span>Русский</a>
               </div>
             </div>
           </div>
