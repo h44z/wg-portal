@@ -45,7 +45,7 @@
       "box-header": "WireGuard Installation",
       "headline": "Installation",
       "content": "Installation instructions for client software can be found on the official WireGuard website.",
-      "btn": "Open Instructions"
+      "button": "Open Instructions"
     },
     "about-wg": {
       "box-header": "About WireGuard",
