@@ -45,7 +45,7 @@ RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} go build -o /build/dist/wg-portal \
 ######
 FROM alpine:3.19
 # Install OS-level dependencies
-RUN apk add --no-cache bash openresolv
+RUN apk add --no-cache bash curl iptables nftables openresolv
 # Setup timezone
 ENV TZ=Europe/Vienna
 # Copy binaries
