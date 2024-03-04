@@ -1,4 +1,5 @@
 .github/
 **/.vscode/
+docs/
 frontend/node_modules/
 internal/app/api/core/frontend-dist
