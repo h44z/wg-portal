@@ -12,7 +12,8 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../internal/app/api/core/frontend-dist',
+    //
+    outDir: process.env.DIST_OUT_DIR || '../internal/app/api/core/frontend-dist',
     emptyOutDir: true
   },
   // local dev api (proxy to avoid cors problems)
