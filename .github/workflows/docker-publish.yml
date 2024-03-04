@@ -1,26 +1,20 @@
 name: Docker
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 on:
+  pull_request:
+    branches: [master]
   push:
-    branches: [ master, stable ]
+    branches: [master, stable]
     # Publish vX.X.X tags as releases.
-    tags: [ 'v*.*.*' ]
+    tags: ["v*.*.*"]
 
-env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ github.repository }}
-
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  build-dockerhub:
-    name: Push Docker image to Docker Hub
+  build-n-push:
+    name: Build and Push
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -34,32 +28,43 @@ jobs:
 
       - name: Get Version
         shell: bash
-        run: |
-          echo "::set-output name=identifier::$(echo ${GITHUB_REF##*/})"
-          echo "::set-output name=hash::$(echo ${GITHUB_SHA} | cut -c1-7)"
-        id: get_version
+        run: echo "BUILD_VERSION=${GITHUB_REF_NAME}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Log in to Docker Hub
+      - name: Login to Docker Hub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: wgportal/wg-portal
+          images: |
+            wgportal/wg-portal
+            ghcr.io/${{ github.repository }}
           flavor: |
-            latest=true
+            latest=auto
             prefix=
             suffix=
           tags: |
+            type=ref,event=tag
             type=ref,event=branch
+            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern=v{{major}}
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -68,72 +73,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           build-args: |
-            BUILD_IDENTIFIER=${{ steps.get_version.outputs.identifier }}
-            BUILD_VERSION=${{ steps.get_version.outputs.hash }}
-
-  build-github:
-    name: Push Docker image to Github Container Registry
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Get Version
-        shell: bash
-        run: |
-          echo "::set-output name=identifier::$(echo ${GITHUB_REF##*/})"
-          echo "::set-output name=hash::$(echo ${GITHUB_SHA} | cut -c1-7)"
-        id: get_version
-
-      # Login against a Docker registry except on PR
-      # https://github.com/docker/login-action
-      - name: Log into registry ${{ env.REGISTRY }}
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Extract metadata (tags, labels) for Docker
-      # https://github.com/docker/metadata-action
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          flavor: |
-            latest=true
-            prefix=
-            suffix=
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
-
-      # Build and push Docker image with Buildx (don't push on PR)
-      # https://github.com/docker/build-push-action
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-          build-args: |
-            BUILD_IDENTIFIER=${{ steps.get_version.outputs.identifier }}
-            BUILD_VERSION=${{ steps.get_version.outputs.hash }}
+            BUILD_VERSION=${{ env.BUILD_VERSION }}
