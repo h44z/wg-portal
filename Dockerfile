@@ -20,7 +20,7 @@ RUN npm run build
 ######
 # Build backend
 ######
-FROM --platform=${BUILDPLATFORM} golang:1.21 as builder
+FROM --platform=${BUILDPLATFORM} golang:1.21-alpine as builder
 # Set the working directory
 WORKDIR /build
 # Download dependencies
@@ -30,17 +30,15 @@ RUN go mod download
 COPY . .
 # Copy the frontend build result
 COPY --from=frontend /build/dist/ ./internal/app/api/core/frontend-dist/
-# Set the build version and identifier from arguments
-ARG BUILD_IDENTIFIER BUILD_VERSION
-ENV ENV_BUILD_IDENTIFIER=${BUILD_IDENTIFIER}
-ENV ENV_BUILD_VERSION=${BUILD_VERSION}
-
+# Set the build version from arguments
+ARG BUILD_VERSION
 # Split to cross-platform build
 ARG TARGETARCH
-ENV GOARCH=${TARGETARCH}
-# Build the Go app
-RUN echo "Building version '$ENV_BUILD_IDENTIFIER-$ENV_BUILD_VERSION' for architecture $TARGETARCH"
-RUN make build
+# Build the application
+RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} go build -o /build/dist/wg-portal \
+  -ldflags "-w -s -extldflags '-static' -X 'github.com/h44z/wg-portal/internal.Version=${BUILD_VERSION}'" \
+  -tags netgo \
+  cmd/wg-portal/main.go
 
 ######
 # Final image
