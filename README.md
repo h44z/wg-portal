@@ -182,7 +182,7 @@ Go version 1.20 or higher has to be installed to build WireGuard Portal.
 If you want to re-compile the frontend, NodeJS 18 and NPM >= 9 is required.
 
 ```shell
-# build the frontend (optional)
+# build the frontend
 make frontend
 
 # build the binary
