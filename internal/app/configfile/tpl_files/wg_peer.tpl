@@ -25,7 +25,7 @@ Address = {{ CidrsToString .Peer.Interface.Addresses }}
 
 # Misc. settings (optional)
 {{- if .Peer.Interface.DnsStr.GetValue}}
-DNS = {{ .Peer.Interface.DnsStr.GetValue }}
+DNS = {{ .Peer.Interface.DnsStr.GetValue }} {{- if .Peer.Interface.DnsSearchStr.GetValue}}, {{ .Peer.Interface.DnsSearchStr.GetValue }} {{- end}}
 {{- end}}
 {{- if ne .Peer.Interface.Mtu.GetValue 0}}
 MTU = {{ .Peer.Interface.Mtu.GetValue }}
