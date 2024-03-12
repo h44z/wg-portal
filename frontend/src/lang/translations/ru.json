@@ -1,0 +1,489 @@
+{
+  "general": {
+    "pagination": {
+      "size": "Количество элементов",
+      "all": "Все (медленно)"
+    },
+    "search": {
+      "placeholder": "Поиск...",
+      "button": "Поиск"
+    },
+    "select-all": "Выбрать все",
+    "yes": "Да",
+    "no": "Нет",
+    "cancel": "Отмена",
+    "close": "Закрыть",
+    "save": "Сохранить",
+    "delete": "Удалить"
+  },
+  "login": {
+    "headline": "Пожалуйста, войдите в систему",
+    "username": {
+      "label": "Имя пользователя",
+      "placeholder": "Пожалуйста, введите ваше имя пользователя"
+    },
+    "password": {
+      "label": "Пароль",
+      "placeholder": "Пожалуйста, введите ваш пароль"
+    },
+    "button": "Войти"
+  },
+  "menu": {
+    "home": "Главная",
+    "interfaces": "Интерфейсы",
+    "users": "Пользователи",
+    "lang": "Сменить язык",
+    "profile": "Мой профиль",
+    "login": "Вход",
+    "logout": "Выход"
+  },
+  "home": {
+    "headline": "Портал VPN WireGuard®",
+    "info-headline": "Дополнительная информация",
+    "abstract": "WireGuard® - это чрезвычайно простой, но быстрый и современный VPN, использующий передовую криптографию. Он стремится быть быстрее, проще, компактнее и полезнее, чем IPsec, избегая при этом значительных сложностей. Он предназначен для значительного повышения производительности по сравнению с OpenVPN.",
+    "installation": {
+      "box-header": "Установка WireGuard",
+      "headline": "Установка",
+      "content": "Инструкции по установке клиентского программного обеспечения можно найти на официальном сайте WireGuard.",
+      "btn": "Открыть инструкции",
+      "button": "Открыть инструкции"
+    },
+    "about-wg": {
+      "box-header": "О WireGuard",
+      "headline": "О программе",
+      "content": "WireGuard® - это чрезвычайно простой, но быстрый и современный VPN, использующий передовую криптографию.",
+      "button": "Подробнее"
+    },
+    "about-portal": {
+      "box-header": "О портале WireGuard",
+      "headline": "Портал WireGuard",
+      "content": "Портал WireGuard - это простой веб-портал для настройки WireGuard.",
+      "button": "Подробнее"
+    },
+    "profiles": {
+      "headline": "VPN Профили",
+      "abstract": "Вы можете получить доступ и загрузить свои личные конфигурации VPN через свой пользовательский профиль.",
+      "content": "Чтобы найти все сконфигурированные профили, нажмите на кнопку ниже.",
+      "button": "Открыть мой профиль"
+    },
+    "admin": {
+      "headline": "Административная зона",
+      "abstract": "В административной зоне вы можете управлять узлами и серверным интерфейсом WireGuard, а также пользователями, которым разрешен вход в портал WireGuard.",
+      "content": "",
+      "button-admin": "Открыть администрирование сервера",
+      "button-user": "Открыть администрирование пользователей"
+    }
+  },
+  "interfaces": {
+    "headline": "Администрирование интерфейсов",
+    "headline-peers": "Текущие VPN пиры",
+    "headline-endpoints": "Текущие конечные точки",
+    "no-interface": {
+      "default-selection": "Интерфейсы отсутствуют",
+      "headline": "Интерфейсы не найдены...",
+      "abstract": "Нажмите на кнопку со знаком плюса выше, чтобы создать новый интерфейс WireGuard."
+    },
+    "no-peer": {
+      "headline": "Пиры отсутствуют",
+      "abstract": "В настоящее время для выбранного интерфейса WireGuard нет доступных пиров."
+    },
+    "table-heading": {
+      "name": "Имя",
+      "user": "Пользователь",
+      "ip": "IP-адреса",
+      "endpoint": "Конечная точка",
+      "status": "Статус"
+    },
+    "interface": {
+      "headline": "Статус интерфейса для",
+      "mode": "режим",
+      "key": "Публичный ключ",
+      "endpoint": "Публичная конечная точка",
+      "port": "Порт прослушивания",
+      "peers": "Активные пиры",
+      "total-peers": "Всего пиров",
+      "endpoints": "Активные конечные точки",
+      "total-endpoints": "Всего конечных точек",
+      "ip": "IP-адрес",
+      "default-allowed-ip": "Разрешенные IP по умолчанию",
+      "dns": "DNS-серверы",
+      "mtu": "MTU",
+      "default-keep-alive": "Интервал поддержания активности по умолчанию",
+      "button-show-config": "Показать конфигурацию",
+      "button-download-config": "Скачать конфигурацию",
+      "button-store-config": "Сохранить конфигурацию для wg-quick",
+      "button-edit": "Редактировать интерфейс"
+    },
+    "button-add-interface": "Добавить интерфейс",
+    "button-add-peer": "Добавить пира",
+    "button-add-peers": "Добавить несколько пиров",
+    "button-show-peer": "Показать пира",
+    "button-edit-peer": "Редактировать пира",
+    "peer-disabled": "Пир отключен, причина:",
+    "peer-expiring": "Пир истекает в",
+    "peer-connected": "Подключено",
+    "peer-not-connected": "Не подключено",
+    "peer-handshake": "Последнее рукопожатие:"
+  },
+  "users": {
+    "headline": "Администрирование пользователей",
+    "table-heading": {
+      "id": "ID",
+      "email": "Электронная почта",
+      "firstname": "Имя",
+      "lastname": "Фамилия",
+      "source": "Источник",
+      "peers": "Пиры",
+      "admin": "Админ"
+    },
+    "no-user": {
+      "headline": "Пользователи отсутствуют",
+      "abstract": "В настоящее время в портале WireGuard не зарегистрировано ни одного пользователя."
+    },
+    "button-add-user": "Добавить пользователя",
+    "button-show-user": "Показать пользователя",
+    "button-edit-user": "Редактировать пользователя",
+    "user-disabled": "Пользователь отключен, причина:",
+    "user-locked": "Учетная запись заблокирована, причина:",
+    "admin": "Пользователь имеет права администратора",
+    "no-admin": "Пользователь не имеет прав администратора"
+  },
+  "profile": {
+    "headline": "Мои VPN пиры",
+    "table-heading": {
+      "name": "Имя",
+      "ip": "IP-адреса",
+      "stats": "Статус",
+      "interface": "Интерфейс сервера"
+    },
+    "no-peer": {
+      "headline": "Пиров нет",
+      "abstract": "В настоящее время у вашего профиля пользователя нет связанных пиров."
+    },
+    "peer-connected": "Подключено",
+    "button-add-peer": "Добавить пира",
+    "button-show-peer": "Показать пира",
+    "button-edit-peer": "Редактировать пира"
+  },
+  "modals": {
+    "user-view": {
+      "headline": "Учетная запись пользователя:",
+      "tab-user": "Информация",
+      "tab-peers": "Пиры",
+      "headline-info": "Информация о пользователе:",
+      "headline-notes": "Заметки:",
+      "email": "Электронная почта",
+      "firstname": "Имя",
+      "lastname": "Фамилия",
+      "phone": "Номер телефона",
+      "department": "Отдел",
+      "disabled": "Учетная запись отключена",
+      "locked": "Учетная запись заблокирована",
+      "no-peers": "У пользователя нет связанных пиров.",
+      "peers": {
+        "name": "Имя",
+        "interface": "Интерфейс",
+        "ip": "IP-адреса"
+      }
+    },
+    "user-edit": {
+      "headline-edit": "Редактировать пользователя:",
+      "headline-new": "Новый пользователь",
+      "header-general": "Общее",
+      "header-personal": "Информация о пользователе",
+      "header-notes": "Заметки",
+      "header-state": "Состояние",
+      "identifier": {
+        "label": "Идентификатор",
+        "placeholder": "Уникальный идентификатор пользователя"
+      },
+      "source": {
+        "label": "Источник",
+        "placeholder": "Источник пользователя"
+      },
+      "password": {
+        "label": "Пароль",
+        "placeholder": "Надежный пароль",
+        "description": "Оставьте это поле пустым, чтобы сохранить текущий пароль."
+      },
+      "email": {
+        "label": "Электронная почта",
+        "placeholder": "Адрес электронной почты"
+      },
+      "phone": {
+        "label": "Телефон",
+        "placeholder": "Номер телефона"
+      },
+      "department": {
+        "label": "Отдел",
+        "placeholder": "Отдел"
+      },
+      "firstname": {
+        "label": "Имя",
+        "placeholder": "Имя"
+      },
+      "lastname": {
+        "label": "Фамилия",
+        "placeholder": "Фамилия"
+      },
+      "notes": {
+        "label": "Заметки",
+        "placeholder": ""
+      },
+      "disabled": {
+        "label": "Отключен (нет возможности подключения к WireGuard и входа в систему)"
+      },
+      "locked": {
+        "label": "Заблокирован (вход в систему невозможен, подключения WireGuard работают)"
+      },
+      "admin": {
+        "label": "Является администратором"
+      }
+    },
+    "interface-view": {
+      "headline": "Конфигурация интерфейса:"
+    },
+    "interface-edit": {
+      "headline-edit": "Редактировать интерфейс:",
+      "headline-new": "Новый интерфейс",
+      "tab-interface": "Интерфейс",
+      "tab-peerdef": "Настройки пира по умолчанию",
+      "header-general": "Общие",
+      "header-network": "Сеть",
+      "header-crypto": "Криптография",
+      "header-hooks": "Хуки интерфейса",
+      "header-peer-hooks": "Хуки",
+      "header-state": "Состояние",
+      "identifier": {
+        "label": "Идентификатор",
+        "placeholder": "Уникальный идентификатор интерфейса"
+      },
+      "mode": {
+        "label": "Режим интерфейса",
+        "server": "Режим сервера",
+        "client": "Режим клиента",
+        "any": "Неизвестный режим"
+      },
+      "display-name": {
+        "label": "Отображаемое имя",
+        "placeholder": "Описательное имя для интерфейса"
+      },
+      "private-key": {
+        "label": "Приватный ключ",
+        "placeholder": "Приватный ключ"
+      },
+      "public-key": {
+        "label": "Публичный ключ",
+        "placeholder": "Публичный ключ"
+      },
+      "ip": {
+        "label": "IP-адреса",
+        "placeholder": "IP-адреса (в формате CIDR)"
+      },
+      "listen-port": {
+        "label": "Порт прослушивания",
+        "placeholder": "Порт для прослушивания"
+      },
+      "dns": {
+        "label": "DNS-сервер",
+        "placeholder": "Используемые DNS-серверы"
+      },
+      "dns-search": {
+        "label": "Поисковые домены DNS",
+        "placeholder": "Префиксы поиска DNS"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "MTU интерфейса (0 = использовать значение по умолчанию)"
+      },
+      "firewall-mark": {
+        "label": "Метка брандмауэра",
+        "placeholder": "Метка брандмауэра, применяемая к исходящему трафику (0 = автоматически)"
+      },
+      "routing-table": {
+        "label": "Таблица маршрутизации",
+        "placeholder": "ID таблицы маршрутизации",
+        "description": "Особые случаи: off = не управлять маршрутами, 0 = автоматически"
+      },
+      "pre-up": {
+        "label": "Pre-Up",
+        "placeholder": "Одна или несколько команд bash, разделенных ;"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "Одна или несколько команд bash, разделенных ;"
+      },
+      "pre-down": {
+        "label": "Pre-Down",
+        "placeholder": "Одна или несколько команд bash, разделенных ;"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "Одна или несколько команд bash, разделенных ;"
+      },
+      "disabled": {
+        "label": "Интерфейс отключен"
+      },
+      "save-config": {
+        "label": "Автоматически сохранять конфигурацию wg-quick"
+      },
+      "defaults": {
+        "endpoint": {
+          "label": "Адрес конечной точки",
+          "placeholder": "Адрес конечной точки",
+          "description": "Адрес конечной точки, к которой будут подключаться пиры."
+        },
+        "networks": {
+          "label": "IP-сети",
+          "placeholder": "Сетевые адреса",
+          "description": "Пиры будут получать IP-адреса из этих подсетей."
+        },
+        "allowed-ip": {
+          "label": "Разрешенные IP-адреса",
+          "placeholder": "Разрешенные IP-адреса по умолчанию"
+        },
+        "mtu": {
+          "label": "MTU",
+          "placeholder": "MTU клиента (0 = использовать значение по умолчанию)"
+        },
+        "keep-alive": {
+          "label": "Интервал поддержания активности",
+          "placeholder": "Постоянное поддержание активности (0 = значение по умолчанию)"
+        }
+      },
+      "button-apply-defaults": "Применить настройки пира по умолчанию"
+    },
+    "peer-view": {
+      "headline-peer": "Пир:",
+      "headline-endpoint": "Конечная точка:",
+      "section-info": "Информация о пире",
+      "section-status": "Текущий статус",
+      "section-config": "Конфигурация",
+      "identifier": "Идентификатор",
+      "ip": "IP-адреса",
+      "user": "Связанный пользователь",
+      "notes": "Заметки",
+      "expiry-status": "Истекает в",
+      "disabled-status": "Отключено в",
+      "traffic": "Трафик",
+      "connection-status": "Статус соединения",
+      "upload": "Загружено байт (от сервера к пиру)",
+      "download": "Скачано байт (от пира к серверу)",
+      "pingable": "Доступность пинга",
+      "handshake": "Последнее рукопожатие",
+      "connected-since": "Подключен с",
+      "endpoint": "Конечная точка",
+      "button-download": "Скачать конфигурацию",
+      "button-email": "Отправить конфигурацию по электронной почте"
+    },
+    "peer-edit": {
+      "headline-edit-peer": "Редактировать пира:",
+      "headline-edit-endpoint": "Редактировать конечную точку:",
+      "headline-new-peer": "Создать пира",
+      "headline-new-endpoint": "Создать конечную точку",
+      "header-general": "Общее",
+      "header-network": "Сеть",
+      "header-crypto": "Криптография",
+      "header-hooks": "Хуки (Выполняются на пире)",
+      "header-state": "Состояние",
+      "display-name": {
+        "label": "Отображаемое имя",
+        "placeholder": "Описательное имя для пира"
+      },
+      "linked-user": {
+        "label": "Связанный пользователь",
+        "placeholder": "Учетная запись пользователя, которой принадлежит этот пир"
+      },
+      "private-key": {
+        "label": "Приватный ключ",
+        "placeholder": "Приватный ключ"
+      },
+      "public-key": {
+        "label": "Публичный ключ",
+        "placeholder": "Публичный ключ"
+      },
+      "preshared-key": {
+        "label": "Предварительно разделяемый ключ",
+        "placeholder": "Необязательный предварительно разделяемый ключ"
+      },
+      "endpoint-public-key": {
+        "label": "Публичный ключ конечной точки",
+        "placeholder": "Публичный ключ удаленной конечной точки"
+      },
+      "endpoint": {
+        "label": "Адрес конечной точки",
+        "placeholder": "Адрес удаленной конечной точки"
+      },
+      "ip": {
+        "label": "IP-адреса",
+        "placeholder": "IP-адреса (в формате CIDR)"
+      },
+      "allowed-ip": {
+        "label": "Разрешенные IP-адреса",
+        "placeholder": "Разрешенные IP-адреса (в формате CIDR)"
+      },
+      "extra-allowed-ip": {
+        "label": "Дополнительно разрешенные IP-адреса",
+        "placeholder": "Дополнительные разрешенные IP-адреса (на стороне сервера)",
+        "description": "Эти IP-адреса будут добавлены в удаленный интерфейс WireGuard как разрешенные IP-адреса."
+      },
+      "dns": {
+        "label": "DNS Server",
+        "placeholder": "The DNS servers that should be used"
+      },
+      "dns-search": {
+        "label": "DNS Search Domains",
+        "placeholder": "DNS search prefixes"
+      },
+      "keep-alive": {
+        "label": "Keep Alive Interval",
+        "placeholder": "Persistent Keepalive (0 = default)"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "The client MTU (0 = keep default)"
+      },
+      "pre-up": {
+        "label": "Pre-Up",
+        "placeholder": "One or multiple bash commands separated by ;"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "One or multiple bash commands separated by ;"
+      },
+      "pre-down": {
+        "label": "Pre-Down",
+        "placeholder": "One or multiple bash commands separated by ;"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "One or multiple bash commands separated by ;"
+      },
+      "disabled": {
+        "label": "Peer Disabled"
+      },
+      "ignore-global": {
+        "label": "Ignore global settings"
+      },
+      "expires-at": {
+        "label": "Expiry date"
+      }
+    },
+    "peer-multi-create": {
+      "headline-peer": "Create multiple peers",
+      "headline-endpoint": "Create multiple endpoints",
+      "identifiers": {
+        "label": "User Identifiers",
+        "placeholder": "User Identifiers",
+        "description": "A user identifier (the username) for which a peer should be created."
+      },
+      "prefix": {
+        "headline-peer": "Peer:",
+        "headline-endpoint": "Endpoint:",
+        "label": "Display Name Prefix",
+        "placeholder": "The prefix",
+        "description": "A prefix that is added to the peers display name."
+      }
+    }
+  }
+}

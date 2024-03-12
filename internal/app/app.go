@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
-	"time"
 )
 
 type App struct {
@@ -59,6 +60,7 @@ func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, 
 }
 
 func (a *App) Startup(ctx context.Context) error {
+	
 	a.UserManager.StartBackgroundJobs(ctx)
 	a.StatisticsCollector.StartBackgroundJobs(ctx)
 	a.WireGuardManager.StartBackgroundJobs(ctx)

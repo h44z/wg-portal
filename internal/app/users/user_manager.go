@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/h44z/wg-portal/internal/app"
 	"math"
 	"sync"
 	"time"
+
+	"github.com/h44z/wg-portal/internal/app"
 
 	"github.com/h44z/wg-portal/internal"
 
@@ -87,7 +88,9 @@ func (m Manager) NewUser(ctx context.Context, user *domain.User) error {
 }
 
 func (m Manager) StartBackgroundJobs(ctx context.Context) {
+
 	go m.runLdapSynchronizationService(ctx)
+
 }
 
 func (m Manager) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
@@ -322,7 +325,7 @@ func (m Manager) runLdapSynchronizationService(ctx context.Context) {
 			if !ldapCfg.Synchronize {
 				continue // sync disabled
 			}
-
+			//logrus.Tracef(&ldapCfg)
 			err := m.synchronizeLdapUsers(ctx, &ldapCfg)
 			if err != nil {
 				logrus.Errorf("failed to synchronize LDAP users for %s: %v", ldapCfg.ProviderName, err)
@@ -382,15 +385,20 @@ func (m Manager) updateLdapUsers(ctx context.Context, providerName string, rawUs
 			return fmt.Errorf("find error for user id %s: %w", user.Identifier, err)
 		}
 
+		tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		tctx = domain.SetUserInfo(tctx, domain.SystemAdminContextUserInfo())
+		
 		if existingUser == nil {
-			err := m.NewUser(ctx, user)
+			err := m.NewUser(tctx, user)
 			if err != nil {
 				return fmt.Errorf("create error for user id %s: %w", user.Identifier, err)
 			}
 		}
 
 		if existingUser != nil && existingUser.Source == domain.UserSourceLdap && userChangedInLdap(existingUser, user) {
-			err := m.users.SaveUser(ctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
+		
+			err := m.users.SaveUser(tctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
 				u.UpdatedAt = time.Now()
 				u.UpdatedBy = "ldap_sync"
 				u.Email = user.Email

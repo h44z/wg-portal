@@ -1,5 +1,6 @@
 // src/lang/index.js
 import de from './translations/de.json';
+import ru from './translations/ru.json';
 import en from './translations/en.json';
 import {createI18n} from "vue-i18n";
 
@@ -20,6 +21,7 @@ const i18n = createI18n({
   fallbackLocale: "en", // set fallback locale
   messages: {
     "de": de,
+    "ru": ru,
     "en": en
   }
 });
