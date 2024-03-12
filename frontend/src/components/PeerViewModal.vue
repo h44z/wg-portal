@@ -52,7 +52,7 @@ const selectedStats = computed(() => {
     if (!!props.peerId || props.peerId.length) {
       p = profile.Statistics(props.peerId)
     } else {
-      s = freshStats() // dummy peer to avoid 'undefined' exceptions
+      s = freshStats() // dummy stats to avoid 'undefined' exceptions
     }
 
   }
