@@ -7,7 +7,7 @@ require (
 	github.com/gin-contrib/cors v1.7.0
 	github.com/gin-contrib/sessions v0.0.5
 	github.com/gin-gonic/gin v1.9.1
-	github.com/glebarez/sqlite v1.10.0
+	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.6
 	github.com/prometheus-community/pro-bing v0.4.0
 	github.com/sirupsen/logrus v1.9.3
