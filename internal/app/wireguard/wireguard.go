@@ -2,9 +2,10 @@ package wireguard
 
 import (
 	"context"
+	"time"
+
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/sirupsen/logrus"
-	"time"
 
 	evbus "github.com/vardius/message-bus"
 
@@ -46,7 +47,7 @@ func (m Manager) connectToMessageBus() {
 func (m Manager) handleUserCreationEvent(user *domain.User) {
 	logrus.Errorf("handling new user event for %s", user.Identifier)
 
-	if m.cfg.Core.CreateDefaultPeer {
+	if m.cfg.Core.CreateDefaultPeer && m.cfg.Core.DefaultPeersPerUser > 0 {
 		ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
 		err := m.CreateDefaultPeer(ctx, user)
 		if err != nil {

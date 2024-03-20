@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 func (m Manager) CreateDefaultPeer(ctx context.Context, user *domain.User) error {
@@ -21,33 +22,37 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, user *domain.User) error
 		return fmt.Errorf("failed to fetch all interfaces: %w", err)
 	}
 
-	var newPeers []domain.Peer
+	numPeers := 0
 	for _, iface := range existingInterfaces {
 		if iface.Type != domain.InterfaceTypeServer {
 			continue // only create default peers for server interfaces
 		}
 
-		peer, err := m.PreparePeer(ctx, iface.Identifier)
-		if err != nil {
-			return fmt.Errorf("failed to create default peer for interface %s: %w", iface.Identifier, err)
+		for i := 0; i < m.cfg.Core.DefaultPeersPerUser; i++ {
+			peer, err := m.PreparePeer(ctx, iface.Identifier)
+			if err != nil {
+				return fmt.Errorf("failed to create default peer for interface %s: %w", iface.Identifier, err)
+			}
+
+			peer.UserIdentifier = user.Identifier
+			if i < len(m.cfg.Core.DefaultPeerNames) {
+				peer.DisplayName = string(user.Identifier) + " " + m.cfg.Core.DefaultPeerNames[i]
+			} else {
+				peer.DisplayName = fmt.Sprintf("Default Peer %s", internal.TruncateString(string(peer.Identifier), 8))
+			}
+			peer.Notes = fmt.Sprintf("Default peer created for user %s", user.Identifier)
+
+			_, err = m.CreatePeer(ctx, peer)
+			if err != nil {
+				return fmt.Errorf("failed to create default peer %s on interface %s: %w",
+					peer.Identifier, peer.InterfaceIdentifier, err)
+			} else {
+				numPeers++
+			}
 		}
-
-		peer.UserIdentifier = user.Identifier
-		peer.DisplayName = fmt.Sprintf("Default Peer %s", internal.TruncateString(string(peer.Identifier), 8))
-		peer.Notes = fmt.Sprintf("Default peer created for user %s", user.Identifier)
-
-		newPeers = append(newPeers, *peer)
 	}
 
-	for i, peer := range newPeers {
-		_, err := m.CreatePeer(ctx, &newPeers[i])
-		if err != nil {
-			return fmt.Errorf("failed to create default peer %s on interface %s: %w",
-				peer.Identifier, peer.InterfaceIdentifier, err)
-		}
-	}
-
-	logrus.Infof("created %d default peers for user %s", len(newPeers), user.Identifier)
+	logrus.Infof("created %d default peers for user %s", numPeers, user.Identifier)
 
 	return nil
 }
