@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"gopkg.in/yaml.v2"
 )
@@ -15,11 +16,13 @@ type Config struct {
 		AdminUser     string `yaml:"admin_user"`
 		AdminPassword string `yaml:"admin_password"`
 
-		EditableKeys            bool `yaml:"editable_keys"`
-		CreateDefaultPeer       bool `yaml:"create_default_peer"`
-		SelfProvisioningAllowed bool `yaml:"self_provisioning_allowed"`
-		ImportExisting          bool `yaml:"import_existing"`
-		RestoreState            bool `yaml:"restore_state"`
+		EditableKeys            bool     `yaml:"editable_keys"`
+		CreateDefaultPeer       bool     `yaml:"create_default_peer"`
+		DefaultPeersPerUser     int      `yaml:"default_peers_per_user"`
+		DefaultPeerNames        []string `yaml:"default_peer_names"`
+		SelfProvisioningAllowed bool     `yaml:"self_provisioning_allowed"`
+		ImportExisting          bool     `yaml:"import_existing"`
+		RestoreState            bool     `yaml:"restore_state"`
 	} `yaml:"core"`
 
 	Advanced struct {
@@ -84,6 +87,8 @@ func defaultConfig() *Config {
 
 	cfg.Core.ImportExisting = true
 	cfg.Core.RestoreState = true
+
+	cfg.Core.DefaultPeersPerUser = 1
 
 	cfg.Database = DatabaseConfig{
 		Type: "sqlite",
