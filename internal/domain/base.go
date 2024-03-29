@@ -1,7 +1,10 @@
 package domain
 
 import (
+	"errors"
 	"time"
+
+	"database/sql/driver"
 )
 
 type BaseModel struct {
@@ -19,6 +22,26 @@ func (PrivateString) MarshalJSON() ([]byte, error) {
 
 func (PrivateString) String() string {
 	return ""
+}
+
+func (ps PrivateString) Value() (driver.Value, error) {
+	if len(ps) == 0 {
+        return nil, nil
+    }
+	return string(ps), nil
+}
+
+func (ps *PrivateString) Scan(value interface{}) error {
+    if value == nil {
+        *ps = ""
+        return nil
+    }
+    strValue, ok := value.(string)
+    if !ok {
+        return errors.New("invalid type for PrivateString")
+    }
+    *ps = PrivateString(strValue)
+    return nil
 }
 
 const (
