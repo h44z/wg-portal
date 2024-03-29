@@ -5,7 +5,7 @@ site_description: 'Manage WireGuard Peers and Interface using a beautiful and si
 site_url: https://wgportal.org
 repo_name: 'h44z/wg-portal'
 repo_url: 'https://github.com/h44z/wg-portal'
-copyright: 'Copyright &copy; 2023 WireGuard Portal Project'
+copyright: 'Copyright &copy; 2023-2024 WireGuard Portal Project'
 extra_css:
   - stylesheets/extra.css
 theme:
@@ -24,7 +24,7 @@ theme:
 
 plugins:
   - search
-  - social
+  #- social # disable until https://github.com/squidfunk/mkdocs-material/issues/6983 is resolved
 
 extra:
   social:
