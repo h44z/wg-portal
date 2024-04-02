@@ -203,9 +203,6 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 			// try to move interface to stored state
 			_, err = m.saveInterface(ctx, &iface, peers)
 			if err != nil {
-				return err
-			}
-			if err != nil {
 				if updateDbOnError {
 					// disable interface in database as no physical interface is available
 					_ = m.db.SaveInterface(ctx, iface.Identifier, func(in *domain.Interface) (*domain.Interface, error) {
@@ -469,7 +466,26 @@ func (m Manager) hasInterfaceStateChanged(ctx context.Context, iface *domain.Int
 		return false
 	}
 
-	return oldInterface.IsDisabled() != iface.IsDisabled()
+	if oldInterface.IsDisabled() != iface.IsDisabled() {
+		return true // interface in db has changed
+	}
+
+	wgInterface, err := m.wg.GetInterface(ctx, iface.Identifier)
+	if err != nil {
+		return true // interface might not exist - so we assume that there must be a change
+	}
+
+	// compare physical interface settings
+	if len(wgInterface.Addresses) != len(iface.Addresses) ||
+		wgInterface.Mtu != iface.Mtu ||
+		wgInterface.FirewallMark != iface.FirewallMark ||
+		wgInterface.ListenPort != iface.ListenPort ||
+		wgInterface.PrivateKey != iface.PrivateKey ||
+		wgInterface.PublicKey != iface.PublicKey {
+		return true
+	}
+
+	return false
 }
 
 func (m Manager) handleInterfacePreSaveActions(iface *domain.Interface) error {

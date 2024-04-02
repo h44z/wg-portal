@@ -28,6 +28,7 @@ func (r *WgQuickRepo) ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCm
 		return nil
 	}
 
+	logrus.Tracef("interface %s: executing hook %s", id, hookCmd)
 	err := r.exec(hookCmd, id)
 	if err != nil {
 		return fmt.Errorf("failed to exec hook: %w", err)
