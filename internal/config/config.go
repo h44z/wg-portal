@@ -15,11 +15,12 @@ type Config struct {
 		AdminUser     string `yaml:"admin_user"`
 		AdminPassword string `yaml:"admin_password"`
 
-		EditableKeys            bool `yaml:"editable_keys"`
-		CreateDefaultPeer       bool `yaml:"create_default_peer"`
-		SelfProvisioningAllowed bool `yaml:"self_provisioning_allowed"`
-		ImportExisting          bool `yaml:"import_existing"`
-		RestoreState            bool `yaml:"restore_state"`
+		EditableKeys                bool `yaml:"editable_keys"`
+		CreateDefaultPeer           bool `yaml:"create_default_peer"`
+		CreateDefaultPeerOnCreation bool `yaml:"create_default_peer_on_creation"`
+		SelfProvisioningAllowed     bool `yaml:"self_provisioning_allowed"`
+		ImportExisting              bool `yaml:"import_existing"`
+		RestoreState                bool `yaml:"restore_state"`
 	} `yaml:"core"`
 
 	Advanced struct {
@@ -60,7 +61,7 @@ type Config struct {
 func (c *Config) LogStartupValues() {
 	logrus.Debug("WireGuard Portal Features:")
 	logrus.Debugf("  - EditableKeys: %t", c.Core.EditableKeys)
-	logrus.Debugf("  - CreateDefaultPeer: %t", c.Core.CreateDefaultPeer)
+	logrus.Debugf("  - CreateDefaultPeerOnCreation: %t", c.Core.CreateDefaultPeerOnCreation)
 	logrus.Debugf("  - SelfProvisioningAllowed: %t", c.Core.SelfProvisioningAllowed)
 	logrus.Debugf("  - ImportExisting: %t", c.Core.ImportExisting)
 	logrus.Debugf("  - RestoreState: %t", c.Core.RestoreState)

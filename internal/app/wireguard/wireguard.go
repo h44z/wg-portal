@@ -41,18 +41,46 @@ func (m Manager) StartBackgroundJobs(ctx context.Context) {
 
 func (m Manager) connectToMessageBus() {
 	_ = m.bus.Subscribe(app.TopicUserCreated, m.handleUserCreationEvent)
+	_ = m.bus.Subscribe(app.TopicAuthLogin, m.handleUserLoginEvent)
 }
 
 func (m Manager) handleUserCreationEvent(user *domain.User) {
-	logrus.Errorf("handling new user event for %s", user.Identifier)
+	if !m.cfg.Core.CreateDefaultPeerOnCreation {
+		return
+	}
 
-	if m.cfg.Core.CreateDefaultPeer {
-		ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
-		err := m.CreateDefaultPeer(ctx, user)
-		if err != nil {
-			logrus.Errorf("failed to create default peer for %s: %v", user.Identifier, err)
-			return
-		}
+	logrus.Tracef("handling new user event for %s", user.Identifier)
+
+	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+	err := m.CreateDefaultPeer(ctx, user.Identifier)
+	if err != nil {
+		logrus.Errorf("failed to create default peer for %s: %v", user.Identifier, err)
+		return
+	}
+}
+
+func (m Manager) handleUserLoginEvent(userId domain.UserIdentifier) {
+	if !m.cfg.Core.CreateDefaultPeer {
+		return
+	}
+
+	userPeers, err := m.db.GetUserPeers(context.Background(), userId)
+	if err != nil {
+		logrus.Errorf("failed to retrieve existing peers for %s prior to default peer creation: %v", userId, err)
+		return
+	}
+
+	if len(userPeers) > 0 {
+		return // user already has peers, skip creation
+	}
+
+	logrus.Tracef("handling new user login for %s", userId)
+
+	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+	err = m.CreateDefaultPeer(ctx, userId)
+	if err != nil {
+		logrus.Errorf("failed to create default peer for %s: %v", userId, err)
+		return
 	}
 }
 

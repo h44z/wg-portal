@@ -4,6 +4,8 @@ advanced:
 core:
   admin_user: test@test.de
   admin_password: secret
+  create_default_peer: true
+  create_default_peer_on_creation: false
 
 web:
   external_url: http://localhost:8888

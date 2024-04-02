@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (m Manager) CreateDefaultPeer(ctx context.Context, user *domain.User) error {
+func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdentifier) error {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return err
 	}
@@ -32,9 +32,10 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, user *domain.User) error
 			return fmt.Errorf("failed to create default peer for interface %s: %w", iface.Identifier, err)
 		}
 
-		peer.UserIdentifier = user.Identifier
+		peer.UserIdentifier = userId
 		peer.DisplayName = fmt.Sprintf("Default Peer %s", internal.TruncateString(string(peer.Identifier), 8))
-		peer.Notes = fmt.Sprintf("Default peer created for user %s", user.Identifier)
+		peer.Notes = fmt.Sprintf("Default peer created for user %s", userId)
+		peer.AutomaticallyCreated = true
 
 		newPeers = append(newPeers, *peer)
 	}
@@ -47,7 +48,7 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, user *domain.User) error
 		}
 	}
 
-	logrus.Infof("created %d default peers for user %s", len(newPeers), user.Identifier)
+	logrus.Infof("created %d default peers for user %s", len(newPeers), userId)
 
 	return nil
 }

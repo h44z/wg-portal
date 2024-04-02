@@ -40,14 +40,15 @@ type Peer struct {
 
 	// WG Portal specific
 
-	DisplayName         string              // a nice display name/ description for the peer
-	Identifier          PeerIdentifier      `gorm:"primaryKey;column:identifier"`      // peer unique identifier
-	UserIdentifier      UserIdentifier      `gorm:"index;column:user_identifier"`      // the owner
-	InterfaceIdentifier InterfaceIdentifier `gorm:"index;column:interface_identifier"` // the interface id
-	Disabled            *time.Time          `gorm:"column:disabled"`                   // if this field is set, the peer is disabled
-	DisabledReason      string              // the reason why the peer has been disabled
-	ExpiresAt           *time.Time          `gorm:"column:expires_at"`         // expiry dates for peers
-	Notes               string              `form:"notes" binding:"omitempty"` // a note field for peers
+	DisplayName          string              // a nice display name/ description for the peer
+	Identifier           PeerIdentifier      `gorm:"primaryKey;column:identifier"`      // peer unique identifier
+	UserIdentifier       UserIdentifier      `gorm:"index;column:user_identifier"`      // the owner
+	InterfaceIdentifier  InterfaceIdentifier `gorm:"index;column:interface_identifier"` // the interface id
+	Disabled             *time.Time          `gorm:"column:disabled"`                   // if this field is set, the peer is disabled
+	DisabledReason       string              // the reason why the peer has been disabled
+	ExpiresAt            *time.Time          `gorm:"column:expires_at"`         // expiry dates for peers
+	Notes                string              `form:"notes" binding:"omitempty"` // a note field for peers
+	AutomaticallyCreated bool                `gorm:"column:auto_created"`       // specifies if the peer was automatically created
 
 	// Interface settings for the peer, used to generate the [interface] section in the peer config file
 	Interface PeerInterfaceConfig `gorm:"embedded"`
