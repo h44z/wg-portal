@@ -212,7 +212,7 @@ function ConfigQrUrl() {
       <div class="flex-fill text-start">
         <button @click.prevent="download" type="button" class="btn btn-primary me-1">{{
           $t('modals.peer-view.button-download') }}</button>
-        <button @click.prevent="email" hidden type="button" class="btn btn-primary me-1">{{
+        <button @click.prevent="email" type="button" class="btn btn-primary me-1">{{
           $t('modals.peer-view.button-email') }}</button>
       </div>
       <button @click.prevent="close" type="button" class="btn btn-secondary">{{ $t('general.close') }}</button>
