@@ -32,7 +32,11 @@ The [Values](#values) section lists the parameters that can be configured during
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Affinity configuration |
+| args | list | `[]` | Additional pod arguments |
+| command | list | `[]` | Overwrite pod command |
 | dnsPolicy | string | `"ClusterFirst"` | Set DNS policy for the pod. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`. |
+| env | list | `[]` | Additional environment variables |
+| envFrom | list | `[]` | Additional environment variables from a secret or configMap |
 | hostNetwork | string | `false`. | Use the host's network namespace. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | image.repository | string | `"ghcr.io/h44z/wg-portal"` | Image repository |

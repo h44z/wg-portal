@@ -112,6 +112,22 @@ hostNetwork: ''
 # @section -- Parameters
 resources: {}
 
+# -- Overwrite pod command
+# @section -- Parameters
+command: []
+
+# -- Additional pod arguments
+# @section -- Parameters
+args: []
+
+# -- Additional environment variables
+# @section -- Parameters
+env: []
+
+# -- Additional environment variables from a secret or configMap
+# @section -- Parameters
+envFrom: []
+
 # -- Liveness probe configuration
 # @ignore
 livenessProbe:

@@ -23,6 +23,18 @@ spec:
     - name: {{ .Chart.Name }}
       image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag}}"
       imagePullPolicy: {{ .Values.image.pullPolicy }}
+      {{- with .Values.command }}
+      command: {{ . }}
+      {{- end }}
+      {{- with .Values.args }}
+      args: {{ . }}
+      {{- end }}
+      {{- with .Values.env }}
+      env: {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+      {{- with .Values.envFrom }}
+      envFrom: {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
       ports:
         - name: http
           containerPort: {{ .Values.service.web.port }}
