@@ -150,6 +150,16 @@ readinessProbe:
     path: /
     port: http
 
+# -- Startup probe configuration
+# @ignore
+startupProbe:
+  initialDelaySeconds: 5
+  failureThreshold: 10
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+
 # -- (tpl/list) Additional volumes
 # @section -- Parameters
 volumes: []
