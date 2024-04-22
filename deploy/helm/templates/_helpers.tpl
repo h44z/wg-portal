@@ -69,12 +69,12 @@ the admin_user and admin_password values are not used.
 {{- define "wg-portal.admin" -}}
 {{- $externalAdmin := false -}}
 {{- with .Values.config.auth -}}
-  {{- range .ldap -}}
+  {{- range (default list .ldap) -}}
     {{- if hasKey . "admin_group" -}}
       {{- $externalAdmin = true -}}
     {{- end -}}
   {{- end }}
-  {{- range (concat .oidc .oauth) -}}
+  {{- range (concat (default list .oidc) (default list .oauth)) -}}
     {{- if hasKey .field_map "is_admin" -}}
       {{- $externalAdmin = true -}}
     {{- end -}}
