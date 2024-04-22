@@ -8,6 +8,9 @@ spec:
   {{- with .Values.revisionHistoryLimit }}
   revisionHistoryLimit: {{ . }}
   {{- end }}
+  {{- with .Values.strategy }}
+  updateStrategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
   serviceName: {{ template "wg-portal.fullname" . }}-web
   selector:
     matchLabels: {{- include "wg-portal.selectorLabels" . | nindent 6 }}

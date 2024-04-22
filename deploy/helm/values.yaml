@@ -48,6 +48,13 @@ revisionHistoryLimit: ''
 # -- Workload type - `Deployment` or `StatefulSet`
 # @section -- Parameters
 workloadType: Deployment
+# -- Update strategy for the workload
+# Valid values are:
+#  `RollingUpdate` or `Recreate` for Deployment,
+#  `RollingUpdate` or `OnDelete` for StatefulSet
+# @section -- Parameters
+strategy:
+  type: RollingUpdate
 
 image:
   # -- Image repository

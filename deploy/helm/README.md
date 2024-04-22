@@ -52,6 +52,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | revisionHistoryLimit | string | `10` | The number of old ReplicaSets to retain to allow rollback. |
 | securityContext.capabilities.add | list | `["NET_ADMIN"]` | Add capabilities to the container |
 | sidecarContainers | list | `[]` | Pod sidecar containers. Evaluated as a template |
+| strategy | object | `{"type":"RollingUpdate"}` | Update strategy for the workload Valid values are:  `RollingUpdate` or `Recreate` for Deployment,  `RollingUpdate` or `OnDelete` for StatefulSet |
 | tolerations | list | `[]` | Tolerations configuration |
 | volumeMounts | list | `[]` | Additional volumeMounts |
 | volumes | list | `[]` | Additional volumes |
