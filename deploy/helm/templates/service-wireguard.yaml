@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.service.wireguard.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ include "wg-portal.fullname" . }}-wireguard
+  labels: {{- include "wg-portal.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.service.wireguard.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- with .Values.service.wireguard.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  ports:
+    {{- range $index, $port := .Values.service.wireguard.ports }}
+    - port: {{ $port }}
+      targetPort: wg{{ $index }}
+      protocol: UDP
+      name: wg{{ $index }}
+    {{- end }}
+  selector: {{- include "wg-portal.selectorLabels" . | nindent 4 }}
+  {{- with .Values.service.wireguard.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  type: {{ .Values.service.wireguard.type }}

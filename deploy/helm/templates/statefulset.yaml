@@ -1,0 +1,21 @@
+{{- if eq .Values.workloadType "StatefulSet" -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "wg-portal.fullname" . }}
+  labels: {{- include "wg-portal.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  serviceName: {{ template "wg-portal.fullname" . }}-web
+  selector:
+    matchLabels: {{- include "wg-portal.selectorLabels" . | nindent 6 }}
+  template: {{- include "wg-portal.podTemplate" . | nindent 4 }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec: {{- include "wg-portal.pvc" . | nindent 8 }}
+  {{- end -}}
+{{- end -}}
