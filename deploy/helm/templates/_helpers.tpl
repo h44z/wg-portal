@@ -90,7 +90,7 @@ admin_password: {{ printf "%s/%s" .Release.Name .Release.Namespace | b64enc }}
 Define PersistentVolumeClaim spec
 */}}
 {{- define "wg-portal.pvc" -}}
-accessModes: {{ toYaml .Values.persistence.accessModes | nindent 2 }}
+accessModes: [{{ .Values.persistence.accessMode }}]
 {{- with .Values.persistence.storageClass }}
 storageClassName: {{ . }}
 {{- end }}

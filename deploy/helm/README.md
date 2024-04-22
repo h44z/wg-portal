@@ -99,7 +99,7 @@ The [Values](#values) section lists the parameters that can be configured during
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| persistence.accessModes | list | `["ReadWriteOnce"]` | Persistent Volume Access Modes |
+| persistence.accessMode | string | `"ReadWriteOnce"` | Persistent Volume Access Mode |
 | persistence.annotations | object | `{}` | Persistent Volume Claim annotations |
 | persistence.enabled | bool | `false` | Specifies whether an persistent volume should be created |
 | persistence.size | string | `"1Gi"` | Persistent Volume size |

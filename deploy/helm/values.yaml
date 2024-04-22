@@ -229,9 +229,9 @@ persistence:
   # If undefined (the default) cluster's default provisioner will be used.
   # @section -- Persistence
   storageClass: ''
-  # -- Persistent Volume Access Modes
+  # -- Persistent Volume Access Mode
   # @section -- Persistence
-  accessModes: [ReadWriteOnce]
+  accessMode: ReadWriteOnce
   # -- Persistent Volume size
   # @section -- Persistence
   size: 1Gi
