@@ -35,40 +35,40 @@ The [Values](#values) section lists the parameters that can be configured during
 | args | list | `[]` | Additional pod arguments |
 | command | list | `[]` | Overwrite pod command |
 | dnsPolicy | string | `"ClusterFirst"` | Set DNS policy for the pod. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`. |
-| env | list | `[]` | Additional environment variables |
-| envFrom | list | `[]` | Additional environment variables from a secret or configMap |
+| env | tpl/list | `[]` | Additional environment variables |
+| envFrom | tpl/list | `[]` | Additional environment variables from a secret or configMap |
 | hostNetwork | string | `false`. | Use the host's network namespace. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | image.repository | string | `"ghcr.io/h44z/wg-portal"` | Image repository |
-| image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
+| image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion |
 | imagePullSecrets | list | `[]` | Image pull secrets |
-| initContainers | list | `[]` | Pod init containers. Evaluated as a template |
+| initContainers | tpl/list | `[]` | Pod init containers |
 | nodeSelector | object | `{"kubernetes.io/os":"linux"}` | Node Selector configuration |
-| podAnnotations | object | `{}` | Extra annotations to add to the pod |
+| podAnnotations | tpl/object | `{}` | Extra annotations to add to the pod |
 | podLabels | object | `{}` | Extra labels to add to the pod |
 | podSecurityContext | object | `{}` | Pod Security Context |
 | resources | object | `{}` | Resources requests and limits |
 | restartPolicy | string | `"Always"` | Restart policy for all containers within the pod. Valid values are `Always`, `OnFailure` or `Never`. |
 | revisionHistoryLimit | string | `10` | The number of old ReplicaSets to retain to allow rollback. |
 | securityContext.capabilities.add | list | `["NET_ADMIN"]` | Add capabilities to the container |
-| sidecarContainers | list | `[]` | Pod sidecar containers. Evaluated as a template |
+| sidecarContainers | tpl/list | `[]` | Pod sidecar containers |
 | strategy | object | `{"type":"RollingUpdate"}` | Update strategy for the workload Valid values are:  `RollingUpdate` or `Recreate` for Deployment,  `RollingUpdate` or `OnDelete` for StatefulSet |
 | tolerations | list | `[]` | Tolerations configuration |
-| volumeMounts | list | `[]` | Additional volumeMounts |
-| volumes | list | `[]` | Additional volumes |
+| volumeMounts | tpl/list | `[]` | Additional volumeMounts |
+| volumes | tpl/list | `[]` | Additional volumes |
 | workloadType | string | `"Deployment"` | Workload type - `Deployment` or `StatefulSet` |
 
 ### Configuration
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| config.advanced | object | `{}` | Advanced configuration options |
-| config.auth | object | `{}` | Auth configuration options |
-| config.core | object | `{}` | Core configuration options.<br> If external admins in `auth` are not defined and there are no `admin_user` and `admin_password` defined here, the default credentials will be generated. |
-| config.database | object | `{}` | Database configuration options |
-| config.mail | object | `{}` | Mail configuration options |
-| config.statistics | object | `{}` | Statistics configuration options |
-| config.web | object | `{}` | Web configuration options.<br> The chart will set `listening_address` automatically from `service.web.port`, and `external_url` from `ingress.host` if enabled. |
+| config.advanced | tpl/object | `{}` | Advanced configuration options. |
+| config.auth | tpl/object | `{}` | Auth configuration options. |
+| config.core | tpl/object | `{}` | Core configuration options.<br> If external admins in `auth` are not defined and there are no `admin_user` and `admin_password` defined here, the default credentials will be generated. |
+| config.database | tpl/object | `{}` | Database configuration options |
+| config.mail | tpl/object | `{}` | Mail configuration options |
+| config.statistics | tpl/object | `{}` | Statistics configuration options |
+| config.web | tpl/object | `{}` | Web configuration options.<br> The chart will set `listening_address` automatically from `service.web.port`, and `external_url` from `ingress.host` if enabled. |
 
 ### Common
 

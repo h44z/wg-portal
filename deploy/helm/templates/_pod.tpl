@@ -4,7 +4,7 @@ metadata:
     checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     kubectl.kubernetes.io/default-container: {{ .Chart.Name }}
     {{- with .Values.podAnnotations }}
-    {{- toYaml . | nindent 4 }}
+    {{- tpl (toYaml .) $ | nindent 4 }}
     {{- end }}
   labels:
     {{- include "wg-portal.labels" . | nindent 4 }}

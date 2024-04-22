@@ -14,28 +14,28 @@ extraDeploy: []
 
 # https://github.com/h44z/wg-portal/blob/master/README.md#configuration-options
 config:
-  # -- Advanced configuration options
+  # -- (tpl/object) Advanced configuration options.
   # @section -- Configuration
   advanced: {}
-  # -- Auth configuration options
+  # -- (tpl/object) Auth configuration options.
   # @section -- Configuration
   auth: {}
-  # -- Core configuration options.<br>
+  # -- (tpl/object) Core configuration options.<br>
   # @section -- Configuration
   # If external admins in `auth` are not defined and
   # there are no `admin_user` and `admin_password` defined here,
   # the default credentials will be generated.
   core: {}
-  # -- Database configuration options
+  # -- (tpl/object) Database configuration options
   # @section -- Configuration
   database: {}
-  # -- Mail configuration options
+  # -- (tpl/object) Mail configuration options
   # @section -- Configuration
   mail: {}
-  # -- Statistics configuration options
+  # -- (tpl/object) Statistics configuration options
   # @section -- Configuration
   statistics: {}
-  # -- Web configuration options.<br>
+  # -- (tpl/object) Web configuration options.<br>
   # @section -- Configuration
   # The chart will set `listening_address` automatically from `service.web.port`,
   # and `external_url` from `ingress.host` if enabled.
@@ -63,7 +63,7 @@ image:
   # -- Image pull policy
   # @section -- Parameters
   pullPolicy: IfNotPresent
-  # -- Overrides the image tag whose default is the chart appVersion.
+  # -- Overrides the image tag whose default is the chart appVersion
   # @section -- Parameters
   tag: ''
 
@@ -71,7 +71,7 @@ image:
 # @section -- Parameters
 imagePullSecrets: []
 
-# -- Extra annotations to add to the pod
+# -- (tpl/object) Extra annotations to add to the pod
 # @section -- Parameters
 podAnnotations: {}
 
@@ -91,10 +91,10 @@ securityContext:
     add:
       - NET_ADMIN
 
-# -- Pod init containers. Evaluated as a template
+# -- (tpl/list) Pod init containers
 # @section -- Parameters
 initContainers: []
-# -- Pod sidecar containers. Evaluated as a template
+# -- (tpl/list) Pod sidecar containers
 # @section -- Parameters
 sidecarContainers: []
 
@@ -127,11 +127,11 @@ command: []
 # @section -- Parameters
 args: []
 
-# -- Additional environment variables
+# -- (tpl/list) Additional environment variables
 # @section -- Parameters
 env: []
 
-# -- Additional environment variables from a secret or configMap
+# -- (tpl/list) Additional environment variables from a secret or configMap
 # @section -- Parameters
 envFrom: []
 
@@ -150,11 +150,11 @@ readinessProbe:
     path: /
     port: http
 
-# -- Additional volumes
+# -- (tpl/list) Additional volumes
 # @section -- Parameters
 volumes: []
 
-# -- Additional volumeMounts
+# -- (tpl/list) Additional volumeMounts
 # @section -- Parameters
 volumeMounts: []
 
