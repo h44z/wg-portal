@@ -66,7 +66,7 @@ spec:
         - name: data
           mountPath: /app/data
         {{- with .Values.volumeMounts }}
-        {{- toYaml . | nindent 8 }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}
   {{- with .Values.dnsPolicy }}
   dnsPolicy: {{ . }}
@@ -106,6 +106,6 @@ spec:
         claimName: {{ include "wg-portal.fullname" . }}
     {{- end }}
     {{- with .Values.volumes }}
-    {{- toYaml . | nindent 4 }}
+    {{- tpl (toYaml .) $ | nindent 4 }}
     {{- end }}
 {{- end -}}
