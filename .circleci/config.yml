@@ -55,7 +55,7 @@ jobs:
             fi
     working_directory: ~/repo
     docker:
-      - image: cimg/go:1.21-node
+      - image: cimg/go:1.22-node
 
 workflows:
   build-and-release:

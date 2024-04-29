@@ -179,7 +179,7 @@ Ensure that the new database does not contain any data!
 ## Building
 
 To build a standalone application, use the Makefile provided in the repository. 
-Go version 1.20 or higher has to be installed to build WireGuard Portal. 
+Go version 1.22 or higher has to be installed to build WireGuard Portal. 
 If you want to re-compile the frontend, NodeJS 18 and NPM >= 9 is required.
 
 ```shell

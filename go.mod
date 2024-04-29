@@ -1,6 +1,6 @@
 module github.com/h44z/wg-portal
 
-go 1.21
+go 1.22.2
 
 require (
 	github.com/coreos/go-oidc/v3 v3.10.0

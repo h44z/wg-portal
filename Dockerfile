@@ -20,7 +20,7 @@ RUN npm run build
 ######
 # Build backend
 ######
-FROM --platform=${BUILDPLATFORM} golang:1.21-alpine as builder
+FROM --platform=${BUILDPLATFORM} golang:1.22-alpine as builder
 # Set the working directory
 WORKDIR /build
 # Download dependencies
