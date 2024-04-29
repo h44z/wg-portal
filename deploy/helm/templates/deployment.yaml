@@ -1,0 +1,17 @@
+{{- if eq .Values.workloadType "Deployment" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "wg-portal.fullname" . }}
+  labels: {{- include "wg-portal.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "wg-portal.selectorLabels" . | nindent 6 }}
+  template: {{- include "wg-portal.podTemplate" . | nindent 4 }}
+{{- end -}}
