@@ -5,7 +5,7 @@ go 1.22.2
 require (
 	github.com/coreos/go-oidc/v3 v3.10.0
 	github.com/gin-contrib/cors v1.7.1
-	github.com/gin-contrib/sessions v1.0.0
+	github.com/gin-contrib/sessions v1.0.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.8
