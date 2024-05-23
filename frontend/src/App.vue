@@ -110,9 +110,9 @@ const currentYear = ref(new Date().getFullYear())
               <button aria-expanded="false" aria-haspopup="true" class="btn btn btn-secondary pe-0"
                 data-bs-toggle="dropdown" type="button"><span :class="languageFlag" class="fi"></span></button>
               <div aria-labelledby="btnGroupDrop3" class="dropdown-menu" style="">
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span>English</a>
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span>Deutsch</a>
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span>Русский</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span> English</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span> Deutsch</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span> Русский</a>
               </div>
             </div>
           </div>
