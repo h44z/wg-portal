@@ -42,6 +42,9 @@ const switchLanguage = function (lang) {
 const languageFlag = computed(() => {
   // `this` points to the component instance
   let lang = appGlobal.$i18n.locale.toLowerCase();
+  if (!appGlobal.$i18n.availableLocales.includes(lang)) {
+    lang = appGlobal.$i18n.fallbackLocale;
+  }
   if (lang === "en") {
     lang = "us";
   }
