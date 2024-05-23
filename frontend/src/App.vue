@@ -62,7 +62,7 @@ const currentYear = ref(new Date().getFullYear())
 
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/"><img alt="WireGuard Portal" src="/img/header-logo.png" /></a>
+      <a class="navbar-brand" href="/"><img :alt="companyName" src="/img/header-logo.png" /></a>
       <button aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
         data-bs-target="#navbarTop" data-bs-toggle="collapse" type="button">
         <span class="navbar-toggler-icon"></span>
