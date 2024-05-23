@@ -1,4 +1,7 @@
 {
+  "languages": {
+    "ru": "Русский"
+  },
   "general": {
     "pagination": {
       "size": "Количество элементов",

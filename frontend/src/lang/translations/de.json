@@ -1,4 +1,7 @@
 {
+  "languages": {
+    "de": "Deutsch"
+  },
   "general": {
     "pagination": {
       "size": "Anzahl an Elementen",

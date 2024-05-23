@@ -3,3 +3,7 @@ a.disabled {
     cursor: default;
     color: #888888;
 }
+
+.text-wrap {
+    overflow-break: anywhere;
+}

@@ -138,7 +138,7 @@ onMounted(async () => {
                 <tbody>
                 <tr>
                   <td>{{ $t('interfaces.interface.key') }}:</td>
-                  <td>{{interfaces.GetSelected.PublicKey}}</td>
+                  <td class="text-wrap">{{interfaces.GetSelected.PublicKey}}</td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.interface.endpoint') }}:</td>
@@ -192,7 +192,7 @@ onMounted(async () => {
                 <tbody>
                 <tr>
                   <td>{{ $t('interfaces.interface.key') }}:</td>
-                  <td>{{interfaces.GetSelected.PublicKey}}</td>
+                  <td class="text-wrap">{{interfaces.GetSelected.PublicKey}}</td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.interface.endpoints') }}:</td>
@@ -230,7 +230,7 @@ onMounted(async () => {
                 <tbody>
                 <tr>
                   <td>{{ $t('interfaces.interface.key') }}:</td>
-                  <td>{{interfaces.GetSelected.PublicKey}}</td>
+                  <td class="text-wrap">{{interfaces.GetSelected.PublicKey}}</td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.interface.endpoint') }}:</td>
