@@ -42,6 +42,9 @@ const switchLanguage = function (lang) {
 const languageFlag = computed(() => {
   // `this` points to the component instance
   let lang = appGlobal.$i18n.locale.toLowerCase();
+  if (!appGlobal.$i18n.availableLocales.includes(lang)) {
+    lang = appGlobal.$i18n.fallbackLocale;
+  }
   if (lang === "en") {
     lang = "us";
   }
@@ -59,7 +62,7 @@ const currentYear = ref(new Date().getFullYear())
 
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/"><img alt="WireGuard Portal" src="/img/header-logo.png" /></a>
+      <a class="navbar-brand" href="/"><img :alt="companyName" src="/img/header-logo.png" /></a>
       <button aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
         data-bs-target="#navbarTop" data-bs-toggle="collapse" type="button">
         <span class="navbar-toggler-icon"></span>
@@ -110,9 +113,9 @@ const currentYear = ref(new Date().getFullYear())
               <button aria-expanded="false" aria-haspopup="true" class="btn btn btn-secondary pe-0"
                 data-bs-toggle="dropdown" type="button"><span :class="languageFlag" class="fi"></span></button>
               <div aria-labelledby="btnGroupDrop3" class="dropdown-menu" style="">
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span>English</a>
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span>Deutsch</a>
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span>Русский</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span> English</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span> Deutsch</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span> Русский</a>
               </div>
             </div>
           </div>
