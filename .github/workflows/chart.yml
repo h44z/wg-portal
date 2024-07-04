@@ -27,7 +27,7 @@ jobs:
       # ct lint requires Python 3.x to run following packages:
       #  - yamale (https://github.com/23andMe/Yamale)
       #  - yamllint (https://github.com/adrienverge/yamllint)
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
@@ -63,7 +63,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: docker/login-action@v1
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
