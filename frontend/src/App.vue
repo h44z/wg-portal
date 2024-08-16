@@ -116,6 +116,7 @@ const currentYear = ref(new Date().getFullYear())
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span> English</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span> Deutsch</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span> Русский</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('vi')"><span class="fi fi-vi"></span> Tiếng Việt</a>
               </div>
             </div>
           </div>
