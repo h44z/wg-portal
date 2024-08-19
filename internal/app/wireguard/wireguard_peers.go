@@ -127,8 +127,8 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 			RoutingTable:      domain.NewStringConfigOption(iface.PeerDefRoutingTable, true),
 			PreUp:             domain.NewStringConfigOption(iface.PeerDefPreUp, true),
 			PostUp:            domain.NewStringConfigOption(iface.PeerDefPostUp, true),
-			PreDown:           domain.NewStringConfigOption(iface.PeerDefPreUp, true),
-			PostDown:          domain.NewStringConfigOption(iface.PeerDefPostUp, true),
+			PreDown:           domain.NewStringConfigOption(iface.PeerDefPreDown, true),
+			PostDown:          domain.NewStringConfigOption(iface.PeerDefPostDown, true),
 		},
 	}
 
