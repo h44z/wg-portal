@@ -24,6 +24,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check docs
+        run: |
+          make helm-docs
+          if ! git diff --exit-code; then
+            echo "error::Documentation is not up to date. Please run helm-docs and commit changes."
+            exit 1
+          fi
+
       # ct lint requires Python 3.x to run following packages:
       #  - yamale (https://github.com/23andMe/Yamale)
       #  - yamllint (https://github.com/adrienverge/yamllint)
@@ -36,18 +44,12 @@ jobs:
       - name: Run chart-testing (lint)
         run: ct lint --config ct.yaml
 
-      - name: Check docs
-        run: |
-          make helm-docs
-          if ! git diff --exit-code; then
-            echo "error::Documentation is not up to date. Please run helm-docs and commit changes."
-            exit 1
-          fi
-
-      - uses: helm/kind-action@v1
+      - uses: nolar/setup-k3d-k3s@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run chart-testing (install)
-        run: ct install --config ct.yaml --skip-clean-up
+        run: ct install --config ct.yaml
 
       - name: Run helm package charts
         run: |
