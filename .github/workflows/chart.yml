@@ -47,7 +47,7 @@ jobs:
       - uses: helm/kind-action@v1
 
       - name: Run chart-testing (install)
-        run: ct install --config ct.yaml
+        run: ct install --config ct.yaml --skip-clean-up
 
       - name: Run helm package charts
         run: |
