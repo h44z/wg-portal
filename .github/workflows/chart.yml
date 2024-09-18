@@ -10,10 +10,10 @@ name: Chart
 on:
   pull_request:
     branches: [master]
-    paths: [deploy/helm]
+    paths: ['deploy/helm/**']
   push:
     branches: [master]
-    paths: [deploy/helm]
+    paths: ['deploy/helm/**']
 
 jobs:
   lint-test:
