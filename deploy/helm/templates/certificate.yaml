@@ -1,0 +1,54 @@
+{{/* https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources */}}
+{{- if and .Values.certificate.enabled (include "wg-portal.hostname" .) -}}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "wg-portal.fullname" . }}
+  labels: {{- include "wg-portal.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "wg-portal.fullname" . }}-tls
+  {{- with .Values.certificate.secretTemplate }}
+  secretTemplate: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.privateKey }}
+  privateKey: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.keystores }}
+  keystores: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.duration }}
+  duration: {{ . }}
+  {{- end }}
+  {{- with .Values.certificate.renewBefore }}
+  renewBefore: {{ . }}
+  {{- end }}
+  {{- with .Values.certificate.usages }}
+  usages: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.subject }}
+  subject: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.commonName }}
+  commonName: {{ . }}
+  {{- end }}
+  dnsNames:
+    - {{ include "wg-portal.hostname" . }}
+  {{- with .Values.certificate.uris }}
+  uris: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.emailAddresses }}
+  emailAddresses: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.ipAddresses }}
+  ipAddresses: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.otherNames }}
+  otherNames: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  issuerRef:
+    {{- with .Values.certificate.issuer.group }}
+    group: {{ . }}
+    {{- end }}
+    kind: {{ .Values.certificate.issuer.kind }}
+    name: {{ .Values.certificate.issuer.name }}
+{{- end -}}

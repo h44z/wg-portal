@@ -98,3 +98,12 @@ resources:
   requests:
     storage: {{ .Values.persistence.size | quote }}
 {{- end -}}
+
+{{/*
+Define hostname
+*/}}
+{{- define "wg-portal.hostname" -}}
+{{- if .Values.config.web.external_url -}}
+  {{- (urlParse (tpl .Values.config.web.external_url .)).hostname -}}
+{{- end -}}
+{{- end -}}

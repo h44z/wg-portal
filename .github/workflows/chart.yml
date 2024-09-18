@@ -38,7 +38,7 @@ jobs:
 
       - name: Check docs
         run: |
-          docker run --rm --volume "${PWD}/deploy:/helm-docs" -u "$(id -u)" jnorwood/helm-docs
+          make helm-docs
           if ! git diff --exit-code; then
             echo "error::Documentation is not up to date. Please run helm-docs and commit changes."
             exit 1
