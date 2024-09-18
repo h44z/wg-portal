@@ -68,8 +68,7 @@ func NewServer(cfg *config.Config, endpoints ...ApiEndpointSetupFunc) (*Server, 
 		c.Writer.Header().Set("X-Served-By", hostname)
 		c.Next()
 	}).Use(func(c *gin.Context) {
-		var xRequestID string
-		xRequestID = uuid(16)
+		xRequestID := uuid(16)
 
 		c.Request.Header.Set(RequestIDKey, xRequestID)
 		c.Set(RequestIDKey, xRequestID)
@@ -106,7 +105,13 @@ func (s *Server) Run(ctx context.Context, listenAddress string) {
 
 	srvContext, cancelFn := context.WithCancel(ctx)
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
+		var err error
+		if s.cfg.Web.CertFile != "" && s.cfg.Web.KeyFile != "" {
+			err = srv.ListenAndServeTLS(s.cfg.Web.CertFile, s.cfg.Web.KeyFile)
+		} else {
+			err = srv.ListenAndServe()
+		}
+		if err != nil {
 			logrus.Infof("web service on %s exited: %v", listenAddress, err)
 			cancelFn()
 		}
