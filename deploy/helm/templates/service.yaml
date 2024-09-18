@@ -6,9 +6,9 @@
 {{- end -}}
 
 {{- if .Values.service.mixed.enabled -}}
-{{- include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.mixed "ports" (concat $portsWeb $ports)) }}
+{{ include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.mixed "ports" (concat $portsWeb $ports)) }}
 {{- else }}
-{{- include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.web "ports" $portsWeb) }}
+{{ include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.web "ports" $portsWeb) }}
 ---
-{{- include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.wireguard "ports" $ports "name" "wireguard") }}
+{{ include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.wireguard "ports" $ports "name" "wireguard") }}
 {{- end -}}
