@@ -4,6 +4,7 @@ import {notify} from "@kyvg/vue3-notification";
 import {interfaceStore} from "./interfaces";
 import {freshPeer, freshStats} from '@/helpers/models';
 import { base64_url_encode } from '@/helpers/encoding';
+import { ipToLong } from '@/helpers/utils';
 
 const baseUrl = `/peer`
 
@@ -21,6 +22,8 @@ export const peerStore = defineStore({
     pageOffset: 0,
     pages: [],
     fetching: false,
+    sortKey: 'IsConnected', // Default sort key
+    sortOrder: -1, // 1 for ascending, -1 for descending
   }),
   getters: {
     Find: (state) => {
@@ -39,8 +42,26 @@ export const peerStore = defineStore({
         return p.DisplayName.includes(state.filter) || p.Identifier.includes(state.filter)
       })
     },
+    Sorted: (state) => {
+      return state.Filtered.slice().sort((a, b) => {
+        let aValue = a[state.sortKey];
+        let bValue = b[state.sortKey];
+        if (state.sortKey === 'Addresses') {
+          aValue = aValue.length > 0 ? ipToLong(aValue[0]) : 0;
+          bValue = bValue.length > 0 ? ipToLong(bValue[0]) : 0;
+        }
+        if (state.sortKey === 'IsConnected') {
+          aValue = state.statsEnabled && state.stats[a.Identifier]?.IsConnected ? 1 : 0;
+          bValue = state.statsEnabled && state.stats[b.Identifier]?.IsConnected ? 1 : 0;
+        }
+        let result = 0;
+        if (aValue > bValue) result = 1;
+        if (aValue < bValue) result = -1;
+        return state.sortOrder === 1 ? result : -result;
+      });
+    },
     FilteredAndPaged: (state) => {
-      return state.Filtered.slice(state.pageOffset, state.pageOffset + state.pageSize)
+      return state.Sorted.slice(state.pageOffset, state.pageOffset + state.pageSize);
     },
     ConfigQrUrl: (state) => {
       return (id) => state.peers.find((p) => p.Identifier === id) ? apiWrapper.url(`${baseUrl}/config-qr/${base64_url_encode(id)}`) : ''

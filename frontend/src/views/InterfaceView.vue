@@ -21,6 +21,20 @@ const multiCreatePeerId = ref("")
 const editInterfaceId = ref("")
 const viewedInterfaceId = ref("")
 
+const sortKey = ref("");
+const sortOrder = ref(1);
+
+function sortBy(key) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value * -1; // Toggle sort order
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 1; // Default to ascending
+  }
+  peers.sortKey = sortKey.value;
+  peers.sortOrder = sortOrder.value;
+}
+
 function calculateInterfaceName(id, name) {
   let result = id
   if (name) {
@@ -314,11 +328,25 @@ onMounted(async () => {
           <input id="flexCheckDefault" class="form-check-input" :title="$t('general.select-all')" type="checkbox" value="">
         </th><!-- select -->
         <th scope="col"></th><!-- status -->
-        <th scope="col">{{ $t('interfaces.table-heading.name') }}</th>
-        <th scope="col">{{ $t('interfaces.table-heading.user') }}</th>
-        <th scope="col">{{ $t('interfaces.table-heading.ip') }}</th>
-        <th v-if="interfaces.GetSelected.Mode==='client'" scope="col">{{ $t('interfaces.table-heading.endpoint') }}</th>
-        <th v-if="peers.hasStatistics" scope="col">{{ $t('interfaces.table-heading.status') }}</th>
+        <th scope="col" @click="sortBy('DisplayName')">
+          {{ $t("interfaces.table-heading.name") }}
+          <i v-if="sortKey === 'DisplayName'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
+        <th scope="col" @click="sortBy('UserIdentifier')">
+          {{ $t("interfaces.table-heading.user") }}
+          <i v-if="sortKey === 'UserIdentifier'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
+        <th scope="col" @click="sortBy('Addresses')">
+          {{ $t("interfaces.table-heading.ip") }}
+          <i v-if="sortKey === 'Addresses'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
+        <th v-if="interfaces.GetSelected.Mode === 'client'" scope="col">
+          {{ $t("interfaces.table-heading.endpoint") }}
+        </th>
+        <th v-if="peers.hasStatistics" scope="col" @click="sortBy('IsConnected')">
+          {{ $t("interfaces.table-heading.status") }}
+          <i v-if="sortKey === 'IsConnected'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
         <th scope="col"></th><!-- Actions -->
       </tr>
       </thead>

@@ -1,9 +1,17 @@
 a.disabled {
-    pointer-events: none;
-    cursor: default;
-    color: #888888;
+  pointer-events: none;
+  cursor: default;
+  color: #888888;
 }
 
 .text-wrap {
-    overflow-break: anywhere;
+  overflow-break: anywhere;
+}
+
+.asc::after {
+  content: " ↑";
+}
+
+.desc::after {
+  content: " ↓";
 }

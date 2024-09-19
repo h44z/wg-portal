@@ -12,10 +12,25 @@ const profile = profileStore()
 const viewedPeerId = ref("")
 const editPeerId = ref("")
 
+const sortKey = ref("");
+const sortOrder = ref(1);
+
+function sortBy(key) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value * -1; // Toggle sort order
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 1; // Default to ascending
+  }
+  profile.sortKey = sortKey.value;
+  profile.sortOrder = sortOrder.value;
+}
+
 onMounted(async () => {
   await profile.LoadUser()
   await profile.LoadPeers()
   await profile.LoadStats()
+  await profile.calculatePages(); // Forces to show initial page number
 })
 
 </script>
@@ -58,9 +73,18 @@ onMounted(async () => {
               value="">
           </th><!-- select -->
           <th scope="col"></th><!-- status -->
-          <th scope="col">{{ $t('profile.table-heading.name') }}</th>
-          <th scope="col">{{ $t('profile.table-heading.ip') }}</th>
-          <th v-if="profile.hasStatistics" scope="col">{{ $t('profile.table-heading.stats') }}</th>
+          <th scope="col" @click="sortBy('DisplayName')">
+            {{ $t("profile.table-heading.name") }}
+            <i v-if="sortKey === 'DisplayName'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+          </th>
+          <th scope="col" @click="sortBy('Addresses')">
+            {{ $t("profile.table-heading.ip") }}
+            <i v-if="sortKey === 'Addresses'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+          </th>
+          <th v-if="profile.hasStatistics" scope="col" @click="sortBy('IsConnected')">
+            {{ $t("profile.table-heading.stats") }}
+            <i v-if="sortKey === 'IsConnected'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+          </th>
           <th scope="col">{{ $t('profile.table-heading.interface') }}</th>
           <th scope="col"></th><!-- Actions -->
         </tr>
