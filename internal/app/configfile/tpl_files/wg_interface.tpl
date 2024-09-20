@@ -60,6 +60,8 @@ PostDown = {{ .Interface.PostDown }}
 {{range .Peers}}
 {{- if not .IsDisabled}}
 [Peer]
+{{/* `friendly_name` used by https://github.com/MindFlavor/prometheus_wireguard_exporter */ -}}
+# friendly_name = {{ .DisplayName }}
 # -WGP- Peer: {{.Identifier}}
 # -WGP- Created: {{.CreatedAt}}
 # -WGP- Updated: {{.UpdatedAt}}
