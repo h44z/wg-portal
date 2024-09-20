@@ -5,15 +5,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"strings"
+
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 	"github.com/yeqown/go-qrcode/v2"
-	"io"
-	"os"
-	"strings"
 )
 
 type Manager struct {
@@ -21,7 +22,7 @@ type Manager struct {
 	bus        evbus.MessageBus
 	tplHandler *TemplateHandler
 
-	fsRepo FileSystemRepo // can be nil if storing the configuration is disabled
+	fsRepo FileSystemRepo
 	users  UserDatabaseRepo
 	wg     WireguardDatabaseRepo
 }
@@ -42,18 +43,18 @@ func NewConfigFileManager(cfg *config.Config, bus evbus.MessageBus, users UserDa
 		wg:     wg,
 	}
 
-	if err := m.createStorageDirectory(); err != nil {
-		return nil, err
+	if m.cfg.Advanced.ConfigStoragePath != "" {
+		if err := m.createStorageDirectory(); err != nil {
+			return nil, err
+		}
+
+		m.connectToMessageBus()
 	}
 
 	return m, nil
 }
 
 func (m Manager) createStorageDirectory() error {
-	if m.cfg.Advanced.ConfigStoragePath == "" {
-		return nil // no storage path configured, skip initialization step
-	}
-
 	err := os.MkdirAll(m.cfg.Advanced.ConfigStoragePath, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to create configuration storage path %s: %w",
@@ -64,20 +65,16 @@ func (m Manager) createStorageDirectory() error {
 }
 
 func (m Manager) connectToMessageBus() {
-	if m.fsRepo == nil {
-		return // skip subscription
-	}
-
 	_ = m.bus.Subscribe(app.TopicInterfaceUpdated, m.handleInterfaceUpdatedEvent)
-	_ = m.bus.Subscribe(app.TopicPeerInterfaceUpdated, m.handleInterfaceUpdatedEvent)
+	_ = m.bus.Subscribe(app.TopicPeerInterfaceUpdated, m.handlePeerInterfaceUpdatedEvent)
 }
 
 func (m Manager) handleInterfaceUpdatedEvent(iface *domain.Interface) {
-	logrus.Errorf("handling interface updated event for %s", iface.Identifier)
-
-	if !iface.SaveConfig || m.fsRepo == nil {
+	if !iface.SaveConfig {
 		return
 	}
+
+	logrus.Debugf("handling interface updated event for %s", iface.Identifier)
 
 	err := m.PersistInterfaceConfig(context.Background(), iface.Identifier)
 	if err != nil {
@@ -86,12 +83,6 @@ func (m Manager) handleInterfaceUpdatedEvent(iface *domain.Interface) {
 }
 
 func (m Manager) handlePeerInterfaceUpdatedEvent(id domain.InterfaceIdentifier) {
-	logrus.Errorf("handling interface updated event for %s", id)
-
-	if m.fsRepo == nil {
-		return
-	}
-
 	peerInterface, err := m.wg.GetInterface(context.Background(), id)
 	if err != nil {
 		logrus.Errorf("failed to load interface %s: %v", id, err)
@@ -101,6 +92,8 @@ func (m Manager) handlePeerInterfaceUpdatedEvent(id domain.InterfaceIdentifier) 
 	if !peerInterface.SaveConfig {
 		return
 	}
+
+	logrus.Debugf("handling peer interface updated event for %s", id)
 
 	err = m.PersistInterfaceConfig(context.Background(), peerInterface.Identifier)
 	if err != nil {
@@ -184,14 +177,6 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 }
 
 func (m Manager) PersistInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) error {
-	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
-		return err
-	}
-
-	if m.fsRepo == nil {
-		return fmt.Errorf("peristing configuration is not supported")
-	}
-
 	iface, peers, err := m.wg.GetInterfaceAndPeers(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to fetch interface %s: %w", id, err)
