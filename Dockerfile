@@ -4,7 +4,7 @@
 ######
 # Build frontend
 ######
-FROM --platform=${BUILDPLATFORM} node:lts-alpine as frontend
+FROM --platform=${BUILDPLATFORM} node:lts-alpine AS frontend
 # Set the working directory
 WORKDIR /build
 # Download dependencies
@@ -20,14 +20,15 @@ RUN npm run build
 ######
 # Build backend
 ######
-FROM --platform=${BUILDPLATFORM} golang:1.22-alpine as builder
+FROM --platform=${BUILDPLATFORM} golang:1.22-alpine AS builder
 # Set the working directory
 WORKDIR /build
 # Download dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 # Copy the sources to the working directory
-COPY . .
+COPY ./cmd ./cmd
+COPY ./internal ./internal
 # Copy the frontend build result
 COPY --from=frontend /build/dist/ ./internal/app/api/core/frontend-dist/
 # Set the build version from arguments
@@ -47,7 +48,7 @@ FROM alpine:3.19
 # Install OS-level dependencies
 RUN apk add --no-cache bash curl iptables nftables openresolv
 # Setup timezone
-ENV TZ=Europe/Vienna
+ENV TZ=UTC
 # Copy binaries
 COPY --from=builder /build/dist/wg-portal /app/wg-portal
 # Set the Current Working Directory inside the container
