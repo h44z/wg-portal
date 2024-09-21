@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/go-ldap/ldap/v3"
 )
 
@@ -50,10 +52,10 @@ type LdapProvider struct {
 	AdminGroupDN       string   `yaml:"admin_group"`  // Members of this group receive admin rights in WG-Portal
 	ParsedAdminGroupDN *ldap.DN `yaml:"-"`
 
-	Synchronize bool `yaml:"synchronize"`
 	// If DisableMissing is true, missing users will be deactivated
-	DisableMissing bool   `yaml:"disable_missing"`
-	SyncFilter     string `yaml:"sync_filter"`
+	DisableMissing bool          `yaml:"disable_missing"`
+	SyncFilter     string        `yaml:"sync_filter"`
+	SyncInterval   time.Duration `yaml:"sync_interval"`
 
 	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.
 	RegistrationEnabled bool `yaml:"registration_enabled"`
