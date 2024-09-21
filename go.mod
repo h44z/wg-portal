@@ -3,6 +3,7 @@ module github.com/h44z/wg-portal
 go 1.22.2
 
 require (
+	github.com/a8m/envsubst v1.4.2
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-contrib/sessions v1.0.1
