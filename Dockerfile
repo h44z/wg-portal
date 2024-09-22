@@ -42,6 +42,12 @@ RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} go build -o /build/dist/wg-portal \
   cmd/wg-portal/main.go
 
 ######
+# Export binaries
+######
+FROM scratch AS binaries
+COPY --from=builder /build/dist/wg-portal /
+
+######
 # Final image
 ######
 FROM alpine:3.19

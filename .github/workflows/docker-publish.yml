@@ -77,3 +77,26 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           build-args: |
             BUILD_VERSION=${{ env.BUILD_VERSION }}
+
+      - name: Export binaries from images
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          target: binaries
+          outputs: type=local,dest=./binaries
+          build-args: |
+            BUILD_VERSION=${{ env.BUILD_VERSION }}
+
+      - name: Rename binaries
+        run: |
+          for file in binaries/linux*/wg-portal; do
+            mv $file binaries/wg-portal_$(basename $(dirname $file))
+          done
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: binaries/wg-portal_linux*
+          retention-days: 10
