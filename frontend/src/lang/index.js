@@ -2,6 +2,7 @@
 import de from './translations/de.json';
 import ru from './translations/ru.json';
 import en from './translations/en.json';
+import vi from './translations/vi.json';
 import {createI18n} from "vue-i18n";
 
 // Create i18n instance with options
@@ -18,7 +19,8 @@ const i18n = createI18n({
   messages: {
     "de": de,
     "ru": ru,
-    "en": en
+    "en": en,
+    "vi": vi
   }
 });
 
