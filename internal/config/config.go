@@ -80,8 +80,6 @@ func (c *Config) LogStartupValues() {
 	logrus.Debugf("  - OIDC Providers: %d", len(c.Auth.OpenIDConnect))
 	logrus.Debugf("  - OAuth Providers: %d", len(c.Auth.OAuth))
 	logrus.Debugf("  - Ldap Providers: %d", len(c.Auth.Ldap))
-
-	logrus.Debugf("WireGuard Portal Mail: %+v", c)
 }
 
 func defaultConfig() *Config {
