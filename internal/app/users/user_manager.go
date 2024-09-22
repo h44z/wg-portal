@@ -26,9 +26,8 @@ type Manager struct {
 	cfg *config.Config
 	bus evbus.MessageBus
 
-	syncInterval time.Duration
-	users        UserDatabaseRepo
-	peers        PeerDatabaseRepo
+	users UserDatabaseRepo
+	peers PeerDatabaseRepo
 }
 
 func NewUserManager(cfg *config.Config, bus evbus.MessageBus, users UserDatabaseRepo, peers PeerDatabaseRepo) (*Manager, error) {
@@ -36,9 +35,8 @@ func NewUserManager(cfg *config.Config, bus evbus.MessageBus, users UserDatabase
 		cfg: cfg,
 		bus: bus,
 
-		syncInterval: 10 * time.Second,
-		users:        users,
-		peers:        peers,
+		users: users,
+		peers: peers,
 	}
 	return m, nil
 }
@@ -311,26 +309,29 @@ func (m Manager) validateDeletion(ctx context.Context, del *domain.User) error {
 }
 
 func (m Manager) runLdapSynchronizationService(ctx context.Context) {
-	running := true
-	for running {
-		select {
-		case <-ctx.Done():
-			running = false
-			continue
-		case <-time.After(m.syncInterval):
-			// select blocks until one of the cases evaluate to true
-		}
+	for _, ldapCfg := range m.cfg.Auth.Ldap { // LDAP Auth providers
+		go func(cfg config.LdapProvider) {
+			syncInterval := cfg.SyncInterval
+			if syncInterval == 0 {
+				logrus.Debugf("sync disabled for LDAP server: %s", cfg.ProviderName)
+				return
+			}
+			running := true
+			for running {
+				select {
+				case <-ctx.Done():
+					running = false
+					continue
+				case <-time.After(syncInterval * time.Second):
+					// select blocks until one of the cases evaluate to true
+				}
 
-		for _, ldapCfg := range m.cfg.Auth.Ldap { // LDAP Auth providers
-			if !ldapCfg.Synchronize {
-				continue // sync disabled
+				err := m.synchronizeLdapUsers(ctx, &cfg)
+				if err != nil {
+					logrus.Errorf("failed to synchronize LDAP users for %s: %v", cfg.ProviderName, err)
+				}
 			}
-			//logrus.Tracef(&ldapCfg)
-			err := m.synchronizeLdapUsers(ctx, &ldapCfg)
-			if err != nil {
-				logrus.Errorf("failed to synchronize LDAP users for %s: %v", ldapCfg.ProviderName, err)
-			}
-		}
+		}(ldapCfg)
 	}
 }
 
@@ -388,7 +389,7 @@ func (m Manager) updateLdapUsers(ctx context.Context, providerName string, rawUs
 		tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		tctx = domain.SetUserInfo(tctx, domain.SystemAdminContextUserInfo())
-		
+
 		if existingUser == nil {
 			err := m.NewUser(tctx, user)
 			if err != nil {
@@ -397,7 +398,7 @@ func (m Manager) updateLdapUsers(ctx context.Context, providerName string, rawUs
 		}
 
 		if existingUser != nil && existingUser.Source == domain.UserSourceLdap && userChangedInLdap(existingUser, user) {
-		
+
 			err := m.users.SaveUser(tctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
 				u.UpdatedAt = time.Now()
 				u.UpdatedBy = "ldap_sync"

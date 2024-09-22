@@ -27,7 +27,6 @@ type Config struct {
 		LogLevel            string        `yaml:"log_level"`
 		LogPretty           bool          `yaml:"log_pretty"`
 		LogJson             bool          `yaml:"log_json"`
-		LdapSyncInterval    time.Duration `yaml:"ldap_sync_interval"`
 		StartListenPort     int           `yaml:"start_listen_port"`
 		StartCidrV4         string        `yaml:"start_cidr_v4"`
 		StartCidrV6         string        `yaml:"start_cidr_v6"`
