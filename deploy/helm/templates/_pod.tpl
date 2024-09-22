@@ -7,7 +7,7 @@ metadata:
     {{- tpl (toYaml .) $ | nindent 4 }}
     {{- end }}
   labels:
-    {{- include "wg-portal.labels" . | nindent 4 }}
+    {{- include "wg-portal.selectorLabels" . | nindent 4 }}
     {{- with .Values.podLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -36,7 +36,7 @@ spec:
       envFrom: {{- tpl (toYaml .) $ | nindent 8 }}
       {{- end }}
       ports:
-        - name: http
+        - name: web
           containerPort: {{ .Values.service.web.port }}
           protocol: TCP
         {{- range $index, $port := .Values.service.wireguard.ports }}
@@ -65,6 +65,10 @@ spec:
           readOnly: true
         - name: data
           mountPath: /app/data
+        {{- if and .Values.certificate.enabled (include "wg-portal.hostname" .) }}
+        - name: certs
+          mountPath: /app/certs
+        {{- end }}
         {{- with .Values.volumeMounts }}
         {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}
@@ -97,6 +101,11 @@ spec:
     - name: config
       secret:
         secretName: {{ include "wg-portal.fullname" . }}
+    {{- if and .Values.certificate.enabled (include "wg-portal.hostname" .) }}
+    - name: certs
+      secret:
+        secretName: {{ include "wg-portal.fullname" . }}-tls
+    {{- end }}
     {{- if not .Values.persistence.enabled }}
     - name: data
       emptyDir: {}

@@ -128,3 +128,8 @@ build-docker:
 	--build-arg BUILD_IDENTIFIER=${ENV_BUILD_IDENTIFIER} --build-arg BUILD_VERSION=${ENV_BUILD_VERSION} \
  	--build-arg TARGETPLATFORM=unknown . \
 	-t h44z/wg-portal:local
+
+#< helm-docs: Generate the helm chart documentation
+.PHONY: helm-docs
+helm-docs:
+	docker run --rm --volume "${PWD}/deploy:/helm-docs" -u "$$(id -u)" jnorwood/helm-docs -s file

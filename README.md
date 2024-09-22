@@ -142,7 +142,8 @@ The following configuration options are available:
 | csrf_secret                     | web        | extremely_secret                           | The CSRF secret.                                                                                                                        |
 | site_title                      | web        | WireGuard Portal                           | The title that is shown in the web frontend.                                                                                            |
 | site_company_name               | web        | WireGuard Portal                           | The company name that is shown at the bottom of the web frontend.                                                                       |
-
+| cert_file                       | web        |                                            | (Optional) Path to the TLS certificate file                                                                                             |
+| key_file                        | web        |                                            | (Optional) Path to the TLS certificate key file                                                                                         |
 
 ## Upgrading from V1
 

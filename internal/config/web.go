@@ -9,4 +9,6 @@ type WebConfig struct {
 	CsrfSecret        string `yaml:"csrf_secret"`
 	SiteTitle         string `yaml:"site_title"`
 	SiteCompanyName   string `yaml:"site_company_name"`
+	CertFile          string `yaml:"cert_file"`
+	KeyFile           string `yaml:"key_file"`
 }

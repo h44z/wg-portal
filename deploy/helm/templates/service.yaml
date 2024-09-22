@@ -1,0 +1,14 @@
+{{- $portsWeb := list (dict "name" "web" "port" .Values.service.web.port "protocol" "TCP" "targetPort" "web") -}}
+{{- $ports := list -}}
+{{- range $idx, $port := .Values.service.wireguard.ports -}}
+{{- $name := printf "wg%d" $idx -}}
+{{- $ports = append $ports (dict "name" $name "port" $port "protocol" "UDP" "targetPort" $name) -}}
+{{- end -}}
+
+{{- if .Values.service.mixed.enabled -}}
+{{ include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.mixed "ports" (concat $portsWeb $ports)) }}
+{{- else }}
+{{ include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.web "ports" $portsWeb) }}
+---
+{{ include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.wireguard "ports" $ports "name" "wireguard") }}
+{{- end -}}
