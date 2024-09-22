@@ -4,7 +4,7 @@ import {notify} from "@kyvg/vue3-notification";
 import {authStore} from "@/stores/auth";
 import { base64_url_encode } from '@/helpers/encoding';
 import {freshStats} from "@/helpers/models";
-import { ipToLong } from '@/helpers/utils';
+import { ipToBigInt } from '@/helpers/utils';
 
 const baseUrl = `/user`
 
@@ -43,8 +43,8 @@ export const profileStore = defineStore({
         let aValue = a[state.sortKey];
         let bValue = b[state.sortKey];
         if (state.sortKey === 'Addresses') {
-          aValue = aValue.length > 0 ? ipToLong(aValue[0]) : 0;
-          bValue = bValue.length > 0 ? ipToLong(bValue[0]) : 0;
+          aValue = aValue.length > 0 ? ipToBigInt(aValue[0]) : 0;
+          bValue = bValue.length > 0 ? ipToBigInt(bValue[0]) : 0;
         }
         if (state.sortKey === 'IsConnected') {
           aValue = state.statsEnabled && state.stats[a.Identifier]?.IsConnected ? 1 : 0;

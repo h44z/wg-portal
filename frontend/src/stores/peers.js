@@ -4,7 +4,7 @@ import {notify} from "@kyvg/vue3-notification";
 import {interfaceStore} from "./interfaces";
 import {freshPeer, freshStats} from '@/helpers/models';
 import { base64_url_encode } from '@/helpers/encoding';
-import { ipToLong } from '@/helpers/utils';
+import { ipToBigInt } from '@/helpers/utils';
 
 const baseUrl = `/peer`
 
@@ -47,8 +47,8 @@ export const peerStore = defineStore({
         let aValue = a[state.sortKey];
         let bValue = b[state.sortKey];
         if (state.sortKey === 'Addresses') {
-          aValue = aValue.length > 0 ? ipToLong(aValue[0]) : 0;
-          bValue = bValue.length > 0 ? ipToLong(bValue[0]) : 0;
+          aValue = aValue.length > 0 ? ipToBigInt(aValue[0]) : 0;
+          bValue = bValue.length > 0 ? ipToBigInt(bValue[0]) : 0;
         }
         if (state.sortKey === 'IsConnected') {
           aValue = state.statsEnabled && state.stats[a.Identifier]?.IsConnected ? 1 : 0;
