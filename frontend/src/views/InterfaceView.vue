@@ -94,7 +94,7 @@ onMounted(async () => {
           <button class="input-group-text btn btn-primary" :title="$t('interfaces.button-add-interface')" @click.prevent="editInterfaceId='#NEW#'">
             <i class="fa-solid fa-plus-circle"></i>
           </button>
-          <select v-model="interfaces.selected" :disabled="interfaces.Count===0" class="form-select" @change="peers.LoadPeers()">
+          <select v-model="interfaces.selected" :disabled="interfaces.Count===0" class="form-select" @change="() => { peers.LoadPeers(); peers.LoadStats() }">
             <option v-if="interfaces.Count===0" value="nothing">{{ $t('interfaces.no-interface.default-selection') }}</option>
             <option v-for="iface in interfaces.All" :key="iface.Identifier" :value="iface.Identifier">{{ calculateInterfaceName(iface.Identifier,iface.DisplayName) }}</option>
           </select>
