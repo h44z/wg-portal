@@ -5,6 +5,7 @@ import { onMounted, ref } from "vue";
 import { profileStore } from "@/stores/profile";
 import PeerEditModal from "@/components/PeerEditModal.vue";
 import { settingsStore } from "@/stores/settings";
+import { humanFileSize } from "@/helpers/utils";
 
 const settings = settingsStore()
 const profile = profileStore()
@@ -56,7 +57,7 @@ onMounted(async () => {
     </div>
     <div class="col-12 col-lg-3 text-lg-end">
       <a v-if="settings.Setting('SelfProvisioning')" class="btn btn-primary ms-2" href="#"
-        :title="$t('general.search.button-add-peer')" @click.prevent="editPeerId = '#NEW#'"><i
+        :title="$t('interfaces.button-add-peer')" @click.prevent="editPeerId = '#NEW#'"><i
           class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
     </div>
   </div>
@@ -84,6 +85,9 @@ onMounted(async () => {
           <th v-if="profile.hasStatistics" scope="col" @click="sortBy('IsConnected')">
             {{ $t("profile.table-heading.stats") }}
             <i v-if="sortKey === 'IsConnected'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+          </th>
+          <th v-if="profile.hasStatistics" scope="col" @click="sortBy('Traffic')">RX/TX
+            <i v-if="sortKey === 'Traffic'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
           </th>
           <th scope="col">{{ $t('profile.table-heading.interface') }}</th>
           <th scope="col"></th><!-- Actions -->
@@ -113,6 +117,9 @@ onMounted(async () => {
             <div v-else>
               <span class="badge rounded-pill bg-light"><i class="fa-solid fa-link-slash"></i></span>
             </div>
+          </td>
+          <td v-if="profile.hasStatistics" >
+            <span class="text-center" >{{ humanFileSize(profile.Statistics(peer.Identifier).BytesReceived) }} / {{ humanFileSize(profile.Statistics(peer.Identifier).BytesTransmitted) }}</span>
           </td>
           <td>{{ peer.InterfaceIdentifier }}</td>
           <td class="text-center">

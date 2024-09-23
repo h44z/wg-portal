@@ -10,6 +10,7 @@ import {peerStore} from "@/stores/peers";
 import {interfaceStore} from "@/stores/interfaces";
 import {notify} from "@kyvg/vue3-notification";
 import {settingsStore} from "@/stores/settings";
+import {humanFileSize} from '@/helpers/utils';
 
 const settings = settingsStore()
 const interfaces = interfaceStore()
@@ -347,6 +348,9 @@ onMounted(async () => {
           {{ $t("interfaces.table-heading.status") }}
           <i v-if="sortKey === 'IsConnected'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
         </th>
+        <th v-if="peers.hasStatistics" scope="col" @click="sortBy('Traffic')">RX/TX
+          <i v-if="sortKey === 'Traffic'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
         <th scope="col"></th><!-- Actions -->
       </tr>
       </thead>
@@ -372,6 +376,9 @@ onMounted(async () => {
             <div v-else>
               <span class="badge rounded-pill bg-light" :title="$t('interfaces.peer-not-connected')"><i class="fa-solid fa-link-slash"></i></span>
             </div>
+          </td>
+          <td v-if="peers.hasStatistics" >
+            <span class="text-center" >{{ humanFileSize(peers.Statistics(peer.Identifier).BytesReceived) }} / {{ humanFileSize(peers.Statistics(peer.Identifier).BytesTransmitted) }}</span>
           </td>
           <td class="text-center">
             <a href="#" :title="$t('interfaces.button-show-peer')" @click.prevent="viewedPeerId=peer.Identifier"><i class="fas fa-eye me-2"></i></a>

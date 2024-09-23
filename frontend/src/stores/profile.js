@@ -50,6 +50,10 @@ export const profileStore = defineStore({
           aValue = state.statsEnabled && state.stats[a.Identifier]?.IsConnected ? 1 : 0;
           bValue = state.statsEnabled && state.stats[b.Identifier]?.IsConnected ? 1 : 0;
         }
+        if (state.sortKey === 'Traffic') {
+          aValue = state.statsEnabled ? (state.stats[a.Identifier].BytesReceived + state.stats[a.Identifier].BytesTransmitted) : 0;
+          bValue = state.statsEnabled ? (state.stats[b.Identifier].BytesReceived + state.stats[b.Identifier].BytesTransmitted) : 0;
+        }
         let result = 0;
         if (aValue > bValue) result = 1;
         if (aValue < bValue) result = -1;
