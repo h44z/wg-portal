@@ -17,7 +17,7 @@ require (
 	github.com/toorop/gin-logrus v0.0.0-20210225092905-2c785434f26f
 	github.com/utrack/gin-csrf v0.0.0-20190424104817-40fb8d2c8fca
 	github.com/vardius/message-bus v1.1.5
-	github.com/vishvananda/netlink v1.1.0
+	github.com/vishvananda/netlink v1.3.0
 	github.com/xhit/go-simple-mail/v2 v2.16.0
 	github.com/yeqown/go-qrcode/v2 v2.2.4
 	golang.org/x/crypto v0.27.0
