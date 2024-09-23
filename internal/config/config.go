@@ -2,9 +2,11 @@ package config
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"time"
+
+	"github.com/a8m/envsubst"
+	"github.com/sirupsen/logrus"
 
 	"gopkg.in/yaml.v2"
 )
@@ -153,20 +155,14 @@ func GetConfig() (*Config, error) {
 }
 
 func loadConfigFile(cfg any, filename string) error {
-	f, err := os.Open(filename)
+	data, err := envsubst.ReadFile(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("envsubst error: %v", err)
 	}
-	defer func(f *os.File) {
-		if err := f.Close(); err != nil {
-			logrus.Errorf("failed to close configuration file %s: %v", filename, err)
-		}
-	}(f)
 
-	decoder := yaml.NewDecoder(f)
-	err = decoder.Decode(cfg)
+	err = yaml.Unmarshal(data, cfg)
 	if err != nil {
-		return err
+		return fmt.Errorf("yaml error: %v", err)
 	}
 
 	return nil

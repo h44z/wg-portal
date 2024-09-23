@@ -43,10 +43,11 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL or Post
 
 
 ## Configuration
-You can configure WireGuard Portal using a yaml configuration file.
-The filepath of the yaml configuration file defaults to **config/config.yml** in the working directory of the executable.
+You can configure WireGuard Portal using a yaml configuration file.  
+The filepath of the yaml configuration file defaults to **config/config.yml** in the working directory of the executable.  
 It is possible to override the configuration filepath using the environment variable **WG_PORTAL_CONFIG**.
-For example: `WG_PORTAL_CONFIG=/home/test/config.yml ./wg-portal-amd64`.
+For example: `WG_PORTAL_CONFIG=/home/test/config.yml ./wg-portal-amd64`.  
+Also, environment variable substitution in config file is supported. Refer to [syntax](https://github.com/a8m/envsubst?tab=readme-ov-file#docs)
 
 By default, WireGuard Portal uses a SQLite database. The database is stored in **data/sqlite.db** in the working directory of the executable.
 
