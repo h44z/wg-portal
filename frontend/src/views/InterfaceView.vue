@@ -10,6 +10,7 @@ import {peerStore} from "@/stores/peers";
 import {interfaceStore} from "@/stores/interfaces";
 import {notify} from "@kyvg/vue3-notification";
 import {settingsStore} from "@/stores/settings";
+import {humanFileSize} from '@/helpers/utils';
 
 const settings = settingsStore()
 const interfaces = interfaceStore()
@@ -20,6 +21,20 @@ const editPeerId = ref("")
 const multiCreatePeerId = ref("")
 const editInterfaceId = ref("")
 const viewedInterfaceId = ref("")
+
+const sortKey = ref("");
+const sortOrder = ref(1);
+
+function sortBy(key) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value * -1; // Toggle sort order
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 1; // Default to ascending
+  }
+  peers.sortKey = sortKey.value;
+  peers.sortOrder = sortOrder.value;
+}
 
 function calculateInterfaceName(id, name) {
   let result = id
@@ -314,11 +329,28 @@ onMounted(async () => {
           <input id="flexCheckDefault" class="form-check-input" :title="$t('general.select-all')" type="checkbox" value="">
         </th><!-- select -->
         <th scope="col"></th><!-- status -->
-        <th scope="col">{{ $t('interfaces.table-heading.name') }}</th>
-        <th scope="col">{{ $t('interfaces.table-heading.user') }}</th>
-        <th scope="col">{{ $t('interfaces.table-heading.ip') }}</th>
-        <th v-if="interfaces.GetSelected.Mode==='client'" scope="col">{{ $t('interfaces.table-heading.endpoint') }}</th>
-        <th v-if="peers.hasStatistics" scope="col">{{ $t('interfaces.table-heading.status') }}</th>
+        <th scope="col" @click="sortBy('DisplayName')">
+          {{ $t("interfaces.table-heading.name") }}
+          <i v-if="sortKey === 'DisplayName'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
+        <th scope="col" @click="sortBy('UserIdentifier')">
+          {{ $t("interfaces.table-heading.user") }}
+          <i v-if="sortKey === 'UserIdentifier'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
+        <th scope="col" @click="sortBy('Addresses')">
+          {{ $t("interfaces.table-heading.ip") }}
+          <i v-if="sortKey === 'Addresses'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
+        <th v-if="interfaces.GetSelected.Mode === 'client'" scope="col">
+          {{ $t("interfaces.table-heading.endpoint") }}
+        </th>
+        <th v-if="peers.hasStatistics" scope="col" @click="sortBy('IsConnected')">
+          {{ $t("interfaces.table-heading.status") }}
+          <i v-if="sortKey === 'IsConnected'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
+        <th v-if="peers.hasStatistics" scope="col" @click="sortBy('Traffic')">RX/TX
+          <i v-if="sortKey === 'Traffic'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+        </th>
         <th scope="col"></th><!-- Actions -->
       </tr>
       </thead>
@@ -344,6 +376,9 @@ onMounted(async () => {
             <div v-else>
               <span class="badge rounded-pill bg-light" :title="$t('interfaces.peer-not-connected')"><i class="fa-solid fa-link-slash"></i></span>
             </div>
+          </td>
+          <td v-if="peers.hasStatistics" >
+            <span class="text-center" >{{ humanFileSize(peers.Statistics(peer.Identifier).BytesReceived) }} / {{ humanFileSize(peers.Statistics(peer.Identifier).BytesTransmitted) }}</span>
           </td>
           <td class="text-center">
             <a href="#" :title="$t('interfaces.button-show-peer')" @click.prevent="viewedPeerId=peer.Identifier"><i class="fas fa-eye me-2"></i></a>

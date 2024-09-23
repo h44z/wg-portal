@@ -5,6 +5,7 @@ import { onMounted, ref } from "vue";
 import { profileStore } from "@/stores/profile";
 import PeerEditModal from "@/components/PeerEditModal.vue";
 import { settingsStore } from "@/stores/settings";
+import { humanFileSize } from "@/helpers/utils";
 
 const settings = settingsStore()
 const profile = profileStore()
@@ -12,10 +13,25 @@ const profile = profileStore()
 const viewedPeerId = ref("")
 const editPeerId = ref("")
 
+const sortKey = ref("");
+const sortOrder = ref(1);
+
+function sortBy(key) {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value * -1; // Toggle sort order
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 1; // Default to ascending
+  }
+  profile.sortKey = sortKey.value;
+  profile.sortOrder = sortOrder.value;
+}
+
 onMounted(async () => {
   await profile.LoadUser()
   await profile.LoadPeers()
   await profile.LoadStats()
+  await profile.calculatePages(); // Forces to show initial page number
 })
 
 </script>
@@ -41,7 +57,7 @@ onMounted(async () => {
     </div>
     <div class="col-12 col-lg-3 text-lg-end">
       <a v-if="settings.Setting('SelfProvisioning')" class="btn btn-primary ms-2" href="#"
-        :title="$t('general.search.button-add-peer')" @click.prevent="editPeerId = '#NEW#'"><i
+        :title="$t('interfaces.button-add-peer')" @click.prevent="editPeerId = '#NEW#'"><i
           class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
     </div>
   </div>
@@ -58,9 +74,21 @@ onMounted(async () => {
               value="">
           </th><!-- select -->
           <th scope="col"></th><!-- status -->
-          <th scope="col">{{ $t('profile.table-heading.name') }}</th>
-          <th scope="col">{{ $t('profile.table-heading.ip') }}</th>
-          <th v-if="profile.hasStatistics" scope="col">{{ $t('profile.table-heading.stats') }}</th>
+          <th scope="col" @click="sortBy('DisplayName')">
+            {{ $t("profile.table-heading.name") }}
+            <i v-if="sortKey === 'DisplayName'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+          </th>
+          <th scope="col" @click="sortBy('Addresses')">
+            {{ $t("profile.table-heading.ip") }}
+            <i v-if="sortKey === 'Addresses'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+          </th>
+          <th v-if="profile.hasStatistics" scope="col" @click="sortBy('IsConnected')">
+            {{ $t("profile.table-heading.stats") }}
+            <i v-if="sortKey === 'IsConnected'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+          </th>
+          <th v-if="profile.hasStatistics" scope="col" @click="sortBy('Traffic')">RX/TX
+            <i v-if="sortKey === 'Traffic'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
+          </th>
           <th scope="col">{{ $t('profile.table-heading.interface') }}</th>
           <th scope="col"></th><!-- Actions -->
         </tr>
@@ -89,6 +117,9 @@ onMounted(async () => {
             <div v-else>
               <span class="badge rounded-pill bg-light"><i class="fa-solid fa-link-slash"></i></span>
             </div>
+          </td>
+          <td v-if="profile.hasStatistics" >
+            <span class="text-center" >{{ humanFileSize(profile.Statistics(peer.Identifier).BytesReceived) }} / {{ humanFileSize(profile.Statistics(peer.Identifier).BytesTransmitted) }}</span>
           </td>
           <td>{{ peer.InterfaceIdentifier }}</td>
           <td class="text-center">

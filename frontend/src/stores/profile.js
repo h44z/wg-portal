@@ -4,6 +4,7 @@ import {notify} from "@kyvg/vue3-notification";
 import {authStore} from "@/stores/auth";
 import { base64_url_encode } from '@/helpers/encoding';
 import {freshStats} from "@/helpers/models";
+import { ipToBigInt } from '@/helpers/utils';
 
 const baseUrl = `/user`
 
@@ -19,6 +20,8 @@ export const profileStore = defineStore({
     pageOffset: 0,
     pages: [],
     fetching: false,
+    sortKey: 'IsConnected', // Default sort key
+    sortOrder: -1, // 1 for ascending, -1 for descending
   }),
   getters: {
     FindPeers: (state) => {
@@ -35,8 +38,30 @@ export const profileStore = defineStore({
         return p.DisplayName.includes(state.filter) || p.Identifier.includes(state.filter)
       })
     },
+    Sorted: (state) => {
+      return state.FilteredPeers.slice().sort((a, b) => {
+        let aValue = a[state.sortKey];
+        let bValue = b[state.sortKey];
+        if (state.sortKey === 'Addresses') {
+          aValue = aValue.length > 0 ? ipToBigInt(aValue[0]) : 0;
+          bValue = bValue.length > 0 ? ipToBigInt(bValue[0]) : 0;
+        }
+        if (state.sortKey === 'IsConnected') {
+          aValue = state.statsEnabled && state.stats[a.Identifier]?.IsConnected ? 1 : 0;
+          bValue = state.statsEnabled && state.stats[b.Identifier]?.IsConnected ? 1 : 0;
+        }
+        if (state.sortKey === 'Traffic') {
+          aValue = state.statsEnabled ? (state.stats[a.Identifier].BytesReceived + state.stats[a.Identifier].BytesTransmitted) : 0;
+          bValue = state.statsEnabled ? (state.stats[b.Identifier].BytesReceived + state.stats[b.Identifier].BytesTransmitted) : 0;
+        }
+        let result = 0;
+        if (aValue > bValue) result = 1;
+        if (aValue < bValue) result = -1;
+        return state.sortOrder === 1 ? result : -result;
+      });
+    },
     FilteredAndPagedPeers: (state) => {
-      return state.FilteredPeers.slice(state.pageOffset, state.pageOffset + state.pageSize)
+      return state.Sorted.slice(state.pageOffset, state.pageOffset + state.pageSize);
     },
     isFetching: (state) => state.fetching,
     hasNextPage: (state) => state.pageOffset < (state.FilteredPeerCount - state.pageSize),
