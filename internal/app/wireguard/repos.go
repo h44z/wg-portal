@@ -2,6 +2,7 @@ package wireguard
 
 import (
 	"context"
+
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -27,6 +28,7 @@ type InterfaceAndPeerDatabaseRepo interface {
 type StatisticsDatabaseRepo interface {
 	GetAllInterfaces(ctx context.Context) ([]domain.Interface, error)
 	GetInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.Peer, error)
+	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 
 	UpdatePeerStatus(ctx context.Context, id domain.PeerIdentifier, updateFunc func(in *domain.PeerStatus) (*domain.PeerStatus, error)) error
 	UpdateInterfaceStatus(ctx context.Context, id domain.InterfaceIdentifier, updateFunc func(in *domain.InterfaceStatus) (*domain.InterfaceStatus, error)) error
@@ -47,4 +49,9 @@ type WgQuickController interface {
 	ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCmd string) error
 	SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error
 	UnsetDNS(id domain.InterfaceIdentifier) error
+}
+
+type MetricsServer interface {
+	UpdateInterfaceMetrics(status domain.InterfaceStatus)
+	UpdatePeerMetrics(ctx context.Context, status domain.PeerStatus)
 }

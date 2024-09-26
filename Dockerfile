@@ -59,8 +59,10 @@ ENV TZ=UTC
 COPY --from=builder /build/dist/wg-portal /app/wg-portal
 # Set the Current Working Directory inside the container
 WORKDIR /app
-# by default, the web-portal is reachable on port 8888
+# Expose default ports for metrics, web and wireguard
+EXPOSE 8787/tcp
 EXPOSE 8888/tcp
+EXPOSE 51820/udp
 # the database and config file can be mounted from the host
 VOLUME [ "/app/data", "/app/config" ]
 # Command to run the executable
