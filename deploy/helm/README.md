@@ -1,6 +1,6 @@
 # wg-portal
 
-![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
+![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
 
 WireGuard Configuration Portal with LDAP, OAuth, OIDC authentication
 
@@ -76,6 +76,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | service.wireguard.annotations | object | `{}` | Annotations for the WireGuard service |
 | service.wireguard.type | string | `"LoadBalancer"` | Wireguard service type |
 | service.wireguard.ports | list | `[51820]` | Wireguard service ports. Exposes the WireGuard ports for created interfaces. Lowerest port is selected as start port for the first interface. Increment next port by 1 for each additional interface. |
+| service.metrics.port | int | `8787` |  |
 | ingress.enabled | bool | `false` | Specifies whether an ingress resource should be created |
 | ingress.className | string | `""` | Ingress class name |
 | ingress.annotations | object | `{}` | Ingress annotations |
@@ -104,3 +105,14 @@ The [Values](#values) section lists the parameters that can be configured during
 | serviceAccount.annotations | object | `{}` | Service account annotations |
 | serviceAccount.automount | bool | `false` | Automatically mount a ServiceAccount's API credentials |
 | serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
+| monitoring.enabled | bool | `true` | Enable Prometheus monitoring. |
+| monitoring.apiVersion | string | `"monitoring.coreos.com/v1"` | API version of the Prometheus resource. Use `azmonitoring.coreos.com/v1` for Azure Managed Prometheus. |
+| monitoring.kind | string | `"PodMonitor"` | Kind of the Prometheus resource. Could be `PodMonitor` or `ServiceMonitor`. |
+| monitoring.labels | object | `{}` | Resource labels. |
+| monitoring.annotations | object | `{}` | Resource annotations. |
+| monitoring.interval | string | `""` | Interval at which metrics should be scraped. If not specified Prometheus' global scrape interval is used. |
+| monitoring.metricRelabelings | list | `[]` | Relabelings to samples before ingestion. |
+| monitoring.relabelings | list | `[]` | Relabelings to samples before scraping. |
+| monitoring.scrapeTimeout | string | `""` | Timeout after which the scrape is ended If not specified, the Prometheus global scrape interval is used. |
+| monitoring.jobLabel | string | `""` | The label to use to retrieve the job name from. |
+| monitoring.podTargetLabels | object | `{}` | Transfers labels on the Kubernetes Pod onto the target. |

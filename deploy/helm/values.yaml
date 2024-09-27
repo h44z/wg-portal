@@ -134,6 +134,8 @@ service:
     # Increment next port by 1 for each additional interface.
     ports:
       - 51820
+  metrics:
+    port: 8787
 
 ingress:
   # -- Specifies whether an ingress resource should be created
@@ -202,3 +204,29 @@ serviceAccount:
   # -- The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ''
+
+monitoring:
+  # -- Enable Prometheus monitoring.
+  enabled: true
+  # -- API version of the Prometheus resource.
+  # Use `azmonitoring.coreos.com/v1` for Azure Managed Prometheus.
+  apiVersion: monitoring.coreos.com/v1
+  # -- Kind of the Prometheus resource.
+  # Could be `PodMonitor` or `ServiceMonitor`.
+  kind: PodMonitor
+  # -- Resource labels.
+  labels: {}
+  # -- Resource annotations.
+  annotations: {}
+  # -- Interval at which metrics should be scraped. If not specified Prometheus' global scrape interval is used.
+  interval: ''
+  # -- Relabelings to samples before ingestion.
+  metricRelabelings: []
+  # -- Relabelings to samples before scraping.
+  relabelings: []
+  # -- Timeout after which the scrape is ended If not specified, the Prometheus global scrape interval is used.
+  scrapeTimeout: ''
+  # -- The label to use to retrieve the job name from.
+  jobLabel: ''
+  # -- Transfers labels on the Kubernetes Pod onto the target.
+  podTargetLabels: {}
