@@ -12,3 +12,9 @@
 ---
 {{ include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.wireguard "ports" $ports "name" "wireguard") }}
 {{- end -}}
+
+{{- if and .Values.monitoring.enabled (eq .Values.monitoring.kind "ServiceMonitor") }}
+---
+{{- $portsMetrics := list (dict "name" "metrics" "port" .Values.service.metrics.port "protocol" "TCP" "targetPort" "metrics") -}}
+{{- include "wg-portal.service.tpl" (dict "context" . "scope" .Values.service.metrics "ports" $portsWeb "name" "metrics") }}
+{{- end -}}

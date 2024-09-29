@@ -48,6 +48,7 @@ type Config struct {
 		CollectInterfaceData   bool          `yaml:"collect_interface_data"`
 		CollectPeerData        bool          `yaml:"collect_peer_data"`
 		CollectAuditData       bool          `yaml:"collect_audit_data"`
+		ListeningAddress       string        `yaml:"listening_address"`
 	} `yaml:"statistics"`
 
 	Mail MailConfig `yaml:"mail"`
@@ -117,10 +118,11 @@ func defaultConfig() *Config {
 	cfg.Statistics.PingCheckWorkers = 10
 	cfg.Statistics.PingUnprivileged = false
 	cfg.Statistics.PingCheckInterval = 1 * time.Minute
-	cfg.Statistics.DataCollectionInterval = 10 * time.Second
+	cfg.Statistics.DataCollectionInterval = 1 * time.Minute
 	cfg.Statistics.CollectInterfaceData = true
 	cfg.Statistics.CollectPeerData = true
 	cfg.Statistics.CollectAuditData = true
+	cfg.Statistics.ListeningAddress = ":8787"
 
 	cfg.Mail = MailConfig{
 		Host:           "127.0.0.1",

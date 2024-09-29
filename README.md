@@ -37,6 +37,7 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL or Post
  * Support for multiple WireGuard interfaces
  * Peer Expiry Feature
  * Handle route and DNS settings like wg-quick does
+ * Exposes Prometheus [metrics](#metrics)
  * ~~REST API for management and client deployment~~ (coming soon)
 
 ![Screenshot](screenshot.png)
@@ -79,10 +80,11 @@ The following configuration options are available:
 | ping_check_workers              | statistics | 10                                         | Number of parallel ping checks that will be executed.                                                                                   |
 | ping_unprivileged               | statistics | false                                      | If set to false, the ping checks will run without root permissions (BETA).                                                              |
 | ping_check_interval             | statistics | 1m                                         | The interval time between two ping check runs.                                                                                          |
-| data_collection_interval        | statistics | 10m                                        | The interval between the data collection cycles.                                                                                        |
+| data_collection_interval        | statistics | 1m                                         | The interval between the data collection cycles.                                                                                        |
 | collect_interface_data          | statistics | true                                       | A flag to enable interface data collection like bytes sent and received.                                                                |
 | collect_peer_data               | statistics | true                                       | A flag to enable peer data collection like bytes sent and received, last handshake and remote endpoint address.                         |
 | collect_audit_data              | statistics | true                                       | If enabled, some events, like portal logins, will be logged to the database.                                                            |
+| listening_address               | statistics | :8787                                      | The listening address of the Prometheus metric server.                                                                                  |
 | host                            | mail       | 127.0.0.1                                  | The mail-server address.                                                                                                                |
 | port                            | mail       | 25                                         | The mail-server SMTP port.                                                                                                              |
 | encryption                      | mail       | none                                       | SMTP encryption type, allowed values: none, tls, starttls.                                                                              |
@@ -204,6 +206,48 @@ make build
  * [Bootstrap](https://getbootstrap.com/), for the HTML templates
  * [Vue.JS](https://vuejs.org/), for the frontend
 
+## Metrics
+
+Metrics are available if interface/peer statistic data collection is enabled.
+
+Add following scrape job to your Prometheus config file:
+
+```yaml
+# prometheus.yaml
+scrape_configs:
+  - job_name: "wg-portal"
+    scrape_interval: 60s
+    static_configs:
+      - targets: ["wg-portal:8787"]
+```
+
+Exposed metrics:
+
+```console
+# HELP wireguard_interface_info Interface info.
+# TYPE wireguard_interface_info gauge
+
+# HELP wireguard_interface_received_bytes_total Bytes received througth the interface.
+# TYPE wireguard_interface_received_bytes_total gauge
+
+# HELP wireguard_interface_sent_bytes_total Bytes sent through the interface.
+# TYPE wireguard_interface_sent_bytes_total gauge
+
+# HELP wireguard_peer_info Peer info.
+# TYPE wireguard_peer_info gauge
+
+# HELP wireguard_peer_received_bytes_total Bytes received from the peer.
+# TYPE wireguard_peer_received_bytes_total gauge
+
+# HELP wireguard_peer_sent_bytes_total Bytes sent to the peer.
+# TYPE wireguard_peer_sent_bytes_total gauge
+
+# HELP wireguard_peer_up Peer connection state (boolean: 1/0).
+# TYPE wireguard_peer_up gauge
+
+# HELP wireguard_peer_last_handshake_seconds Seconds from the last handshake with the peer.
+# TYPE wireguard_peer_last_handshake_seconds gauge
+```
 
 ## License
 

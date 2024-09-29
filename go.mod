@@ -11,6 +11,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.8
 	github.com/prometheus-community/pro-bing v0.4.1
+	github.com/prometheus/client_golang v1.20.4
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/swag v1.16.3
@@ -29,6 +30,16 @@ require (
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/driver/sqlserver v1.5.3
 	gorm.io/gorm v1.25.12
+)
+
+require (
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/prometheus/client_model v0.6.1 // indirect
+	github.com/prometheus/common v0.55.0 // indirect
+	github.com/prometheus/procfs v0.15.1 // indirect
 )
 
 require (

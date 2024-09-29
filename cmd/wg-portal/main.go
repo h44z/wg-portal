@@ -2,6 +2,11 @@ package main
 
 import (
 	"context"
+	"os"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/h44z/wg-portal/internal/app/api/core"
 	handlersV0 "github.com/h44z/wg-portal/internal/app/api/v0/handlers"
 	"github.com/h44z/wg-portal/internal/app/audit"
@@ -11,10 +16,6 @@ import (
 	"github.com/h44z/wg-portal/internal/app/route"
 	"github.com/h44z/wg-portal/internal/app/users"
 	"github.com/h44z/wg-portal/internal/app/wireguard"
-	"os"
-	"strings"
-	"syscall"
-	"time"
 
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/adapters"
@@ -49,6 +50,8 @@ func main() {
 
 	mailer := adapters.NewSmtpMailRepo(cfg.Mail)
 
+	metricsServer := adapters.NewMetricsServer(cfg, database)
+
 	cfgFileSystem, err := adapters.NewFileSystemRepository(cfg.Advanced.ConfigStoragePath)
 	internal.AssertNoError(err)
 
@@ -75,7 +78,7 @@ func main() {
 	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, wgQuick, database)
 	internal.AssertNoError(err)
 
-	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, database, wireGuard)
+	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, database, wireGuard, metricsServer)
 	internal.AssertNoError(err)
 
 	cfgFileManager, err := configfile.NewConfigFileManager(cfg, eventBus, database, database, cfgFileSystem)
@@ -103,6 +106,7 @@ func main() {
 	webSrv, err := core.NewServer(cfg, apiFrontend)
 	internal.AssertNoError(err)
 
+	go metricsServer.Run(ctx)
 	go webSrv.Run(ctx, cfg.Web.ListeningAddress)
 
 	// wait until context gets cancelled

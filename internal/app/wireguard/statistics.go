@@ -2,12 +2,13 @@ package wireguard
 
 import (
 	"context"
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/prometheus-community/pro-bing"
-	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
+
+	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
+	probing "github.com/prometheus-community/pro-bing"
+	"github.com/sirupsen/logrus"
 )
 
 type StatisticsCollector struct {
@@ -18,14 +19,16 @@ type StatisticsCollector struct {
 
 	db StatisticsDatabaseRepo
 	wg InterfaceController
+	ms MetricsServer
 }
 
-func NewStatisticsCollector(cfg *config.Config, db StatisticsDatabaseRepo, wg InterfaceController) (*StatisticsCollector, error) {
+func NewStatisticsCollector(cfg *config.Config, db StatisticsDatabaseRepo, wg InterfaceController, ms MetricsServer) (*StatisticsCollector, error) {
 	return &StatisticsCollector{
 		cfg: cfg,
 
 		db: db,
 		wg: wg,
+		ms: ms,
 	}, nil
 }
 
@@ -70,11 +73,15 @@ func (c *StatisticsCollector) collectInterfaceData(ctx context.Context) {
 					i.UpdatedAt = time.Now()
 					i.BytesReceived = physicalInterface.BytesDownload
 					i.BytesTransmitted = physicalInterface.BytesUpload
+
+					// Update prometheus metrics
+					go c.ms.UpdateInterfaceMetrics(*i)
 					return i, nil
 				})
 				if err != nil {
 					logrus.Warnf("failed to update interface status for %s: %v", in.Identifier, err)
 				}
+				logrus.Tracef("updated interface status for %s", in.Identifier)
 			}
 		}
 	}
@@ -126,11 +133,15 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 						p.Endpoint = peer.Endpoint
 						p.LastHandshake = lastHandshake
 
+						// Update prometheus metrics
+						go c.ms.UpdatePeerMetrics(ctx, *p)
+
 						return p, nil
 					})
 					if err != nil {
 						logrus.Warnf("failed to update interface status for %s: %v", in.Identifier, err)
 					}
+					logrus.Tracef("updated peer status for %s", peer.Identifier)
 				}
 			}
 		}
@@ -234,7 +245,7 @@ func (c *StatisticsCollector) pingWorker(ctx context.Context) {
 }
 
 func (c *StatisticsCollector) isPeerPingable(ctx context.Context, peer domain.Peer) bool {
-	if c.cfg.Statistics.UsePingChecks == false {
+	if !c.cfg.Statistics.UsePingChecks {
 		return false
 	}
 

@@ -95,8 +95,6 @@ func NewServer(cfg *config.Config, endpoints ...ApiEndpointSetupFunc) (*Server, 
 }
 
 func (s *Server) Run(ctx context.Context, listenAddress string) {
-	logrus.Infof("starting web service on %s", listenAddress)
-
 	// Run web service
 	srv := &http.Server{
 		Addr:    listenAddress,
@@ -116,6 +114,7 @@ func (s *Server) Run(ctx context.Context, listenAddress string) {
 			cancelFn()
 		}
 	}()
+	logrus.Infof("started web service on %s", listenAddress)
 
 	// Wait for the main context to end
 	<-srvContext.Done()
