@@ -79,7 +79,7 @@ jobs:
             BUILD_VERSION=${{ env.BUILD_VERSION }}
 
       - name: Export binaries from images
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v7
