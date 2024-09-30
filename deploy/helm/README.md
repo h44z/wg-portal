@@ -1,6 +1,6 @@
 # wg-portal
 
-![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
+![Version: 0.4.0](https://img.shields.io/badge/Version-0.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
 
 WireGuard Configuration Portal with LDAP, OAuth, OIDC authentication
 
@@ -116,3 +116,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | monitoring.scrapeTimeout | string | `""` | Timeout after which the scrape is ended If not specified, the Prometheus global scrape interval is used. |
 | monitoring.jobLabel | string | `""` | The label to use to retrieve the job name from. |
 | monitoring.podTargetLabels | object | `{}` | Transfers labels on the Kubernetes Pod onto the target. |
+| monitoring.dashboard.enabled | bool | `false` | Enable Grafana dashboard. |
+| monitoring.dashboard.annotations | object | `{}` | Annotations for the dashboard ConfigMap. |
+| monitoring.dashboard.labels | object | `{}` | Additional labels for the dashboard ConfigMap. |
+| monitoring.dashboard.namespace | string | `""` | Dashboard ConfigMap namespace Overrides the namespace for the dashboard ConfigMap. |

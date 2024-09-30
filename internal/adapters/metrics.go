@@ -16,12 +16,10 @@ import (
 
 type MetricsServer struct {
 	*http.Server
-	db *SqlRepo
 
-	ifaceInfo                *prometheus.GaugeVec
+	ifaceIsDisabled          *prometheus.GaugeVec
 	ifaceReceivedBytesTotal  *prometheus.GaugeVec
 	ifaceSendBytesTotal      *prometheus.GaugeVec
-	peerInfo                 *prometheus.GaugeVec
 	peerIsConnected          *prometheus.GaugeVec
 	peerLastHandshakeSeconds *prometheus.GaugeVec
 	peerReceivedBytesTotal   *prometheus.GaugeVec
@@ -30,13 +28,12 @@ type MetricsServer struct {
 
 // Wireguard metrics labels
 var (
-	labels      = []string{"interface"}
-	ifaceLabels = []string{}
-	peerLabels  = []string{"addresses", "id", "name"}
+	ifaceLabels = []string{"interface"}
+	peerLabels  = []string{"interface", "addresses", "id", "name"}
 )
 
 // NewMetricsServer returns a new prometheus server
-func NewMetricsServer(cfg *config.Config, db *SqlRepo) *MetricsServer {
+func NewMetricsServer(cfg *config.Config) *MetricsServer {
 	reg := prometheus.NewRegistry()
 
 	mux := http.NewServeMux()
@@ -47,56 +44,50 @@ func NewMetricsServer(cfg *config.Config, db *SqlRepo) *MetricsServer {
 			Addr:    cfg.Statistics.ListeningAddress,
 			Handler: mux,
 		},
-		db: db,
 
-		ifaceInfo: promauto.With(reg).NewGaugeVec(
+		ifaceIsDisabled: promauto.With(reg).NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: "wireguard_interface_info",
-				Help: "Interface info.",
-			}, append(labels, ifaceLabels...),
+				Name: "wireguard_interface_up",
+				Help: "Iterface state (boolean: 1/0).",
+			}, ifaceLabels,
 		),
+
 		ifaceReceivedBytesTotal: promauto.With(reg).NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "wireguard_interface_received_bytes_total",
 				Help: "Bytes received througth the interface.",
-			}, append(labels, ifaceLabels...),
+			}, ifaceLabels,
 		),
 		ifaceSendBytesTotal: promauto.With(reg).NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "wireguard_interface_sent_bytes_total",
 				Help: "Bytes sent through the interface.",
-			}, append(labels, ifaceLabels...),
+			}, ifaceLabels,
 		),
 
-		peerInfo: promauto.With(reg).NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: "wireguard_peer_info",
-				Help: "Peer info.",
-			}, append(labels, peerLabels...),
-		),
 		peerIsConnected: promauto.With(reg).NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "wireguard_peer_up",
 				Help: "Peer connection state (boolean: 1/0).",
-			}, append(labels, peerLabels...),
+			}, peerLabels,
 		),
 		peerLastHandshakeSeconds: promauto.With(reg).NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "wireguard_peer_last_handshake_seconds",
 				Help: "Seconds from the last handshake with the peer.",
-			}, append(labels, peerLabels...),
+			}, peerLabels,
 		),
 		peerReceivedBytesTotal: promauto.With(reg).NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "wireguard_peer_received_bytes_total",
 				Help: "Bytes received from the peer.",
-			}, append(labels, peerLabels...),
+			}, peerLabels,
 		),
 		peerSendBytesTotal: promauto.With(reg).NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "wireguard_peer_sent_bytes_total",
 				Help: "Bytes sent to the peer.",
-			}, append(labels, peerLabels...),
+			}, peerLabels,
 		),
 	}
 }
@@ -128,22 +119,15 @@ func (m *MetricsServer) Run(ctx context.Context) {
 }
 
 // UpdateInterfaceMetrics updates the metrics for the given interface
-func (m *MetricsServer) UpdateInterfaceMetrics(status domain.InterfaceStatus) {
+func (m *MetricsServer) UpdateInterfaceMetrics(iface *domain.Interface, status domain.InterfaceStatus) {
 	labels := []string{string(status.InterfaceId)}
-	m.ifaceInfo.WithLabelValues(labels...).Set(1)
+	m.ifaceIsDisabled.WithLabelValues(labels...).Set(internal.BoolToFloat64(iface.IsDisabled()))
 	m.ifaceReceivedBytesTotal.WithLabelValues(labels...).Set(float64(status.BytesReceived))
 	m.ifaceSendBytesTotal.WithLabelValues(labels...).Set(float64(status.BytesTransmitted))
 }
 
 // UpdatePeerMetrics updates the metrics for the given peer
-func (m *MetricsServer) UpdatePeerMetrics(ctx context.Context, status domain.PeerStatus) {
-	// Fetch peer data from the database
-	peer, err := m.db.GetPeer(ctx, status.PeerId)
-	if err != nil {
-		logrus.Warnf("failed to fetch peer data for labels %s: %v", status.PeerId, err)
-		return
-	}
-
+func (m *MetricsServer) UpdatePeerMetrics(peer *domain.Peer, status domain.PeerStatus) {
 	labels := []string{
 		string(peer.InterfaceIdentifier),
 		string(peer.Interface.AddressStr()),
@@ -151,7 +135,6 @@ func (m *MetricsServer) UpdatePeerMetrics(ctx context.Context, status domain.Pee
 		string(peer.DisplayName),
 	}
 
-	m.peerInfo.WithLabelValues(labels...).Set(1)
 	if status.LastHandshake != nil {
 		m.peerLastHandshakeSeconds.WithLabelValues(labels...).Set(float64(status.LastHandshake.Unix()))
 	}

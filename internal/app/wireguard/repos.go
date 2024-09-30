@@ -27,6 +27,7 @@ type InterfaceAndPeerDatabaseRepo interface {
 
 type StatisticsDatabaseRepo interface {
 	GetAllInterfaces(ctx context.Context) ([]domain.Interface, error)
+	GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error)
 	GetInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.Peer, error)
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 
@@ -52,6 +53,6 @@ type WgQuickController interface {
 }
 
 type MetricsServer interface {
-	UpdateInterfaceMetrics(status domain.InterfaceStatus)
-	UpdatePeerMetrics(ctx context.Context, status domain.PeerStatus)
+	UpdateInterfaceMetrics(iface *domain.Interface, status domain.InterfaceStatus)
+	UpdatePeerMetrics(peer *domain.Peer, status domain.PeerStatus)
 }

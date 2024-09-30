@@ -75,7 +75,8 @@ func (c *StatisticsCollector) collectInterfaceData(ctx context.Context) {
 					i.BytesTransmitted = physicalInterface.BytesUpload
 
 					// Update prometheus metrics
-					go c.ms.UpdateInterfaceMetrics(*i)
+					go c.updateInterfaceMetrics(ctx, *i)
+
 					return i, nil
 				})
 				if err != nil {
@@ -134,7 +135,7 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 						p.LastHandshake = lastHandshake
 
 						// Update prometheus metrics
-						go c.ms.UpdatePeerMetrics(ctx, *p)
+						go c.updatePeerMetrics(ctx, *p)
 
 						return p, nil
 					})
@@ -271,4 +272,23 @@ func (c *StatisticsCollector) isPeerPingable(ctx context.Context, peer domain.Pe
 	}
 	stats := pinger.Statistics()
 	return stats.PacketsRecv == checkCount
+}
+
+func (c *StatisticsCollector) updateInterfaceMetrics(ctx context.Context, status domain.InterfaceStatus) {
+	iface, err := c.db.GetInterface(ctx, status.InterfaceId)
+	if err != nil {
+		logrus.Warnf("failed to fetch interface data for metrics %s: %v", status.InterfaceId, err)
+		return
+	}
+	c.ms.UpdateInterfaceMetrics(iface, status)
+}
+
+func (c *StatisticsCollector) updatePeerMetrics(ctx context.Context, status domain.PeerStatus) {
+	// Fetch peer data from the database
+	peer, err := c.db.GetPeer(ctx, status.PeerId)
+	if err != nil {
+		logrus.Warnf("failed to fetch peer data for metrics %s: %v", status.PeerId, err)
+		return
+	}
+	c.ms.UpdatePeerMetrics(peer, status)
 }
