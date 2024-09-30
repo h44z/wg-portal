@@ -17,7 +17,6 @@ import (
 type MetricsServer struct {
 	*http.Server
 
-	ifaceIsDisabled          *prometheus.GaugeVec
 	ifaceReceivedBytesTotal  *prometheus.GaugeVec
 	ifaceSendBytesTotal      *prometheus.GaugeVec
 	peerIsConnected          *prometheus.GaugeVec
@@ -44,13 +43,6 @@ func NewMetricsServer(cfg *config.Config) *MetricsServer {
 			Addr:    cfg.Statistics.ListeningAddress,
 			Handler: mux,
 		},
-
-		ifaceIsDisabled: promauto.With(reg).NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: "wireguard_interface_up",
-				Help: "Iterface state (boolean: 1/0).",
-			}, ifaceLabels,
-		),
 
 		ifaceReceivedBytesTotal: promauto.With(reg).NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -119,9 +111,8 @@ func (m *MetricsServer) Run(ctx context.Context) {
 }
 
 // UpdateInterfaceMetrics updates the metrics for the given interface
-func (m *MetricsServer) UpdateInterfaceMetrics(iface *domain.Interface, status domain.InterfaceStatus) {
+func (m *MetricsServer) UpdateInterfaceMetrics(status domain.InterfaceStatus) {
 	labels := []string{string(status.InterfaceId)}
-	m.ifaceIsDisabled.WithLabelValues(labels...).Set(internal.BoolToFloat64(iface.IsDisabled()))
 	m.ifaceReceivedBytesTotal.WithLabelValues(labels...).Set(float64(status.BytesReceived))
 	m.ifaceSendBytesTotal.WithLabelValues(labels...).Set(float64(status.BytesTransmitted))
 }

@@ -75,7 +75,7 @@ func (c *StatisticsCollector) collectInterfaceData(ctx context.Context) {
 					i.BytesTransmitted = physicalInterface.BytesUpload
 
 					// Update prometheus metrics
-					go c.updateInterfaceMetrics(ctx, *i)
+					go c.updateInterfaceMetrics(*i)
 
 					return i, nil
 				})
@@ -274,13 +274,8 @@ func (c *StatisticsCollector) isPeerPingable(ctx context.Context, peer domain.Pe
 	return stats.PacketsRecv == checkCount
 }
 
-func (c *StatisticsCollector) updateInterfaceMetrics(ctx context.Context, status domain.InterfaceStatus) {
-	iface, err := c.db.GetInterface(ctx, status.InterfaceId)
-	if err != nil {
-		logrus.Warnf("failed to fetch interface data for metrics %s: %v", status.InterfaceId, err)
-		return
-	}
-	c.ms.UpdateInterfaceMetrics(iface, status)
+func (c *StatisticsCollector) updateInterfaceMetrics(status domain.InterfaceStatus) {
+	c.ms.UpdateInterfaceMetrics(status)
 }
 
 func (c *StatisticsCollector) updatePeerMetrics(ctx context.Context, status domain.PeerStatus) {
