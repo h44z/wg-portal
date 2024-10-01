@@ -218,7 +218,8 @@ monitoring:
   labels: {}
   # -- Resource annotations.
   annotations: {}
-  # -- Interval at which metrics should be scraped. If not specified Prometheus' global scrape interval is used.
+  # -- Interval at which metrics should be scraped. If not specified `config.statistics.data_collection_interval` interval is used.
+  # @default -- `1m`
   interval: ''
   # -- Relabelings to samples before ingestion.
   metricRelabelings: []

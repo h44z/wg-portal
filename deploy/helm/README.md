@@ -110,7 +110,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | monitoring.kind | string | `"PodMonitor"` | Kind of the Prometheus resource. Could be `PodMonitor` or `ServiceMonitor`. |
 | monitoring.labels | object | `{}` | Resource labels. |
 | monitoring.annotations | object | `{}` | Resource annotations. |
-| monitoring.interval | string | `""` | Interval at which metrics should be scraped. If not specified Prometheus' global scrape interval is used. |
+| monitoring.interval | string | `1m` | Interval at which metrics should be scraped. If not specified `config.statistics.data_collection_interval` interval is used. |
 | monitoring.metricRelabelings | list | `[]` | Relabelings to samples before ingestion. |
 | monitoring.relabelings | list | `[]` | Relabelings to samples before scraping. |
 | monitoring.scrapeTimeout | string | `""` | Timeout after which the scrape is ended If not specified, the Prometheus global scrape interval is used. |
