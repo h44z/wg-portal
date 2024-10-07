@@ -23,7 +23,7 @@ require (
 	github.com/yeqown/go-qrcode/v2 v2.2.4
 	golang.org/x/crypto v0.27.0
 	golang.org/x/oauth2 v0.23.0
-	golang.org/x/sys v0.25.0
+	golang.org/x/sys v0.26.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20230429144221-925a1e7659e6
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/mysql v1.5.7
