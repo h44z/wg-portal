@@ -100,7 +100,7 @@ function download() {
   let text = configString.value
 
   let element = document.createElement('a')
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text))
+  element.setAttribute('href', 'data:application/octet-stream;charset=utf-8,' + encodeURIComponent(text))
   element.setAttribute('download', filename)
 
   element.style.display = 'none'
