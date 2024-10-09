@@ -19,9 +19,7 @@ spec:
   {{ $endpointsKey }}:
     - port: metrics
       path: /metrics
-      {{- with .interval }}
-      interval: {{ . }}
-      {{- end }}
+      interval: {{ coalesce .interval ($.Values.config.statistics).data_collection_interval "1m" }}
       {{- with .metricRelabelings }}
       metricRelabelings: {{- toYaml . | nindent 8 }}
       {{- end }}

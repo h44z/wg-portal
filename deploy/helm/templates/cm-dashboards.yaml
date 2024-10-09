@@ -1,0 +1,14 @@
+{{- with .Values.monitoring.dashboard -}}
+{{- if .enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  {{- with .annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels: {{- include "wg-portal.util.merge" (list $ .labels "wg-portal.labels") | nindent 4 }}
+  name: {{ printf "grafana-dashboards-%s" (include "wg-portal.fullname" $) }}
+  namespace: {{ default $.Release.Namespace .namespace }}
+data: {{ ($.Files.Glob "files/dashboard.json").AsConfig | nindent 2 }}
+{{- end -}}
+{{- end -}}

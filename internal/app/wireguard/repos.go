@@ -53,5 +53,5 @@ type WgQuickController interface {
 
 type MetricsServer interface {
 	UpdateInterfaceMetrics(status domain.InterfaceStatus)
-	UpdatePeerMetrics(ctx context.Context, status domain.PeerStatus)
+	UpdatePeerMetrics(peer *domain.Peer, status domain.PeerStatus)
 }

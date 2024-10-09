@@ -50,7 +50,7 @@ func main() {
 
 	mailer := adapters.NewSmtpMailRepo(cfg.Mail)
 
-	metricsServer := adapters.NewMetricsServer(cfg, database)
+	metricsServer := adapters.NewMetricsServer(cfg)
 
 	cfgFileSystem, err := adapters.NewFileSystemRepository(cfg.Advanced.ConfigStoragePath)
 	internal.AssertNoError(err)

@@ -218,7 +218,8 @@ monitoring:
   labels: {}
   # -- Resource annotations.
   annotations: {}
-  # -- Interval at which metrics should be scraped. If not specified Prometheus' global scrape interval is used.
+  # -- Interval at which metrics should be scraped. If not specified `config.statistics.data_collection_interval` interval is used.
+  # @default -- `1m`
   interval: ''
   # -- Relabelings to samples before ingestion.
   metricRelabelings: []
@@ -230,3 +231,14 @@ monitoring:
   jobLabel: ''
   # -- Transfers labels on the Kubernetes Pod onto the target.
   podTargetLabels: {}
+
+  dashboard:
+    # -- Enable Grafana dashboard.
+    enabled: false
+    # -- Annotations for the dashboard ConfigMap.
+    annotations: {}
+    # -- Additional labels for the dashboard ConfigMap.
+    labels: {}
+    # -- Dashboard ConfigMap namespace
+    # Overrides the namespace for the dashboard ConfigMap.
+    namespace: ''
