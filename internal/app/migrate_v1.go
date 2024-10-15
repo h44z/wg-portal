@@ -3,13 +3,14 @@ package app
 import (
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/h44z/wg-portal/internal/adapters"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"os"
-	"time"
 )
 
 func migrateFromV1(cfg *config.Config, db *gorm.DB, source, typ string) error {
@@ -137,7 +138,7 @@ func migrateV1Interfaces(oldDb, newDb *gorm.DB) error {
 		DisplayName                string
 		PrivateKey                 string
 		ListenPort                 int
-		FirewallMark               int32
+		FirewallMark               uint32
 		PublicKey                  string
 		Mtu                        int
 		IPsStr                     string
@@ -288,7 +289,8 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 			ifaceType = domain.InterfaceTypeAny
 		}
 		var user domain.User
-		err = newDb.First(&user, "identifier = ?", oldPeer.Email).Error // migrated users use the email address as identifier
+		err = newDb.First(&user, "identifier = ?",
+			oldPeer.Email).Error // migrated users use the email address as identifier
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("failed to find user %s for peer %s: %w", oldPeer.Email, oldPeer.PublicKey, err)
 		}
@@ -325,20 +327,12 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 				CreatedAt: oldPeer.CreatedAt,
 				UpdatedAt: oldPeer.UpdatedAt,
 			},
-			Endpoint: domain.StringConfigOption{
-				Value: oldPeer.Endpoint, Overridable: !oldPeer.IgnoreGlobalSettings,
-			},
-			EndpointPublicKey: domain.StringConfigOption{
-				Value: iface.PublicKey, Overridable: !oldPeer.IgnoreGlobalSettings,
-			},
-			AllowedIPsStr: domain.StringConfigOption{
-				Value: oldPeer.AllowedIPsStr, Overridable: !oldPeer.IgnoreGlobalSettings,
-			},
-			ExtraAllowedIPsStr: oldPeer.AllowedIPsSrvStr,
-			PresharedKey:       domain.PreSharedKey(oldPeer.PresharedKey),
-			PersistentKeepalive: domain.IntConfigOption{
-				Value: oldPeer.PersistentKeepalive, Overridable: !oldPeer.IgnoreGlobalSettings,
-			},
+			Endpoint:            domain.NewConfigOption(oldPeer.Endpoint, !oldPeer.IgnoreGlobalSettings),
+			EndpointPublicKey:   domain.NewConfigOption(iface.PublicKey, !oldPeer.IgnoreGlobalSettings),
+			AllowedIPsStr:       domain.NewConfigOption(oldPeer.AllowedIPsStr, !oldPeer.IgnoreGlobalSettings),
+			ExtraAllowedIPsStr:  oldPeer.AllowedIPsSrvStr,
+			PresharedKey:        domain.PreSharedKey(oldPeer.PresharedKey),
+			PersistentKeepalive: domain.NewConfigOption(oldPeer.PersistentKeepalive, !oldPeer.IgnoreGlobalSettings),
 			DisplayName:         oldPeer.Identifier,
 			Identifier:          domain.PeerIdentifier(oldPeer.PublicKey),
 			UserIdentifier:      user.Identifier,
@@ -352,35 +346,17 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 					PrivateKey: oldPeer.PrivateKey,
 					PublicKey:  oldPeer.PublicKey,
 				},
-				Type:      ifaceType,
-				Addresses: ips,
-				DnsStr: domain.StringConfigOption{
-					Value: oldPeer.DNSStr, Overridable: !oldPeer.IgnoreGlobalSettings,
-				},
-				DnsSearchStr: domain.StringConfigOption{
-					Value: iface.PeerDefDnsSearchStr, Overridable: !oldPeer.IgnoreGlobalSettings,
-				},
-				Mtu: domain.IntConfigOption{
-					Value: oldPeer.Mtu, Overridable: !oldPeer.IgnoreGlobalSettings,
-				},
-				FirewallMark: domain.Int32ConfigOption{
-					Value: iface.PeerDefFirewallMark, Overridable: !oldPeer.IgnoreGlobalSettings,
-				},
-				RoutingTable: domain.StringConfigOption{
-					Value: iface.PeerDefRoutingTable, Overridable: !oldPeer.IgnoreGlobalSettings,
-				},
-				PreUp: domain.StringConfigOption{
-					Value: iface.PeerDefPreUp, Overridable: !oldPeer.IgnoreGlobalSettings,
-				},
-				PostUp: domain.StringConfigOption{
-					Value: iface.PeerDefPostUp, Overridable: !oldPeer.IgnoreGlobalSettings,
-				},
-				PreDown: domain.StringConfigOption{
-					Value: iface.PeerDefPreDown, Overridable: !oldPeer.IgnoreGlobalSettings,
-				},
-				PostDown: domain.StringConfigOption{
-					Value: iface.PeerDefPostDown, Overridable: !oldPeer.IgnoreGlobalSettings,
-				},
+				Type:         ifaceType,
+				Addresses:    ips,
+				DnsStr:       domain.NewConfigOption(oldPeer.DNSStr, !oldPeer.IgnoreGlobalSettings),
+				DnsSearchStr: domain.NewConfigOption(iface.PeerDefDnsSearchStr, !oldPeer.IgnoreGlobalSettings),
+				Mtu:          domain.NewConfigOption(oldPeer.Mtu, !oldPeer.IgnoreGlobalSettings),
+				FirewallMark: domain.NewConfigOption(iface.PeerDefFirewallMark, !oldPeer.IgnoreGlobalSettings),
+				RoutingTable: domain.NewConfigOption(iface.PeerDefRoutingTable, !oldPeer.IgnoreGlobalSettings),
+				PreUp:        domain.NewConfigOption(iface.PeerDefPreUp, !oldPeer.IgnoreGlobalSettings),
+				PostUp:       domain.NewConfigOption(iface.PeerDefPostUp, !oldPeer.IgnoreGlobalSettings),
+				PreDown:      domain.NewConfigOption(iface.PeerDefPreDown, !oldPeer.IgnoreGlobalSettings),
+				PostDown:     domain.NewConfigOption(iface.PeerDefPostDown, !oldPeer.IgnoreGlobalSettings),
 			},
 		}
 

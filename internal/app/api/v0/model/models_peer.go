@@ -1,9 +1,10 @@
 package model
 
 import (
+	"time"
+
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/domain"
-	"time"
 )
 
 const ExpiryDateTimeLayout = "\"2006-01-02\""
@@ -48,30 +49,30 @@ type Peer struct {
 	ExpiresAt           ExpiryDate `json:"ExpiresAt,omitempty"`                  // expiry dates for peers
 	Notes               string     `json:"Notes"`                                // a note field for peers
 
-	Endpoint            StringConfigOption      `json:"Endpoint"`            // the endpoint address
-	EndpointPublicKey   StringConfigOption      `json:"EndpointPublicKey"`   // the endpoint public key
-	AllowedIPs          StringSliceConfigOption `json:"AllowedIPs"`          // all allowed ip subnets, comma seperated
-	ExtraAllowedIPs     []string                `json:"ExtraAllowedIPs"`     // all allowed ip subnets on the server side, comma seperated
-	PresharedKey        string                  `json:"PresharedKey"`        // the pre-shared Key of the peer
-	PersistentKeepalive IntConfigOption         `json:"PersistentKeepalive"` // the persistent keep-alive interval
+	Endpoint            ConfigOption[string]   `json:"Endpoint"`            // the endpoint address
+	EndpointPublicKey   ConfigOption[string]   `json:"EndpointPublicKey"`   // the endpoint public key
+	AllowedIPs          ConfigOption[[]string] `json:"AllowedIPs"`          // all allowed ip subnets, comma seperated
+	ExtraAllowedIPs     []string               `json:"ExtraAllowedIPs"`     // all allowed ip subnets on the server side, comma seperated
+	PresharedKey        string                 `json:"PresharedKey"`        // the pre-shared Key of the peer
+	PersistentKeepalive ConfigOption[int]      `json:"PersistentKeepalive"` // the persistent keep-alive interval
 
 	PrivateKey string `json:"PrivateKey" example:"abcdef=="` // private Key of the server peer
 	PublicKey  string `json:"PublicKey" example:"abcdef=="`  // public Key of the server peer
 
 	Mode string // the peer interface type (server, client, any)
 
-	Addresses         []string                `json:"Addresses"`         // the interface ip addresses
-	CheckAliveAddress string                  `json:"CheckAliveAddress"` // optional ip address or DNS name that is used for ping checks
-	Dns               StringSliceConfigOption `json:"Dns"`               // the dns server that should be set if the interface is up, comma separated
-	DnsSearch         StringSliceConfigOption `json:"DnsSearch"`         // the dns search option string that should be set if the interface is up, will be appended to DnsStr
-	Mtu               IntConfigOption         `json:"Mtu"`               // the device MTU
-	FirewallMark      Int32ConfigOption       `json:"FirewallMark"`      // a firewall mark
-	RoutingTable      StringConfigOption      `json:"RoutingTable"`      // the routing table
+	Addresses         []string               `json:"Addresses"`         // the interface ip addresses
+	CheckAliveAddress string                 `json:"CheckAliveAddress"` // optional ip address or DNS name that is used for ping checks
+	Dns               ConfigOption[[]string] `json:"Dns"`               // the dns server that should be set if the interface is up, comma separated
+	DnsSearch         ConfigOption[[]string] `json:"DnsSearch"`         // the dns search option string that should be set if the interface is up, will be appended to DnsStr
+	Mtu               ConfigOption[int]      `json:"Mtu"`               // the device MTU
+	FirewallMark      ConfigOption[uint32]   `json:"FirewallMark"`      // a firewall mark
+	RoutingTable      ConfigOption[string]   `json:"RoutingTable"`      // the routing table
 
-	PreUp    StringConfigOption `json:"PreUp"`    // action that is executed before the device is up
-	PostUp   StringConfigOption `json:"PostUp"`   // action that is executed after the device is up
-	PreDown  StringConfigOption `json:"PreDown"`  // action that is executed before the device is down
-	PostDown StringConfigOption `json:"PostDown"` // action that is executed after the device is down
+	PreUp    ConfigOption[string] `json:"PreUp"`    // action that is executed before the device is up
+	PostUp   ConfigOption[string] `json:"PostUp"`   // action that is executed after the device is up
+	PreDown  ConfigOption[string] `json:"PreDown"`  // action that is executed before the device is down
+	PostDown ConfigOption[string] `json:"PostDown"` // action that is executed after the device is down
 }
 
 func NewPeer(src *domain.Peer) *Peer {
@@ -84,12 +85,12 @@ func NewPeer(src *domain.Peer) *Peer {
 		DisabledReason:      src.DisabledReason,
 		ExpiresAt:           ExpiryDate{src.ExpiresAt},
 		Notes:               src.Notes,
-		Endpoint:            StringConfigOptionFromDomain(src.Endpoint),
-		EndpointPublicKey:   StringConfigOptionFromDomain(src.EndpointPublicKey),
+		Endpoint:            ConfigOptionFromDomain(src.Endpoint),
+		EndpointPublicKey:   ConfigOptionFromDomain(src.EndpointPublicKey),
 		AllowedIPs:          StringSliceConfigOptionFromDomain(src.AllowedIPsStr),
 		ExtraAllowedIPs:     internal.SliceString(src.ExtraAllowedIPsStr),
 		PresharedKey:        string(src.PresharedKey),
-		PersistentKeepalive: IntConfigOptionFromDomain(src.PersistentKeepalive),
+		PersistentKeepalive: ConfigOptionFromDomain(src.PersistentKeepalive),
 		PrivateKey:          src.Interface.PrivateKey,
 		PublicKey:           src.Interface.PublicKey,
 		Mode:                string(src.Interface.Type),
@@ -97,13 +98,13 @@ func NewPeer(src *domain.Peer) *Peer {
 		CheckAliveAddress:   src.Interface.CheckAliveAddress,
 		Dns:                 StringSliceConfigOptionFromDomain(src.Interface.DnsStr),
 		DnsSearch:           StringSliceConfigOptionFromDomain(src.Interface.DnsSearchStr),
-		Mtu:                 IntConfigOptionFromDomain(src.Interface.Mtu),
-		FirewallMark:        Int32ConfigOptionFromDomain(src.Interface.FirewallMark),
-		RoutingTable:        StringConfigOptionFromDomain(src.Interface.RoutingTable),
-		PreUp:               StringConfigOptionFromDomain(src.Interface.PreUp),
-		PostUp:              StringConfigOptionFromDomain(src.Interface.PostUp),
-		PreDown:             StringConfigOptionFromDomain(src.Interface.PreDown),
-		PostDown:            StringConfigOptionFromDomain(src.Interface.PostDown),
+		Mtu:                 ConfigOptionFromDomain(src.Interface.Mtu),
+		FirewallMark:        ConfigOptionFromDomain(src.Interface.FirewallMark),
+		RoutingTable:        ConfigOptionFromDomain(src.Interface.RoutingTable),
+		PreUp:               ConfigOptionFromDomain(src.Interface.PreUp),
+		PostUp:              ConfigOptionFromDomain(src.Interface.PostUp),
+		PreDown:             ConfigOptionFromDomain(src.Interface.PreDown),
+		PostDown:            ConfigOptionFromDomain(src.Interface.PostDown),
 	}
 }
 
@@ -123,12 +124,12 @@ func NewDomainPeer(src *Peer) *domain.Peer {
 
 	res := &domain.Peer{
 		BaseModel:           domain.BaseModel{},
-		Endpoint:            StringConfigOptionToDomain(src.Endpoint),
-		EndpointPublicKey:   StringConfigOptionToDomain(src.EndpointPublicKey),
+		Endpoint:            ConfigOptionToDomain(src.Endpoint),
+		EndpointPublicKey:   ConfigOptionToDomain(src.EndpointPublicKey),
 		AllowedIPsStr:       StringSliceConfigOptionToDomain(src.AllowedIPs),
 		ExtraAllowedIPsStr:  internal.SliceToString(src.ExtraAllowedIPs),
 		PresharedKey:        domain.PreSharedKey(src.PresharedKey),
-		PersistentKeepalive: IntConfigOptionToDomain(src.PersistentKeepalive),
+		PersistentKeepalive: ConfigOptionToDomain(src.PersistentKeepalive),
 		DisplayName:         src.DisplayName,
 		Identifier:          domain.PeerIdentifier(src.Identifier),
 		UserIdentifier:      domain.UserIdentifier(src.UserIdentifier),
@@ -147,13 +148,13 @@ func NewDomainPeer(src *Peer) *domain.Peer {
 			CheckAliveAddress: src.CheckAliveAddress,
 			DnsStr:            StringSliceConfigOptionToDomain(src.Dns),
 			DnsSearchStr:      StringSliceConfigOptionToDomain(src.DnsSearch),
-			Mtu:               IntConfigOptionToDomain(src.Mtu),
-			FirewallMark:      Int32ConfigOptionToDomain(src.FirewallMark),
-			RoutingTable:      StringConfigOptionToDomain(src.RoutingTable),
-			PreUp:             StringConfigOptionToDomain(src.PreUp),
-			PostUp:            StringConfigOptionToDomain(src.PostUp),
-			PreDown:           StringConfigOptionToDomain(src.PreDown),
-			PostDown:          StringConfigOptionToDomain(src.PostDown),
+			Mtu:               ConfigOptionToDomain(src.Mtu),
+			FirewallMark:      ConfigOptionToDomain(src.FirewallMark),
+			RoutingTable:      ConfigOptionToDomain(src.RoutingTable),
+			PreUp:             ConfigOptionToDomain(src.PreUp),
+			PostUp:            ConfigOptionToDomain(src.PostUp),
+			PreDown:           ConfigOptionToDomain(src.PreDown),
+			PostDown:          ConfigOptionToDomain(src.PostDown),
 		},
 	}
 

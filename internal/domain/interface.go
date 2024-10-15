@@ -2,13 +2,14 @@ package domain
 
 import (
 	"fmt"
-	"github.com/h44z/wg-portal/internal"
-	"github.com/sirupsen/logrus"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/h44z/wg-portal/internal"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -34,7 +35,7 @@ type Interface struct {
 	DnsSearchStr string // the dns search option string that should be set if the interface is up, will be appended to DnsStr
 
 	Mtu          int    // the device MTU
-	FirewallMark int32  // a firewall mark
+	FirewallMark uint32 // a firewall mark
 	RoutingTable string // the routing table number or "off" if the routing table should not be managed
 
 	PreUp    string // action that is executed before the device is up
@@ -61,7 +62,7 @@ type Interface struct {
 	PeerDefAllowedIPsStr       string // the default allowed IP string for the peer
 	PeerDefMtu                 int    // the default device MTU
 	PeerDefPersistentKeepalive int    // the default persistent keep-alive Value
-	PeerDefFirewallMark        int32  // default firewall mark
+	PeerDefFirewallMark        uint32 // default firewall mark
 	PeerDefRoutingTable        string // the default routing table
 
 	PeerDefPreUp    string // default action that is executed before the device is up
@@ -161,8 +162,8 @@ type PhysicalInterface struct {
 
 	Addresses []Cidr // the interface ip addresses
 
-	Mtu          int   // the device MTU
-	FirewallMark int32 // a firewall mark
+	Mtu          int    // the device MTU
+	FirewallMark uint32 // a firewall mark
 
 	DeviceUp bool // device status
 
@@ -223,7 +224,7 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 }
 
 type RoutingTableInfo struct {
-	FwMark int
+	FwMark uint32
 	Table  int
 }
 
@@ -241,7 +242,7 @@ func (r RoutingTableInfo) ManagementEnabled() bool {
 
 func (r RoutingTableInfo) GetRoutingTable() int {
 	if r.Table <= 0 {
-		return r.FwMark // use the dynamic routing table which has the same number as the firewall mark
+		return int(r.FwMark) // use the dynamic routing table which has the same number as the firewall mark
 	}
 
 	return r.Table

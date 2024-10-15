@@ -102,12 +102,12 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
-		Endpoint:            domain.NewStringConfigOption(iface.PeerDefEndpoint, true),
-		EndpointPublicKey:   domain.NewStringConfigOption(iface.PublicKey, true),
-		AllowedIPsStr:       domain.NewStringConfigOption(iface.PeerDefAllowedIPsStr, true),
+		Endpoint:            domain.NewConfigOption(iface.PeerDefEndpoint, true),
+		EndpointPublicKey:   domain.NewConfigOption(iface.PublicKey, true),
+		AllowedIPsStr:       domain.NewConfigOption(iface.PeerDefAllowedIPsStr, true),
 		ExtraAllowedIPsStr:  "",
 		PresharedKey:        pk,
-		PersistentKeepalive: domain.NewIntConfigOption(iface.PeerDefPersistentKeepalive, true),
+		PersistentKeepalive: domain.NewConfigOption(iface.PeerDefPersistentKeepalive, true),
 		DisplayName:         fmt.Sprintf("Peer %s", internal.TruncateString(string(peerId), 8)),
 		Identifier:          peerId,
 		UserIdentifier:      currentUser.Id,
@@ -121,15 +121,15 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 			Type:              peerMode,
 			Addresses:         ips,
 			CheckAliveAddress: "",
-			DnsStr:            domain.NewStringConfigOption(iface.PeerDefDnsStr, true),
-			DnsSearchStr:      domain.NewStringConfigOption(iface.PeerDefDnsSearchStr, true),
-			Mtu:               domain.NewIntConfigOption(iface.PeerDefMtu, true),
-			FirewallMark:      domain.NewInt32ConfigOption(iface.PeerDefFirewallMark, true),
-			RoutingTable:      domain.NewStringConfigOption(iface.PeerDefRoutingTable, true),
-			PreUp:             domain.NewStringConfigOption(iface.PeerDefPreUp, true),
-			PostUp:            domain.NewStringConfigOption(iface.PeerDefPostUp, true),
-			PreDown:           domain.NewStringConfigOption(iface.PeerDefPreDown, true),
-			PostDown:          domain.NewStringConfigOption(iface.PeerDefPostDown, true),
+			DnsStr:            domain.NewConfigOption(iface.PeerDefDnsStr, true),
+			DnsSearchStr:      domain.NewConfigOption(iface.PeerDefDnsSearchStr, true),
+			Mtu:               domain.NewConfigOption(iface.PeerDefMtu, true),
+			FirewallMark:      domain.NewConfigOption(iface.PeerDefFirewallMark, true),
+			RoutingTable:      domain.NewConfigOption(iface.PeerDefRoutingTable, true),
+			PreUp:             domain.NewConfigOption(iface.PeerDefPreUp, true),
+			PostUp:            domain.NewConfigOption(iface.PeerDefPostUp, true),
+			PreDown:           domain.NewConfigOption(iface.PeerDefPreDown, true),
+			PostDown:          domain.NewConfigOption(iface.PeerDefPostDown, true),
 		},
 	}
 
@@ -174,7 +174,11 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 	return peer, nil
 }
 
-func (m Manager) CreateMultiplePeers(ctx context.Context, interfaceId domain.InterfaceIdentifier, r *domain.PeerCreationRequest) ([]domain.Peer, error) {
+func (m Manager) CreateMultiplePeers(
+	ctx context.Context,
+	interfaceId domain.InterfaceIdentifier,
+	r *domain.PeerCreationRequest,
+) ([]domain.Peer, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, err
 	}

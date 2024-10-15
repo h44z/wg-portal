@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/h44z/wg-portal/internal"
 	"time"
+
+	"github.com/h44z/wg-portal/internal"
 
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -22,7 +23,7 @@ type Interface struct {
 	Dns          []string `json:"Dns"`          // the dns server that should be set if the interface is up, comma separated
 	DnsSearch    []string `json:"DnsSearch"`    // the dns search option string that should be set if the interface is up, will be appended to DnsStr
 	Mtu          int      `json:"Mtu"`          // the device MTU
-	FirewallMark int32    `json:"FirewallMark"` // a firewall mark
+	FirewallMark uint32   `json:"FirewallMark"` // a firewall mark
 	RoutingTable string   `json:"RoutingTable"` // the routing table
 
 	PreUp    string `json:"PreUp"`    // action that is executed before the device is up
@@ -37,7 +38,7 @@ type Interface struct {
 	PeerDefAllowedIPs          []string `json:"PeerDefAllowedIPs"`          // the default allowed IP string for the peer
 	PeerDefMtu                 int      `json:"PeerDefMtu"`                 // the default device MTU
 	PeerDefPersistentKeepalive int      `json:"PeerDefPersistentKeepalive"` // the default persistent keep-alive Value
-	PeerDefFirewallMark        int32    `json:"PeerDefFirewallMark"`        // default firewall mark
+	PeerDefFirewallMark        uint32   `json:"PeerDefFirewallMark"`        // default firewall mark
 	PeerDefRoutingTable        string   `json:"PeerDefRoutingTable"`        // the default routing table
 
 	PeerDefPreUp    string `json:"PeerDefPreUp"`    // default action that is executed before the device is up

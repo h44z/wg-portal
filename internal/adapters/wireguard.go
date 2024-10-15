@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/h44z/wg-portal/internal/lowlevel"
 	"github.com/vishvananda/netlink"
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
-	"os"
 )
 
 // WgRepo implements all low-level WireGuard interactions.
@@ -74,7 +75,11 @@ func (r *WgRepo) GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier
 	return peers, nil
 }
 
-func (r *WgRepo) GetPeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) (*domain.PhysicalPeer, error) {
+func (r *WgRepo) GetPeer(
+	_ context.Context,
+	deviceId domain.InterfaceIdentifier,
+	id domain.PeerIdentifier,
+) (*domain.PhysicalPeer, error) {
 	return r.getPeer(deviceId, id)
 }
 
@@ -90,7 +95,7 @@ func (r *WgRepo) convertWireGuardInterface(device *wgtypes.Device) (domain.Physi
 		ListenPort:    device.ListenPort,
 		Addresses:     nil,
 		Mtu:           0,
-		FirewallMark:  int32(device.FirewallMark),
+		FirewallMark:  uint32(device.FirewallMark),
 		DeviceUp:      false,
 		ImportSource:  "wgctrl",
 		DeviceType:    device.Type.String(),
@@ -151,7 +156,11 @@ func (r *WgRepo) convertWireGuardPeer(peer *wgtypes.Peer) (domain.PhysicalPeer, 
 	return peerModel, nil
 }
 
-func (r *WgRepo) SaveInterface(_ context.Context, id domain.InterfaceIdentifier, updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error)) error {
+func (r *WgRepo) SaveInterface(
+	_ context.Context,
+	id domain.InterfaceIdentifier,
+	updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error),
+) error {
 	physicalInterface, err := r.getOrCreateInterface(id)
 	if err != nil {
 		return err
@@ -324,7 +333,12 @@ func (r *WgRepo) deleteLowLevelInterface(id domain.InterfaceIdentifier) error {
 	return nil
 }
 
-func (r *WgRepo) SavePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier, updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error)) error {
+func (r *WgRepo) SavePeer(
+	_ context.Context,
+	deviceId domain.InterfaceIdentifier,
+	id domain.PeerIdentifier,
+	updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error),
+) error {
 	physicalPeer, err := r.getOrCreatePeer(deviceId, id)
 	if err != nil {
 		return err
@@ -342,7 +356,10 @@ func (r *WgRepo) SavePeer(_ context.Context, deviceId domain.InterfaceIdentifier
 	return nil
 }
 
-func (r *WgRepo) getOrCreatePeer(deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) (*domain.PhysicalPeer, error) {
+func (r *WgRepo) getOrCreatePeer(deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) (
+	*domain.PhysicalPeer,
+	error,
+) {
 	peer, err := r.getPeer(deviceId, id)
 	if err == nil {
 		return peer, nil
@@ -352,9 +369,13 @@ func (r *WgRepo) getOrCreatePeer(deviceId domain.InterfaceIdentifier, id domain.
 	}
 
 	// create new peer
-	err = r.wg.ConfigureDevice(string(deviceId), wgtypes.Config{Peers: []wgtypes.PeerConfig{{
-		PublicKey: id.ToPublicKey(),
-	}}})
+	err = r.wg.ConfigureDevice(string(deviceId), wgtypes.Config{
+		Peers: []wgtypes.PeerConfig{
+			{
+				PublicKey: id.ToPublicKey(),
+			},
+		},
+	})
 
 	peer, err = r.getPeer(deviceId, id)
 	return peer, nil

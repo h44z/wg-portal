@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
-	"os"
-	"time"
 )
 
 func (m Manager) GetImportableInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
@@ -25,7 +26,11 @@ func (m Manager) GetImportableInterfaces(ctx context.Context) ([]domain.Physical
 	return physicalInterfaces, nil
 }
 
-func (m Manager) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error) {
+func (m Manager) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (
+	*domain.Interface,
+	[]domain.Peer,
+	error,
+) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, nil, err
 	}
@@ -145,7 +150,11 @@ func (m Manager) ApplyPeerDefaults(ctx context.Context, in *domain.Interface) er
 	return nil
 }
 
-func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool, filter ...domain.InterfaceIdentifier) error {
+func (m Manager) RestoreInterfaceState(
+	ctx context.Context,
+	updateDbOnError bool,
+	filter ...domain.InterfaceIdentifier,
+) error {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return err
 	}
@@ -177,22 +186,24 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 			if err != nil {
 				if updateDbOnError {
 					// disable interface in database as no physical interface exists
-					_ = m.db.SaveInterface(ctx, iface.Identifier, func(in *domain.Interface) (*domain.Interface, error) {
-						now := time.Now()
-						in.Disabled = &now // set
-						in.DisabledReason = domain.DisabledReasonInterfaceMissing
-						return in, nil
-					})
+					_ = m.db.SaveInterface(ctx, iface.Identifier,
+						func(in *domain.Interface) (*domain.Interface, error) {
+							now := time.Now()
+							in.Disabled = &now // set
+							in.DisabledReason = domain.DisabledReasonInterfaceMissing
+							return in, nil
+						})
 				}
 				return fmt.Errorf("failed to create physical interface %s: %w", iface.Identifier, err)
 			}
 
 			// restore peers
 			for _, peer := range peers {
-				err := m.wg.SavePeer(ctx, iface.Identifier, peer.Identifier, func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
-					domain.MergeToPhysicalPeer(pp, &peer)
-					return pp, nil
-				})
+				err := m.wg.SavePeer(ctx, iface.Identifier, peer.Identifier,
+					func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
+						domain.MergeToPhysicalPeer(pp, &peer)
+						return pp, nil
+					})
 				if err != nil {
 					return fmt.Errorf("failed to create physical peer %s: %w", peer.Identifier, err)
 				}
@@ -205,17 +216,18 @@ func (m Manager) RestoreInterfaceState(ctx context.Context, updateDbOnError bool
 			if err != nil {
 				if updateDbOnError {
 					// disable interface in database as no physical interface is available
-					_ = m.db.SaveInterface(ctx, iface.Identifier, func(in *domain.Interface) (*domain.Interface, error) {
-						if iface.IsDisabled() {
-							now := time.Now()
-							in.Disabled = &now // set
-							in.DisabledReason = domain.DisabledReasonInterfaceMissing
-						} else {
-							in.Disabled = nil
-							in.DisabledReason = ""
-						}
-						return in, nil
-					})
+					_ = m.db.SaveInterface(ctx, iface.Identifier,
+						func(in *domain.Interface) (*domain.Interface, error) {
+							if iface.IsDisabled() {
+								now := time.Now()
+								in.Disabled = &now // set
+								in.DisabledReason = domain.DisabledReasonInterfaceMissing
+							} else {
+								in.Disabled = nil
+								in.DisabledReason = ""
+							}
+							return in, nil
+						})
 				}
 				return fmt.Errorf("failed to change physical interface state for %s: %w", iface.Identifier, err)
 			}
@@ -392,9 +404,9 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		return fmt.Errorf("deletion failure: %w", err)
 	}
 
-	fwMark := int(existingInterface.FirewallMark)
+	fwMark := existingInterface.FirewallMark
 	if physicalInterface != nil && fwMark == 0 {
-		fwMark = int(physicalInterface.FirewallMark)
+		fwMark = physicalInterface.FirewallMark
 	}
 	m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
 		FwMark: fwMark,
@@ -410,7 +422,10 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 
 // region helper-functions
 
-func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, peers []domain.Peer) (*domain.Interface, error) {
+func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, peers []domain.Peer) (
+	*domain.Interface,
+	error,
+) {
 	stateChanged := m.hasInterfaceStateChanged(ctx, iface)
 
 	if err := m.handleInterfacePreSaveHooks(stateChanged, iface); err != nil {
@@ -424,10 +439,11 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, pee
 	err := m.db.SaveInterface(ctx, iface.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
 		iface.CopyCalculatedAttributes(i)
 
-		err := m.wg.SaveInterface(ctx, iface.Identifier, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
-			domain.MergeToPhysicalInterface(pi, iface)
-			return pi, nil
-		})
+		err := m.wg.SaveInterface(ctx, iface.Identifier,
+			func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
+				domain.MergeToPhysicalInterface(pi, iface)
+				return pi, nil
+			})
 		if err != nil {
 			return nil, fmt.Errorf("failed to save physical interface %s: %w", iface.Identifier, err)
 		}
@@ -441,9 +457,9 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, pee
 	m.bus.Publish(app.TopicRouteUpdate, "interface updated: "+string(iface.Identifier))
 	if iface.IsDisabled() {
 		physicalInterface, _ := m.wg.GetInterface(ctx, iface.Identifier)
-		fwMark := int(iface.FirewallMark)
+		fwMark := iface.FirewallMark
 		if physicalInterface != nil && fwMark == 0 {
-			fwMark = int(physicalInterface.FirewallMark)
+			fwMark = physicalInterface.FirewallMark
 		}
 		m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
 			FwMark: fwMark,
@@ -702,18 +718,18 @@ func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain
 	}
 
 	peer.InterfaceIdentifier = in.Identifier
-	peer.EndpointPublicKey = domain.StringConfigOption{Value: in.PublicKey, Overridable: true}
-	peer.AllowedIPsStr = domain.StringConfigOption{Value: in.PeerDefAllowedIPsStr, Overridable: true}
+	peer.EndpointPublicKey = domain.NewConfigOption(in.PublicKey, true)
+	peer.AllowedIPsStr = domain.NewConfigOption(in.PeerDefAllowedIPsStr, true)
 	peer.Interface.Addresses = p.AllowedIPs // use allowed IP's as the peer IP's TODO: Should this also match server interface address' prefix length?
-	peer.Interface.DnsStr = domain.StringConfigOption{Value: in.PeerDefDnsStr, Overridable: true}
-	peer.Interface.DnsSearchStr = domain.StringConfigOption{Value: in.PeerDefDnsSearchStr, Overridable: true}
-	peer.Interface.Mtu = domain.IntConfigOption{Value: in.PeerDefMtu, Overridable: true}
-	peer.Interface.FirewallMark = domain.Int32ConfigOption{Value: in.PeerDefFirewallMark, Overridable: true}
-	peer.Interface.RoutingTable = domain.StringConfigOption{Value: in.PeerDefRoutingTable, Overridable: true}
-	peer.Interface.PreUp = domain.StringConfigOption{Value: in.PeerDefPreUp, Overridable: true}
-	peer.Interface.PostUp = domain.StringConfigOption{Value: in.PeerDefPostUp, Overridable: true}
-	peer.Interface.PreDown = domain.StringConfigOption{Value: in.PeerDefPreDown, Overridable: true}
-	peer.Interface.PostDown = domain.StringConfigOption{Value: in.PeerDefPostDown, Overridable: true}
+	peer.Interface.DnsStr = domain.NewConfigOption(in.PeerDefDnsStr, true)
+	peer.Interface.DnsSearchStr = domain.NewConfigOption(in.PeerDefDnsSearchStr, true)
+	peer.Interface.Mtu = domain.NewConfigOption(in.PeerDefMtu, true)
+	peer.Interface.FirewallMark = domain.NewConfigOption(in.PeerDefFirewallMark, true)
+	peer.Interface.RoutingTable = domain.NewConfigOption(in.PeerDefRoutingTable, true)
+	peer.Interface.PreUp = domain.NewConfigOption(in.PeerDefPreUp, true)
+	peer.Interface.PostUp = domain.NewConfigOption(in.PeerDefPostUp, true)
+	peer.Interface.PreDown = domain.NewConfigOption(in.PeerDefPreDown, true)
+	peer.Interface.PostDown = domain.NewConfigOption(in.PeerDefPostDown, true)
 
 	switch in.Type {
 	case domain.InterfaceTypeAny:

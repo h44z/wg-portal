@@ -3,6 +3,7 @@ package route
 import (
 	"context"
 	"fmt"
+
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -17,7 +18,7 @@ import (
 
 type routeRuleInfo struct {
 	ifaceId    domain.InterfaceIdentifier
-	fwMark     int
+	fwMark     uint32
 	table      int
 	family     int
 	hasDefault bool
@@ -210,7 +211,7 @@ func (m Manager) setFwMarkRules(rules []routeRuleInfo, family int) error {
 			SuppressIfgroup:   -1,
 			SuppressPrefixlen: -1,
 			Priority:          m.getRulePriority(existingRules),
-			Mask:              -1,
+			Mask:              nil,
 			Goto:              -1,
 			Flow:              -1,
 		}); err != nil {
@@ -220,7 +221,7 @@ func (m Manager) setFwMarkRules(rules []routeRuleInfo, family int) error {
 	return nil
 }
 
-func (m Manager) removeFwMarkRules(fwmark, table int, family int) error {
+func (m Manager) removeFwMarkRules(fwmark uint32, table int, family int) error {
 	existingRules, err := m.nl.RuleList(family)
 	if err != nil {
 		return fmt.Errorf("failed to get existing rules for family %d: %w", family, err)
@@ -272,8 +273,8 @@ func (m Manager) setMainRule(rules []routeRuleInfo, family int) error {
 		SuppressIfgroup:   -1,
 		SuppressPrefixlen: 0,
 		Priority:          m.getMainRulePriority(existingRules),
-		Mark:              -1,
-		Mask:              -1,
+		Mark:              0,
+		Mask:              nil,
 		Goto:              -1,
 		Flow:              -1,
 	}); err != nil {
@@ -424,20 +425,25 @@ func (m Manager) removeDeprecatedRoutes(link netlink.Link, family int, allowedIP
 	return nil
 }
 
-func (m Manager) getRoutingTableAndFwMark(iface *domain.Interface, allowedIPs []domain.Cidr, link netlink.Link) (table, fwmark int, err error) {
+func (m Manager) getRoutingTableAndFwMark(
+	iface *domain.Interface,
+	allowedIPs []domain.Cidr,
+	link netlink.Link,
+) (table int, fwmark uint32, err error) {
 	table = iface.GetRoutingTable()
-	fwmark = int(iface.FirewallMark)
+	fwmark = iface.FirewallMark
 
 	if fwmark == 0 {
-		fwmark = m.cfg.Advanced.RouteTableOffset + link.Attrs().Index // generate a new (temporary) firewall mark based on the interface index
-		logrus.Debugf("using fwmark %d to handle routes", table)
+		// generate a new (temporary) firewall mark based on the interface index
+		fwmark = uint32(m.cfg.Advanced.RouteTableOffset + link.Attrs().Index)
+		logrus.Debugf("%s: using fwmark %d to handle routes", iface.Identifier, table)
 
 		// apply the temporary fwmark to the wireguard interface
-		err = m.setFwMark(iface.Identifier, fwmark)
+		err = m.setFwMark(iface.Identifier, int(fwmark))
 	}
 	if table == 0 {
-		table = fwmark // generate a new routing table base on interface index
-		logrus.Debugf("using routing table %d to handle default routes", table)
+		table = int(fwmark) // generate a new routing table base on interface index
+		logrus.Debugf("%s: using routing table %d to handle default routes", iface.Identifier, table)
 	}
 	return
 }
