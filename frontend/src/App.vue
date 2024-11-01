@@ -48,6 +48,9 @@ const languageFlag = computed(() => {
   if (lang === "en") {
     lang = "us";
   }
+  if (lang === "zh") {
+    lang = "cn";
+  }
   return "fi-" + lang;
 })
 
@@ -117,6 +120,7 @@ const currentYear = ref(new Date().getFullYear())
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span> Deutsch</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span> Русский</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('vi')"><span class="fi fi-vi"></span> Tiếng Việt</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('zh')"><span class="fi fi-cn"></span> 中文</a>
               </div>
             </div>
           </div>
