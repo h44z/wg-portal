@@ -1,8 +1,7 @@
 ---
-version: '3.6'
 services:
   wg-portal:
-    image: wgportal/wg-portal:v2
+    image: wgportal/wg-portal:latest
     container_name: wg-portal
     restart: unless-stopped
     logging:
