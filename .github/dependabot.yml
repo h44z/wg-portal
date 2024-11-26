@@ -18,3 +18,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      golang:
+        patterns:
+          - golang.org*
+      gorm:
+        patterns:
+          - gorm.io*
+      patch:
+        update-types:
+          - patch
