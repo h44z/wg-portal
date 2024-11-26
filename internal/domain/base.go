@@ -36,11 +36,14 @@ func (ps *PrivateString) Scan(value interface{}) error {
         *ps = ""
         return nil
     }
-    strValue, ok := value.(string)
-    if !ok {
+    switch v := value.(type) {
+    case string:
+        *ps = PrivateString(v)
+    case []byte:
+        *ps = PrivateString(string(v))
+    default:
         return errors.New("invalid type for PrivateString")
     }
-    *ps = PrivateString(strValue)
     return nil
 }
 
