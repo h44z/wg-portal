@@ -5,7 +5,6 @@ site_url: https://wgportal.org/
 repo_name: h44z/wg-portal
 repo_url: https://github.com/h44z/wg-portal
 copyright: Copyright &copy; 2023-2024 WireGuard Portal Project
-remote_branch: docs/multi-version
 
 extra_css:
   - stylesheets/extra.css
