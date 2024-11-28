@@ -1,22 +1,29 @@
 name: github-pages
 on:
   push:
-    branches:
-      - master
+    branches: [master]
+    tags: ["v*"]
+
 permissions:
   contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      - uses: actions/cache@v4
-        with:
-          key: ${{ github.ref }}
-          path: .cache
-      - run: pip install mkdocs-material
-      - run: pip install pillow cairosvg
-      - run: mkdocs gh-deploy --force
+
+      - name: Install dependencies
+        run: pip install mike mkdocs-material[imaging] mkdocs-minify-plugin
+
+      - name: Publish documentation
+        run: mike deploy --push --update-aliases ${{ github.ref_name }} latest
+        env:
+          GIT_COMMITTER_NAME: "github-actions[bot]"
+          GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"

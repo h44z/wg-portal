@@ -1,13 +1,15 @@
-# build with MkDocs 1.5.3, mkdocs-material-9.4.7
-
+---
 site_name: WireGuard Portal
-site_description: 'Manage WireGuard Peers and Interface using a beautiful and simple web UI.'
-site_url: https://wgportal.org
-repo_name: 'h44z/wg-portal'
-repo_url: 'https://github.com/h44z/wg-portal'
-copyright: 'Copyright &copy; 2023-2024 WireGuard Portal Project'
+site_description: Manage WireGuard Peers and Interface using a beautiful and simple web UI.
+site_url: https://wgportal.org/
+repo_name: h44z/wg-portal
+repo_url: https://github.com/h44z/wg-portal
+copyright: Copyright &copy; 2023-2024 WireGuard Portal Project
+remote_branch: docs/multi-version
+
 extra_css:
   - stylesheets/extra.css
+
 theme:
   name: material
   custom_dir: docs/theme-overrides
@@ -18,15 +20,19 @@ theme:
   favicon: assets/images/favicon-large.png
   language: en
   features:
-    - tabs
-    - instant
+    - navigation.instant
     - navigation.tabs
 
 plugins:
   - search
-  #- social # disable until https://github.com/squidfunk/mkdocs-material/issues/6983 is resolved
+  - social
+  - minify:
+      minify_html: true
 
 extra:
+  version:
+    provider: mike
+    default: latest
   social:
     - icon: fontawesome/brands/github-alt
       link: https://github.com/h44z/wg-portal
