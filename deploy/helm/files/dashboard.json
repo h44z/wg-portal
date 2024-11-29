@@ -219,7 +219,7 @@
           "expr": "sum by (instance, interface) (rate(wireguard_interface_received_bytes_total{instance=\"$instance\", interface=~\"$interface\"}[$__rate_interval]))",
           "hide": false,
           "instant": false,
-          "interval": "$__rate_interval",
+          "interval": "",
           "legendFormat": "Received {{interface}}",
           "range": true,
           "refId": "A"
@@ -233,7 +233,7 @@
           "expr": "sum by (instance, interface) (rate(wireguard_interface_sent_bytes_total{instance=\"$instance\", interface=~\"$interface\"}[$__rate_interval]))",
           "hide": false,
           "instant": false,
-          "interval": "$__rate_interval",
+          "interval": "",
           "legendFormat": "Sent {{interface}}",
           "range": true,
           "refId": "B"
@@ -337,7 +337,7 @@
           "expr": "sum by (name, instance, interface) (rate(wireguard_peer_received_bytes_total{instance=\"$instance\", interface=~\"$interface\"}[$__rate_interval]))",
           "hide": false,
           "instant": false,
-          "interval": "$__rate_interval",
+          "interval": "$interval",
           "legendFormat": "{{name}}",
           "range": true,
           "refId": "A"
@@ -441,7 +441,7 @@
           "expr": "sum by (instance, interface, name) (rate(wireguard_peer_sent_bytes_total{instance=\"$instance\", interface=~\"$interface\"}[$__rate_interval]))",
           "hide": false,
           "instant": false,
-          "interval": "$__rate_interval",
+          "interval": "$interval",
           "legendFormat": "{{name}}",
           "range": true,
           "refId": "A"
@@ -519,9 +519,9 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(wireguard_peer_up{instance=\"$instance\", interface=~\"$interface\"}) by (id, instance, interface, name,)",
+          "expr": "sum by(name) (wireguard_peer_up{instance=\"$instance\", interface=~\"$interface\"})",
           "instant": false,
-          "interval": "$__rate_interval",
+          "interval": "$interval",
           "legendFormat": "{{name}}",
           "range": true,
           "refId": "A"
@@ -662,7 +662,6 @@
           }
         ]
       },
-      "pluginVersion": "11.2.0",
       "targets": [
         {
           "datasource": {
@@ -797,7 +796,7 @@
       "type": "table"
     }
   ],
-  "refresh": "30s",
+  "refresh": "1m",
   "tags": [
     "wireguard",
     "vpn"
@@ -865,6 +864,44 @@
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
+      },
+      {
+        "current": {
+          "text": "2m",
+          "value": "2m"
+        },
+        "description": "",
+        "label": "Step Interval",
+        "name": "interval",
+        "options": [
+          {
+            "selected": false,
+            "text": "30s",
+            "value": "30s"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": true,
+            "text": "2m",
+            "value": "2m"
+          },
+          {
+            "selected": false,
+            "text": "5m",
+            "value": "5m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          }
+        ],
+        "query": "30s,1m,2m,5m,10m",
+        "type": "custom"
       }
     ]
   },
