@@ -105,7 +105,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | serviceAccount.annotations | object | `{}` | Service account annotations |
 | serviceAccount.automount | bool | `false` | Automatically mount a ServiceAccount's API credentials |
 | serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
-| monitoring.enabled | bool | `true` | Enable Prometheus monitoring. |
+| monitoring.enabled | bool | `false` | Enable Prometheus monitoring. |
 | monitoring.apiVersion | string | `"monitoring.coreos.com/v1"` | API version of the Prometheus resource. Use `azmonitoring.coreos.com/v1` for Azure Managed Prometheus. |
 | monitoring.kind | string | `"PodMonitor"` | Kind of the Prometheus resource. Could be `PodMonitor` or `ServiceMonitor`. |
 | monitoring.labels | object | `{}` | Resource labels. |
