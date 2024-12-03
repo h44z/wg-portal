@@ -2,22 +2,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://wgportal.org/master/</loc>
-         <lastmod>2024-11-28</lastmod>
+         <lastmod>2024-12-03</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/overview/</loc>
-         <lastmod>2024-11-28</lastmod>
+         <lastmod>2024-12-03</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/getting-started/building/</loc>
-         <lastmod>2024-11-28</lastmod>
+         <lastmod>2024-12-03</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/getting-started/docker/</loc>
-         <lastmod>2024-11-28</lastmod>
+         <lastmod>2024-12-03</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/getting-started/upgrade/</loc>
-         <lastmod>2024-11-28</lastmod>
+         <lastmod>2024-12-03</lastmod>
     </url>
 </urlset>
