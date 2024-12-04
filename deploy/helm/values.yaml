@@ -207,7 +207,7 @@ serviceAccount:
 
 monitoring:
   # -- Enable Prometheus monitoring.
-  enabled: true
+  enabled: false
   # -- API version of the Prometheus resource.
   # Use `azmonitoring.coreos.com/v1` for Azure Managed Prometheus.
   apiVersion: monitoring.coreos.com/v1

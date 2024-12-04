@@ -23,8 +23,13 @@ spec:
       {{- with .metricRelabelings }}
       metricRelabelings: {{- toYaml . | nindent 8 }}
       {{- end }}
+      relabelings:
+        - action: replace
+          sourceLabels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_name
+          targetLabel: instance
       {{- with .relabelings }}
-      relabelings: {{- toYaml . | nindent 8 }}
+      {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .scrapeTimeout }}
       scrapeTimeout: {{ . }}
