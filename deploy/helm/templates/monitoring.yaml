@@ -29,7 +29,7 @@ spec:
             - __meta_kubernetes_pod_label_app_kubernetes_io_name
           targetLabel: instance
       {{- with .relabelings }}
-      {{- toYamlPretty  . | nindent 8 }}
+      {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .scrapeTimeout }}
       scrapeTimeout: {{ . }}
