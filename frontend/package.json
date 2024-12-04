@@ -20,7 +20,7 @@
     "pinia": "^2.1.7",
     "prismjs": "^1.29.0",
     "vue": "^3.3.13",
-    "vue-i18n": "^9.8.0",
+    "vue-i18n": "^9.14.2",
     "vue-prism-component": "github:h44z/vue-prism-component",
     "vue-router": "^4.2.5",
     "vue3-tags-input": "^1.0.12"
