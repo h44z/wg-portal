@@ -6,13 +6,14 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/h44z/wg-portal/internal/app"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/h44z/wg-portal/internal/app"
+	"github.com/sirupsen/logrus"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	evbus "github.com/vardius/message-bus"
@@ -88,8 +89,19 @@ func (a *Authenticator) setupExternalAuthProviders(ctx context.Context) error {
 			return fmt.Errorf("auth provider with name %s is already registerd", providerId)
 		}
 
-		redirectUrl := *extUrl
-		redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", providerId, "/callback")
+		var redirectUrl url.URL
+		if providerCfg.RedirectURL != "" {
+			configRedirectUrl, err := url.Parse(providerCfg.RedirectURL)
+			if err != nil {
+				return fmt.Errorf("failed to parse redirect Url from oauth authentication provider config of %s: %w", providerId, err)
+			}
+
+			redirectUrl = *configRedirectUrl
+		} else {
+			// TODO: Fix bug that e.g. microsoft entra ID wants an absolute uri
+			redirectUrl = *extUrl
+			redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", providerId, "/callback")
+		}
 
 		provider, err := newPlainOauthAuthenticator(ctx, redirectUrl.String(), providerCfg)
 		if err != nil {
@@ -141,8 +153,8 @@ func (a *Authenticator) GetExternalLoginProviders(_ context.Context) []domain.Lo
 		authProviders = append(authProviders, domain.LoginProviderInfo{
 			Identifier:  providerId,
 			Name:        providerName,
-			ProviderUrl: fmt.Sprintf("%s/%s/init", a.cfg.CallbackUrlPrefix, providerId),
-			CallbackUrl: fmt.Sprintf("%s/%s/callback", a.cfg.CallbackUrlPrefix, providerId),
+			ProviderUrl: fmt.Sprintf("%s/auth/login/%s/init", a.cfg.CallbackUrlPrefix, providerId),
+			CallbackUrl: fmt.Sprintf("%s/auth/login/%s/callback", a.cfg.CallbackUrlPrefix, providerId),
 		})
 	}
 
