@@ -159,6 +159,10 @@ func GetConfig() (*Config, error) {
 func loadConfigFile(cfg any, filename string) error {
 	data, err := envsubst.ReadFile(filename)
 	if err != nil {
+		if os.IsNotExist(err) {
+			logrus.Warnf("Config file %s not found, using default values", filename)
+			return nil
+		}
 		return fmt.Errorf("envsubst error: %v", err)
 	}
 
