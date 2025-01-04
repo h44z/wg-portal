@@ -104,8 +104,6 @@ func defaultConfig() *Config {
 		SiteCompanyName:   "WireGuard Portal",
 	}
 
-	cfg.Auth.CallbackUrlPrefix = "/api/v0"
-
 	cfg.Advanced.StartListenPort = 51820
 	cfg.Advanced.StartCidrV4 = "10.11.12.0/24"
 	cfg.Advanced.StartCidrV6 = "fdfd:d3ad:c0de:1234::0/64"

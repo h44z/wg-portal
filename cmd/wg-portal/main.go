@@ -72,7 +72,7 @@ func main() {
 	userManager, err := users.NewUserManager(cfg, eventBus, database, database)
 	internal.AssertNoError(err)
 
-	authenticator, err := auth.NewAuthenticator(&cfg.Auth, eventBus, userManager)
+	authenticator, err := auth.NewAuthenticator(&cfg.Auth, cfg.Web.ExternalUrl, eventBus, userManager)
 	internal.AssertNoError(err)
 
 	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, wgQuick, database)

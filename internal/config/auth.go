@@ -7,10 +7,9 @@ import (
 )
 
 type Auth struct {
-	OpenIDConnect     []OpenIDConnectProvider `yaml:"oidc"`
-	OAuth             []OAuthProvider         `yaml:"oauth"`
-	Ldap              []LdapProvider          `yaml:"ldap"`
-	CallbackUrlPrefix string                  `yaml:"callback_url_prefix"`
+	OpenIDConnect []OpenIDConnectProvider `yaml:"oidc"`
+	OAuth         []OAuthProvider         `yaml:"oauth"`
+	Ldap          []LdapProvider          `yaml:"ldap"`
 }
 
 type BaseFields struct {
@@ -24,7 +23,7 @@ type BaseFields struct {
 
 type OauthFields struct {
 	BaseFields `yaml:",inline"`
-	IsAdmin    string `yaml:"is_admin"`
+	IsAdmin    string `yaml:"is_admin"` // If the value is "true", the user is an admin.
 }
 
 type LdapFields struct {
@@ -93,8 +92,6 @@ type OAuthProvider struct {
 	// DisplayName is shown to the user on the login page. If it is empty, ProviderName will be displayed.
 	DisplayName string `yaml:"display_name"`
 
-	BaseUrl string `yaml:"base_url"`
-
 	// ClientID is the application's ID.
 	ClientID string `yaml:"client_id"`
 
@@ -104,10 +101,6 @@ type OAuthProvider struct {
 	AuthURL     string `yaml:"auth_url"`
 	TokenURL    string `yaml:"token_url"`
 	UserInfoURL string `yaml:"user_info_url"`
-
-	// RedirectURL is the URL to redirect users going through
-	// the OAuth flow, after the resource owner's URLs.
-	RedirectURL string `yaml:"redirect_url"`
 
 	// Scope specifies optional requested permissions.
 	Scopes []string `yaml:"scopes"`

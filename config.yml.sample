@@ -12,7 +12,6 @@ web:
   request_logging: true
 
 auth:
-  callback_url_prefix: http://localhost:8888/api/v0
   ldap:
     - id: ldap1
       provider_name: company ldap
@@ -46,4 +45,23 @@ auth:
       extra_scopes:
         - https://www.googleapis.com/auth/userinfo.email
         - https://www.googleapis.com/auth/userinfo.profile
+      registration_enabled: true
+  oauth:
+    - id: google_plain_oauth
+      provider_name: google3
+      display_name: Login with</br>Google3
+      client_id: another-client-id-1234.apps.googleusercontent.com
+      client_secret: A_CLIENT_SECRET
+      auth_url: https://accounts.google.com/o/oauth2/v2/auth
+      token_url: https://oauth2.googleapis.com/token
+      user_info_url: https://openidconnect.googleapis.com/v1/userinfo
+      scopes:
+        - openid
+        - email
+        - profile
+      field_map:
+        email: email
+        firstname: name
+        user_identifier: sub
+        is_admin: roles
       registration_enabled: true
