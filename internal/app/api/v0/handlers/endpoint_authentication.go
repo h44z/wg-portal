@@ -2,14 +2,16 @@ package handlers
 
 import (
 	"context"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/domain"
-	"net/http"
-	"net/url"
-	"strconv"
-	"time"
 )
 
 type authEndpoint struct {
@@ -114,6 +116,10 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 		}
 
 		if returnTo != "" {
+			if !e.isValidReturnUrl(returnTo) {
+				c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "invalid return URL"})
+				return
+			}
 			if u, err := url.Parse(returnTo); err == nil {
 				returnUrl = u
 			}
@@ -138,10 +144,11 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 		ctx := domain.SetUserInfoFromGin(c)
 		authCodeUrl, state, nonce, err := e.app.Authenticator.OauthLoginStep1(ctx, provider)
 		if err != nil {
-			if autoRedirect {
+			if autoRedirect && e.isValidReturnUrl(returnTo) {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+				c.JSON(http.StatusInternalServerError,
+					model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			}
 			return
 		}
@@ -193,7 +200,7 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 		}
 
 		if currentSession.LoggedIn {
-			if returnUrl != nil {
+			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				queryParams := returnUrl.Query()
 				queryParams.Set("wgLoginState", "success")
 				returnParams = queryParams.Encode()
@@ -209,15 +216,16 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 		oauthState := c.Query("state")
 
 		if provider != currentSession.OauthProvider {
-			if returnUrl != nil {
+			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "invalid oauth provider"})
+				c.JSON(http.StatusBadRequest,
+					model.Error{Code: http.StatusBadRequest, Message: "invalid oauth provider"})
 			}
 			return
 		}
 		if oauthState != currentSession.OauthState {
-			if returnUrl != nil {
+			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				redirectToReturn()
 			} else {
 				c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "invalid oauth state"})
@@ -327,4 +335,13 @@ func (e authEndpoint) handleLogoutPost() gin.HandlerFunc {
 		e.authenticator.Session.DestroyData(c)
 		c.JSON(http.StatusOK, model.Error{Code: http.StatusOK, Message: "logout ok"})
 	}
+}
+
+// isValidReturnUrl checks if the given return URL matches the configured external URL of the application.
+func (e authEndpoint) isValidReturnUrl(returnUrl string) bool {
+	if !strings.HasPrefix(returnUrl, e.app.Config.Web.ExternalUrl) {
+		return false
+	}
+
+	return true
 }
