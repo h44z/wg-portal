@@ -130,7 +130,7 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 		}
 
 		if currentSession.LoggedIn {
-			if autoRedirect {
+			if autoRedirect && e.isValidReturnUrl(returnTo) {
 				queryParams := returnUrl.Query()
 				queryParams.Set("wgLoginState", "success")
 				returnParams = queryParams.Encode()
@@ -237,7 +237,7 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 		user, err := e.app.Authenticator.OauthLoginStep2(loginCtx, provider, currentSession.OauthNonce, oauthCode)
 		cancel()
 		if err != nil {
-			if returnUrl != nil {
+			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				redirectToReturn()
 			} else {
 				c.JSON(http.StatusUnauthorized, model.Error{Code: http.StatusUnauthorized, Message: err.Error()})
@@ -247,7 +247,7 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 
 		e.setAuthenticatedUser(c, user)
 
-		if returnUrl != nil {
+		if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 			queryParams := returnUrl.Query()
 			queryParams.Set("wgLoginState", "success")
 			returnParams = queryParams.Encode()

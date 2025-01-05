@@ -132,7 +132,7 @@ func setupLogging(cfg *config.Config) {
 	case "error":
 		logrus.SetLevel(logrus.ErrorLevel)
 	default:
-		logrus.SetLevel(logrus.WarnLevel)
+		logrus.SetLevel(logrus.InfoLevel)
 	}
 
 	switch {

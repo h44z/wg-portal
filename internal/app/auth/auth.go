@@ -246,6 +246,10 @@ func (a *Authenticator) passwordAuthentication(
 		return nil, errors.New("user not found")
 	}
 
+	if userSource == domain.UserSourceLdap && ldapProvider == nil {
+		return nil, errors.New("ldap provider not found")
+	}
+
 	switch userSource {
 	case domain.UserSourceDatabase:
 		err = existingUser.CheckPassword(password)

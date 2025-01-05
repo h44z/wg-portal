@@ -248,6 +248,10 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 		return err
 	}
 
+	if err := m.validatePeerDeletion(ctx, peer); err != nil {
+		return fmt.Errorf("delete not allowed: %w", err)
+	}
+
 	err = m.wg.DeletePeer(ctx, peer.InterfaceIdentifier, id)
 	if err != nil {
 		return fmt.Errorf("wireguard failed to delete peer %s: %w", id, err)
@@ -309,20 +313,33 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 
 	for i := range peers {
 		peer := peers[i]
-		err := m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
-			peer.CopyCalculatedAttributes(p)
+		var err error
+		if peer.IsDisabled() || peer.IsExpired() {
+			err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+				peer.CopyCalculatedAttributes(p)
 
-			err := m.wg.SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
-				func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
-					domain.MergeToPhysicalPeer(pp, peer)
-					return pp, nil
-				})
-			if err != nil {
-				return nil, fmt.Errorf("failed to save wireguard peer %s: %w", peer.Identifier, err)
-			}
+				if err := m.wg.DeletePeer(ctx, peer.InterfaceIdentifier, peer.Identifier); err != nil {
+					return nil, fmt.Errorf("failed to delete wireguard peer %s: %w", peer.Identifier, err)
+				}
 
-			return peer, nil
-		})
+				return peer, nil
+			})
+		} else {
+			err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+				peer.CopyCalculatedAttributes(p)
+
+				err := m.wg.SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
+					func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
+						domain.MergeToPhysicalPeer(pp, peer)
+						return pp, nil
+					})
+				if err != nil {
+					return nil, fmt.Errorf("failed to save wireguard peer %s: %w", peer.Identifier, err)
+				}
+
+				return peer, nil
+			})
+		}
 		if err != nil {
 			return fmt.Errorf("save failure for peer %s: %w", peer.Identifier, err)
 		}

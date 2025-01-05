@@ -3,11 +3,12 @@ package adapters
 import (
 	"bytes"
 	"fmt"
+	"os/exec"
+	"strings"
+
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
-	"os/exec"
-	"strings"
 )
 
 // WgQuickRepo implements higher level wg-quick like interactions like setting DNS, routing tables or interface hooks.
@@ -57,7 +58,10 @@ func (r *WgQuickRepo) SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr
 
 	err := r.exec(dnsCommand, id, dnsCommandInput...)
 	if err != nil {
-		return fmt.Errorf("failed to set dns settings: %w", err)
+		return fmt.Errorf(
+			"failed to set dns settings (is resolvconf available?, for systemd create this symlink: ln -s /usr/bin/resolvectl /usr/local/bin/resolvconf): %w",
+			err,
+		)
 	}
 
 	return nil

@@ -175,14 +175,11 @@ func (m Manager) RestoreInterfaceState(
 		}
 
 		_, err = m.wg.GetInterface(ctx, iface.Identifier)
-		if err != nil {
+		if err != nil && !iface.IsDisabled() {
 			logrus.Debugf("creating missing interface %s...", iface.Identifier)
 
 			// try to create a new interface
-			_, err = m.saveInterface(ctx, &iface, peers)
-			if err != nil {
-				return err
-			}
+			_, err = m.saveInterface(ctx, &iface)
 			if err != nil {
 				if updateDbOnError {
 					// disable interface in database as no physical interface exists
@@ -196,23 +193,11 @@ func (m Manager) RestoreInterfaceState(
 				}
 				return fmt.Errorf("failed to create physical interface %s: %w", iface.Identifier, err)
 			}
-
-			// restore peers
-			for _, peer := range peers {
-				err := m.wg.SavePeer(ctx, iface.Identifier, peer.Identifier,
-					func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
-						domain.MergeToPhysicalPeer(pp, &peer)
-						return pp, nil
-					})
-				if err != nil {
-					return fmt.Errorf("failed to create physical peer %s: %w", peer.Identifier, err)
-				}
-			}
 		} else {
 			logrus.Debugf("restoring interface state for %s to disabled=%t", iface.Identifier, iface.IsDisabled())
 
 			// try to move interface to stored state
-			_, err = m.saveInterface(ctx, &iface, peers)
+			_, err = m.saveInterface(ctx, &iface)
 			if err != nil {
 				if updateDbOnError {
 					// disable interface in database as no physical interface is available
@@ -230,6 +215,51 @@ func (m Manager) RestoreInterfaceState(
 						})
 				}
 				return fmt.Errorf("failed to change physical interface state for %s: %w", iface.Identifier, err)
+			}
+		}
+
+		// restore peers
+		for _, peer := range peers {
+			switch {
+			case iface.IsDisabled(): // if interface is disabled, delete all peers
+				if err := m.wg.DeletePeer(ctx, iface.Identifier, peer.Identifier); err != nil {
+					return fmt.Errorf("failed to remove peer %s for disabled interface %s: %w",
+						peer.Identifier, iface.Identifier, err)
+				}
+			case peer.IsDisabled(): // if peer is disabled, delete it
+				if err := m.wg.DeletePeer(ctx, iface.Identifier, peer.Identifier); err != nil {
+					return fmt.Errorf("failed to remove disbaled peer %s from interface %s: %w",
+						peer.Identifier, iface.Identifier, err)
+				}
+			default: // update peer
+				err := m.wg.SavePeer(ctx, iface.Identifier, peer.Identifier,
+					func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
+						domain.MergeToPhysicalPeer(pp, &peer)
+						return pp, nil
+					})
+				if err != nil {
+					return fmt.Errorf("failed to create/update physical peer %s for interface %s: %w",
+						peer.Identifier, iface.Identifier, err)
+				}
+			}
+		}
+
+		// remove non-wgportal peers
+		physicalPeers, _ := m.wg.GetPeers(ctx, iface.Identifier)
+		for _, physicalPeer := range physicalPeers {
+			isWgPortalPeer := false
+			for _, peer := range peers {
+				if peer.Identifier == domain.PeerIdentifier(physicalPeer.PublicKey) {
+					isWgPortalPeer = true
+					break
+				}
+			}
+			if !isWgPortalPeer {
+				err := m.wg.DeletePeer(ctx, iface.Identifier, domain.PeerIdentifier(physicalPeer.PublicKey))
+				if err != nil {
+					return fmt.Errorf("failed to remove non-wgportal peer %s from interface %s: %w",
+						physicalPeer.PublicKey, iface.Identifier, err)
+				}
 			}
 		}
 	}
@@ -334,7 +364,7 @@ func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*do
 		return nil, fmt.Errorf("creation not allowed: %w", err)
 	}
 
-	in, err = m.saveInterface(ctx, in, nil)
+	in, err = m.saveInterface(ctx, in)
 	if err != nil {
 		return nil, fmt.Errorf("creation failure: %w", err)
 	}
@@ -356,7 +386,7 @@ func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*do
 		return nil, nil, fmt.Errorf("update not allowed: %w", err)
 	}
 
-	in, err = m.saveInterface(ctx, in, existingPeers)
+	in, err = m.saveInterface(ctx, in)
 	if err != nil {
 		return nil, nil, fmt.Errorf("update failure: %w", err)
 	}
@@ -422,7 +452,7 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 
 // region helper-functions
 
-func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, peers []domain.Peer) (
+func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 	*domain.Interface,
 	error,
 ) {
@@ -454,7 +484,6 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, pee
 		return nil, fmt.Errorf("failed to save interface: %w", err)
 	}
 
-	m.bus.Publish(app.TopicRouteUpdate, "interface updated: "+string(iface.Identifier))
 	if iface.IsDisabled() {
 		physicalInterface, _ := m.wg.GetInterface(ctx, iface.Identifier)
 		fwMark := iface.FirewallMark
@@ -465,6 +494,8 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface, pee
 			FwMark: fwMark,
 			Table:  iface.GetRoutingTable(),
 		})
+	} else {
+		m.bus.Publish(app.TopicRouteUpdate, "interface updated: "+string(iface.Identifier))
 	}
 
 	if err := m.handleInterfacePostSaveHooks(stateChanged, iface); err != nil {

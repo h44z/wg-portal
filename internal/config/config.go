@@ -20,6 +20,8 @@ type Config struct {
 		EditableKeys                bool `yaml:"editable_keys"`
 		CreateDefaultPeer           bool `yaml:"create_default_peer"`
 		CreateDefaultPeerOnCreation bool `yaml:"create_default_peer_on_creation"`
+		ReEnablePeerAfterUserEnable bool `yaml:"re_enable_peer_after_user_enable"`
+		DeletePeerAfterUserDeleted  bool `yaml:"delete_peer_after_user_deleted"`
 		SelfProvisioningAllowed     bool `yaml:"self_provisioning_allowed"`
 		ImportExisting              bool `yaml:"import_existing"`
 		RestoreState                bool `yaml:"restore_state"`
@@ -61,9 +63,13 @@ type Config struct {
 }
 
 func (c *Config) LogStartupValues() {
+	logrus.Infof("Log Level: %s", c.Advanced.LogLevel)
+
 	logrus.Debug("WireGuard Portal Features:")
 	logrus.Debugf("  - EditableKeys: %t", c.Core.EditableKeys)
 	logrus.Debugf("  - CreateDefaultPeerOnCreation: %t", c.Core.CreateDefaultPeerOnCreation)
+	logrus.Debugf("  - ReEnablePeerAfterUserEnable: %t", c.Core.ReEnablePeerAfterUserEnable)
+	logrus.Debugf("  - DeletePeerAfterUserDeleted: %t", c.Core.DeletePeerAfterUserDeleted)
 	logrus.Debugf("  - SelfProvisioningAllowed: %t", c.Core.SelfProvisioningAllowed)
 	logrus.Debugf("  - ImportExisting: %t", c.Core.ImportExisting)
 	logrus.Debugf("  - RestoreState: %t", c.Core.RestoreState)
@@ -85,8 +91,16 @@ func (c *Config) LogStartupValues() {
 func defaultConfig() *Config {
 	cfg := &Config{}
 
+	cfg.Core.AdminUser = "admin@wgportal.local"
+	cfg.Core.AdminPassword = "wgportal"
 	cfg.Core.ImportExisting = true
 	cfg.Core.RestoreState = true
+	cfg.Core.CreateDefaultPeer = false
+	cfg.Core.CreateDefaultPeerOnCreation = false
+	cfg.Core.EditableKeys = true
+	cfg.Core.SelfProvisioningAllowed = false
+	cfg.Core.ReEnablePeerAfterUserEnable = true
+	cfg.Core.DeletePeerAfterUserDeleted = false
 
 	cfg.Database = DatabaseConfig{
 		Type: "sqlite",
@@ -104,6 +118,7 @@ func defaultConfig() *Config {
 		SiteCompanyName:   "WireGuard Portal",
 	}
 
+	cfg.Advanced.LogLevel = "info"
 	cfg.Advanced.StartListenPort = 51820
 	cfg.Advanced.StartCidrV4 = "10.11.12.0/24"
 	cfg.Advanced.StartCidrV6 = "fdfd:d3ad:c0de:1234::0/64"

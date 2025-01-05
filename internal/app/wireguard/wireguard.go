@@ -2,9 +2,10 @@ package wireguard
 
 import (
 	"context"
+	"time"
+
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/sirupsen/logrus"
-	"time"
 
 	evbus "github.com/vardius/message-bus"
 
@@ -21,7 +22,13 @@ type Manager struct {
 	quick WgQuickController
 }
 
-func NewWireGuardManager(cfg *config.Config, bus evbus.MessageBus, wg InterfaceController, quick WgQuickController, db InterfaceAndPeerDatabaseRepo) (*Manager, error) {
+func NewWireGuardManager(
+	cfg *config.Config,
+	bus evbus.MessageBus,
+	wg InterfaceController,
+	quick WgQuickController,
+	db InterfaceAndPeerDatabaseRepo,
+) (*Manager, error) {
 	m := &Manager{
 		cfg:   cfg,
 		bus:   bus,
@@ -42,6 +49,9 @@ func (m Manager) StartBackgroundJobs(ctx context.Context) {
 func (m Manager) connectToMessageBus() {
 	_ = m.bus.Subscribe(app.TopicUserCreated, m.handleUserCreationEvent)
 	_ = m.bus.Subscribe(app.TopicAuthLogin, m.handleUserLoginEvent)
+	_ = m.bus.Subscribe(app.TopicUserDisabled, m.handleUserDisabledEvent)
+	_ = m.bus.Subscribe(app.TopicUserEnabled, m.handleUserEnabledEvent)
+	_ = m.bus.Subscribe(app.TopicUserDeleted, m.handleUserDeletedEvent)
 }
 
 func (m Manager) handleUserCreationEvent(user *domain.User) {
@@ -81,6 +91,104 @@ func (m Manager) handleUserLoginEvent(userId domain.UserIdentifier) {
 	if err != nil {
 		logrus.Errorf("failed to create default peer for %s: %v", userId, err)
 		return
+	}
+}
+
+func (m Manager) handleUserDisabledEvent(user domain.User) {
+	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+	userPeers, err := m.db.GetUserPeers(ctx, user.Identifier)
+	if err != nil {
+		logrus.Errorf("failed to retrieve peers for disabled user %s: %v", user.Identifier, err)
+		return
+	}
+
+	for _, peer := range userPeers {
+		if peer.IsDisabled() {
+			continue // peer is already disabled
+		}
+
+		logrus.Debugf("disabling peer %s due to user %s being disabled", peer.Identifier, user.Identifier)
+
+		peer.Disabled = user.Disabled // set to user disabled timestamp
+		peer.DisabledReason = domain.DisabledReasonUserDisabled
+
+		_, err := m.UpdatePeer(ctx, &peer)
+		if err != nil {
+			logrus.Errorf("failed to disable peer %s for disabled user %s: %v",
+				peer.Identifier, user.Identifier, err)
+		}
+	}
+}
+
+func (m Manager) handleUserEnabledEvent(user domain.User) {
+	if !m.cfg.Core.ReEnablePeerAfterUserEnable {
+		return
+	}
+
+	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+	userPeers, err := m.db.GetUserPeers(ctx, user.Identifier)
+	if err != nil {
+		logrus.Errorf("failed to retrieve peers for re-enabled user %s: %v", user.Identifier, err)
+		return
+	}
+
+	for _, peer := range userPeers {
+		if !peer.IsDisabled() {
+			continue // peer is already active
+		}
+
+		if peer.DisabledReason != domain.DisabledReasonUserDisabled {
+			continue // peer was disabled for another reason
+		}
+
+		logrus.Debugf("enabling peer %s due to user %s being enabled", peer.Identifier, user.Identifier)
+
+		peer.Disabled = nil
+		peer.DisabledReason = ""
+
+		_, err := m.UpdatePeer(ctx, &peer)
+		if err != nil {
+			logrus.Errorf("failed to enable peer %s for enabled user %s: %v",
+				peer.Identifier, user.Identifier, err)
+		}
+	}
+	return
+}
+
+func (m Manager) handleUserDeletedEvent(user domain.User) {
+	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+	userPeers, err := m.db.GetUserPeers(ctx, user.Identifier)
+	if err != nil {
+		logrus.Errorf("failed to retrieve peers for deleted user %s: %v", user.Identifier, err)
+		return
+	}
+
+	deletionTime := time.Now()
+	for _, peer := range userPeers {
+		if peer.IsDisabled() {
+			continue // peer is already disabled
+		}
+
+		if m.cfg.Core.DeletePeerAfterUserDeleted {
+			logrus.Debugf("deleting peer %s due to user %s being deleted", peer.Identifier, user.Identifier)
+
+			if err := m.DeletePeer(ctx, peer.Identifier); err != nil {
+				logrus.Errorf("failed to delete peer %s for deleted user %s: %v",
+					peer.Identifier, user.Identifier, err)
+			}
+		} else {
+			logrus.Debugf("disabling peer %s due to user %s being deleted", peer.Identifier, user.Identifier)
+
+			peer.UserIdentifier = "" // remove user reference
+			peer.Disabled = &deletionTime
+			peer.DisabledReason = domain.DisabledReasonUserDeleted
+
+			_, err := m.UpdatePeer(ctx, &peer)
+			if err != nil {
+				logrus.Errorf("failed to disable peer %s for deleted user %s: %v",
+					peer.Identifier, user.Identifier, err)
+			}
+		}
 	}
 }
 

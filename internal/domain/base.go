@@ -1,10 +1,9 @@
 package domain
 
 import (
+	"database/sql/driver"
 	"errors"
 	"time"
-
-	"database/sql/driver"
 )
 
 type BaseModel struct {
@@ -26,30 +25,32 @@ func (PrivateString) String() string {
 
 func (ps PrivateString) Value() (driver.Value, error) {
 	if len(ps) == 0 {
-        return nil, nil
-    }
+		return nil, nil
+	}
 	return string(ps), nil
 }
 
 func (ps *PrivateString) Scan(value interface{}) error {
-    if value == nil {
-        *ps = ""
-        return nil
-    }
-    switch v := value.(type) {
-    case string:
-        *ps = PrivateString(v)
-    case []byte:
-        *ps = PrivateString(string(v))
-    default:
-        return errors.New("invalid type for PrivateString")
-    }
-    return nil
+	if value == nil {
+		*ps = ""
+		return nil
+	}
+	switch v := value.(type) {
+	case string:
+		*ps = PrivateString(v)
+	case []byte:
+		*ps = PrivateString(string(v))
+	default:
+		return errors.New("invalid type for PrivateString")
+	}
+	return nil
 }
 
 const (
 	DisabledReasonExpired          = "expired"
 	DisabledReasonDeleted          = "deleted"
+	DisabledReasonUserDisabled     = "user disabled"
+	DisabledReasonUserDeleted      = "user deleted"
 	DisabledReasonUserEdit         = "user edit action"
 	DisabledReasonUserCreate       = "user create action"
 	DisabledReasonAdminEdit        = "admin edit action"

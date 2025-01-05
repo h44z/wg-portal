@@ -30,7 +30,10 @@ type Manager struct {
 	peers PeerDatabaseRepo
 }
 
-func NewUserManager(cfg *config.Config, bus evbus.MessageBus, users UserDatabaseRepo, peers PeerDatabaseRepo) (*Manager, error) {
+func NewUserManager(cfg *config.Config, bus evbus.MessageBus, users UserDatabaseRepo, peers PeerDatabaseRepo) (
+	*Manager,
+	error,
+) {
 	m := &Manager{
 		cfg: cfg,
 		bus: bus,
@@ -170,6 +173,13 @@ func (m Manager) UpdateUser(ctx context.Context, user *domain.User) (*domain.Use
 		return nil, fmt.Errorf("update failure: %w", err)
 	}
 
+	switch {
+	case !existingUser.IsDisabled() && user.IsDisabled():
+		m.bus.Publish(app.TopicUserDisabled, *user)
+	case existingUser.IsDisabled() && !user.IsDisabled():
+		m.bus.Publish(app.TopicUserEnabled, *user)
+	}
+
 	return user, nil
 }
 
@@ -225,7 +235,7 @@ func (m Manager) DeleteUser(ctx context.Context, id domain.UserIdentifier) error
 		return fmt.Errorf("deletion failure: %w", err)
 	}
 
-	m.bus.Publish(app.TopicUserDeleted, existingUser)
+	m.bus.Publish(app.TopicUserDeleted, *existingUser)
 
 	return nil
 }
@@ -374,7 +384,13 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 	return nil
 }
 
-func (m Manager) updateLdapUsers(ctx context.Context, providerName string, rawUsers []internal.RawLdapUser, fields *config.LdapFields, adminGroupDN *ldap.DN) error {
+func (m Manager) updateLdapUsers(
+	ctx context.Context,
+	providerName string,
+	rawUsers []internal.RawLdapUser,
+	fields *config.LdapFields,
+	adminGroupDN *ldap.DN,
+) error {
 	for _, rawUser := range rawUsers {
 		user, err := convertRawLdapUser(providerName, rawUser, fields, adminGroupDN)
 		if err != nil && !errors.Is(err, domain.ErrNotFound) {
@@ -397,7 +413,8 @@ func (m Manager) updateLdapUsers(ctx context.Context, providerName string, rawUs
 			}
 		}
 
-		if existingUser != nil && existingUser.Source == domain.UserSourceLdap && userChangedInLdap(existingUser, user) {
+		if existingUser != nil && existingUser.Source == domain.UserSourceLdap && userChangedInLdap(existingUser,
+			user) {
 
 			err := m.users.SaveUser(tctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
 				u.UpdatedAt = time.Now()
@@ -421,7 +438,12 @@ func (m Manager) updateLdapUsers(ctx context.Context, providerName string, rawUs
 	return nil
 }
 
-func (m Manager) disableMissingLdapUsers(ctx context.Context, providerName string, rawUsers []internal.RawLdapUser, fields *config.LdapFields) error {
+func (m Manager) disableMissingLdapUsers(
+	ctx context.Context,
+	providerName string,
+	rawUsers []internal.RawLdapUser,
+	fields *config.LdapFields,
+) error {
 	allUsers, err := m.users.GetAllUsers(ctx)
 	if err != nil {
 		return err
