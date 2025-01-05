@@ -78,7 +78,7 @@ func main() {
 	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, wgQuick, database)
 	internal.AssertNoError(err)
 
-	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, database, wireGuard, metricsServer)
+	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, eventBus, database, wireGuard, metricsServer)
 	internal.AssertNoError(err)
 
 	cfgFileManager, err := configfile.NewConfigFileManager(cfg, eventBus, database, database, cfgFileSystem)

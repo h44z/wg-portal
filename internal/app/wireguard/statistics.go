@@ -5,14 +5,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 	probing "github.com/prometheus-community/pro-bing"
 	"github.com/sirupsen/logrus"
+	evbus "github.com/vardius/message-bus"
 )
 
 type StatisticsCollector struct {
 	cfg *config.Config
+	bus evbus.MessageBus
 
 	pingWaitGroup sync.WaitGroup
 	pingJobs      chan domain.Peer
@@ -22,14 +25,25 @@ type StatisticsCollector struct {
 	ms MetricsServer
 }
 
-func NewStatisticsCollector(cfg *config.Config, db StatisticsDatabaseRepo, wg InterfaceController, ms MetricsServer) (*StatisticsCollector, error) {
-	return &StatisticsCollector{
+func NewStatisticsCollector(
+	cfg *config.Config,
+	bus evbus.MessageBus,
+	db StatisticsDatabaseRepo,
+	wg InterfaceController,
+	ms MetricsServer,
+) (*StatisticsCollector, error) {
+	c := &StatisticsCollector{
 		cfg: cfg,
+		bus: bus,
 
 		db: db,
 		wg: wg,
 		ms: ms,
-	}, nil
+	}
+
+	c.connectToMessageBus()
+
+	return c, nil
 }
 
 func (c *StatisticsCollector) StartBackgroundJobs(ctx context.Context) {
@@ -69,16 +83,17 @@ func (c *StatisticsCollector) collectInterfaceData(ctx context.Context) {
 					logrus.Warnf("failed to load physical interface %s for data collection: %v", in.Identifier, err)
 					continue
 				}
-				err = c.db.UpdateInterfaceStatus(ctx, in.Identifier, func(i *domain.InterfaceStatus) (*domain.InterfaceStatus, error) {
-					i.UpdatedAt = time.Now()
-					i.BytesReceived = physicalInterface.BytesDownload
-					i.BytesTransmitted = physicalInterface.BytesUpload
+				err = c.db.UpdateInterfaceStatus(ctx, in.Identifier,
+					func(i *domain.InterfaceStatus) (*domain.InterfaceStatus, error) {
+						i.UpdatedAt = time.Now()
+						i.BytesReceived = physicalInterface.BytesDownload
+						i.BytesTransmitted = physicalInterface.BytesUpload
 
-					// Update prometheus metrics
-					go c.updateInterfaceMetrics(*i)
+						// Update prometheus metrics
+						go c.updateInterfaceMetrics(*i)
 
-					return i, nil
-				})
+						return i, nil
+					})
 				if err != nil {
 					logrus.Warnf("failed to update interface status for %s: %v", in.Identifier, err)
 				}
@@ -120,36 +135,43 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 					continue
 				}
 				for _, peer := range peers {
-					err = c.db.UpdatePeerStatus(ctx, peer.Identifier, func(p *domain.PeerStatus) (*domain.PeerStatus, error) {
-						var lastHandshake *time.Time
-						if !peer.LastHandshake.IsZero() {
-							lastHandshake = &peer.LastHandshake
-						}
+					err = c.db.UpdatePeerStatus(ctx, peer.Identifier,
+						func(p *domain.PeerStatus) (*domain.PeerStatus, error) {
+							var lastHandshake *time.Time
+							if !peer.LastHandshake.IsZero() {
+								lastHandshake = &peer.LastHandshake
+							}
 
-						// calculate if session was restarted
-						p.UpdatedAt = time.Now()
-						p.LastSessionStart = getSessionStartTime(*p, peer.BytesUpload, peer.BytesDownload, lastHandshake)
-						p.BytesReceived = peer.BytesUpload      // store bytes that where uploaded from the peer and received by the server
-						p.BytesTransmitted = peer.BytesDownload // store bytes that where received from the peer and sent by the server
-						p.Endpoint = peer.Endpoint
-						p.LastHandshake = lastHandshake
+							// calculate if session was restarted
+							p.UpdatedAt = time.Now()
+							p.LastSessionStart = getSessionStartTime(*p, peer.BytesUpload, peer.BytesDownload,
+								lastHandshake)
+							p.BytesReceived = peer.BytesUpload      // store bytes that where uploaded from the peer and received by the server
+							p.BytesTransmitted = peer.BytesDownload // store bytes that where received from the peer and sent by the server
+							p.Endpoint = peer.Endpoint
+							p.LastHandshake = lastHandshake
 
-						// Update prometheus metrics
-						go c.updatePeerMetrics(ctx, *p)
+							// Update prometheus metrics
+							go c.updatePeerMetrics(ctx, *p)
 
-						return p, nil
-					})
+							return p, nil
+						})
 					if err != nil {
-						logrus.Warnf("failed to update interface status for %s: %v", in.Identifier, err)
+						logrus.Warnf("failed to update peer status for %s: %v", peer.Identifier, err)
+					} else {
+						logrus.Tracef("updated peer status for %s", peer.Identifier)
 					}
-					logrus.Tracef("updated peer status for %s", peer.Identifier)
 				}
 			}
 		}
 	}
 }
 
-func getSessionStartTime(oldStats domain.PeerStatus, newReceived, newTransmitted uint64, latestHandshake *time.Time) *time.Time {
+func getSessionStartTime(
+	oldStats domain.PeerStatus,
+	newReceived, newTransmitted uint64,
+	latestHandshake *time.Time,
+) *time.Time {
 	if latestHandshake == nil {
 		return nil // currently not connected
 	}
@@ -242,6 +264,28 @@ func (c *StatisticsCollector) pingWorker(ctx context.Context) {
 	for peer := range c.pingJobs {
 		peerPingable := c.isPeerPingable(ctx, peer)
 		logrus.Tracef("peer %s pingable: %t", peer.Identifier, peerPingable)
+
+		now := time.Now()
+		err := c.db.UpdatePeerStatus(ctx, peer.Identifier,
+			func(p *domain.PeerStatus) (*domain.PeerStatus, error) {
+				if peerPingable {
+					p.IsPingable = true
+					p.LastPing = &now
+				} else {
+					p.IsPingable = false
+					p.LastPing = nil
+				}
+
+				// Update prometheus metrics
+				go c.updatePeerMetrics(ctx, *p)
+
+				return p, nil
+			})
+		if err != nil {
+			logrus.Warnf("failed to update peer ping status for %s: %v", peer.Identifier, err)
+		} else {
+			logrus.Tracef("updated peer ping status for %s", peer.Identifier)
+		}
 	}
 }
 
@@ -257,7 +301,7 @@ func (c *StatisticsCollector) isPeerPingable(ctx context.Context, peer domain.Pe
 
 	pinger, err := probing.NewPinger(checkAddr)
 	if err != nil {
-		logrus.Tracef("failed to instatiate pinger for %s: %v", checkAddr, err)
+		logrus.Tracef("failed to instatiate pinger for %s (%s): %v", peer.Identifier, checkAddr, err)
 		return false
 	}
 
@@ -267,7 +311,7 @@ func (c *StatisticsCollector) isPeerPingable(ctx context.Context, peer domain.Pe
 	pinger.Timeout = 2 * time.Second
 	err = pinger.RunWithContext(ctx) // Blocks until finished.
 	if err != nil {
-		logrus.Tracef("pinger for %s exited unexpectedly: %v", checkAddr, err)
+		logrus.Tracef("pinger for peer %s (%s) exited unexpectedly: %v", peer.Identifier, checkAddr, err)
 		return false
 	}
 	stats := pinger.Statistics()
@@ -286,4 +330,19 @@ func (c *StatisticsCollector) updatePeerMetrics(ctx context.Context, status doma
 		return
 	}
 	c.ms.UpdatePeerMetrics(peer, status)
+}
+
+func (c *StatisticsCollector) connectToMessageBus() {
+	_ = c.bus.Subscribe(app.TopicPeerIdentifierUpdated, c.handlePeerIdentifierChangeEvent)
+}
+
+func (c *StatisticsCollector) handlePeerIdentifierChangeEvent(oldIdentifier, newIdentifier domain.PeerIdentifier) {
+	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+
+	// remove potential left-over status data
+	err := c.db.DeletePeerStatus(ctx, oldIdentifier)
+	if err != nil {
+		logrus.Errorf("failed to delete old peer status for migrated peer, %s -> %s: %v",
+			oldIdentifier, newIdentifier, err)
+	}
 }

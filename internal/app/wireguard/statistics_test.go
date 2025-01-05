@@ -1,10 +1,11 @@
 package wireguard
 
 import (
-	"github.com/h44z/wg-portal/internal/domain"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 func Test_getSessionStartTime(t *testing.T) {
@@ -66,7 +67,9 @@ func Test_getSessionStartTime(t *testing.T) {
 		{
 			name: "still connected",
 			args: args{
-				oldStats:       domain.PeerStatus{LastSessionStart: &nowMinus1, BytesReceived: 10, BytesTransmitted: 10},
+				oldStats: domain.PeerStatus{
+					LastSessionStart: &nowMinus1, BytesReceived: 10, BytesTransmitted: 10,
+				},
 				newReceived:    100,
 				newTransmitted: 100,
 				lastHandshake:  &now,
@@ -76,7 +79,9 @@ func Test_getSessionStartTime(t *testing.T) {
 		{
 			name: "no longer connected",
 			args: args{
-				oldStats:       domain.PeerStatus{LastSessionStart: &nowMinus5, BytesReceived: 100, BytesTransmitted: 100},
+				oldStats: domain.PeerStatus{
+					LastSessionStart: &nowMinus5, BytesReceived: 100, BytesTransmitted: 100,
+				},
 				newReceived:    100,
 				newTransmitted: 100,
 				lastHandshake:  &nowMinus3,
@@ -116,7 +121,9 @@ func Test_getSessionStartTime(t *testing.T) {
 		{
 			name: "reconnect (sent)",
 			args: args{
-				oldStats:       domain.PeerStatus{LastSessionStart: &nowMinus1, BytesReceived: 100, BytesTransmitted: 100},
+				oldStats: domain.PeerStatus{
+					LastSessionStart: &nowMinus1, BytesReceived: 100, BytesTransmitted: 100,
+				},
 				newReceived:    100,
 				newTransmitted: 10,
 				lastHandshake:  &now,
@@ -126,7 +133,8 @@ func Test_getSessionStartTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getSessionStartTime(tt.args.oldStats, tt.args.newReceived, tt.args.newTransmitted, tt.args.lastHandshake); !reflect.DeepEqual(got, tt.want) {
+			if got := getSessionStartTime(tt.args.oldStats, tt.args.newReceived, tt.args.newTransmitted,
+				tt.args.lastHandshake); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getSessionStartTime() = %v, want %v", got, tt.want)
 			}
 		})

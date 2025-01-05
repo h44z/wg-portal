@@ -230,9 +230,31 @@ func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		return nil, fmt.Errorf("update not allowed: %w", err)
 	}
 
-	err = m.savePeers(ctx, peer)
-	if err != nil {
-		return nil, fmt.Errorf("update failure: %w", err)
+	// handle peer identifier change (new public key)
+	if existingPeer.Identifier != domain.PeerIdentifier(peer.Interface.PublicKey) {
+		peer.Identifier = domain.PeerIdentifier(peer.Interface.PublicKey) // set new identifier
+
+		// delete old peer
+		err = m.DeletePeer(ctx, existingPeer.Identifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete old peer %s for %s: %w",
+				existingPeer.Identifier, peer.Identifier, err)
+		}
+
+		// save new peer
+		err = m.savePeers(ctx, peer)
+		if err != nil {
+			return nil, fmt.Errorf("update failure for re-identified peer %s (was %s): %w",
+				peer.Identifier, existingPeer.Identifier, err)
+		}
+
+		// publish event
+		m.bus.Publish(app.TopicPeerIdentifierUpdated, existingPeer.Identifier, peer.Identifier)
+	} else { // normal update
+		err = m.savePeers(ctx, peer)
+		if err != nil {
+			return nil, fmt.Errorf("update failure: %w", err)
+		}
 	}
 
 	return peer, nil
