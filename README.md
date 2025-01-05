@@ -1,6 +1,6 @@
 # WireGuard Portal (v2 - testing)
 
-[![Build Status](https://travis-ci.com/h44z/wg-portal.svg?token=q4pSqaqT58Jzpxdx62xk&branch=master)](https://travis-ci.com/h44z/wg-portal)
+[![Build Status](https://github.com/h44z/wg-portal/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/h44z/wg-portal/actions)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![GitHub last commit](https://img.shields.io/github/last-commit/h44z/wg-portal)
 [![Go Report Card](https://goreportcard.com/badge/github.com/h44z/wg-portal)](https://goreportcard.com/report/github.com/h44z/wg-portal)
