@@ -1,5 +1,35 @@
 basePath: /api/v0
 definitions:
+  model.ConfigOption-array_string:
+    properties:
+      Overridable:
+        type: boolean
+      Value:
+        items:
+          type: string
+        type: array
+    type: object
+  model.ConfigOption-int:
+    properties:
+      Overridable:
+        type: boolean
+      Value:
+        type: integer
+    type: object
+  model.ConfigOption-string:
+    properties:
+      Overridable:
+        type: boolean
+      Value:
+        type: string
+    type: object
+  model.ConfigOption-uint32:
+    properties:
+      Overridable:
+        type: boolean
+      Value:
+        type: integer
+    type: object
   model.Error:
     properties:
       Code:
@@ -7,19 +37,10 @@ definitions:
       Message:
         type: string
     type: object
-  model.Int32ConfigOption:
+  model.ExpiryDate:
     properties:
-      Overridable:
-        type: boolean
-      Value:
-        type: integer
-    type: object
-  model.IntConfigOption:
-    properties:
-      Overridable:
-        type: boolean
-      Value:
-        type: integer
+      time.Time:
+        type: string
     type: object
   model.Interface:
     properties:
@@ -160,6 +181,15 @@ definitions:
         example: /auth/google/login
         type: string
     type: object
+  model.MultiPeerRequest:
+    properties:
+      Identifiers:
+        items:
+          type: string
+        type: array
+      Suffix:
+        type: string
+    type: object
   model.Peer:
     properties:
       Addresses:
@@ -169,7 +199,7 @@ definitions:
         type: array
       AllowedIPs:
         allOf:
-        - $ref: '#/definitions/model.StringSliceConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-array_string'
         description: all allowed ip subnets, comma seperated
       CheckAliveAddress:
         description: optional ip address or DNS name that is used for ping checks
@@ -185,25 +215,26 @@ definitions:
         type: string
       Dns:
         allOf:
-        - $ref: '#/definitions/model.StringSliceConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-array_string'
         description: the dns server that should be set if the interface is up, comma
           separated
       DnsSearch:
         allOf:
-        - $ref: '#/definitions/model.StringSliceConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-array_string'
         description: the dns search option string that should be set if the interface
           is up, will be appended to DnsStr
       Endpoint:
         allOf:
-        - $ref: '#/definitions/model.StringConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-string'
         description: the endpoint address
       EndpointPublicKey:
         allOf:
-        - $ref: '#/definitions/model.StringConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-string'
         description: the endpoint public key
       ExpiresAt:
+        allOf:
+        - $ref: '#/definitions/model.ExpiryDate'
         description: expiry dates for peers
-        type: string
       ExtraAllowedIPs:
         description: all allowed ip subnets on the server side, comma seperated
         items:
@@ -211,7 +242,7 @@ definitions:
         type: array
       FirewallMark:
         allOf:
-        - $ref: '#/definitions/model.Int32ConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-uint32'
         description: a firewall mark
       Identifier:
         description: peer unique identifier
@@ -225,30 +256,30 @@ definitions:
         type: string
       Mtu:
         allOf:
-        - $ref: '#/definitions/model.IntConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-int'
         description: the device MTU
       Notes:
         description: a note field for peers
         type: string
       PersistentKeepalive:
         allOf:
-        - $ref: '#/definitions/model.IntConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-int'
         description: the persistent keep-alive interval
       PostDown:
         allOf:
-        - $ref: '#/definitions/model.StringConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-string'
         description: action that is executed after the device is down
       PostUp:
         allOf:
-        - $ref: '#/definitions/model.StringConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-string'
         description: action that is executed after the device is up
       PreDown:
         allOf:
-        - $ref: '#/definitions/model.StringConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-string'
         description: action that is executed before the device is down
       PreUp:
         allOf:
-        - $ref: '#/definitions/model.StringConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-string'
         description: action that is executed before the device is up
       PresharedKey:
         description: the pre-shared Key of the peer
@@ -263,11 +294,51 @@ definitions:
         type: string
       RoutingTable:
         allOf:
-        - $ref: '#/definitions/model.StringConfigOption'
+        - $ref: '#/definitions/model.ConfigOption-string'
         description: the routing table
       UserIdentifier:
         description: the owner
         type: string
+    type: object
+  model.PeerMailRequest:
+    properties:
+      Identifiers:
+        items:
+          type: string
+        type: array
+      LinkOnly:
+        type: boolean
+    type: object
+  model.PeerStatData:
+    properties:
+      BytesReceived:
+        type: integer
+      BytesTransmitted:
+        type: integer
+      EndpointAddress:
+        type: string
+      IsConnected:
+        type: boolean
+      IsPingable:
+        type: boolean
+      LastHandshake:
+        type: string
+      LastPing:
+        type: string
+      LastSessionStart:
+        type: string
+    type: object
+  model.PeerStats:
+    properties:
+      Enabled:
+        description: peer stats tracking enabled
+        example: true
+        type: boolean
+      Stats:
+        additionalProperties:
+          $ref: '#/definitions/model.PeerStatData'
+        description: stats, map key = Peer identifier
+        type: object
     type: object
   model.SessionInfo:
     properties:
@@ -284,24 +355,23 @@ definitions:
       UserLastname:
         type: string
     type: object
-  model.StringConfigOption:
+  model.Settings:
     properties:
-      Overridable:
+      MailLinkOnly:
         type: boolean
-      Value:
-        type: string
-    type: object
-  model.StringSliceConfigOption:
-    properties:
-      Overridable:
+      PersistentConfigSupported:
         type: boolean
-      Value:
-        items:
-          type: string
-        type: array
+      SelfProvisioning:
+        type: boolean
     type: object
   model.User:
     properties:
+      ApiEnabled:
+        type: boolean
+      ApiToken:
+        type: string
+      ApiTokenCreated:
+        type: string
       Department:
         type: string
       Disabled:
@@ -320,6 +390,12 @@ definitions:
         type: boolean
       Lastname:
         type: string
+      Locked:
+        description: if this field is set, the user is locked
+        type: boolean
+      LockedReason:
+        description: the reason why the user has been locked
+        type: string
       Notes:
         type: string
       Password:
@@ -337,8 +413,8 @@ info:
   contact:
     name: WireGuard Portal Developers
     url: https://github.com/h44z/wg-portal
-  description: WireGuard Portal API - a testing API endpoint
-  title: WireGuard Portal API
+  description: WireGuard Portal API - UI Endpoints
+  title: WireGuard Portal SPA-UI API
   version: "0.0"
 paths:
   /auth/{provider}/callback:
@@ -448,6 +524,19 @@ paths:
       summary: Get the dynamic frontend configuration javascript.
       tags:
       - Configuration
+  /config/settings:
+    get:
+      operationId: config_handleSettingsGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The JavaScript contents
+          schema:
+            type: string
+      summary: Get the frontend settings object.
+      tags:
+      - Configuration
   /csrf:
     get:
       operationId: base_handleCsrfGet
@@ -534,6 +623,62 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Update the interface record.
+      tags:
+      - Interface
+  /interface/{id}/apply-peer-defaults:
+    post:
+      operationId: interfaces_handleApplyPeerDefaultsPost
+      parameters:
+      - description: The interface identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The interface data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.Interface'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if applying peer defaults was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Apply all peer defaults to the available peers.
+      tags:
+      - Interface
+  /interface/{id}/save-config:
+    post:
+      operationId: interfaces_handleSaveConfigPost
+      parameters:
+      - description: The interface identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if saving the configuration was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Save the interface configuration in wg-quick format to a file.
       tags:
       - Interface
   /interface/all:
@@ -762,9 +907,41 @@ paths:
       summary: Update the given peer record.
       tags:
       - Peer
+  /peer/config-mail:
+    post:
+      operationId: peers_handleEmailPost
+      parameters:
+      - description: The peer mail request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.PeerMailRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if mail sending was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Send peer configuration via email.
+      tags:
+      - Peer
   /peer/config-qr/{id}:
     get:
       operationId: peers_handleQrCodeGet
+      parameters:
+      - description: The peer identifier
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -786,6 +963,12 @@ paths:
   /peer/config/{id}:
     get:
       operationId: peers_handleConfigGet
+      parameters:
+      - description: The peer identifier
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -831,6 +1014,41 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Get peers for the given interface.
+      tags:
+      - Peer
+  /peer/iface/{iface}/multiplenew:
+    post:
+      operationId: peers_handleCreateMultiplePost
+      parameters:
+      - description: The interface identifier
+        in: path
+        name: iface
+        required: true
+        type: string
+      - description: The peer creation request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.MultiPeerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Peer'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Create multiple new peers for the given interface.
       tags:
       - Peer
   /peer/iface/{iface}/new:
@@ -891,6 +1109,33 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Prepare a new peer for the given interface.
+      tags:
+      - Peer
+  /peer/iface/{iface}/stats:
+    get:
+      operationId: peers_handleStatsGet
+      parameters:
+      - description: The interface identifier
+        in: path
+        name: iface
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PeerStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get peer stats for the given interface.
       tags:
       - Peer
   /user/{id}:
@@ -972,6 +1217,27 @@ paths:
       summary: Update the user record.
       tags:
       - Users
+  /user/{id}/api/enable:
+    post:
+      operationId: users_handleApiDisablePost
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Disable the REST API for the given user.
+      tags:
+      - Users
   /user/{id}/peers:
     get:
       operationId: users_handlePeersGet
@@ -984,11 +1250,36 @@ paths:
             items:
               $ref: '#/definitions/model.Peer'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.Error'
       summary: Get peers for the given user.
+      tags:
+      - Users
+  /user/{id}/stats:
+    get:
+      operationId: users_handleStatsGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PeerStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get peer stats for the given user.
       tags:
       - Users
   /user/all:

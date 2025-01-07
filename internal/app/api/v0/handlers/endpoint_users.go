@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/domain"
-	"net/http"
 )
 
 type userEndpoint struct {
@@ -27,6 +28,8 @@ func (e userEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 	apiGroup.POST("/new", e.authenticator.LoggedIn(ScopeAdmin), e.handleCreatePost())
 	apiGroup.GET("/:id/peers", e.authenticator.UserIdMatch("id"), e.handlePeersGet())
 	apiGroup.GET("/:id/stats", e.authenticator.UserIdMatch("id"), e.handleStatsGet())
+	apiGroup.POST("/:id/api/enable", e.authenticator.UserIdMatch("id"), e.handleApiEnablePost())
+	apiGroup.POST("/:id/api/disable", e.authenticator.UserIdMatch("id"), e.handleApiDisablePost())
 }
 
 // handleAllGet returns a gorm handler function.
@@ -44,7 +47,8 @@ func (e userEndpoint) handleAllGet() gin.HandlerFunc {
 
 		users, err := e.app.GetAllUsers(ctx)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -74,11 +78,12 @@ func (e userEndpoint) handleSingleGet() gin.HandlerFunc {
 
 		user, err := e.app.GetUser(ctx, domain.UserIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewUser(user))
+		c.JSON(http.StatusOK, model.NewUser(user, true))
 	}
 }
 
@@ -118,11 +123,12 @@ func (e userEndpoint) handleUpdatePut() gin.HandlerFunc {
 
 		updateUser, err := e.app.UpdateUser(ctx, model.NewDomainUser(&user))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewUser(updateUser))
+		c.JSON(http.StatusOK, model.NewUser(updateUser, false))
 	}
 }
 
@@ -150,11 +156,12 @@ func (e userEndpoint) handleCreatePost() gin.HandlerFunc {
 
 		newUser, err := e.app.CreateUser(ctx, model.NewDomainUser(&user))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewUser(newUser))
+		c.JSON(http.StatusOK, model.NewUser(newUser, false))
 	}
 }
 
@@ -174,13 +181,15 @@ func (e userEndpoint) handlePeersGet() gin.HandlerFunc {
 
 		interfaceId := Base64UrlDecode(c.Param("id"))
 		if interfaceId == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
+			c.JSON(http.StatusBadRequest,
+				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
 			return
 		}
 
 		peers, err := e.app.GetUserPeers(ctx, domain.UserIdentifier(interfaceId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -204,13 +213,15 @@ func (e userEndpoint) handleStatsGet() gin.HandlerFunc {
 
 		userId := Base64UrlDecode(c.Param("id"))
 		if userId == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
+			c.JSON(http.StatusBadRequest,
+				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
 			return
 		}
 
 		stats, err := e.app.GetUserPeerStats(ctx, domain.UserIdentifier(userId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -241,10 +252,75 @@ func (e userEndpoint) handleDelete() gin.HandlerFunc {
 
 		err := e.app.DeleteUser(ctx, domain.UserIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
 		c.Status(http.StatusNoContent)
+	}
+}
+
+// handleApiEnablePost returns a gorm handler function.
+//
+// @ID users_handleApiEnablePost
+// @Tags Users
+// @Summary Enable the REST API for the given user.
+// @Produce json
+// @Success 200 {object} model.User
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/{id}/api/enable [post]
+func (e userEndpoint) handleApiEnablePost() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
+		userId := Base64UrlDecode(c.Param("id"))
+		if userId == "" {
+			c.JSON(http.StatusBadRequest,
+				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
+			return
+		}
+
+		user, err := e.app.ActivateApi(ctx, domain.UserIdentifier(userId))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, model.NewUser(user, true))
+	}
+}
+
+// handleApiDisablePost returns a gorm handler function.
+//
+// @ID users_handleApiDisablePost
+// @Tags Users
+// @Summary Disable the REST API for the given user.
+// @Produce json
+// @Success 200 {object} model.User
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/{id}/api/enable [post]
+func (e userEndpoint) handleApiDisablePost() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
+		userId := Base64UrlDecode(c.Param("id"))
+		if userId == "" {
+			c.JSON(http.StatusBadRequest,
+				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
+			return
+		}
+
+		user, err := e.app.DeactivateApi(ctx, domain.UserIdentifier(userId))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, model.NewUser(user, false))
 	}
 }

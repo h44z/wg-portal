@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/memstore"
@@ -10,8 +13,6 @@ import (
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/config"
 	csrf "github.com/utrack/gin-csrf"
-	"net/http"
-	"strings"
 )
 
 type handler interface {
@@ -20,12 +21,12 @@ type handler interface {
 }
 
 // To compile the API documentation use the
-// build_tool
-// command that can be found in the $PROJECT_ROOT/internal/ports/api/build_tool directory.
+// api_build_tool
+// command that can be found in the $PROJECT_ROOT/cmd/api_build_tool directory.
 
-// @title WireGuard Portal API
+// @title WireGuard Portal SPA-UI API
 // @version 0.0
-// @description WireGuard Portal API - a testing API endpoint
+// @description WireGuard Portal API - UI Endpoints
 
 // @contact.name WireGuard Portal Developers
 // @contact.url https://github.com/h44z/wg-portal

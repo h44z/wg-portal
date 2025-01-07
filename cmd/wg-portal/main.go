@@ -9,6 +9,8 @@ import (
 
 	"github.com/h44z/wg-portal/internal/app/api/core"
 	handlersV0 "github.com/h44z/wg-portal/internal/app/api/v0/handlers"
+	backendV1 "github.com/h44z/wg-portal/internal/app/api/v1/backend"
+	handlersV1 "github.com/h44z/wg-portal/internal/app/api/v1/handlers"
 	"github.com/h44z/wg-portal/internal/app/audit"
 	"github.com/h44z/wg-portal/internal/app/auth"
 	"github.com/h44z/wg-portal/internal/app/configfile"
@@ -103,7 +105,11 @@ func main() {
 
 	apiFrontend := handlersV0.NewRestApi(cfg, backend)
 
-	webSrv, err := core.NewServer(cfg, apiFrontend)
+	apiV1BackendUsers := backendV1.NewUserService(cfg, database, database)
+	apiV1EndpointUsers := handlersV1.NewUserEndpoint(apiV1BackendUsers)
+	apiV1 := handlersV1.NewRestApi(userManager, apiV1EndpointUsers)
+
+	webSrv, err := core.NewServer(cfg, apiFrontend, apiV1)
 	internal.AssertNoError(err)
 
 	go metricsServer.Run(ctx)

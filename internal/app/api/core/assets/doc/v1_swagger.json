@@ -1,0 +1,193 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "WireGuard Portal API for managing users and peers.",
+        "title": "WireGuard Portal Public API",
+        "contact": {
+            "name": "WireGuard Portal Project",
+            "url": "https://github.com/h44z/wg-portal"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://github.com/h44z/wg-portal/blob/master/LICENSE.txt"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/user/all": {
+            "get": {
+                "security": [
+                    {
+                        "AdminBasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get all user records.",
+                "operationId": "users_handleAllGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.User"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/id/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "UserBasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own record. Admins can access all records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get a specific user record by its internal identifier.",
+                "operationId": "users_handleByIdGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.Error": {
+            "type": "object",
+            "properties": {
+                "Code": {
+                    "description": "HTTP status code.",
+                    "type": "integer"
+                },
+                "Details": {
+                    "description": "Additional error details.",
+                    "type": "string"
+                },
+                "Message": {
+                    "description": "Error message.",
+                    "type": "string"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "properties": {
+                "ApiEnabled": {
+                    "description": "If this field is set, the user is allowed to use the RESTful API.",
+                    "type": "boolean"
+                },
+                "Department": {
+                    "description": "The department of the user. This field is optional.",
+                    "type": "string"
+                },
+                "Disabled": {
+                    "description": "If this field is set, the user is disabled.",
+                    "type": "boolean"
+                },
+                "DisabledReason": {
+                    "description": "The reason why the user has been disabled.",
+                    "type": "string"
+                },
+                "Email": {
+                    "description": "The email address of the user. This field is optional.",
+                    "type": "string"
+                },
+                "Firstname": {
+                    "description": "The first name of the user. This field is optional.",
+                    "type": "string"
+                },
+                "Identifier": {
+                    "description": "The unique identifier of the user.",
+                    "type": "string"
+                },
+                "IsAdmin": {
+                    "description": "If this field is set, the user is an admin.",
+                    "type": "boolean"
+                },
+                "Lastname": {
+                    "description": "The last name of the user. This field is optional.",
+                    "type": "string"
+                },
+                "Locked": {
+                    "description": "If this field is set, the user is locked and thus unable to log in to WireGuard Portal.",
+                    "type": "boolean"
+                },
+                "LockedReason": {
+                    "description": "The reason why the user has been locked.",
+                    "type": "string"
+                },
+                "Notes": {
+                    "description": "Additional notes about the user. This field is optional.",
+                    "type": "string"
+                },
+                "PeerCount": {
+                    "description": "The number of peers linked to the user.",
+                    "type": "integer"
+                },
+                "Phone": {
+                    "description": "The phone number of the user. This field is optional.",
+                    "type": "string"
+                },
+                "ProviderName": {
+                    "description": "The name of the authentication provider. This field is optional.",
+                    "type": "string"
+                },
+                "Source": {
+                    "description": "The source of the user. This field is optional.",
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "AdminBasicAuth": {
+            "type": "basic"
+        },
+        "UserBasicAuth": {
+            "type": "basic"
+        }
+    }
+}

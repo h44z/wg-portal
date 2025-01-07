@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/h44z/wg-portal/internal/app"
 
 	"github.com/h44z/wg-portal/internal"
@@ -240,6 +241,59 @@ func (m Manager) DeleteUser(ctx context.Context, id domain.UserIdentifier) error
 	return nil
 }
 
+func (m Manager) ActivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+	user, err := m.users.GetUser(ctx, id)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, fmt.Errorf("unable to find user %s: %w", id, err)
+	}
+
+	if err := m.validateApiChange(ctx, user); err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	user.ApiToken = uuid.New().String()
+	user.ApiTokenCreated = &now
+
+	err = m.users.SaveUser(ctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
+		user.CopyCalculatedAttributes(u)
+		return user, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("update failure: %w", err)
+	}
+
+	m.bus.Publish(app.TopicUserApiEnabled, user)
+
+	return user, nil
+}
+
+func (m Manager) DeactivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+	user, err := m.users.GetUser(ctx, id)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, fmt.Errorf("unable to find user %s: %w", id, err)
+	}
+
+	if err := m.validateApiChange(ctx, user); err != nil {
+		return nil, err
+	}
+
+	user.ApiToken = ""
+	user.ApiTokenCreated = nil
+
+	err = m.users.SaveUser(ctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
+		user.CopyCalculatedAttributes(u)
+		return user, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("update failure: %w", err)
+	}
+
+	m.bus.Publish(app.TopicUserApiDisabled, user)
+
+	return user, nil
+}
+
 func (m Manager) validateModifications(ctx context.Context, old, new *domain.User) error {
 	currentUser := domain.GetUserInfo(ctx)
 
@@ -313,6 +367,16 @@ func (m Manager) validateDeletion(ctx context.Context, del *domain.User) error {
 
 	if currentUser.Id == del.Identifier {
 		return fmt.Errorf("cannot delete own user")
+	}
+
+	return nil
+}
+
+func (m Manager) validateApiChange(ctx context.Context, user *domain.User) error {
+	currentUser := domain.GetUserInfo(ctx)
+
+	if currentUser.Id != user.Identifier {
+		return fmt.Errorf("cannot change API access of user")
 	}
 
 	return nil

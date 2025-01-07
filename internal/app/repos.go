@@ -2,8 +2,9 @@ package app
 
 import (
 	"context"
-	"github.com/h44z/wg-portal/internal/domain"
 	"io"
+
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type Authenticator interface {
@@ -23,6 +24,8 @@ type UserManager interface {
 	UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error)
 	CreateUser(ctx context.Context, user *domain.User) (*domain.User, error)
 	DeleteUser(ctx context.Context, id domain.UserIdentifier) error
+	ActivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
+	DeactivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
 }
 
 type WireGuardManager interface {
@@ -43,7 +46,11 @@ type WireGuardManager interface {
 	PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error)
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 	CreatePeer(ctx context.Context, p *domain.Peer) (*domain.Peer, error)
-	CreateMultiplePeers(ctx context.Context, id domain.InterfaceIdentifier, r *domain.PeerCreationRequest) ([]domain.Peer, error)
+	CreateMultiplePeers(
+		ctx context.Context,
+		id domain.InterfaceIdentifier,
+		r *domain.PeerCreationRequest,
+	) ([]domain.Peer, error)
 	UpdatePeer(ctx context.Context, p *domain.Peer) (*domain.Peer, error)
 	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error
@@ -62,4 +69,8 @@ type ConfigFileManager interface {
 
 type MailManager interface {
 	SendPeerEmail(ctx context.Context, linkOnly bool, peers ...domain.PeerIdentifier) error
+}
+
+type ApiV1Manager interface {
+	ApiV1GetUsers(ctx context.Context) ([]domain.User, error)
 }
