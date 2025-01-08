@@ -19,7 +19,7 @@
             "get": {
                 "security": [
                     {
-                        "AdminBasicAuth": []
+                        "BasicAuth": []
                     }
                 ],
                 "produces": [
@@ -53,7 +53,7 @@
             "get": {
                 "security": [
                     {
-                        "UserBasicAuth": []
+                        "BasicAuth": []
                     }
                 ],
                 "description": "Normal users can only access their own record. Admins can access all records.",
@@ -183,10 +183,7 @@
         }
     },
     "securityDefinitions": {
-        "AdminBasicAuth": {
-            "type": "basic"
-        },
-        "UserBasicAuth": {
+        "BasicAuth": {
             "type": "basic"
         }
     }

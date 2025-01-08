@@ -197,7 +197,7 @@ func (m Manager) CreateUser(ctx context.Context, user *domain.User) (*domain.Use
 		return nil, fmt.Errorf("user %s already exists", user.Identifier)
 	}
 
-	if err := m.validateCreation(ctx, user); err != nil {
+	if err := ValidateCreation(ctx, user); err != nil {
 		return nil, fmt.Errorf("creation not allowed: %w", err)
 	}
 
@@ -328,7 +328,7 @@ func (m Manager) validateModifications(ctx context.Context, old, new *domain.Use
 	return nil
 }
 
-func (m Manager) validateCreation(ctx context.Context, new *domain.User) error {
+func ValidateCreation(ctx context.Context, new *domain.User) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin {
@@ -343,8 +343,12 @@ func (m Manager) validateCreation(ctx context.Context, new *domain.User) error {
 		return fmt.Errorf("reserved user identifier")
 	}
 
+	if new.Identifier == "new" { // the new user identifier collides with the rest api routes
+		return fmt.Errorf("reserved user identifier")
+	}
+
 	if new.Source != domain.UserSourceDatabase {
-		return fmt.Errorf("invalid user source: %s", new.Source)
+		return fmt.Errorf("invalid user source: %s, only %s is allowed", new.Source, domain.UserSourceDatabase)
 	}
 
 	if string(new.Password) == "" {

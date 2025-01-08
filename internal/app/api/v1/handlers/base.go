@@ -30,15 +30,7 @@ type Handler interface {
 // @contact.name WireGuard Portal Project
 // @contact.url https://github.com/h44z/wg-portal
 
-// @securityDefinitions.basic AdminBasicAuth
-// @in header
-// @name Authorization
-// @scope.admin Admin access required
-
-// @securityDefinitions.basic UserBasicAuth
-// @in header
-// @name Authorization
-// @scope.user User access required
+// @securityDefinitions.basic BasicAuth
 
 // @BasePath /api/v1
 // @query.collection.format multi
@@ -74,6 +66,10 @@ func ParseServiceError(err error) (int, models.Error) {
 		code = http.StatusNotFound
 	case errors.Is(err, domain.ErrNoPermission):
 		code = http.StatusForbidden
+	case errors.Is(err, domain.ErrDuplicateEntry):
+		code = http.StatusConflict
+	case errors.Is(err, domain.ErrInvalidData):
+		code = http.StatusBadRequest
 	}
 
 	return code, models.Error{

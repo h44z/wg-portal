@@ -35,7 +35,9 @@ func (h authenticationHandler) LoggedIn(scopes ...Scope) gin.HandlerFunc {
 		}
 
 		// check if user exists in DB
-		user, err := h.userSource.GetUser(c.Request.Context(), domain.UserIdentifier(username))
+
+		ctx := domain.SetUserInfo(c.Request.Context(), domain.SystemAdminContextUserInfo())
+		user, err := h.userSource.GetUser(ctx, domain.UserIdentifier(username))
 		if err != nil {
 			// Abort the request with the appropriate error code
 			c.Abort()
