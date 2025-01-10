@@ -16,8 +16,12 @@ definitions:
     properties:
       ApiEnabled:
         description: If this field is set, the user is allowed to use the RESTful
-          API.
+          API. This field is read-only.
         type: boolean
+      ApiToken:
+        description: The API token of the user. This field is never populated on bulk
+          read operations.
+        type: string
       Department:
         description: The department of the user. This field is optional.
         type: string
@@ -52,8 +56,12 @@ definitions:
       Notes:
         description: Additional notes about the user. This field is optional.
         type: string
+      Password:
+        description: The password of the user. This field is never populated on read
+          operations.
+        type: string
       PeerCount:
-        description: The number of peers linked to the user.
+        description: The number of peers linked to the user. This field is read-only.
         type: integer
       Phone:
         description: The phone number of the user. This field is optional.
@@ -88,6 +96,10 @@ paths:
             items:
               $ref: '#/definitions/models.User'
             type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
         "500":
           description: Internal Server Error
           schema:
@@ -98,10 +110,54 @@ paths:
       tags:
       - Users
   /user/id/{id}:
+    delete:
+      operationId: users_handleDelete
+      parameters:
+      - description: The user identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if deletion was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Delete the user record.
+      tags:
+      - Users
     get:
       description: Normal users can only access their own record. Admins can access
         all records.
       operationId: users_handleByIdGet
+      parameters:
+      - description: The user identifier.
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -109,6 +165,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
         "403":
           description: Forbidden
           schema:
@@ -124,6 +184,96 @@ paths:
       security:
       - BasicAuth: []
       summary: Get a specific user record by its internal identifier.
+      tags:
+      - Users
+    put:
+      description: Only admins can update existing records.
+      operationId: users_handleUpdatePut
+      parameters:
+      - description: The user identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The user data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Update a user record.
+      tags:
+      - Users
+  /user/new:
+    post:
+      description: Only admins can create new records.
+      operationId: users_handleCreatePost
+      parameters:
+      - description: The user data.
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Error'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Create a new user record.
       tags:
       - Users
 securityDefinitions:

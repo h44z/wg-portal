@@ -94,7 +94,7 @@ func ValidateUserAccessRights(ctx context.Context, requiredUser UserIdentifier) 
 	}
 
 	logrus.Warnf("insufficient permissions for %s (want %s), stack: %s", sessionUser.Id, requiredUser, GetStackTrace())
-	return fmt.Errorf("insufficient permissions")
+	return ErrNoPermission
 }
 
 // ValidateAdminAccessRights checks if the current user has admin access rights.
@@ -106,5 +106,5 @@ func ValidateAdminAccessRights(ctx context.Context) error {
 	}
 
 	logrus.Warnf("insufficient admin permissions for %s, stack: %s", sessionUser.Id, GetStackTrace())
-	return fmt.Errorf("insufficient permissions")
+	return ErrNoPermission
 }

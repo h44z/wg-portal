@@ -105,7 +105,7 @@ func main() {
 
 	apiFrontend := handlersV0.NewRestApi(cfg, backend)
 
-	apiV1BackendUsers := backendV1.NewUserService(cfg, database, database)
+	apiV1BackendUsers := backendV1.NewUserService(cfg, userManager)
 	apiV1EndpointUsers := handlersV1.NewUserEndpoint(apiV1BackendUsers)
 	apiV1 := handlersV1.NewRestApi(userManager, apiV1EndpointUsers)
 

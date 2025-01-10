@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/app/api/v1/models"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -14,6 +13,8 @@ type UserService interface {
 	GetUsers(ctx context.Context) ([]domain.User, error)
 	GetUserById(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
 	CreateUser(ctx context.Context, user *domain.User) (*domain.User, error)
+	UpdateUser(ctx context.Context, id domain.UserIdentifier, user *domain.User) (*domain.User, error)
+	DeleteUser(ctx context.Context, id domain.UserIdentifier) error
 }
 
 type UserEndpoint struct {
@@ -35,6 +36,9 @@ func (e UserEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 
 	apiGroup.GET("/all", authenticator.LoggedIn(ScopeAdmin), e.handleAllGet())
 	apiGroup.GET("/id/:id", authenticator.LoggedIn(), e.handleByIdGet())
+	apiGroup.POST("/new", authenticator.LoggedIn(ScopeAdmin), e.handleCreatePost())
+	apiGroup.PUT("/id/:id", authenticator.LoggedIn(ScopeAdmin), e.handleUpdatePut())
+	apiGroup.DELETE("/id/:id", authenticator.LoggedIn(ScopeAdmin), e.handleDelete())
 }
 
 // handleAllGet returns a gorm Handler function.
@@ -44,6 +48,7 @@ func (e UserEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 // @Summary Get all user records.
 // @Produce json
 // @Success 200 {object} []models.User
+// @Failure 401 {object} models.Error
 // @Failure 500 {object} models.Error
 // @Router /user/all [get]
 // @Security BasicAuth
@@ -70,7 +75,7 @@ func (e UserEndpoint) handleAllGet() gin.HandlerFunc {
 // @Param id path string true "The user identifier."
 // @Produce json
 // @Success 200 {object} models.User
-// @Failure 403 {object} models.Error
+// @Failure 401 {object} models.Error
 // @Failure 403 {object} models.Error
 // @Failure 404 {object} models.Error
 // @Failure 500 {object} models.Error
@@ -106,10 +111,12 @@ func (e UserEndpoint) handleByIdGet() gin.HandlerFunc {
 // @Produce json
 // @Success 200 {object} models.User
 // @Failure 400 {object} models.Error
+// @Failure 401 {object} models.Error
 // @Failure 403 {object} models.Error
 // @Failure 409 {object} models.Error
 // @Failure 500 {object} models.Error
 // @Router /user/new [post]
+// @Security BasicAuth
 func (e UserEndpoint) handleCreatePost() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
@@ -142,41 +149,36 @@ func (e UserEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Produce json
 // @Success 200 {object} models.User
 // @Failure 400 {object} models.Error
+// @Failure 401 {object} models.Error
 // @Failure 403 {object} models.Error
 // @Failure 404 {object} models.Error
 // @Failure 500 {object} models.Error
-// @Router /user/{id} [put]
+// @Router /user/id/{id} [put]
+// @Security BasicAuth
 func (e UserEndpoint) handleUpdatePut() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// TODO: implement
 		ctx := domain.SetUserInfoFromGin(c)
 
-		id := Base64UrlDecode(c.Param("id"))
+		id := c.Param("id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
+			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
 		}
 
-		var user model.User
+		var user models.User
 		err := c.BindJSON(&user)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		if id != user.Identifier {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "user id mismatch"})
-			return
-		}
-
-		updateUser, err := e.app.UpdateUser(ctx, model.NewDomainUser(&user))
+		updateUser, err := e.users.UpdateUser(ctx, domain.UserIdentifier(id), models.NewDomainUser(&user))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
-				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(ParseServiceError(err))
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewUser(updateUser, false))
+		c.JSON(http.StatusOK, models.NewUser(updateUser, true))
 	}
 }
 
@@ -188,24 +190,27 @@ func (e UserEndpoint) handleUpdatePut() gin.HandlerFunc {
 // @Produce json
 // @Param id path string true "The user identifier"
 // @Success 204 "No content if deletion was successful"
-// @Failure 400 {object} model.Error
-// @Failure 500 {object} model.Error
-// @Router /user/{id} [delete]
+// @Failure 400 {object} models.Error
+// @Failure 401 {object} models.Error
+// @Failure 403 {object} models.Error
+// @Failure 404 {object} models.Error
+// @Failure 500 {object} models.Error
+// @Router /user/id/{id} [delete]
+// @Security BasicAuth
 func (e UserEndpoint) handleDelete() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// TODO: implement
 		ctx := domain.SetUserInfoFromGin(c)
 
-		id := Base64UrlDecode(c.Param("id"))
+		id := c.Param("id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
+			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
 		}
 
-		err := e.app.DeleteUser(ctx, domain.UserIdentifier(id))
+		err := e.users.DeleteUser(ctx, domain.UserIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
-				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(ParseServiceError(err))
 			return
 		}
 

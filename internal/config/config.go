@@ -39,6 +39,7 @@ type Config struct {
 		ExpiryCheckInterval time.Duration `yaml:"expiry_check_interval"`
 		RulePrioOffset      int           `yaml:"rule_prio_offset"`
 		RouteTableOffset    int           `yaml:"route_table_offset"`
+		ApiAdminOnly        bool          `yaml:"api_admin_only"` // if true, only admin users can access the API
 	} `yaml:"advanced"`
 
 	Statistics struct {
