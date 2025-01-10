@@ -302,7 +302,7 @@ func (e userEndpoint) handleApiEnablePost() gin.HandlerFunc {
 // @Success 200 {object} model.User
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
-// @Router /user/{id}/api/enable [post]
+// @Router /user/{id}/api/disable [post]
 func (e userEndpoint) handleApiDisablePost() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)

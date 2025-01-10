@@ -90,7 +90,7 @@ const currentYear = ref(new Date().getFullYear())
               href="#" role="button">{{ auth.User.Firstname }} {{ auth.User.Lastname }}</a>
             <div class="dropdown-menu">
               <RouterLink :to="{ name: 'profile' }" class="dropdown-item"><i class="fas fa-user"></i> {{ $t('menu.profile') }}</RouterLink>
-              <RouterLink :to="{ name: 'settings' }" class="dropdown-item"><i class="fas fa-gears"></i> {{ $t('menu.settings') }}</RouterLink>
+              <RouterLink :to="{ name: 'settings' }" class="dropdown-item" v-if="auth.IsAdmin || !settings.Setting('ApiAdminOnly')"><i class="fas fa-gears"></i> {{ $t('menu.settings') }}</RouterLink>
               <div class="dropdown-divider"></div>
               <a class="dropdown-item" href="#" @click.prevent="auth.Logout"><i class="fas fa-sign-out-alt"></i> {{ $t('menu.logout') }}</a>
             </div>

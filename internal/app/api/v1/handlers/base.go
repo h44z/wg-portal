@@ -22,7 +22,9 @@ type Handler interface {
 
 // @title WireGuard Portal Public API
 // @version 1.0
-// @description WireGuard Portal API for managing users and peers.
+// @description The WireGuard Portal REST API enables efficient management of WireGuard VPN configurations through a set of JSON-based endpoints.
+// @description It supports creating and editing peers, interfaces, and user profiles, while also providing role-based access control and auditing.
+// @description This API allows seamless integration with external tools or scripts for automated network configuration and administration.
 
 // @license.name MIT
 // @license.url https://github.com/h44z/wg-portal/blob/master/LICENSE.txt

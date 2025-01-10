@@ -8,28 +8,46 @@ import (
 
 // User represents a user in the system.
 type User struct {
-	Identifier   string `json:"Identifier"`   // The unique identifier of the user.
-	Email        string `json:"Email"`        // The email address of the user. This field is optional.
-	Source       string `json:"Source"`       // The source of the user. This field is optional.
-	ProviderName string `json:"ProviderName"` // The name of the authentication provider. This field is optional.
-	IsAdmin      bool   `json:"IsAdmin"`      // If this field is set, the user is an admin.
+	// The unique identifier of the user.
+	Identifier string `json:"Identifier" binding:"required,max=64" example:"uid-1234567"`
+	// The email address of the user. This field is optional.
+	Email string `json:"Email" binding:"omitempty,email" example:"test@test.com"`
+	// The source of the user. This field is optional.
+	Source string `json:"Source" binding:"oneof=db" example:"db"`
+	// The name of the authentication provider. This field is read-only.
+	ProviderName string `json:"ProviderName,omitempty" readonly:"true" example:""`
+	// If this field is set, the user is an admin.
+	IsAdmin bool `json:"IsAdmin" binding:"required" example:"false"`
 
-	Firstname  string `json:"Firstname"`  // The first name of the user. This field is optional.
-	Lastname   string `json:"Lastname"`   // The last name of the user. This field is optional.
-	Phone      string `json:"Phone"`      // The phone number of the user. This field is optional.
-	Department string `json:"Department"` // The department of the user. This field is optional.
-	Notes      string `json:"Notes"`      // Additional notes about the user. This field is optional.
+	// The first name of the user. This field is optional.
+	Firstname string `json:"Firstname" example:"Max"`
+	// The last name of the user. This field is optional.
+	Lastname string `json:"Lastname" example:"Muster"`
+	// The phone number of the user. This field is optional.
+	Phone string `json:"Phone" example:"+1234546789"`
+	// The department of the user. This field is optional.
+	Department string `json:"Department" example:"Software Development"`
+	// Additional notes about the user. This field is optional.
+	Notes string `json:"Notes" example:"some sample notes"`
 
-	Password       string `json:"Password,omitempty"` // The password of the user. This field is never populated on read operations.
-	Disabled       bool   `json:"Disabled"`           // If this field is set, the user is disabled.
-	DisabledReason string `json:"DisabledReason"`     // The reason why the user has been disabled.
-	Locked         bool   `json:"Locked"`             // If this field is set, the user is locked and thus unable to log in to WireGuard Portal.
-	LockedReason   string `json:"LockedReason"`       // The reason why the user has been locked.
+	// The password of the user. This field is never populated on read operations.
+	Password string `json:"Password,omitempty" binding:"omitempty,min=16,max=64" example:""`
+	// If this field is set, the user is disabled.
+	Disabled bool `json:"Disabled" example:"false"`
+	// The reason why the user has been disabled.
+	DisabledReason string `json:"DisabledReason" binding:"required_if=Disabled true" example:""`
+	// If this field is set, the user is locked and thus unable to log in to WireGuard Portal.
+	Locked bool `json:"Locked" example:"false"`
+	// The reason why the user has been locked.
+	LockedReason string `json:"LockedReason" binding:"required_if=Locked true" example:""`
 
-	ApiToken   string `json:"ApiToken"`   // The API token of the user. This field is never populated on bulk read operations.
-	ApiEnabled bool   `json:"ApiEnabled"` // If this field is set, the user is allowed to use the RESTful API. This field is read-only.
+	// The API token of the user. This field is never populated on bulk read operations.
+	ApiToken string `json:"ApiToken,omitempty" binding:"omitempty,min=32,max=64" example:""`
+	// If this field is set, the user is allowed to use the RESTful API. This field is read-only.
+	ApiEnabled bool `json:"ApiEnabled" readonly:"true" example:"false"`
 
-	PeerCount int `json:"PeerCount"` // The number of peers linked to the user. This field is read-only.
+	// The number of peers linked to the user. This field is read-only.
+	PeerCount int `json:"PeerCount" readonly:"true" example:"2"`
 }
 
 func NewUser(src *domain.User, exposeCredentials bool) *User {

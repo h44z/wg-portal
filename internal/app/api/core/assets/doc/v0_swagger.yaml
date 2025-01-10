@@ -1217,7 +1217,7 @@ paths:
       summary: Update the user record.
       tags:
       - Users
-  /user/{id}/api/enable:
+  /user/{id}/api/disable:
     post:
       operationId: users_handleApiDisablePost
       produces:
@@ -1236,6 +1236,27 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Disable the REST API for the given user.
+      tags:
+      - Users
+  /user/{id}/api/enable:
+    post:
+      operationId: users_handleApiEnablePost
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Enable the REST API for the given user.
       tags:
       - Users
   /user/{id}/peers:

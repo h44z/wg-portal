@@ -357,7 +357,7 @@ func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*do
 		return nil, fmt.Errorf("unable to load existing interface %s: %w", in.Identifier, err)
 	}
 	if existingInterface != nil {
-		return nil, fmt.Errorf("interface %s already exists", in.Identifier)
+		return nil, fmt.Errorf("interface %s already exists: %w", in.Identifier, domain.ErrDuplicateEntry)
 	}
 
 	if err := m.validateInterfaceCreation(ctx, existingInterface, in); err != nil {
@@ -823,6 +823,13 @@ func (m Manager) validateInterfaceCreation(ctx context.Context, old, new *domain
 
 	if !currentUser.IsAdmin {
 		return fmt.Errorf("insufficient permissions")
+	}
+
+	// validate public key if it is set
+	if new.PublicKey != "" && new.PrivateKey != "" {
+		if domain.PublicKeyFromPrivateKey(new.PrivateKey) != new.PublicKey {
+			return fmt.Errorf("invalid public key for given privatekey: %w", domain.ErrInvalidData)
+		}
 	}
 
 	return nil

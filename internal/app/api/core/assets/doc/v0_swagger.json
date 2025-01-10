@@ -1298,7 +1298,7 @@
                 }
             }
         },
-        "/user/{id}/api/enable": {
+        "/user/{id}/api/disable": {
             "post": {
                 "produces": [
                     "application/json"
@@ -1308,6 +1308,38 @@
                 ],
                 "summary": "Disable the REST API for the given user.",
                 "operationId": "users_handleApiDisablePost",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/api/enable": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Enable the REST API for the given user.",
+                "operationId": "users_handleApiEnablePost",
                 "responses": {
                     "200": {
                         "description": "OK",

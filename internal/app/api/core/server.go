@@ -88,6 +88,8 @@ func NewServer(cfg *config.Config, endpoints ...ApiEndpointSetupFunc) (*Server, 
 	s.server.StaticFS("/doc", http.FS(fsMust(fs.Sub(apiStatics, "assets/doc"))))
 
 	// Setup routes
+	s.server.UseRawPath = true
+	s.server.UnescapePathValues = true
 	s.setupRoutes(endpoints...)
 	s.setupFrontendRoutes()
 

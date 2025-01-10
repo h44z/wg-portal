@@ -30,7 +30,7 @@ func NewUserService(cfg *config.Config, users UserManagerRepo) *UserService {
 	}
 }
 
-func (s UserService) GetUsers(ctx context.Context) ([]domain.User, error) {
+func (s UserService) GetAll(ctx context.Context) ([]domain.User, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, err
 	}
@@ -43,9 +43,9 @@ func (s UserService) GetUsers(ctx context.Context) ([]domain.User, error) {
 	return allUsers, nil
 }
 
-func (s UserService) GetUserById(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+func (s UserService) GetById(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
 	if err := domain.ValidateUserAccessRights(ctx, id); err != nil {
-		return nil, errors.Join(err, domain.ErrNoPermission)
+		return nil, err
 	}
 
 	if s.cfg.Advanced.ApiAdminOnly && !domain.GetUserInfo(ctx).IsAdmin {
@@ -60,7 +60,7 @@ func (s UserService) GetUserById(ctx context.Context, id domain.UserIdentifier) 
 	return user, nil
 }
 
-func (s UserService) CreateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
+func (s UserService) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (s UserService) CreateUser(ctx context.Context, user *domain.User) (*domain
 	return createdUser, nil
 }
 
-func (s UserService) UpdateUser(ctx context.Context, id domain.UserIdentifier, user *domain.User) (
+func (s UserService) Update(ctx context.Context, id domain.UserIdentifier, user *domain.User) (
 	*domain.User,
 	error,
 ) {
@@ -93,7 +93,7 @@ func (s UserService) UpdateUser(ctx context.Context, id domain.UserIdentifier, u
 	return updatedUser, nil
 }
 
-func (s UserService) DeleteUser(ctx context.Context, id domain.UserIdentifier) error {
+func (s UserService) Delete(ctx context.Context, id domain.UserIdentifier) error {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return err
 	}

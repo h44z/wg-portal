@@ -159,7 +159,7 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		return nil, fmt.Errorf("unable to load existing peer %s: %w", peer.Identifier, err)
 	}
 	if existingPeer != nil {
-		return nil, fmt.Errorf("peer %s already exists", peer.Identifier)
+		return nil, fmt.Errorf("peer %s already exists: %w", peer.Identifier, domain.ErrDuplicateEntry)
 	}
 
 	if err := m.validatePeerCreation(ctx, existingPeer, peer); err != nil {
@@ -233,6 +233,15 @@ func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 	// handle peer identifier change (new public key)
 	if existingPeer.Identifier != domain.PeerIdentifier(peer.Interface.PublicKey) {
 		peer.Identifier = domain.PeerIdentifier(peer.Interface.PublicKey) // set new identifier
+
+		// check for already existing peer with new identifier
+		duplicatePeer, err := m.db.GetPeer(ctx, peer.Identifier)
+		if err != nil && !errors.Is(err, domain.ErrNotFound) {
+			return nil, fmt.Errorf("unable to load existing peer %s: %w", peer.Identifier, err)
+		}
+		if duplicatePeer != nil {
+			return nil, fmt.Errorf("peer %s already exists: %w", peer.Identifier, domain.ErrDuplicateEntry)
+		}
 
 		// delete old peer
 		err = m.DeletePeer(ctx, existingPeer.Identifier)
@@ -431,7 +440,7 @@ func (m Manager) validatePeerModifications(ctx context.Context, old, new *domain
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin {
-		return fmt.Errorf("insufficient permissions")
+		return domain.ErrNoPermission
 	}
 
 	return nil
@@ -441,11 +450,16 @@ func (m Manager) validatePeerCreation(ctx context.Context, old, new *domain.Peer
 	currentUser := domain.GetUserInfo(ctx)
 
 	if new.Identifier == "" {
-		return fmt.Errorf("invalid peer identifier")
+		return fmt.Errorf("invalid peer identifier: %w", domain.ErrInvalidData)
 	}
 
 	if !currentUser.IsAdmin {
-		return fmt.Errorf("insufficient permissions")
+		return domain.ErrNoPermission
+	}
+
+	_, err := m.db.GetInterface(ctx, new.InterfaceIdentifier)
+	if err != nil {
+		return fmt.Errorf("invalid interface: %w", domain.ErrInvalidData)
 	}
 
 	return nil
@@ -455,7 +469,7 @@ func (m Manager) validatePeerDeletion(ctx context.Context, del *domain.Peer) err
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin {
-		return fmt.Errorf("insufficient permissions")
+		return domain.ErrNoPermission
 	}
 
 	return nil

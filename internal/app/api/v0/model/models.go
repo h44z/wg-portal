@@ -9,4 +9,5 @@ type Settings struct {
 	MailLinkOnly              bool `json:"MailLinkOnly"`
 	PersistentConfigSupported bool `json:"PersistentConfigSupported"`
 	SelfProvisioning          bool `json:"SelfProvisioning"`
+	ApiAdminOnly              bool `json:"ApiAdminOnly"`
 }

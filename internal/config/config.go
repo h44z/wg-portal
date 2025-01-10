@@ -127,6 +127,7 @@ func defaultConfig() *Config {
 	cfg.Advanced.ExpiryCheckInterval = 15 * time.Minute
 	cfg.Advanced.RulePrioOffset = 20000
 	cfg.Advanced.RouteTableOffset = 20000
+	cfg.Advanced.ApiAdminOnly = true
 
 	cfg.Statistics.UsePingChecks = true
 	cfg.Statistics.PingCheckWorkers = 10
