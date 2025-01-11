@@ -309,6 +309,180 @@
                 }
             }
         },
+        "/metrics/by-interface/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Metrics"
+                ],
+                "summary": "Get all metrics for a WireGuard Portal interface.",
+                "operationId": "metrics_handleMetricsForInterfaceGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The WireGuard interface identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.InterfaceMetrics"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/metrics/by-peer/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Metrics"
+                ],
+                "summary": "Get all metrics for a WireGuard Portal peer.",
+                "operationId": "metrics_handleMetricsForPeerGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier (public key).",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.PeerMetrics"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/metrics/by-user/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Metrics"
+                ],
+                "summary": "Get all metrics for a WireGuard Portal user.",
+                "operationId": "metrics_handleMetricsForUserGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserMetrics"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/peer/by-id/{id}": {
             "get": {
                 "security": [
@@ -1523,6 +1697,26 @@
                 }
             }
         },
+        "models.InterfaceMetrics": {
+            "type": "object",
+            "properties": {
+                "BytesReceived": {
+                    "description": "The number of bytes received by the interface.",
+                    "type": "integer",
+                    "example": 123456789
+                },
+                "BytesTransmitted": {
+                    "description": "The number of bytes transmitted by the interface.",
+                    "type": "integer",
+                    "example": 123456789
+                },
+                "InterfaceIdentifier": {
+                    "description": "The unique identifier of the interface.",
+                    "type": "string",
+                    "example": "wg0"
+                }
+            }
+        },
         "models.Peer": {
             "type": "object",
             "required": [
@@ -1728,6 +1922,51 @@
                 }
             }
         },
+        "models.PeerMetrics": {
+            "type": "object",
+            "properties": {
+                "BytesReceived": {
+                    "description": "The number of bytes received by the peer.",
+                    "type": "integer",
+                    "example": 123456789
+                },
+                "BytesTransmitted": {
+                    "description": "The number of bytes transmitted by the peer.",
+                    "type": "integer",
+                    "example": 123456789
+                },
+                "Endpoint": {
+                    "description": "The current endpoint address of the peer.",
+                    "type": "string",
+                    "example": "12.34.56.78"
+                },
+                "IsPingable": {
+                    "description": "If this field is set, the peer is pingable.",
+                    "type": "boolean",
+                    "example": true
+                },
+                "LastHandshake": {
+                    "description": "The last time the peer initiated a handshake.",
+                    "type": "string",
+                    "example": "2021-01-01T12:00:00Z"
+                },
+                "LastPing": {
+                    "description": "The last time the peer responded to a ICMP ping request.",
+                    "type": "string",
+                    "example": "2021-01-01T12:00:00Z"
+                },
+                "LastSessionStart": {
+                    "description": "The last time the peer initiated a session.",
+                    "type": "string",
+                    "example": "2021-01-01T12:00:00Z"
+                },
+                "PeerIdentifier": {
+                    "description": "The unique identifier of the peer.",
+                    "type": "string",
+                    "example": "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg="
+                }
+            }
+        },
         "models.ProvisioningRequest": {
             "type": "object",
             "required": [
@@ -1920,6 +2159,38 @@
                     "description": "IsDisabled is a flag that specifies if the peer is enabled or not. Disabled peers are not able to connect.",
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "models.UserMetrics": {
+            "type": "object",
+            "properties": {
+                "BytesReceived": {
+                    "description": "The total number of bytes received by the user. This is the sum of all bytes received by the peers linked to the user.",
+                    "type": "integer",
+                    "example": 123456789
+                },
+                "BytesTransmitted": {
+                    "description": "The total number of bytes transmitted by the user. This is the sum of all bytes transmitted by the peers linked to the user.",
+                    "type": "integer",
+                    "example": 123456789
+                },
+                "PeerCount": {
+                    "description": "PeerCount represents the number of peers linked to the user.",
+                    "type": "integer",
+                    "example": 2
+                },
+                "PeerMetrics": {
+                    "description": "PeerMetrics represents the metrics of the peers linked to the user.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PeerMetrics"
+                    }
+                },
+                "UserIdentifier": {
+                    "description": "The unique identifier of the user.",
+                    "type": "string",
+                    "example": "uid-1234567"
                 }
             }
         }

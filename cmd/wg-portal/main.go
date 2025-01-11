@@ -109,16 +109,20 @@ func main() {
 	apiV1BackendPeers := backendV1.NewPeerService(cfg, wireGuardManager, userManager)
 	apiV1BackendInterfaces := backendV1.NewInterfaceService(cfg, wireGuardManager)
 	apiV1BackendProvisioning := backendV1.NewProvisioningService(cfg, userManager, wireGuardManager, cfgFileManager)
+	apiV1BackendMetrics := backendV1.NewMetricsService(cfg, database, userManager, wireGuardManager)
 	apiV1EndpointUsers := handlersV1.NewUserEndpoint(apiV1BackendUsers)
 	apiV1EndpointPeers := handlersV1.NewPeerEndpoint(apiV1BackendPeers)
 	apiV1EndpointInterfaces := handlersV1.NewInterfaceEndpoint(apiV1BackendInterfaces)
 	apiV1EndpointProvisioning := handlersV1.NewProvisioningEndpoint(apiV1BackendProvisioning)
+	apiV1EndpointMetrics := handlersV1.NewMetricsEndpoint(apiV1BackendMetrics)
+
 	apiV1 := handlersV1.NewRestApi(
 		userManager,
 		apiV1EndpointUsers,
 		apiV1EndpointPeers,
 		apiV1EndpointInterfaces,
 		apiV1EndpointProvisioning,
+		apiV1EndpointMetrics,
 	)
 
 	webSrv, err := core.NewServer(cfg, apiFrontend, apiV1)

@@ -295,6 +295,30 @@ func (r *SqlRepo) GetAllInterfaces(ctx context.Context) ([]domain.Interface, err
 	return interfaces, nil
 }
 
+func (r *SqlRepo) GetInterfaceStats(ctx context.Context, id domain.InterfaceIdentifier) (
+	*domain.InterfaceStatus,
+	error,
+) {
+	if id == "" {
+		return nil, nil
+	}
+
+	var stats []domain.InterfaceStatus
+
+	err := r.db.WithContext(ctx).Where("identifier = ?", id).Find(&stats).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(stats) == 0 {
+		return nil, domain.ErrNotFound
+	}
+
+	stat := stats[0]
+
+	return &stat, nil
+}
+
 func (r *SqlRepo) FindInterfaces(ctx context.Context, search string) ([]domain.Interface, error) {
 	var users []domain.Interface
 

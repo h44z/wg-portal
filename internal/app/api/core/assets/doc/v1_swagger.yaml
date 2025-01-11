@@ -239,6 +239,21 @@ definitions:
     - PrivateKey
     - PublicKey
     type: object
+  models.InterfaceMetrics:
+    properties:
+      BytesReceived:
+        description: The number of bytes received by the interface.
+        example: 123456789
+        type: integer
+      BytesTransmitted:
+        description: The number of bytes transmitted by the interface.
+        example: 123456789
+        type: integer
+      InterfaceIdentifier:
+        description: The unique identifier of the interface.
+        example: wg0
+        type: string
+    type: object
   models.Peer:
     properties:
       Addresses:
@@ -382,6 +397,41 @@ definitions:
     - Identifier
     - InterfaceIdentifier
     - PrivateKey
+    type: object
+  models.PeerMetrics:
+    properties:
+      BytesReceived:
+        description: The number of bytes received by the peer.
+        example: 123456789
+        type: integer
+      BytesTransmitted:
+        description: The number of bytes transmitted by the peer.
+        example: 123456789
+        type: integer
+      Endpoint:
+        description: The current endpoint address of the peer.
+        example: 12.34.56.78
+        type: string
+      IsPingable:
+        description: If this field is set, the peer is pingable.
+        example: true
+        type: boolean
+      LastHandshake:
+        description: The last time the peer initiated a handshake.
+        example: "2021-01-01T12:00:00Z"
+        type: string
+      LastPing:
+        description: The last time the peer responded to a ICMP ping request.
+        example: "2021-01-01T12:00:00Z"
+        type: string
+      LastSessionStart:
+        description: The last time the peer initiated a session.
+        example: "2021-01-01T12:00:00Z"
+        type: string
+      PeerIdentifier:
+        description: The unique identifier of the peer.
+        example: xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=
+        type: string
     type: object
   models.ProvisioningRequest:
     properties:
@@ -546,6 +596,33 @@ definitions:
           not. Disabled peers are not able to connect.
         example: true
         type: boolean
+    type: object
+  models.UserMetrics:
+    properties:
+      BytesReceived:
+        description: The total number of bytes received by the user. This is the sum
+          of all bytes received by the peers linked to the user.
+        example: 123456789
+        type: integer
+      BytesTransmitted:
+        description: The total number of bytes transmitted by the user. This is the
+          sum of all bytes transmitted by the peers linked to the user.
+        example: 123456789
+        type: integer
+      PeerCount:
+        description: PeerCount represents the number of peers linked to the user.
+        example: 2
+        type: integer
+      PeerMetrics:
+        description: PeerMetrics represents the metrics of the peers linked to the
+          user.
+        items:
+          $ref: '#/definitions/models.PeerMetrics'
+        type: array
+      UserIdentifier:
+        description: The unique identifier of the user.
+        example: uid-1234567
+        type: string
     type: object
 info:
   contact:
@@ -749,6 +826,117 @@ paths:
       summary: Create a new interface record.
       tags:
       - Interfaces
+  /metrics/by-interface/{id}:
+    get:
+      operationId: metrics_handleMetricsForInterfaceGet
+      parameters:
+      - description: The WireGuard interface identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.InterfaceMetrics'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Get all metrics for a WireGuard Portal interface.
+      tags:
+      - Metrics
+  /metrics/by-peer/{id}:
+    get:
+      operationId: metrics_handleMetricsForPeerGet
+      parameters:
+      - description: The peer identifier (public key).
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PeerMetrics'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Get all metrics for a WireGuard Portal peer.
+      tags:
+      - Metrics
+  /metrics/by-user/{id}:
+    get:
+      operationId: metrics_handleMetricsForUserGet
+      parameters:
+      - description: The user identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserMetrics'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Get all metrics for a WireGuard Portal user.
+      tags:
+      - Metrics
   /peer/by-id/{id}:
     delete:
       operationId: peers_handleDelete
