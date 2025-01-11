@@ -357,6 +357,8 @@ definitions:
     type: object
   model.Settings:
     properties:
+      ApiAdminOnly:
+        type: boolean
       MailLinkOnly:
         type: boolean
       PersistentConfigSupported:
@@ -943,12 +945,13 @@ paths:
         required: true
         type: string
       produces:
+      - image/png
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
+            type: file
         "400":
           description: Bad Request
           schema:

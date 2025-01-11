@@ -18,6 +18,7 @@ type ProvisioningEndpointProvisioningService interface {
 	)
 	GetPeerConfig(ctx context.Context, peerId domain.PeerIdentifier) ([]byte, error)
 	GetPeerQrPng(ctx context.Context, peerId domain.PeerIdentifier) ([]byte, error)
+	NewPeer(ctx context.Context, req models.ProvisioningRequest) (*domain.Peer, error)
 }
 
 type ProvisioningEndpoint struct {
@@ -40,6 +41,8 @@ func (e ProvisioningEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *
 	apiGroup.GET("/data/user-info", authenticator.LoggedIn(), e.handleUserInfoGet())
 	apiGroup.GET("/data/peer-config", authenticator.LoggedIn(), e.handlePeerConfigGet())
 	apiGroup.GET("/data/peer-qr", authenticator.LoggedIn(), e.handlePeerQrGet())
+
+	apiGroup.POST("/new-peer", authenticator.LoggedIn(), e.handleNewPeerPost())
 }
 
 // handleUserInfoGet returns a gorm Handler function.
@@ -151,5 +154,42 @@ func (e ProvisioningEndpoint) handlePeerQrGet() gin.HandlerFunc {
 		}
 
 		c.Data(http.StatusOK, "image/png", peerConfigQrCode)
+	}
+}
+
+// handleNewPeerPost returns a gorm Handler function.
+//
+// @ID provisioning_handleNewPeerPost
+// @Tags Provisioning
+// @Summary Create a new peer for the given interface and user.
+// @Description Normal users can only create new peers if self provisioning is allowed. Admins can always add new peers.
+// @Param request body models.ProvisioningRequest true "Provisioning request model."
+// @Produce json
+// @Success 200 {object} models.Peer
+// @Failure 400 {object} models.Error
+// @Failure 401 {object} models.Error
+// @Failure 403 {object} models.Error
+// @Failure 404 {object} models.Error
+// @Failure 500 {object} models.Error
+// @Router /provisioning/new-peer [post]
+// @Security BasicAuth
+func (e ProvisioningEndpoint) handleNewPeerPost() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
+		var req models.ProvisioningRequest
+		err := c.BindJSON(&req)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		peer, err := e.provisioning.NewPeer(ctx, req)
+		if err != nil {
+			c.JSON(ParseServiceError(err))
+			return
+		}
+
+		c.JSON(http.StatusOK, models.NewPeer(peer))
 	}
 }

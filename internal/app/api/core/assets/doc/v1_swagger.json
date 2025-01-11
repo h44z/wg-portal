@@ -867,6 +867,73 @@
                 }
             }
         },
+        "/provisioning/new-peer": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only create new peers if self provisioning is allowed. Admins can always add new peers.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Create a new peer for the given interface and user.",
+                "operationId": "provisioning_handleNewPeerPost",
+                "parameters": [
+                    {
+                        "description": "Provisioning request model.",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ProvisioningRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/all": {
             "get": {
                 "security": [
@@ -1661,6 +1728,34 @@
                 }
             }
         },
+        "models.ProvisioningRequest": {
+            "type": "object",
+            "required": [
+                "InterfaceIdentifier"
+            ],
+            "properties": {
+                "InterfaceIdentifier": {
+                    "description": "InterfaceIdentifier is the identifier of the WireGuard interface the peer should be linked to.",
+                    "type": "string",
+                    "example": "wg0"
+                },
+                "PresharedKey": {
+                    "description": "PresharedKey is the optional pre-shared key of the peer. If no pre-shared key is set, a new key is generated.",
+                    "type": "string",
+                    "example": "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk="
+                },
+                "PublicKey": {
+                    "description": "PublicKey is the optional public key of the peer. If no public key is set, a new key pair is generated.",
+                    "type": "string",
+                    "example": "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg="
+                },
+                "UserIdentifier": {
+                    "description": "UserIdentifier is the identifier of the user the peer should be linked to.\nIf no user identifier is set, the authenticated user is used.",
+                    "type": "string",
+                    "example": "uid-1234567"
+                }
+            }
+        },
         "models.User": {
             "type": "object",
             "required": [
@@ -1775,16 +1870,19 @@
             "type": "object",
             "properties": {
                 "PeerCount": {
+                    "description": "PeerCount is the number of peers linked to the user.",
                     "type": "integer",
                     "example": 2
                 },
                 "Peers": {
+                    "description": "Peers is a list of peers linked to the user.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.UserInformationPeer"
                     }
                 },
                 "UserIdentifier": {
+                    "description": "UserIdentifier is the unique identifier of the user.",
                     "type": "string",
                     "example": "uid-1234567"
                 }

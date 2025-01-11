@@ -383,6 +383,32 @@ definitions:
     - InterfaceIdentifier
     - PrivateKey
     type: object
+  models.ProvisioningRequest:
+    properties:
+      InterfaceIdentifier:
+        description: InterfaceIdentifier is the identifier of the WireGuard interface
+          the peer should be linked to.
+        example: wg0
+        type: string
+      PresharedKey:
+        description: PresharedKey is the optional pre-shared key of the peer. If no
+          pre-shared key is set, a new key is generated.
+        example: yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=
+        type: string
+      PublicKey:
+        description: PublicKey is the optional public key of the peer. If no public
+          key is set, a new key pair is generated.
+        example: xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=
+        type: string
+      UserIdentifier:
+        description: |-
+          UserIdentifier is the identifier of the user the peer should be linked to.
+          If no user identifier is set, the authenticated user is used.
+        example: uid-1234567
+        type: string
+    required:
+    - InterfaceIdentifier
+    type: object
   models.User:
     properties:
       ApiEnabled:
@@ -478,13 +504,16 @@ definitions:
   models.UserInformation:
     properties:
       PeerCount:
+        description: PeerCount is the number of peers linked to the user.
         example: 2
         type: integer
       Peers:
+        description: Peers is a list of peers linked to the user.
         items:
           $ref: '#/definitions/models.UserInformationPeer'
         type: array
       UserIdentifier:
+        description: UserIdentifier is the unique identifier of the user.
         example: uid-1234567
         type: string
     type: object
@@ -1085,6 +1114,50 @@ paths:
       security:
       - BasicAuth: []
       summary: Get information about all peer records for a given user.
+      tags:
+      - Provisioning
+  /provisioning/new-peer:
+    post:
+      description: Normal users can only create new peers if self provisioning is
+        allowed. Admins can always add new peers.
+      operationId: provisioning_handleNewPeerPost
+      parameters:
+      - description: Provisioning request model.
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.ProvisioningRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Peer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Create a new peer for the given interface and user.
       tags:
       - Provisioning
   /user/all:

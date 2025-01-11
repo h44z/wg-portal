@@ -345,7 +345,7 @@ func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
 // @Produce png
 // @Produce json
 // @Param id path string true "The peer identifier"
-// @Success 200 {object} file
+// @Success 200 {file} binary
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/config-qr/{id} [get]

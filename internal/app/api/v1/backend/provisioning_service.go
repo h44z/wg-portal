@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/h44z/wg-portal/internal/app/api/v1/models"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -17,6 +18,8 @@ type ProvisioningServiceUserManagerRepo interface {
 type ProvisioningServicePeerManagerRepo interface {
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 	GetUserPeers(context.Context, domain.UserIdentifier) ([]domain.Peer, error)
+	PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error)
+	CreatePeer(ctx context.Context, p *domain.Peer) (*domain.Peer, error)
 }
 
 type ProvisioningServiceConfigFileManagerRepo interface {
@@ -127,4 +130,45 @@ func (p ProvisioningService) GetPeerQrPng(ctx context.Context, peerId domain.Pee
 	}
 
 	return peerCfgQrData, nil
+}
+
+func (p ProvisioningService) NewPeer(ctx context.Context, req models.ProvisioningRequest) (*domain.Peer, error) {
+	if req.UserIdentifier == "" {
+		req.UserIdentifier = string(domain.GetUserInfo(ctx).Id) // use authenticated user id if not set
+	}
+
+	// check permissions
+	if err := domain.ValidateUserAccessRights(ctx, domain.UserIdentifier(req.UserIdentifier)); err != nil {
+		return nil, err
+	}
+	if !p.cfg.Core.SelfProvisioningAllowed {
+		// only admins can create new peers if self-provisioning is disabled
+		if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	// prepare new peer
+	peer, err := p.peers.PreparePeer(ctx, domain.InterfaceIdentifier(req.InterfaceIdentifier))
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare new peer: %w", err)
+	}
+	peer.UserIdentifier = domain.UserIdentifier(req.UserIdentifier) // overwrite context user id with the one from the request
+	if req.PublicKey != "" {
+		peer.Identifier = domain.PeerIdentifier(req.PublicKey)
+		peer.Interface.PublicKey = req.PublicKey
+		peer.Interface.PrivateKey = "" // clear private key if public key is set, WireGuard Portal does not know the private key in that case
+	}
+	if req.PresharedKey != "" {
+		peer.PresharedKey = domain.PreSharedKey(req.PresharedKey)
+	}
+	peer.GenerateDisplayName("API")
+
+	// save new peer
+	peer, err = p.peers.CreatePeer(ctx, peer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new peer: %w", err)
+	}
+
+	return peer, nil
 }

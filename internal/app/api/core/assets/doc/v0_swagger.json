@@ -674,6 +674,7 @@
         "/peer/config-qr/{id}": {
             "get": {
                 "produces": [
+                    "image/png",
                     "application/json"
                 ],
                 "tags": [
@@ -694,7 +695,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "file"
                         }
                     },
                     "400": {
@@ -1964,6 +1965,9 @@
         "model.Settings": {
             "type": "object",
             "properties": {
+                "ApiAdminOnly": {
+                    "type": "boolean"
+                },
                 "MailLinkOnly": {
                     "type": "boolean"
                 },

@@ -37,6 +37,7 @@
     "users": "Benutzer",
     "lang": "Sprache ändern",
     "profile": "Mein Profil",
+    "settings": "Einstellungen",
     "login": "Anmelden",
     "logout": "Abmelden"
   },
@@ -166,6 +167,26 @@
     "button-add-peer": "Add Peer",
     "button-show-peer": "Show Peer",
     "button-edit-peer": "Edit Peer"
+  },
+  "settings": {
+    "headline": "Einstellungen",
+    "abstract": "Hier finden Sie persönliche Einstellungen für WireGuard Portal.",
+    "api": {
+      "headline": "API Einstellungen",
+      "abstract": "Hier können Sie die  RESTful API verwalten.",
+      "active-description": "Die API ist derzeit für Ihr Benutzerkonto aktiv. Alle API-Anfragen werden mit Basic Auth authentifiziert. Verwenden Sie zur Authentifizierung die folgenden Anmeldeinformationen.",
+      "inactive-description": "Die API ist derzeit inaktiv. Klicken Sie auf die Schaltfläche unten, um sie zu aktivieren.",
+      "user-label": "API Benutzername:",
+      "user-placeholder": "API Benutzer",
+      "token-label": "API Passwort:",
+      "token-placeholder": "API Token",
+      "token-created-label": "API-Zugriff gewährt seit: ",
+      "button-disable-title": "Deaktivieren Sie die API. Dadurch wird der aktuelle Token ungültig.",
+      "button-disable-text": "API deaktivieren",
+      "button-enable-title": "Aktivieren Sie die API, dadurch wird ein neuer Token generiert.",
+      "button-enable-text": "API aktivieren",
+      "api-link": "API Dokumentation"
+    }
   },
   "modals": {
     "user-view": {

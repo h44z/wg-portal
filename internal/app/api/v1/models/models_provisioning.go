@@ -4,9 +4,12 @@ import "github.com/h44z/wg-portal/internal/domain"
 
 // UserInformation represents the information about a user and its linked peers.
 type UserInformation struct {
-	UserIdentifier string                `json:"UserIdentifier" example:"uid-1234567"`
-	PeerCount      int                   `json:"PeerCount" example:"2"`
-	Peers          []UserInformationPeer `json:"Peers"`
+	// UserIdentifier is the unique identifier of the user.
+	UserIdentifier string `json:"UserIdentifier" example:"uid-1234567"`
+	// PeerCount is the number of peers linked to the user.
+	PeerCount int `json:"PeerCount" example:"2"`
+	// Peers is a list of peers linked to the user.
+	Peers []UserInformationPeer `json:"Peers"`
 }
 
 // UserInformationPeer represents the information about a peer.
@@ -55,4 +58,18 @@ func NewUserInformationPeer(peer domain.Peer) UserInformationPeer {
 	}
 
 	return up
+}
+
+// ProvisioningRequest represents a request to provision a new peer.
+type ProvisioningRequest struct {
+	// InterfaceIdentifier is the identifier of the WireGuard interface the peer should be linked to.
+	InterfaceIdentifier string `json:"InterfaceIdentifier" example:"wg0" binding:"required"`
+	// UserIdentifier is the identifier of the user the peer should be linked to.
+	// If no user identifier is set, the authenticated user is used.
+	UserIdentifier string `json:"UserIdentifier" example:"uid-1234567"`
+
+	// PublicKey is the optional public key of the peer. If no public key is set, a new key pair is generated.
+	PublicKey string `json:"PublicKey" example:"xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=" binding:"omitempty,len=44"`
+	// PresharedKey is the optional pre-shared key of the peer. If no pre-shared key is set, a new key is generated.
+	PresharedKey string `json:"PresharedKey" example:"yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=" binding:"omitempty,len=44"`
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
@@ -34,9 +33,9 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdenti
 		}
 
 		peer.UserIdentifier = userId
-		peer.DisplayName = fmt.Sprintf("Default Peer %s", internal.TruncateString(string(peer.Identifier), 8))
 		peer.Notes = fmt.Sprintf("Default peer created for user %s", userId)
 		peer.AutomaticallyCreated = true
+		peer.GenerateDisplayName("Default")
 
 		newPeers = append(newPeers, *peer)
 	}
@@ -108,7 +107,6 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 		ExtraAllowedIPsStr:  "",
 		PresharedKey:        pk,
 		PersistentKeepalive: domain.NewConfigOption(iface.PeerDefPersistentKeepalive, true),
-		DisplayName:         fmt.Sprintf("Peer %s", internal.TruncateString(string(peerId), 8)),
 		Identifier:          peerId,
 		UserIdentifier:      currentUser.Id,
 		InterfaceIdentifier: iface.Identifier,
@@ -132,6 +130,7 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 			PostDown:          domain.NewConfigOption(iface.PeerDefPostDown, true),
 		},
 	}
+	freshPeer.GenerateDisplayName("")
 
 	return freshPeer, nil
 }
