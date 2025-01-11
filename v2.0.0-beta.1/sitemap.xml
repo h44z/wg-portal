@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://wgportal.org/v2.0.0-beta.1/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://wgportal.org/v2.0.0-beta.1/documentation/overview/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://wgportal.org/v2.0.0-beta.1/documentation/getting-started/building/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://wgportal.org/v2.0.0-beta.1/documentation/getting-started/docker/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://wgportal.org/v2.0.0-beta.1/documentation/getting-started/upgrade/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+</urlset>
