@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"io"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/domain"
-	"io"
-	"net/http"
 )
 
 type peerEndpoint struct {
@@ -57,7 +58,8 @@ func (e peerEndpoint) handleAllGet() gin.HandlerFunc {
 
 		_, peers, err := e.app.GetInterfaceAndPeers(ctx, domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -88,7 +90,8 @@ func (e peerEndpoint) handleSingleGet() gin.HandlerFunc {
 
 		peer, err := e.app.GetPeer(ctx, domain.PeerIdentifier(peerId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -119,7 +122,8 @@ func (e peerEndpoint) handlePrepareGet() gin.HandlerFunc {
 
 		peer, err := e.app.PreparePeer(ctx, domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -163,7 +167,8 @@ func (e peerEndpoint) handleCreatePost() gin.HandlerFunc {
 
 		newPeer, err := e.app.CreatePeer(ctx, model.NewDomainPeer(&p))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -200,9 +205,11 @@ func (e peerEndpoint) handleCreateMultiplePost() gin.HandlerFunc {
 			return
 		}
 
-		newPeers, err := e.app.CreateMultiplePeers(ctx, domain.InterfaceIdentifier(interfaceId), model.NewDomainPeerCreationRequest(&req))
+		newPeers, err := e.app.CreateMultiplePeers(ctx, domain.InterfaceIdentifier(interfaceId),
+			model.NewDomainPeerCreationRequest(&req))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -246,7 +253,8 @@ func (e peerEndpoint) handleUpdatePut() gin.HandlerFunc {
 
 		updatedPeer, err := e.app.UpdatePeer(ctx, model.NewDomainPeer(&p))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -277,7 +285,8 @@ func (e peerEndpoint) handleDelete() gin.HandlerFunc {
 
 		err := e.app.DeletePeer(ctx, domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -333,9 +342,10 @@ func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
 // @ID peers_handleQrCodeGet
 // @Tags Peer
 // @Summary Get peer configuration as qr code.
+// @Produce png
 // @Produce json
 // @Param id path string true "The peer identifier"
-// @Success 200 {object} string
+// @Success 200 {object} file
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/config-qr/{id} [get]
@@ -403,7 +413,8 @@ func (e peerEndpoint) handleEmailPost() gin.HandlerFunc {
 		}
 		err = e.app.SendPeerEmail(ctx, req.LinkOnly, peerIds...)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
@@ -434,7 +445,8 @@ func (e peerEndpoint) handleStatsGet() gin.HandlerFunc {
 
 		stats, err := e.app.GetPeerStats(ctx, domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 

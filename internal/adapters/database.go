@@ -698,6 +698,30 @@ func (r *SqlRepo) GetUser(ctx context.Context, id domain.UserIdentifier) (*domai
 	return &user, nil
 }
 
+func (r *SqlRepo) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+	var users []domain.User
+
+	err := r.db.WithContext(ctx).Where("email = ?", email).Find(&users).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) == 0 {
+		return nil, domain.ErrNotFound
+	}
+
+	if len(users) > 1 {
+		return nil, fmt.Errorf("found multiple users with email %s: %w", email, domain.ErrNotUnique)
+	}
+
+	user := users[0]
+
+	return &user, nil
+}
+
 func (r *SqlRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	var users []domain.User
 

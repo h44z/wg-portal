@@ -665,6 +665,208 @@
                 }
             }
         },
+        "/provisioning/data/peer-config": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own record. Admins can access all records.",
+                "produces": [
+                    "text/plain",
+                    "application/json"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Get the peer configuration in wg-quick format.",
+                "operationId": "provisioning_handlePeerConfigGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier (public key) that should be queried.",
+                        "name": "PeerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The WireGuard configuration file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/data/peer-qr": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own record. Admins can access all records.",
+                "produces": [
+                    "image/png",
+                    "application/json"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Get the peer configuration as QR code.",
+                "operationId": "provisioning_handlePeerQrGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier (public key) that should be queried.",
+                        "name": "PeerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The WireGuard configuration QR code",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/data/user-info": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own record. Admins can access all records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Get information about all peer records for a given user.",
+                "operationId": "provisioning_handleUserInfoGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier that should be queried. If not set, the authenticated user is used.",
+                        "name": "UserId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The email address that should be queried. If UserId is set, this is ignored.",
+                        "name": "Email",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserInformation"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/all": {
             "get": {
                 "security": [
@@ -1566,6 +1768,60 @@
                         "db"
                     ],
                     "example": "db"
+                }
+            }
+        },
+        "models.UserInformation": {
+            "type": "object",
+            "properties": {
+                "PeerCount": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "Peers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.UserInformationPeer"
+                    }
+                },
+                "UserIdentifier": {
+                    "type": "string",
+                    "example": "uid-1234567"
+                }
+            }
+        },
+        "models.UserInformationPeer": {
+            "type": "object",
+            "properties": {
+                "DisplayName": {
+                    "description": "DisplayName is a user-defined description of the peer.",
+                    "type": "string",
+                    "example": "My iPhone"
+                },
+                "Identifier": {
+                    "description": "Identifier is the unique identifier of the peer. It equals the public key of the peer.",
+                    "type": "string",
+                    "example": "peer-1234567"
+                },
+                "InterfaceIdentifier": {
+                    "description": "InterfaceIdentifier is the unique identifier of the WireGuard Portal device the peer is connected to.",
+                    "type": "string",
+                    "example": "wg0"
+                },
+                "IpAddresses": {
+                    "description": "IPAddresses is a list of IP addresses in CIDR format assigned to the peer.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "10.11.12.2/24"
+                    ]
+                },
+                "IsDisabled": {
+                    "description": "IsDisabled is a flag that specifies if the peer is enabled or not. Disabled peers are not able to connect.",
+                    "type": "boolean",
+                    "example": true
                 }
             }
         }

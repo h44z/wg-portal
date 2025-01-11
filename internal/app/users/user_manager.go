@@ -111,6 +111,24 @@ func (m Manager) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain
 	return user, nil
 }
 
+func (m Manager) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+
+	user, err := m.users.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load user for email %s: %w", email, err)
+	}
+
+	if err := domain.ValidateUserAccessRights(ctx, user.Identifier); err != nil {
+		return nil, err
+	}
+
+	peers, _ := m.peers.GetUserPeers(ctx, user.Identifier) // ignore error, list will be empty in error case
+
+	user.LinkedPeerCount = len(peers)
+
+	return user, nil
+}
+
 func (m Manager) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, err

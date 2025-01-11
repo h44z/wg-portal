@@ -475,6 +475,49 @@ definitions:
     - Identifier
     - IsAdmin
     type: object
+  models.UserInformation:
+    properties:
+      PeerCount:
+        example: 2
+        type: integer
+      Peers:
+        items:
+          $ref: '#/definitions/models.UserInformationPeer'
+        type: array
+      UserIdentifier:
+        example: uid-1234567
+        type: string
+    type: object
+  models.UserInformationPeer:
+    properties:
+      DisplayName:
+        description: DisplayName is a user-defined description of the peer.
+        example: My iPhone
+        type: string
+      Identifier:
+        description: Identifier is the unique identifier of the peer. It equals the
+          public key of the peer.
+        example: peer-1234567
+        type: string
+      InterfaceIdentifier:
+        description: InterfaceIdentifier is the unique identifier of the WireGuard
+          Portal device the peer is connected to.
+        example: wg0
+        type: string
+      IpAddresses:
+        description: IPAddresses is a list of IP addresses in CIDR format assigned
+          to the peer.
+        example:
+        - 10.11.12.2/24
+        items:
+          type: string
+        type: array
+      IsDisabled:
+        description: IsDisabled is a flag that specifies if the peer is enabled or
+          not. Disabled peers are not able to connect.
+        example: true
+        type: boolean
+    type: object
 info:
   contact:
     name: WireGuard Portal Project
@@ -908,6 +951,142 @@ paths:
       summary: Create a new peer record.
       tags:
       - Peers
+  /provisioning/data/peer-config:
+    get:
+      description: Normal users can only access their own record. Admins can access
+        all records.
+      operationId: provisioning_handlePeerConfigGet
+      parameters:
+      - description: The peer identifier (public key) that should be queried.
+        in: query
+        name: PeerId
+        required: true
+        type: string
+      produces:
+      - text/plain
+      - application/json
+      responses:
+        "200":
+          description: The WireGuard configuration file
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Get the peer configuration in wg-quick format.
+      tags:
+      - Provisioning
+  /provisioning/data/peer-qr:
+    get:
+      description: Normal users can only access their own record. Admins can access
+        all records.
+      operationId: provisioning_handlePeerQrGet
+      parameters:
+      - description: The peer identifier (public key) that should be queried.
+        in: query
+        name: PeerId
+        required: true
+        type: string
+      produces:
+      - image/png
+      - application/json
+      responses:
+        "200":
+          description: The WireGuard configuration QR code
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Get the peer configuration as QR code.
+      tags:
+      - Provisioning
+  /provisioning/data/user-info:
+    get:
+      description: Normal users can only access their own record. Admins can access
+        all records.
+      operationId: provisioning_handleUserInfoGet
+      parameters:
+      - description: The user identifier that should be queried. If not set, the authenticated
+          user is used.
+        in: query
+        name: UserId
+        type: string
+      - description: The email address that should be queried. If UserId is set, this
+          is ignored.
+        in: query
+        name: Email
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserInformation'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Get information about all peer records for a given user.
+      tags:
+      - Provisioning
   /user/all:
     get:
       operationId: users_handleAllGet
