@@ -23,6 +23,7 @@ import (
 type UserManager interface {
 	GetUser(context.Context, domain.UserIdentifier) (*domain.User, error)
 	RegisterUser(ctx context.Context, user *domain.User) error
+	UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error)
 }
 
 type Authenticator struct {
@@ -371,6 +372,11 @@ func (a *Authenticator) processUserInfo(
 		}
 	case err != nil:
 		return nil, fmt.Errorf("registration disabled, cannot create missing user: %w", err)
+	default:
+		err = a.updateExternalUser(ctx, user, userInfo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update user: %w", err)
+		}
 	}
 
 	return user, nil
@@ -400,6 +406,9 @@ func (a *Authenticator) registerNewUser(
 		return nil, fmt.Errorf("failed to register new user: %w", err)
 	}
 
+	logrus.Tracef("registered user %s from external authentication provider, admin user: %t",
+		user.Identifier, user.IsAdmin)
+
 	return user, nil
 }
 
@@ -417,6 +426,56 @@ func (a *Authenticator) getAuthenticatorConfig(id string) (interface{}, error) {
 	}
 
 	return nil, fmt.Errorf("no configuration for Authenticator id %s", id)
+}
+
+func (a *Authenticator) updateExternalUser(
+	ctx context.Context,
+	existingUser *domain.User,
+	userInfo *domain.AuthenticatorUserInfo,
+) error {
+	if existingUser.IsLocked() || existingUser.IsDisabled() {
+		return nil // user is locked or disabled, do not update
+	}
+
+	isChanged := false
+	if existingUser.Email != userInfo.Email {
+		existingUser.Email = userInfo.Email
+		isChanged = true
+	}
+	if existingUser.Firstname != userInfo.Firstname {
+		existingUser.Firstname = userInfo.Firstname
+		isChanged = true
+	}
+	if existingUser.Lastname != userInfo.Lastname {
+		existingUser.Lastname = userInfo.Lastname
+		isChanged = true
+	}
+	if existingUser.Phone != userInfo.Phone {
+		existingUser.Phone = userInfo.Phone
+		isChanged = true
+	}
+	if existingUser.Department != userInfo.Department {
+		existingUser.Department = userInfo.Department
+		isChanged = true
+	}
+	if existingUser.IsAdmin != userInfo.IsAdmin {
+		existingUser.IsAdmin = userInfo.IsAdmin
+		isChanged = true
+	}
+
+	if !isChanged {
+		return nil // nothing to update
+	}
+
+	_, err := a.users.UpdateUser(ctx, existingUser)
+	if err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	logrus.Tracef("updated user %s with data from external authentication provider, admin user: %t",
+		existingUser.Identifier, existingUser.IsAdmin)
+
+	return nil
 }
 
 // endregion oauth authentication
