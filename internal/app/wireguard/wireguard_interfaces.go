@@ -705,8 +705,8 @@ func (m Manager) importInterface(ctx context.Context, in *domain.PhysicalInterfa
 	now := time.Now()
 	iface := domain.ConvertPhysicalInterface(in)
 	iface.BaseModel = domain.BaseModel{
-		CreatedBy: "importer",
-		UpdatedBy: "importer",
+		CreatedBy: domain.CtxSystemWgImporter,
+		UpdatedBy: domain.CtxSystemWgImporter,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -742,8 +742,8 @@ func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain
 	now := time.Now()
 	peer := domain.ConvertPhysicalPeer(p)
 	peer.BaseModel = domain.BaseModel{
-		CreatedBy: "importer",
-		UpdatedBy: "importer",
+		CreatedBy: domain.CtxSystemWgImporter,
+		UpdatedBy: domain.CtxSystemWgImporter,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

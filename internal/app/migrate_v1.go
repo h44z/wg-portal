@@ -98,8 +98,8 @@ func migrateV1Users(oldDb, newDb *gorm.DB) error {
 		}
 		newUser := domain.User{
 			BaseModel: domain.BaseModel{
-				CreatedBy: "v1migrator",
-				UpdatedBy: "v1migrator",
+				CreatedBy: domain.CtxSystemV1Migrator,
+				UpdatedBy: domain.CtxSystemV1Migrator,
 				CreatedAt: oldUser.CreatedAt,
 				UpdatedAt: oldUser.UpdatedAt,
 			},
@@ -173,8 +173,8 @@ func migrateV1Interfaces(oldDb, newDb *gorm.DB) error {
 		}
 		newInterface := domain.Interface{
 			BaseModel: domain.BaseModel{
-				CreatedBy: "v1migrator",
-				UpdatedBy: "v1migrator",
+				CreatedBy: domain.CtxSystemV1Migrator,
+				UpdatedBy: domain.CtxSystemV1Migrator,
 				CreatedAt: oldDevice.CreatedAt,
 				UpdatedAt: oldDevice.UpdatedAt,
 			},
@@ -299,8 +299,8 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 			now := time.Now()
 			user = domain.User{
 				BaseModel: domain.BaseModel{
-					CreatedBy: "v1migrator",
-					UpdatedBy: "v1migrator",
+					CreatedBy: domain.CtxSystemV1Migrator,
+					UpdatedBy: domain.CtxSystemV1Migrator,
 					CreatedAt: now,
 					UpdatedAt: now,
 				},
@@ -322,8 +322,8 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 		}
 		newPeer := domain.Peer{
 			BaseModel: domain.BaseModel{
-				CreatedBy: "v1migrator",
-				UpdatedBy: "v1migrator",
+				CreatedBy: domain.CtxSystemV1Migrator,
+				UpdatedBy: domain.CtxSystemV1Migrator,
 				CreatedAt: oldPeer.CreatedAt,
 				UpdatedAt: oldPeer.UpdatedAt,
 			},

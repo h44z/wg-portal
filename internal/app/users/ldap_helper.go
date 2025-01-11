@@ -2,15 +2,21 @@ package users
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/go-ldap/ldap/v3"
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
-	"strings"
-	"time"
 )
 
-func convertRawLdapUser(providerName string, rawUser map[string]any, fields *config.LdapFields, adminGroupDN *ldap.DN) (*domain.User, error) {
+func convertRawLdapUser(
+	providerName string,
+	rawUser map[string]any,
+	fields *config.LdapFields,
+	adminGroupDN *ldap.DN,
+) (*domain.User, error) {
 	now := time.Now()
 
 	isAdmin, err := internal.LdapIsMemberOf(rawUser[fields.GroupMembership].([][]byte), adminGroupDN)
@@ -20,8 +26,8 @@ func convertRawLdapUser(providerName string, rawUser map[string]any, fields *con
 
 	return &domain.User{
 		BaseModel: domain.BaseModel{
-			CreatedBy: "ldap_sync",
-			UpdatedBy: "ldap_sync",
+			CreatedBy: domain.CtxSystemLdapSyncer,
+			UpdatedBy: domain.CtxSystemLdapSyncer,
 			CreatedAt: now,
 			UpdatedAt: now,
 		},

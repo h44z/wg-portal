@@ -12,8 +12,11 @@ import (
 const CtxUserInfo = "userInfo"
 
 const (
-	CtxSystemAdminId = "_WG_SYS_ADMIN_"
-	CtxUnknownUserId = "_WG_SYS_UNKNOWN_"
+	CtxSystemAdminId    = "_WG_SYS_ADMIN_"
+	CtxUnknownUserId    = "_WG_SYS_UNKNOWN_"
+	CtxSystemLdapSyncer = "_WG_SYS_LDAP_SYNCER_"
+	CtxSystemWgImporter = "_WG_SYS_WG_IMPORTER_"
+	CtxSystemV1Migrator = "_WG_SYS_V1_MIGRATOR_"
 )
 
 type ContextUserInfo struct {

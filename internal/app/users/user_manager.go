@@ -513,7 +513,7 @@ func (m Manager) updateLdapUsers(
 
 			err := m.users.SaveUser(tctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
 				u.UpdatedAt = time.Now()
-				u.UpdatedBy = "ldap_sync"
+				u.UpdatedBy = domain.CtxSystemLdapSyncer
 				u.Email = user.Email
 				u.Firstname = user.Firstname
 				u.Lastname = user.Lastname

@@ -129,8 +129,8 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 	now := time.Now()
 	admin, err := a.CreateUser(ctx, &domain.User{
 		BaseModel: domain.BaseModel{
-			CreatedBy: "system",
-			UpdatedBy: "system",
+			CreatedBy: domain.CtxSystemAdminId,
+			UpdatedBy: domain.CtxSystemAdminId,
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
