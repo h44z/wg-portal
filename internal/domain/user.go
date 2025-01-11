@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"crypto/subtle"
 	"errors"
 	"time"
 
@@ -42,6 +43,10 @@ type User struct {
 	Locked         *time.Time    `gorm:"index;column:locked"` // if this field is set, the user is locked and can no longer login (WireGuard peers still can connect)
 	LockedReason   string        // the reason why the user has been locked
 
+	// API token for REST API access
+	ApiToken        string `form:"api_token" binding:"omitempty"`
+	ApiTokenCreated *time.Time
+
 	LinkedPeerCount int `gorm:"-"`
 }
 
@@ -54,6 +59,14 @@ func (u *User) IsDisabled() bool {
 // IsLocked returns true if the user is locked. In such a case, no login is possible, WireGuard connections still work.
 func (u *User) IsLocked() bool {
 	return u.Locked != nil
+}
+
+func (u *User) IsApiEnabled() bool {
+	if u.ApiToken != "" {
+		return true
+	}
+
+	return false
 }
 
 func (u *User) CanChangePassword() error {
@@ -110,6 +123,18 @@ func (u *User) CheckPassword(password string) error {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)); err != nil {
 		return errors.New("wrong password")
+	}
+
+	return nil
+}
+
+func (u *User) CheckApiToken(token string) error {
+	if !u.IsApiEnabled() {
+		return errors.New("api access disabled")
+	}
+
+	if res := subtle.ConstantTimeCompare([]byte(u.ApiToken), []byte(token)); res != 1 {
+		return errors.New("wrong token")
 	}
 
 	return nil

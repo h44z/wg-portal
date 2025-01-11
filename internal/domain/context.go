@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,7 @@ func (u *ContextUserInfo) UserId() string {
 	return string(u.Id)
 }
 
+// DefaultContextUserInfo returns a default context user info.
 func DefaultContextUserInfo() *ContextUserInfo {
 	return &ContextUserInfo{
 		Id:      CtxUnknownUserId,
@@ -35,6 +37,7 @@ func DefaultContextUserInfo() *ContextUserInfo {
 	}
 }
 
+// SystemAdminContextUserInfo returns a context user info for the system admin.
 func SystemAdminContextUserInfo() *ContextUserInfo {
 	return &ContextUserInfo{
 		Id:      CtxSystemAdminId,
@@ -42,6 +45,7 @@ func SystemAdminContextUserInfo() *ContextUserInfo {
 	}
 }
 
+// SetUserInfoFromGin sets the user info from the gin context to the request context.
 func SetUserInfoFromGin(c *gin.Context) context.Context {
 	ginUserInfo, exists := c.Get(CtxUserInfo)
 
@@ -56,11 +60,13 @@ func SetUserInfoFromGin(c *gin.Context) context.Context {
 	return ctx
 }
 
+// SetUserInfo sets the user info in the context.
 func SetUserInfo(ctx context.Context, info *ContextUserInfo) context.Context {
 	ctx = context.WithValue(ctx, CtxUserInfo, info)
 	return ctx
 }
 
+// GetUserInfo returns the user info from the context.
 func GetUserInfo(ctx context.Context) *ContextUserInfo {
 	rawInfo := ctx.Value(CtxUserInfo)
 	if rawInfo == nil {
@@ -74,6 +80,8 @@ func GetUserInfo(ctx context.Context) *ContextUserInfo {
 	return DefaultContextUserInfo()
 }
 
+// ValidateUserAccessRights checks if the current user has access rights to the requested user.
+// If the user is an admin, access is granted.
 func ValidateUserAccessRights(ctx context.Context, requiredUser UserIdentifier) error {
 	sessionUser := GetUserInfo(ctx)
 
@@ -86,9 +94,10 @@ func ValidateUserAccessRights(ctx context.Context, requiredUser UserIdentifier) 
 	}
 
 	logrus.Warnf("insufficient permissions for %s (want %s), stack: %s", sessionUser.Id, requiredUser, GetStackTrace())
-	return fmt.Errorf("insufficient permissions")
+	return ErrNoPermission
 }
 
+// ValidateAdminAccessRights checks if the current user has admin access rights.
 func ValidateAdminAccessRights(ctx context.Context) error {
 	sessionUser := GetUserInfo(ctx)
 
@@ -97,5 +106,5 @@ func ValidateAdminAccessRights(ctx context.Context) error {
 	}
 
 	logrus.Warnf("insufficient admin permissions for %s, stack: %s", sessionUser.Id, GetStackTrace())
-	return fmt.Errorf("insufficient permissions")
+	return ErrNoPermission
 }

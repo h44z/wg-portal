@@ -7,6 +7,9 @@ import (
 
 var ErrNotFound = errors.New("record not found")
 var ErrNotUnique = errors.New("record not unique")
+var ErrNoPermission = errors.New("no permission")
+var ErrDuplicateEntry = errors.New("duplicate entry")
+var ErrInvalidData = errors.New("invalid data")
 
 // GetStackTrace returns a stack trace of the current goroutine. The stack trace has at most 1024 bytes.
 func GetStackTrace() string {

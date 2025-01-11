@@ -146,6 +146,8 @@ export function freshUser() {
     Locked: false,
     LockedReason: "",
 
+    ApiEnabled: false,
+
     PeerCount: 0
   }
 }

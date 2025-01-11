@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/h44z/wg-portal/internal/app"
 
 	"github.com/h44z/wg-portal/internal"
@@ -101,9 +102,27 @@ func (m Manager) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain
 
 	user, err := m.users.GetUser(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("unable to load peer %s: %w", id, err)
+		return nil, fmt.Errorf("unable to load user %s: %w", id, err)
 	}
 	peers, _ := m.peers.GetUserPeers(ctx, id) // ignore error, list will be empty in error case
+
+	user.LinkedPeerCount = len(peers)
+
+	return user, nil
+}
+
+func (m Manager) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+
+	user, err := m.users.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load user for email %s: %w", email, err)
+	}
+
+	if err := domain.ValidateUserAccessRights(ctx, user.Identifier); err != nil {
+		return nil, err
+	}
+
+	peers, _ := m.peers.GetUserPeers(ctx, user.Identifier) // ignore error, list will be empty in error case
 
 	user.LinkedPeerCount = len(peers)
 
@@ -193,7 +212,7 @@ func (m Manager) CreateUser(ctx context.Context, user *domain.User) (*domain.Use
 		return nil, fmt.Errorf("unable to load existing user %s: %w", user.Identifier, err)
 	}
 	if existingUser != nil {
-		return nil, fmt.Errorf("user %s already exists", user.Identifier)
+		return nil, errors.Join(fmt.Errorf("user %s already exists", user.Identifier), domain.ErrDuplicateEntry)
 	}
 
 	if err := m.validateCreation(ctx, user); err != nil {
@@ -240,6 +259,59 @@ func (m Manager) DeleteUser(ctx context.Context, id domain.UserIdentifier) error
 	return nil
 }
 
+func (m Manager) ActivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+	user, err := m.users.GetUser(ctx, id)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, fmt.Errorf("unable to find user %s: %w", id, err)
+	}
+
+	if err := m.validateApiChange(ctx, user); err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	user.ApiToken = uuid.New().String()
+	user.ApiTokenCreated = &now
+
+	err = m.users.SaveUser(ctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
+		user.CopyCalculatedAttributes(u)
+		return user, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("update failure: %w", err)
+	}
+
+	m.bus.Publish(app.TopicUserApiEnabled, user)
+
+	return user, nil
+}
+
+func (m Manager) DeactivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+	user, err := m.users.GetUser(ctx, id)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, fmt.Errorf("unable to find user %s: %w", id, err)
+	}
+
+	if err := m.validateApiChange(ctx, user); err != nil {
+		return nil, err
+	}
+
+	user.ApiToken = ""
+	user.ApiTokenCreated = nil
+
+	err = m.users.SaveUser(ctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
+		user.CopyCalculatedAttributes(u)
+		return user, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("update failure: %w", err)
+	}
+
+	m.bus.Publish(app.TopicUserApiDisabled, user)
+
+	return user, nil
+}
+
 func (m Manager) validateModifications(ctx context.Context, old, new *domain.User) error {
 	currentUser := domain.GetUserInfo(ctx)
 
@@ -248,27 +320,27 @@ func (m Manager) validateModifications(ctx context.Context, old, new *domain.Use
 	}
 
 	if err := old.EditAllowed(new); err != nil {
-		return fmt.Errorf("no access: %w", err)
+		return errors.Join(fmt.Errorf("no access: %w", err), domain.ErrInvalidData)
 	}
 
 	if err := old.CanChangePassword(); err != nil && string(new.Password) != "" {
-		return fmt.Errorf("no access: %w", err)
+		return errors.Join(fmt.Errorf("no access: %w", err), domain.ErrInvalidData)
 	}
 
 	if currentUser.Id == old.Identifier && old.IsAdmin && !new.IsAdmin {
-		return fmt.Errorf("cannot remove own admin rights")
+		return fmt.Errorf("cannot remove own admin rights: %w", domain.ErrInvalidData)
 	}
 
 	if currentUser.Id == old.Identifier && new.IsDisabled() {
-		return fmt.Errorf("cannot disable own user")
+		return fmt.Errorf("cannot disable own user: %w", domain.ErrInvalidData)
 	}
 
 	if currentUser.Id == old.Identifier && new.IsLocked() {
-		return fmt.Errorf("cannot lock own user")
+		return fmt.Errorf("cannot lock own user: %w", domain.ErrInvalidData)
 	}
 
 	if old.Source != new.Source {
-		return fmt.Errorf("cannot change user source")
+		return fmt.Errorf("cannot change user source: %w", domain.ErrInvalidData)
 	}
 
 	return nil
@@ -282,19 +354,32 @@ func (m Manager) validateCreation(ctx context.Context, new *domain.User) error {
 	}
 
 	if new.Identifier == "" {
-		return fmt.Errorf("invalid user identifier")
+		return fmt.Errorf("invalid user identifier: %w", domain.ErrInvalidData)
 	}
 
-	if new.Identifier == "all" { // the all user identifier collides with the rest api routes
-		return fmt.Errorf("reserved user identifier")
+	if new.Identifier == "all" { // the 'all' user identifier collides with the rest api routes
+		return fmt.Errorf("reserved user identifier: %w", domain.ErrInvalidData)
+	}
+
+	if new.Identifier == "new" { // the 'new' user identifier collides with the rest api routes
+		return fmt.Errorf("reserved user identifier: %w", domain.ErrInvalidData)
+	}
+
+	if new.Identifier == "id" { // the 'id' user identifier collides with the rest api routes
+		return fmt.Errorf("reserved user identifier: %w", domain.ErrInvalidData)
+	}
+
+	if new.Identifier == domain.CtxSystemAdminId || new.Identifier == domain.CtxUnknownUserId {
+		return fmt.Errorf("reserved user identifier: %w", domain.ErrInvalidData)
 	}
 
 	if new.Source != domain.UserSourceDatabase {
-		return fmt.Errorf("invalid user source: %s", new.Source)
+		return fmt.Errorf("invalid user source: %s, only %s is allowed: %w",
+			new.Source, domain.UserSourceDatabase, domain.ErrInvalidData)
 	}
 
 	if string(new.Password) == "" {
-		return fmt.Errorf("invalid password")
+		return fmt.Errorf("invalid password: %w", domain.ErrInvalidData)
 	}
 
 	return nil
@@ -304,15 +389,25 @@ func (m Manager) validateDeletion(ctx context.Context, del *domain.User) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin {
-		return fmt.Errorf("insufficient permissions")
+		return domain.ErrNoPermission
 	}
 
 	if err := del.DeleteAllowed(); err != nil {
-		return fmt.Errorf("no access: %w", err)
+		return errors.Join(fmt.Errorf("no access: %w", err), domain.ErrInvalidData)
 	}
 
 	if currentUser.Id == del.Identifier {
-		return fmt.Errorf("cannot delete own user")
+		return fmt.Errorf("cannot delete own user: %w", domain.ErrInvalidData)
+	}
+
+	return nil
+}
+
+func (m Manager) validateApiChange(ctx context.Context, user *domain.User) error {
+	currentUser := domain.GetUserInfo(ctx)
+
+	if currentUser.Id != user.Identifier {
+		return fmt.Errorf("cannot change API access of user: %w", domain.ErrNoPermission)
 	}
 
 	return nil

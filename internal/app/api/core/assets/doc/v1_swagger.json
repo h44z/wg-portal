@@ -1,0 +1,1932 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "The WireGuard Portal REST API enables efficient management of WireGuard VPN configurations through a set of JSON-based endpoints.\nIt supports creating and editing peers, interfaces, and user profiles, while also providing role-based access control and auditing.\nThis API allows seamless integration with external tools or scripts for automated network configuration and administration.",
+        "title": "WireGuard Portal Public API",
+        "contact": {
+            "name": "WireGuard Portal Project",
+            "url": "https://github.com/h44z/wg-portal"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://github.com/h44z/wg-portal/blob/master/LICENSE.txt"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/interface/all": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interfaces"
+                ],
+                "summary": "Get all interface records.",
+                "operationId": "interface_handleAllGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Interface"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/by-id/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interfaces"
+                ],
+                "summary": "Get a specific interface record by its identifier.",
+                "operationId": "interfaces_handleByIdGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Interface"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interfaces"
+                ],
+                "summary": "Update an interface record.",
+                "operationId": "interfaces_handleUpdatePut",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The interface data.",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Interface"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Interface"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interfaces"
+                ],
+                "summary": "Delete the interface record.",
+                "operationId": "interfaces_handleDelete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if deletion was successful."
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/new": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interfaces"
+                ],
+                "summary": "Create a new interface record.",
+                "operationId": "interfaces_handleCreatePost",
+                "parameters": [
+                    {
+                        "description": "The interface data.",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Interface"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Interface"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/by-id/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own records. Admins can access all records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Get a specific peer record by its identifier (public key).",
+                "operationId": "peers_handleByIdGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier (public key).",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Peer"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Only admins can update existing records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Update a peer record.",
+                "operationId": "peers_handleUpdatePut",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The peer data.",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Peer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Delete the peer record.",
+                "operationId": "peers_handleDelete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if deletion was successful."
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/by-interface/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Get all peer records for a given WireGuard interface.",
+                "operationId": "peers_handleAllForInterfaceGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The WireGuard interface identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Peer"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/by-user/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own records. Admins can access all records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Get all peer records for a given user.",
+                "operationId": "peers_handleAllForUserGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Peer"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/new": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Only admins can create new records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Create a new peer record.",
+                "operationId": "peers_handleCreatePost",
+                "parameters": [
+                    {
+                        "description": "The peer data.",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Peer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/data/peer-config": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own record. Admins can access all records.",
+                "produces": [
+                    "text/plain",
+                    "application/json"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Get the peer configuration in wg-quick format.",
+                "operationId": "provisioning_handlePeerConfigGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier (public key) that should be queried.",
+                        "name": "PeerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The WireGuard configuration file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/data/peer-qr": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own record. Admins can access all records.",
+                "produces": [
+                    "image/png",
+                    "application/json"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Get the peer configuration as QR code.",
+                "operationId": "provisioning_handlePeerQrGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier (public key) that should be queried.",
+                        "name": "PeerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The WireGuard configuration QR code",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/data/user-info": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own record. Admins can access all records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Get information about all peer records for a given user.",
+                "operationId": "provisioning_handleUserInfoGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier that should be queried. If not set, the authenticated user is used.",
+                        "name": "UserId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The email address that should be queried. If UserId is set, this is ignored.",
+                        "name": "Email",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserInformation"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/new-peer": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only create new peers if self provisioning is allowed. Admins can always add new peers.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Provisioning"
+                ],
+                "summary": "Create a new peer for the given interface and user.",
+                "operationId": "provisioning_handleNewPeerPost",
+                "parameters": [
+                    {
+                        "description": "Provisioning request model.",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ProvisioningRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/all": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get all user records.",
+                "operationId": "users_handleAllGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.User"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/by-id/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Normal users can only access their own record. Admins can access all records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get a specific user record by its internal identifier.",
+                "operationId": "users_handleByIdGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Only admins can update existing records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update a user record.",
+                "operationId": "users_handleUpdatePut",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The user data.",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete the user record.",
+                "operationId": "users_handleDelete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if deletion was successful."
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/new": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Only admins can create new records.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create a new user record.",
+                "operationId": "users_handleCreatePost",
+                "parameters": [
+                    {
+                        "description": "The user data.",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.ConfigOption-array_string": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.ConfigOption-int": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.ConfigOption-string": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ConfigOption-uint32": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Error": {
+            "type": "object",
+            "properties": {
+                "Code": {
+                    "description": "HTTP status code.",
+                    "type": "integer"
+                },
+                "Details": {
+                    "description": "Additional error details.",
+                    "type": "string"
+                },
+                "Message": {
+                    "description": "Error message.",
+                    "type": "string"
+                }
+            }
+        },
+        "models.ExpiryDate": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Interface": {
+            "type": "object",
+            "required": [
+                "Identifier",
+                "Mode",
+                "PrivateKey",
+                "PublicKey"
+            ],
+            "properties": {
+                "Addresses": {
+                    "description": "Addresses is a list of IP addresses (in CIDR format) that are assigned to the interface.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "10.11.12.1/24"
+                    ]
+                },
+                "Disabled": {
+                    "description": "Disabled is a flag that specifies if the interface is enabled (up) or not (down). Disabled interfaces are not able to accept connections.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "DisabledReason": {
+                    "description": "DisabledReason is the reason why the interface has been disabled.",
+                    "type": "string",
+                    "example": "This is a reason why the interface has been disabled."
+                },
+                "DisplayName": {
+                    "description": "DisplayName is a nice display name / description for the interface.",
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "My Interface"
+                },
+                "Dns": {
+                    "description": "Dns is a list of DNS servers that should be set if the interface is up.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "1.1.1.1"
+                    ]
+                },
+                "DnsSearch": {
+                    "description": "DnsSearch is the dns search option string that should be set if the interface is up, will be appended to Dns servers.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "wg.local"
+                    ]
+                },
+                "EnabledPeers": {
+                    "description": "EnabledPeers is the number of enabled peers for this interface. Only enabled peers are able to connect.",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "FirewallMark": {
+                    "description": "FirewallMark is an optional firewall mark which is used to handle interface traffic.",
+                    "type": "integer"
+                },
+                "Identifier": {
+                    "description": "Identifier is the unique identifier of the interface. It is always equal to the device name of the interface.",
+                    "type": "string",
+                    "example": "wg0"
+                },
+                "ListenPort": {
+                    "description": "ListenPort is the listening port, for example: 51820. The listening port is only required for server interfaces.",
+                    "type": "integer",
+                    "maximum": 65535,
+                    "minimum": 1,
+                    "example": 51820
+                },
+                "Mode": {
+                    "description": "Mode is the interface type, either 'server', 'client' or 'any'. The mode specifies how WireGuard Portal handles peers for this interface.",
+                    "type": "string",
+                    "enum": [
+                        "server",
+                        "client",
+                        "any"
+                    ],
+                    "example": "server"
+                },
+                "Mtu": {
+                    "description": "Mtu is the device MTU of the interface.",
+                    "type": "integer",
+                    "maximum": 9000,
+                    "minimum": 1,
+                    "example": 1420
+                },
+                "PeerDefAllowedIPs": {
+                    "description": "PeerDefAllowedIPs specifies the default allowed IP addresses for a new peer.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "10.11.12.0/24"
+                    ]
+                },
+                "PeerDefDns": {
+                    "description": "PeerDefDns specifies the default dns servers for a new peer.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "8.8.8.8"
+                    ]
+                },
+                "PeerDefDnsSearch": {
+                    "description": "PeerDefDnsSearch specifies the default dns search options for a new peer.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "wg.local"
+                    ]
+                },
+                "PeerDefEndpoint": {
+                    "description": "PeerDefEndpoint specifies the default endpoint for a new peer.",
+                    "type": "string",
+                    "example": "wg.example.com:51820"
+                },
+                "PeerDefFirewallMark": {
+                    "description": "PeerDefFirewallMark specifies the default firewall mark for a new peer.",
+                    "type": "integer"
+                },
+                "PeerDefMtu": {
+                    "description": "PeerDefMtu specifies the default device MTU for a new peer.",
+                    "type": "integer",
+                    "example": 1420
+                },
+                "PeerDefNetwork": {
+                    "description": "PeerDefNetwork specifies the default subnets from which new peers will get their IP addresses. The subnet is specified in CIDR format.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "10.11.12.0/24"
+                    ]
+                },
+                "PeerDefPersistentKeepalive": {
+                    "description": "PeerDefPersistentKeepalive specifies the default persistent keep-alive value in seconds for a new peer.",
+                    "type": "integer",
+                    "example": 25
+                },
+                "PeerDefPostDown": {
+                    "description": "PeerDefPostDown specifies the default action that is executed after the device is down for a new peer.",
+                    "type": "string"
+                },
+                "PeerDefPostUp": {
+                    "description": "PeerDefPostUp specifies the default action that is executed after the device is up for a new peer.",
+                    "type": "string"
+                },
+                "PeerDefPreDown": {
+                    "description": "PeerDefPreDown specifies the default action that is executed before the device is down for a new peer.",
+                    "type": "string"
+                },
+                "PeerDefPreUp": {
+                    "description": "PeerDefPreUp specifies the default action that is executed before the device is up for a new peer.",
+                    "type": "string"
+                },
+                "PeerDefRoutingTable": {
+                    "description": "PeerDefRoutingTable specifies the default routing table for a new peer.",
+                    "type": "string"
+                },
+                "PostDown": {
+                    "description": "PostDown is an optional action that is executed after the device is down.",
+                    "type": "string",
+                    "example": "echo 'Interface is down'"
+                },
+                "PostUp": {
+                    "description": "PostUp is an optional action that is executed after the device is up.",
+                    "type": "string",
+                    "example": "iptables -A FORWARD -i %i -j ACCEPT"
+                },
+                "PreDown": {
+                    "description": "PreDown is an optional action that is executed before the device is down.",
+                    "type": "string",
+                    "example": "iptables -D FORWARD -i %i -j ACCEPT"
+                },
+                "PreUp": {
+                    "description": "PreUp is an optional action that is executed before the device is up.",
+                    "type": "string",
+                    "example": "echo 'Interface is up'"
+                },
+                "PrivateKey": {
+                    "description": "PrivateKey is the private key of the interface.",
+                    "type": "string",
+                    "example": "gI6EdUSYvn8ugXOt8QQD6Yc+JyiZxIhp3GInSWRfWGE="
+                },
+                "PublicKey": {
+                    "description": "PublicKey is the public key of the server interface. The public key is used by peers to connect to the server.",
+                    "type": "string",
+                    "example": "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw="
+                },
+                "RoutingTable": {
+                    "description": "RoutingTable is an optional routing table which is used to route interface traffic.",
+                    "type": "string"
+                },
+                "SaveConfig": {
+                    "description": "SaveConfig is a flag that specifies if the configuration should be saved to the configuration file (wgX.conf in wg-quick format).",
+                    "type": "boolean",
+                    "example": false
+                },
+                "TotalPeers": {
+                    "description": "TotalPeers is the total number of peers for this interface.",
+                    "type": "integer",
+                    "readOnly": true
+                }
+            }
+        },
+        "models.Peer": {
+            "type": "object",
+            "required": [
+                "Identifier",
+                "InterfaceIdentifier",
+                "PrivateKey"
+            ],
+            "properties": {
+                "Addresses": {
+                    "description": "Addresses is a list of IP addresses in CIDR format (both IPv4 and IPv6) for the peer.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "10.11.12.2/24"
+                    ]
+                },
+                "AllowedIPs": {
+                    "description": "AllowedIPs is a list of allowed IP subnets for the peer.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-array_string"
+                        }
+                    ]
+                },
+                "CheckAliveAddress": {
+                    "description": "CheckAliveAddress is an optional ip address or DNS name that is used for ping checks.",
+                    "type": "string",
+                    "example": "1.1.1.1"
+                },
+                "Disabled": {
+                    "description": "Disabled is a flag that specifies if the peer is enabled or not. Disabled peers are not able to connect.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "DisabledReason": {
+                    "description": "DisabledReason is the reason why the peer has been disabled.",
+                    "type": "string",
+                    "example": "This is a reason why the peer has been disabled."
+                },
+                "DisplayName": {
+                    "description": "DisplayName is a nice display name / description for the peer.",
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "My Peer"
+                },
+                "Dns": {
+                    "description": "Dns is a list of DNS servers that should be set if the peer interface is up.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-array_string"
+                        }
+                    ]
+                },
+                "DnsSearch": {
+                    "description": "DnsSearch is the dns search option string that should be set if the peer interface is up, will be appended to Dns servers.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-array_string"
+                        }
+                    ]
+                },
+                "Endpoint": {
+                    "description": "Endpoint is the endpoint address of the peer.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-string"
+                        }
+                    ]
+                },
+                "EndpointPublicKey": {
+                    "description": "EndpointPublicKey is the endpoint public key.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-string"
+                        }
+                    ]
+                },
+                "ExpiresAt": {
+                    "description": "ExpiresAt is the expiry date of the peer  in YYYY-MM-DD format. An expired peer is not able to connect.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ExpiryDate"
+                        }
+                    ]
+                },
+                "ExtraAllowedIPs": {
+                    "description": "ExtraAllowedIPs is a list of additional allowed IP subnets for the peer. These allowed IP subnets are added on the server side.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "FirewallMark": {
+                    "description": "FirewallMark is an optional firewall mark which is used to handle peer traffic.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-uint32"
+                        }
+                    ]
+                },
+                "Identifier": {
+                    "description": "Identifier is the unique identifier of the peer. It is always equal to the public key of the peer.",
+                    "type": "string",
+                    "example": "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg="
+                },
+                "InterfaceIdentifier": {
+                    "description": "InterfaceIdentifier is the identifier of the interface the peer is linked to.",
+                    "type": "string",
+                    "example": "wg0"
+                },
+                "Mode": {
+                    "description": "Mode is the peer interface type (server, client, any).",
+                    "type": "string",
+                    "enum": [
+                        "server",
+                        "client",
+                        "any"
+                    ],
+                    "example": "client"
+                },
+                "Mtu": {
+                    "description": "Mtu is the device MTU of the peer.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-int"
+                        }
+                    ]
+                },
+                "Notes": {
+                    "description": "Notes is a note field for peers.",
+                    "type": "string",
+                    "example": "This is a note for the peer."
+                },
+                "PersistentKeepalive": {
+                    "description": "PersistentKeepalive is the optional persistent keep-alive interval in seconds.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-int"
+                        }
+                    ]
+                },
+                "PostDown": {
+                    "description": "PostDown is an optional action that is executed after the device is down.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-string"
+                        }
+                    ]
+                },
+                "PostUp": {
+                    "description": "PostUp is an optional action that is executed after the device is up.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-string"
+                        }
+                    ]
+                },
+                "PreDown": {
+                    "description": "PreDown is an optional action that is executed before the device is down.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-string"
+                        }
+                    ]
+                },
+                "PreUp": {
+                    "description": "PreUp is an optional action that is executed before the device is up.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-string"
+                        }
+                    ]
+                },
+                "PresharedKey": {
+                    "description": "PresharedKey is the optional pre-shared Key of the peer.",
+                    "type": "string",
+                    "example": "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk="
+                },
+                "PrivateKey": {
+                    "description": "PrivateKey is the private Key of the peer.",
+                    "type": "string",
+                    "example": "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk="
+                },
+                "PublicKey": {
+                    "description": "PublicKey is the public Key of the server peer.",
+                    "type": "string",
+                    "example": "TrMvSoP4jYQlY6RIzBgbssQqY3vxI2Pi+y71lOWWXX0="
+                },
+                "RoutingTable": {
+                    "description": "RoutingTable is an optional routing table which is used to route peer traffic.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ConfigOption-string"
+                        }
+                    ]
+                },
+                "UserIdentifier": {
+                    "description": "UserIdentifier is the identifier of the user that owns the peer.",
+                    "type": "string",
+                    "example": "uid-1234567"
+                }
+            }
+        },
+        "models.ProvisioningRequest": {
+            "type": "object",
+            "required": [
+                "InterfaceIdentifier"
+            ],
+            "properties": {
+                "InterfaceIdentifier": {
+                    "description": "InterfaceIdentifier is the identifier of the WireGuard interface the peer should be linked to.",
+                    "type": "string",
+                    "example": "wg0"
+                },
+                "PresharedKey": {
+                    "description": "PresharedKey is the optional pre-shared key of the peer. If no pre-shared key is set, a new key is generated.",
+                    "type": "string",
+                    "example": "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk="
+                },
+                "PublicKey": {
+                    "description": "PublicKey is the optional public key of the peer. If no public key is set, a new key pair is generated.",
+                    "type": "string",
+                    "example": "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg="
+                },
+                "UserIdentifier": {
+                    "description": "UserIdentifier is the identifier of the user the peer should be linked to.\nIf no user identifier is set, the authenticated user is used.",
+                    "type": "string",
+                    "example": "uid-1234567"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "required": [
+                "Identifier",
+                "IsAdmin"
+            ],
+            "properties": {
+                "ApiEnabled": {
+                    "description": "If this field is set, the user is allowed to use the RESTful API. This field is read-only.",
+                    "type": "boolean",
+                    "readOnly": true,
+                    "example": false
+                },
+                "ApiToken": {
+                    "description": "The API token of the user. This field is never populated on bulk read operations.",
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 32,
+                    "example": ""
+                },
+                "Department": {
+                    "description": "The department of the user. This field is optional.",
+                    "type": "string",
+                    "example": "Software Development"
+                },
+                "Disabled": {
+                    "description": "If this field is set, the user is disabled.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "DisabledReason": {
+                    "description": "The reason why the user has been disabled.",
+                    "type": "string",
+                    "example": ""
+                },
+                "Email": {
+                    "description": "The email address of the user. This field is optional.",
+                    "type": "string",
+                    "example": "test@test.com"
+                },
+                "Firstname": {
+                    "description": "The first name of the user. This field is optional.",
+                    "type": "string",
+                    "example": "Max"
+                },
+                "Identifier": {
+                    "description": "The unique identifier of the user.",
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "uid-1234567"
+                },
+                "IsAdmin": {
+                    "description": "If this field is set, the user is an admin.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "Lastname": {
+                    "description": "The last name of the user. This field is optional.",
+                    "type": "string",
+                    "example": "Muster"
+                },
+                "Locked": {
+                    "description": "If this field is set, the user is locked and thus unable to log in to WireGuard Portal.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "LockedReason": {
+                    "description": "The reason why the user has been locked.",
+                    "type": "string",
+                    "example": ""
+                },
+                "Notes": {
+                    "description": "Additional notes about the user. This field is optional.",
+                    "type": "string",
+                    "example": "some sample notes"
+                },
+                "Password": {
+                    "description": "The password of the user. This field is never populated on read operations.",
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 16,
+                    "example": ""
+                },
+                "PeerCount": {
+                    "description": "The number of peers linked to the user. This field is read-only.",
+                    "type": "integer",
+                    "readOnly": true,
+                    "example": 2
+                },
+                "Phone": {
+                    "description": "The phone number of the user. This field is optional.",
+                    "type": "string",
+                    "example": "+1234546789"
+                },
+                "ProviderName": {
+                    "description": "The name of the authentication provider. This field is read-only.",
+                    "type": "string",
+                    "readOnly": true,
+                    "example": ""
+                },
+                "Source": {
+                    "description": "The source of the user. This field is optional.",
+                    "type": "string",
+                    "enum": [
+                        "db"
+                    ],
+                    "example": "db"
+                }
+            }
+        },
+        "models.UserInformation": {
+            "type": "object",
+            "properties": {
+                "PeerCount": {
+                    "description": "PeerCount is the number of peers linked to the user.",
+                    "type": "integer",
+                    "example": 2
+                },
+                "Peers": {
+                    "description": "Peers is a list of peers linked to the user.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.UserInformationPeer"
+                    }
+                },
+                "UserIdentifier": {
+                    "description": "UserIdentifier is the unique identifier of the user.",
+                    "type": "string",
+                    "example": "uid-1234567"
+                }
+            }
+        },
+        "models.UserInformationPeer": {
+            "type": "object",
+            "properties": {
+                "DisplayName": {
+                    "description": "DisplayName is a user-defined description of the peer.",
+                    "type": "string",
+                    "example": "My iPhone"
+                },
+                "Identifier": {
+                    "description": "Identifier is the unique identifier of the peer. It equals the public key of the peer.",
+                    "type": "string",
+                    "example": "peer-1234567"
+                },
+                "InterfaceIdentifier": {
+                    "description": "InterfaceIdentifier is the unique identifier of the WireGuard Portal device the peer is connected to.",
+                    "type": "string",
+                    "example": "wg0"
+                },
+                "IpAddresses": {
+                    "description": "IPAddresses is a list of IP addresses in CIDR format assigned to the peer.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "10.11.12.2/24"
+                    ]
+                },
+                "IsDisabled": {
+                    "description": "IsDisabled is a flag that specifies if the peer is enabled or not. Disabled peers are not able to connect.",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
+        }
+    }
+}

@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/h44z/wg-portal/internal/app"
-	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"html/template"
 	"net"
 	"net/http"
 	"net/url"
+
+	"github.com/gin-gonic/gin"
+	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 )
 
 //go:embed frontend_config.js.gotpl
@@ -63,7 +64,8 @@ func (e configEndpoint) handleConfigJsGet() gin.HandlerFunc {
 			if err == nil {
 				host, port, _ = net.SplitHostPort(parsedReferer.Host)
 			}
-			backendUrl = fmt.Sprintf("http://%s:%s/api/v0", host, port) // override if request comes from frontend started with npm run dev
+			backendUrl = fmt.Sprintf("http://%s:%s/api/v0", host,
+				port) // override if request comes from frontend started with npm run dev
 		}
 		buf := &bytes.Buffer{}
 		err := e.tpl.ExecuteTemplate(buf, "frontend_config.js.gotpl", gin.H{
@@ -96,6 +98,7 @@ func (e configEndpoint) handleSettingsGet() gin.HandlerFunc {
 			MailLinkOnly:              e.app.Config.Mail.LinkOnly,
 			PersistentConfigSupported: e.app.Config.Advanced.ConfigStoragePath != "",
 			SelfProvisioning:          e.app.Config.Core.SelfProvisioningAllowed,
+			ApiAdminOnly:              e.app.Config.Advanced.ApiAdminOnly,
 		})
 	}
 }

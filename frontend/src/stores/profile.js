@@ -116,6 +116,34 @@ export const profileStore = defineStore({
       this.stats = statsResponse.Stats
       this.statsEnabled = statsResponse.Enabled
     },
+    async enableApi() {
+      this.fetching = true
+      let currentUser = authStore().user.Identifier
+      return apiWrapper.post(`${baseUrl}/${base64_url_encode(currentUser)}/api/enable`)
+          .then(this.setUser)
+          .catch(error => {
+            this.setPeers([])
+            console.log("Failed to activate API for ", currentUser, ": ", error)
+            notify({
+              title: "Backend Connection Failure",
+              text: "Failed to activate API!",
+            })
+          })
+    },
+    async disableApi() {
+      this.fetching = true
+      let currentUser = authStore().user.Identifier
+      return apiWrapper.post(`${baseUrl}/${base64_url_encode(currentUser)}/api/disable`)
+          .then(this.setUser)
+          .catch(error => {
+            this.setPeers([])
+            console.log("Failed to deactivate API for ", currentUser, ": ", error)
+            notify({
+              title: "Backend Connection Failure",
+              text: "Failed to deactivate API!",
+            })
+          })
+    },
     async LoadPeers() {
       this.fetching = true
       let currentUser = authStore().user.Identifier

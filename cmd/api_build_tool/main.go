@@ -20,7 +20,7 @@ func main() {
 	}
 
 	apiBasePath := filepath.Join(wd, "/internal/app/api")
-	apis := []string{"v0"}
+	apis := []string{"v0", "v1"}
 
 	hasError := false
 	for _, apiVersion := range apis {

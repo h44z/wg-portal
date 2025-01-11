@@ -37,6 +37,7 @@
     "users": "Users",
     "lang": "Toggle Language",
     "profile": "My Profile",
+    "settings": "Settings",
     "login": "Login",
     "logout": "Logout"
   },
@@ -167,6 +168,26 @@
     "button-show-peer": "Show Peer",
     "button-edit-peer": "Edit Peer"
   },
+  "settings": {
+    "headline": "Settings",
+    "abstract": "Here you can change your personal settings.",
+    "api": {
+      "headline": "API Settings",
+      "abstract": "Here you can configure the RESTful API settings.",
+      "active-description": "The API is currently active for your user account. All API requests are authenticated with Basic Auth. Use the following credentials for authentication.",
+      "inactive-description": "The API is currently inactive. Press the button below to activate it.",
+      "user-label": "API Username:",
+      "user-placeholder": "The API user",
+      "token-label": "API Password:",
+      "token-placeholder": "The API token",
+      "token-created-label": "API access granted at: ",
+      "button-disable-title": "Disable API, this will invalidate the current token.",
+      "button-disable-text": "Disable API",
+      "button-enable-title": "Enable API, this will generate a new token.",
+      "button-enable-text": "Enable API",
+      "api-link": "API Documentation"
+    }
+  },
   "modals": {
     "user-view": {
       "headline": "User Account:",
@@ -177,8 +198,9 @@
       "email": "E-Mail",
       "firstname": "Firstname",
       "lastname": "Lastname",
-      "phone": "Phone number",
+      "phone": "Phone Number",
       "department": "Department",
+      "api-enabled": "API Access",
       "disabled": "Account Disabled",
       "locked": "Account Locked",
       "no-peers": "User has no associated peers.",

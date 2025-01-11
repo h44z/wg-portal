@@ -1,6 +1,8 @@
 package app
 
 const TopicUserCreated = "user:created"
+const TopicUserApiEnabled = "user:api:enabled"
+const TopicUserApiDisabled = "user:api:disabled"
 const TopicUserRegistered = "user:registered"
 const TopicUserDisabled = "user:disabled"
 const TopicUserEnabled = "user:enabled"

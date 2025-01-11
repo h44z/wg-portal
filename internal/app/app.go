@@ -22,9 +22,19 @@ type App struct {
 	StatisticsCollector
 	ConfigFileManager
 	MailManager
+	ApiV1Manager
 }
 
-func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, users UserManager, wireGuard WireGuardManager, stats StatisticsCollector, cfgFiles ConfigFileManager, mailer MailManager) (*App, error) {
+func New(
+	cfg *config.Config,
+	bus evbus.MessageBus,
+	authenticator Authenticator,
+	users UserManager,
+	wireGuard WireGuardManager,
+	stats StatisticsCollector,
+	cfgFiles ConfigFileManager,
+	mailer MailManager,
+) (*App, error) {
 
 	a := &App{
 		Config: cfg,
@@ -60,7 +70,7 @@ func New(cfg *config.Config, bus evbus.MessageBus, authenticator Authenticator, 
 }
 
 func (a *App) Startup(ctx context.Context) error {
-	
+
 	a.UserManager.StartBackgroundJobs(ctx)
 	a.StatisticsCollector.StartBackgroundJobs(ctx)
 	a.WireGuardManager.StartBackgroundJobs(ctx)

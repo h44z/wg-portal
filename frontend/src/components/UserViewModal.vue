@@ -88,6 +88,10 @@ function close() {
                   <td>{{ $t('modals.user-view.department') }}:</td>
                   <td>{{selectedUser.Department}}</td>
                 </tr>
+                <tr>
+                  <td>{{ $t('modals.user-view.api-enabled') }}:</td>
+                  <td>{{selectedUser.ApiEnabled}}</td>
+                </tr>
                 <tr v-if="selectedUser.Disabled">
                   <td>{{ $t('modals.user-view.disabled') }}:</td>
                   <td>{{selectedUser.DisabledReason}}</td>

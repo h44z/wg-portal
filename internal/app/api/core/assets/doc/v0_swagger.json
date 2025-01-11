@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "WireGuard Portal API - a testing API endpoint",
-        "title": "WireGuard Portal API",
+        "description": "WireGuard Portal API - UI Endpoints",
+        "title": "WireGuard Portal SPA-UI API",
         "contact": {
             "name": "WireGuard Portal Developers",
             "url": "https://github.com/h44z/wg-portal"
@@ -165,6 +165,26 @@
                 ],
                 "summary": "Get the dynamic frontend configuration javascript.",
                 "operationId": "config_handleConfigJsGet",
+                "responses": {
+                    "200": {
+                        "description": "The JavaScript contents",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/config/settings": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "Get the frontend settings object.",
+                "operationId": "config_handleSettingsGet",
                 "responses": {
                     "200": {
                         "description": "The JavaScript contents",
@@ -499,6 +519,91 @@
                 }
             }
         },
+        "/interface/{id}/apply-peer-defaults": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Apply all peer defaults to the available peers.",
+                "operationId": "interfaces_handleApplyPeerDefaultsPost",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The interface data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Interface"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if applying peer defaults was successful"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/{id}/save-config": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Save the interface configuration in wg-quick format to a file.",
+                "operationId": "interfaces_handleSaveConfigPost",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if saving the configuration was successful"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/now": {
             "get": {
                 "description": "Nothing more to describe...",
@@ -526,9 +631,50 @@
                 }
             }
         },
+        "/peer/config-mail": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Send peer configuration via email.",
+                "operationId": "peers_handleEmailPost",
+                "parameters": [
+                    {
+                        "description": "The peer mail request data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PeerMailRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if mail sending was successful"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/peer/config-qr/{id}": {
             "get": {
                 "produces": [
+                    "image/png",
                     "application/json"
                 ],
                 "tags": [
@@ -536,11 +682,20 @@
                 ],
                 "summary": "Get peer configuration as qr code.",
                 "operationId": "peers_handleQrCodeGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "file"
                         }
                     },
                     "400": {
@@ -568,6 +723,15 @@
                 ],
                 "summary": "Get peer configuration as string.",
                 "operationId": "peers_handleConfigGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -607,6 +771,59 @@
                         "name": "iface",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Peer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/iface/{iface}/multiplenew": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Create multiple new peers for the given interface.",
+                "operationId": "peers_handleCreateMultiplePost",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "iface",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The peer creation request data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.MultiPeerRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -708,6 +925,47 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/iface/{iface}/stats": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Get peer stats for the given interface.",
+                "operationId": "peers_handleStatsGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "iface",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PeerStats"
                         }
                     },
                     "400": {
@@ -1041,6 +1299,70 @@
                 }
             }
         },
+        "/user/{id}/api/disable": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Disable the REST API for the given user.",
+                "operationId": "users_handleApiDisablePost",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/api/enable": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Enable the REST API for the given user.",
+                "operationId": "users_handleApiEnablePost",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/{id}/peers": {
             "get": {
                 "produces": [
@@ -1061,6 +1383,44 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/stats": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get peer stats for the given user.",
+                "operationId": "users_handleStatsGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PeerStats"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -1072,6 +1432,53 @@
         }
     },
     "definitions": {
+        "model.ConfigOption-array_string": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.ConfigOption-int": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ConfigOption-string": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ConfigOption-uint32": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.Error": {
             "type": "object",
             "properties": {
@@ -1083,25 +1490,11 @@
                 }
             }
         },
-        "model.Int32ConfigOption": {
+        "model.ExpiryDate": {
             "type": "object",
             "properties": {
-                "Overridable": {
-                    "type": "boolean"
-                },
-                "Value": {
-                    "type": "integer"
-                }
-            }
-        },
-        "model.IntConfigOption": {
-            "type": "object",
-            "properties": {
-                "Overridable": {
-                    "type": "boolean"
-                },
-                "Value": {
-                    "type": "integer"
+                "time.Time": {
+                    "type": "string"
                 }
             }
         },
@@ -1290,6 +1683,20 @@
                 }
             }
         },
+        "model.MultiPeerRequest": {
+            "type": "object",
+            "properties": {
+                "Identifiers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "Suffix": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Peer": {
             "type": "object",
             "properties": {
@@ -1304,7 +1711,7 @@
                     "description": "all allowed ip subnets, comma seperated",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringSliceConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-array_string"
                         }
                     ]
                 },
@@ -1328,7 +1735,7 @@
                     "description": "the dns server that should be set if the interface is up, comma separated",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringSliceConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-array_string"
                         }
                     ]
                 },
@@ -1336,7 +1743,7 @@
                     "description": "the dns search option string that should be set if the interface is up, will be appended to DnsStr",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringSliceConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-array_string"
                         }
                     ]
                 },
@@ -1344,7 +1751,7 @@
                     "description": "the endpoint address",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-string"
                         }
                     ]
                 },
@@ -1352,13 +1759,17 @@
                     "description": "the endpoint public key",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-string"
                         }
                     ]
                 },
                 "ExpiresAt": {
                     "description": "expiry dates for peers",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ExpiryDate"
+                        }
+                    ]
                 },
                 "ExtraAllowedIPs": {
                     "description": "all allowed ip subnets on the server side, comma seperated",
@@ -1371,7 +1782,7 @@
                     "description": "a firewall mark",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.Int32ConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-uint32"
                         }
                     ]
                 },
@@ -1392,7 +1803,7 @@
                     "description": "the device MTU",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.IntConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-int"
                         }
                     ]
                 },
@@ -1404,7 +1815,7 @@
                     "description": "the persistent keep-alive interval",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.IntConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-int"
                         }
                     ]
                 },
@@ -1412,7 +1823,7 @@
                     "description": "action that is executed after the device is down",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-string"
                         }
                     ]
                 },
@@ -1420,7 +1831,7 @@
                     "description": "action that is executed after the device is up",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-string"
                         }
                     ]
                 },
@@ -1428,7 +1839,7 @@
                     "description": "action that is executed before the device is down",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-string"
                         }
                     ]
                 },
@@ -1436,7 +1847,7 @@
                     "description": "action that is executed before the device is up",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-string"
                         }
                     ]
                 },
@@ -1458,13 +1869,73 @@
                     "description": "the routing table",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/model.StringConfigOption"
+                            "$ref": "#/definitions/model.ConfigOption-string"
                         }
                     ]
                 },
                 "UserIdentifier": {
                     "description": "the owner",
                     "type": "string"
+                }
+            }
+        },
+        "model.PeerMailRequest": {
+            "type": "object",
+            "properties": {
+                "Identifiers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "LinkOnly": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.PeerStatData": {
+            "type": "object",
+            "properties": {
+                "BytesReceived": {
+                    "type": "integer"
+                },
+                "BytesTransmitted": {
+                    "type": "integer"
+                },
+                "EndpointAddress": {
+                    "type": "string"
+                },
+                "IsConnected": {
+                    "type": "boolean"
+                },
+                "IsPingable": {
+                    "type": "boolean"
+                },
+                "LastHandshake": {
+                    "type": "string"
+                },
+                "LastPing": {
+                    "type": "string"
+                },
+                "LastSessionStart": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PeerStats": {
+            "type": "object",
+            "properties": {
+                "Enabled": {
+                    "description": "peer stats tracking enabled",
+                    "type": "boolean",
+                    "example": true
+                },
+                "Stats": {
+                    "description": "stats, map key = Peer identifier",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.PeerStatData"
+                    }
                 }
             }
         },
@@ -1491,34 +1962,35 @@
                 }
             }
         },
-        "model.StringConfigOption": {
+        "model.Settings": {
             "type": "object",
             "properties": {
-                "Overridable": {
+                "ApiAdminOnly": {
                     "type": "boolean"
                 },
-                "Value": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.StringSliceConfigOption": {
-            "type": "object",
-            "properties": {
-                "Overridable": {
+                "MailLinkOnly": {
                     "type": "boolean"
                 },
-                "Value": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "PersistentConfigSupported": {
+                    "type": "boolean"
+                },
+                "SelfProvisioning": {
+                    "type": "boolean"
                 }
             }
         },
         "model.User": {
             "type": "object",
             "properties": {
+                "ApiEnabled": {
+                    "type": "boolean"
+                },
+                "ApiToken": {
+                    "type": "string"
+                },
+                "ApiTokenCreated": {
+                    "type": "string"
+                },
                 "Department": {
                     "type": "string"
                 },
@@ -1543,6 +2015,14 @@
                     "type": "boolean"
                 },
                 "Lastname": {
+                    "type": "string"
+                },
+                "Locked": {
+                    "description": "if this field is set, the user is locked",
+                    "type": "boolean"
+                },
+                "LockedReason": {
+                    "description": "the reason why the user has been locked",
                     "type": "string"
                 },
                 "Notes": {

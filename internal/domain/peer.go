@@ -120,6 +120,13 @@ func (p *Peer) ApplyInterfaceDefaults(in *Interface) {
 	p.Interface.PostDown.TrySetValue(in.PeerDefPostDown)
 }
 
+func (p *Peer) GenerateDisplayName(prefix string) {
+	if prefix != "" {
+		prefix = fmt.Sprintf("%s ", strings.TrimSpace(prefix)) // add a space after the prefix
+	}
+	p.DisplayName = fmt.Sprintf("%sPeer %s", prefix, internal.TruncateString(string(p.Identifier), 8))
+}
+
 type PeerInterfaceConfig struct {
 	KeyPair // private/public Key of the peer
 
