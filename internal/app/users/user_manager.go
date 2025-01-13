@@ -319,7 +319,7 @@ func (m Manager) validateModifications(ctx context.Context, old, new *domain.Use
 		return fmt.Errorf("insufficient permissions")
 	}
 
-	if err := old.EditAllowed(new); err != nil {
+	if err := old.EditAllowed(new); err != nil && currentUser.Id != domain.SystemAdminContextUserInfo().Id {
 		return errors.Join(fmt.Errorf("no access: %w", err), domain.ErrInvalidData)
 	}
 
