@@ -567,10 +567,13 @@ func (m Manager) disableMissingLdapUsers(
 			continue
 		}
 
+		now := time.Now()
+		user.Disabled = &now
+		user.DisabledReason = domain.DisabledReasonLdapMissing
+
 		err := m.users.SaveUser(ctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
-			now := time.Now()
-			u.Disabled = &now
-			u.DisabledReason = "missing in ldap"
+			u.Disabled = user.Disabled
+			u.DisabledReason = user.DisabledReason
 			return u, nil
 		})
 		if err != nil {
