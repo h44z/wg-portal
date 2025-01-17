@@ -4,7 +4,7 @@ site_description: Manage WireGuard Peers and Interface using a beautiful and sim
 site_url: https://wgportal.org/
 repo_name: h44z/wg-portal
 repo_url: https://github.com/h44z/wg-portal
-copyright: Copyright &copy; 2023-2024 WireGuard Portal Project
+copyright: Copyright &copy; 2023-2025 WireGuard Portal Project
 
 extra_css:
   - stylesheets/extra.css
@@ -27,6 +27,7 @@ plugins:
   - social
   - minify:
       minify_html: true
+  - swagger-ui-tag
 
 extra:
   version:
@@ -60,3 +61,4 @@ nav:
           - Building: documentation/getting-started/building.md
           - Docker Container: documentation/getting-started/docker.md
           - Upgrade from V1: documentation/getting-started/upgrade.md
+      - REST API: documentation/rest-api/api-doc.md

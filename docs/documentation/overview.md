@@ -21,7 +21,7 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL or Post
 * Support for multiple WireGuard interfaces
 * Peer Expiry Feature
 * Handle route and DNS settings like wg-quick does
-* ~~REST API for management and client deployment~~ (coming soon)
+* REST API for management and client deployment
 
 ## Quick-Start
 

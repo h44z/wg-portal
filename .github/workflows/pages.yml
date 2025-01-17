@@ -20,7 +20,7 @@ jobs:
           python-version: 3.x
 
       - name: Install dependencies
-        run: pip install mike mkdocs-material[imaging] mkdocs-minify-plugin
+        run: pip install mike mkdocs-material[imaging] mkdocs-minify-plugin mkdocs-swagger-ui-tag
 
       - name: Publish documentation
         run: mike deploy --push --update-aliases ${{ github.ref_name }} latest

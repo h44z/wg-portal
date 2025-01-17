@@ -12,6 +12,10 @@ import (
 	"github.com/swaggo/swag/gen"
 )
 
+var apiRootPath = "/internal/app/api"
+var apiDocPath = "core/assets/doc"
+var apiMkDocPath = "/docs/documentation/rest-api"
+
 // this replaces the call to: swag init --propertyStrategy pascalcase --parseDependency --parseInternal --generalInfo base.go
 func main() {
 	wd, err := os.Getwd() // should be the project root
@@ -19,7 +23,7 @@ func main() {
 		panic(err)
 	}
 
-	apiBasePath := filepath.Join(wd, "/internal/app/api")
+	apiBasePath := filepath.Join(wd, apiRootPath)
 	apis := []string{"v0", "v1"}
 
 	hasError := false
@@ -37,6 +41,15 @@ func main() {
 			logrus.Errorf("failed to generate API docs for %s: %v", apiVersion, err)
 		}
 
+		// copy the latest version of the API docs for mkdocs
+		if apiVersion == apis[len(apis)-1] {
+			if err = copyDocForMkdocs(wd, apiBasePath, apiVersion); err != nil {
+				logrus.Errorf("failed to copy API docs for mkdocs: %v", err)
+			} else {
+				log.Println("Copied API docs " + apiVersion + " for mkdocs")
+			}
+		}
+
 		log.Println("Generated swagger docs for API", apiVersion)
 	}
 
@@ -51,7 +64,7 @@ func generateApi(basePath, apiPath, version string) error {
 		Excludes:            "",
 		MainAPIFile:         "base.go",
 		PropNamingStrategy:  swag.PascalCase,
-		OutputDir:           filepath.Join(basePath, "core/assets/doc"),
+		OutputDir:           filepath.Join(basePath, apiDocPath),
 		OutputTypes:         []string{"json", "yaml"},
 		ParseVendor:         false,
 		ParseDependency:     3,
@@ -64,6 +77,24 @@ func generateApi(basePath, apiPath, version string) error {
 	})
 	if err != nil {
 		return fmt.Errorf("swag failed: %w", err)
+	}
+
+	return nil
+}
+
+func copyDocForMkdocs(workingDir, basePath, version string) error {
+	srcPath := filepath.Join(basePath, apiDocPath, fmt.Sprintf("%s_swagger.yaml", version))
+	dstPath := filepath.Join(workingDir, apiMkDocPath, "swagger.yaml")
+
+	// copy the file
+	input, err := os.ReadFile(srcPath)
+	if err != nil {
+		return fmt.Errorf("error while reading swagger doc: %w", err)
+	}
+
+	err = os.WriteFile(dstPath, input, 0644)
+	if err != nil {
+		return fmt.Errorf("error while writing swagger doc: %w", err)
 	}
 
 	return nil
