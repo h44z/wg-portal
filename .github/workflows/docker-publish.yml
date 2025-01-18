@@ -65,9 +65,9 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             # add v{{major}} tag, even for beta releases
-            type=match,pattern=(v\d),group=1,enable=${{ !contains(github.ref, 'beta') }}
+            type=match,pattern=(v\d),group=1,enable=${{ contains(github.ref, 'beta') }}
             # add {{major}} tag, even for beta releases
-            type=match,pattern=v(\d),group=1,enable=${{ !contains(github.ref, 'beta') }}
+            type=match,pattern=v(\d),group=1,enable=${{ contains(github.ref, 'beta') }}
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
 
