@@ -32,8 +32,6 @@ ssh.key
 .testCoverage.txt
 wg_portal.db
 sqlite.db
-swagger.json
-swagger.yaml
 /config.yml
 /config/
 venv/
