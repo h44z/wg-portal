@@ -59,10 +59,15 @@ jobs:
           tags: |
             type=ref,event=tag
             type=ref,event=branch
-            type=ref,event=pr
+            # semver tags, without v prefix
             type=semver,pattern={{version}}
+            # major and major.minor tags are not available for alpha or beta releases
             type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
+            type=semver,pattern={{major}}
+            # add v{{major}} tag, even for beta releases
+            type=match,pattern=(v\d),group=1,enable=${{ !contains(github.ref, 'beta') }}
+            # add {{major}} tag, even for beta releases
+            type=match,pattern=v(\d),group=1,enable=${{ !contains(github.ref, 'beta') }}
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
 
