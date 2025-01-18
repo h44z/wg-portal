@@ -2,14 +2,14 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
@@ -19,15 +19,22 @@ type OidcAuthenticator struct {
 	verifier            *oidc.IDTokenVerifier
 	cfg                 *oauth2.Config
 	userInfoMapping     config.OauthFields
+	userAdminMapping    *config.OauthAdminMapping
 	registrationEnabled bool
+	userInfoLogging     bool
 }
 
-func newOidcAuthenticator(ctx context.Context, callbackUrl string, cfg *config.OpenIDConnectProvider) (*OidcAuthenticator, error) {
+func newOidcAuthenticator(
+	_ context.Context,
+	callbackUrl string,
+	cfg *config.OpenIDConnectProvider,
+) (*OidcAuthenticator, error) {
 	var err error
 	var provider = &OidcAuthenticator{}
 
 	provider.name = cfg.ProviderName
-	provider.provider, err = oidc.NewProvider(context.Background(), cfg.BaseUrl) // use new context here, see https://github.com/coreos/go-oidc/issues/339
+	provider.provider, err = oidc.NewProvider(context.Background(),
+		cfg.BaseUrl) // use new context here, see https://github.com/coreos/go-oidc/issues/339
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new oidc provider: %w", err)
 	}
@@ -45,7 +52,9 @@ func newOidcAuthenticator(ctx context.Context, callbackUrl string, cfg *config.O
 		Scopes:       scopes,
 	}
 	provider.userInfoMapping = getOauthFieldMapping(cfg.FieldMap)
+	provider.userAdminMapping = &cfg.AdminMapping
 	provider.registrationEnabled = cfg.RegistrationEnabled
+	provider.userInfoLogging = cfg.LogUserInfo
 
 	return provider, nil
 }
@@ -66,11 +75,17 @@ func (o OidcAuthenticator) AuthCodeURL(state string, opts ...oauth2.AuthCodeOpti
 	return o.cfg.AuthCodeURL(state, opts...)
 }
 
-func (o OidcAuthenticator) Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
+func (o OidcAuthenticator) Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (
+	*oauth2.Token,
+	error,
+) {
 	return o.cfg.Exchange(ctx, code, opts...)
 }
 
-func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token, nonce string) (map[string]interface{}, error) {
+func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token, nonce string) (
+	map[string]interface{},
+	error,
+) {
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
 		return nil, errors.New("token does not contain id_token")
@@ -88,20 +103,14 @@ func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 		return nil, fmt.Errorf("failed to parse extra claims: %w", err)
 	}
 
+	if o.userInfoLogging {
+		contents, _ := json.Marshal(tokenFields)
+		logrus.Tracef("User info from OIDC source %s: %v", o.name, string(contents))
+	}
+
 	return tokenFields, nil
 }
 
 func (o OidcAuthenticator) ParseUserInfo(raw map[string]interface{}) (*domain.AuthenticatorUserInfo, error) {
-	isAdmin, _ := strconv.ParseBool(internal.MapDefaultString(raw, o.userInfoMapping.IsAdmin, ""))
-	userInfo := &domain.AuthenticatorUserInfo{
-		Identifier: domain.UserIdentifier(internal.MapDefaultString(raw, o.userInfoMapping.UserIdentifier, "")),
-		Email:      internal.MapDefaultString(raw, o.userInfoMapping.Email, ""),
-		Firstname:  internal.MapDefaultString(raw, o.userInfoMapping.Firstname, ""),
-		Lastname:   internal.MapDefaultString(raw, o.userInfoMapping.Lastname, ""),
-		Phone:      internal.MapDefaultString(raw, o.userInfoMapping.Phone, ""),
-		Department: internal.MapDefaultString(raw, o.userInfoMapping.Department, ""),
-		IsAdmin:    isAdmin,
-	}
-
-	return userInfo, nil
+	return parseOauthUserInfo(o.userInfoMapping, o.userAdminMapping, raw)
 }

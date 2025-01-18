@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/sirupsen/logrus"
 )
 
 type LdapAuthenticator struct {
@@ -78,7 +80,10 @@ func (l LdapAuthenticator) PlaintextAuthentication(userId domain.UserIdentifier,
 	return nil
 }
 
-func (l LdapAuthenticator) GetUserInfo(_ context.Context, userId domain.UserIdentifier) (map[string]interface{}, error) {
+func (l LdapAuthenticator) GetUserInfo(_ context.Context, userId domain.UserIdentifier) (
+	map[string]interface{},
+	error,
+) {
 	conn, err := internal.LdapConnect(l.cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup connection: %w", err)
@@ -108,6 +113,11 @@ func (l LdapAuthenticator) GetUserInfo(_ context.Context, userId domain.UserIden
 	}
 
 	users := internal.LdapConvertEntries(sr, &l.cfg.FieldMap)
+
+	if l.cfg.LogUserInfo {
+		contents, _ := json.Marshal(users[0])
+		logrus.Tracef("User info from LDAP source %s for %s: %v", l.GetName(), userId, string(contents))
+	}
 
 	return users[0], nil
 }

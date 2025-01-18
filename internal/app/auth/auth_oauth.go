@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
@@ -21,10 +20,16 @@ type PlainOauthAuthenticator struct {
 	userInfoEndpoint    string
 	client              *http.Client
 	userInfoMapping     config.OauthFields
+	userAdminMapping    *config.OauthAdminMapping
 	registrationEnabled bool
+	userInfoLogging     bool
 }
 
-func newPlainOauthAuthenticator(_ context.Context, callbackUrl string, cfg *config.OAuthProvider) (*PlainOauthAuthenticator, error) {
+func newPlainOauthAuthenticator(
+	_ context.Context,
+	callbackUrl string,
+	cfg *config.OAuthProvider,
+) (*PlainOauthAuthenticator, error) {
 	var provider = &PlainOauthAuthenticator{}
 
 	provider.name = cfg.ProviderName
@@ -44,7 +49,9 @@ func newPlainOauthAuthenticator(_ context.Context, callbackUrl string, cfg *conf
 	}
 	provider.userInfoEndpoint = cfg.UserInfoURL
 	provider.userInfoMapping = getOauthFieldMapping(cfg.FieldMap)
+	provider.userAdminMapping = &cfg.AdminMapping
 	provider.registrationEnabled = cfg.RegistrationEnabled
+	provider.userInfoLogging = cfg.LogUserInfo
 
 	return provider, nil
 }
@@ -65,11 +72,19 @@ func (p PlainOauthAuthenticator) AuthCodeURL(state string, opts ...oauth2.AuthCo
 	return p.cfg.AuthCodeURL(state, opts...)
 }
 
-func (p PlainOauthAuthenticator) Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
+func (p PlainOauthAuthenticator) Exchange(
+	ctx context.Context,
+	code string,
+	opts ...oauth2.AuthCodeOption,
+) (*oauth2.Token, error) {
 	return p.cfg.Exchange(ctx, code, opts...)
 }
 
-func (p PlainOauthAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token, _ string) (map[string]interface{}, error) {
+func (p PlainOauthAuthenticator) GetUserInfo(
+	ctx context.Context,
+	token *oauth2.Token,
+	_ string,
+) (map[string]interface{}, error) {
 	req, err := http.NewRequest("GET", p.userInfoEndpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user info get request: %w", err)
@@ -93,57 +108,13 @@ func (p PlainOauthAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.
 		return nil, fmt.Errorf("failed to parse user info: %w", err)
 	}
 
+	if p.userInfoLogging {
+		logrus.Tracef("User info from OAuth source %s: %v", p.name, string(contents))
+	}
+
 	return userFields, nil
 }
 
 func (p PlainOauthAuthenticator) ParseUserInfo(raw map[string]interface{}) (*domain.AuthenticatorUserInfo, error) {
-	isAdmin, _ := strconv.ParseBool(internal.MapDefaultString(raw, p.userInfoMapping.IsAdmin, ""))
-	userInfo := &domain.AuthenticatorUserInfo{
-		Identifier: domain.UserIdentifier(internal.MapDefaultString(raw, p.userInfoMapping.UserIdentifier, "")),
-		Email:      internal.MapDefaultString(raw, p.userInfoMapping.Email, ""),
-		Firstname:  internal.MapDefaultString(raw, p.userInfoMapping.Firstname, ""),
-		Lastname:   internal.MapDefaultString(raw, p.userInfoMapping.Lastname, ""),
-		Phone:      internal.MapDefaultString(raw, p.userInfoMapping.Phone, ""),
-		Department: internal.MapDefaultString(raw, p.userInfoMapping.Department, ""),
-		IsAdmin:    isAdmin,
-	}
-
-	return userInfo, nil
-}
-
-func getOauthFieldMapping(f config.OauthFields) config.OauthFields {
-	defaultMap := config.OauthFields{
-		BaseFields: config.BaseFields{
-			UserIdentifier: "sub",
-			Email:          "email",
-			Firstname:      "given_name",
-			Lastname:       "family_name",
-			Phone:          "phone",
-			Department:     "department",
-		},
-		IsAdmin: "admin_flag",
-	}
-	if f.UserIdentifier != "" {
-		defaultMap.UserIdentifier = f.UserIdentifier
-	}
-	if f.Email != "" {
-		defaultMap.Email = f.Email
-	}
-	if f.Firstname != "" {
-		defaultMap.Firstname = f.Firstname
-	}
-	if f.Lastname != "" {
-		defaultMap.Lastname = f.Lastname
-	}
-	if f.Phone != "" {
-		defaultMap.Phone = f.Phone
-	}
-	if f.Department != "" {
-		defaultMap.Department = f.Department
-	}
-	if f.IsAdmin != "" {
-		defaultMap.IsAdmin = f.IsAdmin
-	}
-
-	return defaultMap
+	return parseOauthUserInfo(p.userInfoMapping, p.userAdminMapping, raw)
 }

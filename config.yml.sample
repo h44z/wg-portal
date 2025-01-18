@@ -1,3 +1,5 @@
+# More information about the configuration can be found in the documentation: https://wgportal.org/master/documentation/overview/
+
 advanced:
   log_level: trace
 
@@ -22,7 +24,7 @@ auth:
       base_dn: DC=YOURCOMPANY,DC=LOCAL
       login_filter: (&(objectClass=organizationalPerson)(mail={{login_identifier}})(!userAccountControl:1.2.840.113556.1.4.803:=2))
       admin_group: CN=WireGuardAdmins,OU=it,DC=YOURCOMPANY,DC=LOCAL
-      synchronize: false
+      sync_interval: 0  # sync disabled
       sync_filter: (&(objectClass=organizationalPerson)(!userAccountControl:1.2.840.113556.1.4.803:=2)(mail=*))
       registration_enabled: true
   oidc:
@@ -63,5 +65,28 @@ auth:
         email: email
         firstname: name
         user_identifier: sub
-        is_admin: roles
+        is_admin: this-attribute-must-be-true
       registration_enabled: true
+    - id: google_plain_oauth_with_groups
+      provider_name: google4
+      display_name: Login with</br>Google4
+      client_id: another-client-id-1234.apps.googleusercontent.com
+      client_secret: A_CLIENT_SECRET
+      auth_url: https://accounts.google.com/o/oauth2/v2/auth
+      token_url: https://oauth2.googleapis.com/token
+      user_info_url: https://openidconnect.googleapis.com/v1/userinfo
+      scopes:
+        - openid
+        - email
+        - profile
+        - i-want-some-groups
+      field_map:
+        email: email
+        firstname: name
+        user_identifier: sub
+        user_groups: groups
+      admin_mapping:
+        admin_value_regex: ^true$
+        admin_group_regex: ^admin-group-name$
+      registration_enabled: true
+      log_user_info: true

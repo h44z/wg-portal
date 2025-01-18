@@ -8,7 +8,7 @@ A sample docker-compose.yml:
 version: '3.6'
 services:
   wg-portal:
-    image: wgportal/wg-portal:v2
+    image: wgportal/wg-portal:latest
     restart: unless-stopped
     cap_add:
       - NET_ADMIN
@@ -64,18 +64,4 @@ You should mount those directories as a volume:
 - /app/data
 - /app/config
 
-### Configuration Options
-All available YAML configuration options are available [here](https://github.com/h44z/wg-portal#configuration).
-
-A very basic example:
-
-```yaml
-core:
-  admin_user: test@wg-portal.local
-  admin_password: secret
-
-web:
-  external_url: http://localhost:8888
-  request_logging: true
-```
-
+A detailed description of the configuration options can be found [here](../configuration/overview.md).

@@ -79,6 +79,27 @@ func MapDefaultString(m map[string]interface{}, key string, dflt string) string 
 	}
 }
 
+// MapDefaultStringSlice returns the string slice value for the given key or a default value
+func MapDefaultStringSlice(m map[string]interface{}, key string, dflt []string) []string {
+	if m == nil {
+		return dflt
+	}
+	if tmp, ok := m[key]; !ok {
+		return dflt
+	} else {
+		switch v := tmp.(type) {
+		case []string:
+			return v
+		case string:
+			return []string{v}
+		case nil:
+			return dflt
+		default:
+			return []string{fmt.Sprintf("%v", v)}
+		}
+	}
+}
+
 // UniqueStringSlice removes duplicates in the given string slice
 func UniqueStringSlice(slice []string) []string {
 	keys := make(map[string]struct{})

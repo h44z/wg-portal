@@ -23,3 +23,14 @@ For example:
 
 The upgrade will transform the old, existing database and store the values in the new database specified in the **config.yml** configuration file.
 Ensure that the new database does not contain any data!
+
+If you are using Docker, you can adapt the docker-compose.yml file to start the upgrade process:
+
+```yaml
+services:
+  wg-portal:
+    image: wgportal/wg-portal:latest
+    # ... other settings
+    restart: no
+    command: ["-migrateFrom=/app/data/wg_portal.db"]
+```

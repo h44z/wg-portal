@@ -21,6 +21,7 @@ theme:
   features:
     - navigation.instant
     - navigation.tabs
+    - navigation.expand
 
 plugins:
   - search
@@ -61,4 +62,7 @@ nav:
           - Building: documentation/getting-started/building.md
           - Docker Container: documentation/getting-started/docker.md
           - Upgrade from V1: documentation/getting-started/upgrade.md
+      - Configuration:
+          - Overview: documentation/configuration/overview.md
+          - Examples: documentation/configuration/examples.md
       - REST API: documentation/rest-api/api-doc.md

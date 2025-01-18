@@ -133,3 +133,9 @@ build-docker:
 .PHONY: helm-docs
 helm-docs:
 	docker run --rm --volume "${PWD}/deploy:/helm-docs" -u "$$(id -u)" jnorwood/helm-docs -s file
+
+#< run-mkdocs: Run a local instance of MkDocs
+.PHONY: run-mkdocs
+run-mkdocs:
+	python -m venv venv; source venv/bin/activate; pip install mike cairosvg mkdocs-material mkdocs-minify-plugin mkdocs-swagger-ui-tag
+	venv/bin/mkdocs serve
