@@ -373,7 +373,7 @@ func (a *Authenticator) processUserInfo(
 	case err != nil:
 		return nil, fmt.Errorf("registration disabled, cannot create missing user: %w", err)
 	default:
-		err = a.updateExternalUser(ctx, user, userInfo)
+		err = a.updateExternalUser(ctx, user, userInfo, source, provider)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update user: %w", err)
 		}
@@ -432,6 +432,8 @@ func (a *Authenticator) updateExternalUser(
 	ctx context.Context,
 	existingUser *domain.User,
 	userInfo *domain.AuthenticatorUserInfo,
+	source domain.UserSource,
+	provider string,
 ) error {
 	if existingUser.IsLocked() || existingUser.IsDisabled() {
 		return nil // user is locked or disabled, do not update
@@ -460,6 +462,14 @@ func (a *Authenticator) updateExternalUser(
 	}
 	if existingUser.IsAdmin != userInfo.IsAdmin {
 		existingUser.IsAdmin = userInfo.IsAdmin
+		isChanged = true
+	}
+	if existingUser.Source != source {
+		existingUser.Source = source
+		isChanged = true
+	}
+	if existingUser.ProviderName != provider {
+		existingUser.ProviderName = provider
 		isChanged = true
 	}
 

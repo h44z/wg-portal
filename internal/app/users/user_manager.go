@@ -73,11 +73,16 @@ func (m Manager) NewUser(ctx context.Context, user *domain.User) error {
 		u.Identifier = user.Identifier
 		u.Email = user.Email
 		u.Source = user.Source
+		u.ProviderName = user.ProviderName
 		u.IsAdmin = user.IsAdmin
 		u.Firstname = user.Firstname
 		u.Lastname = user.Lastname
 		u.Phone = user.Phone
 		u.Department = user.Department
+		u.Notes = user.Notes
+		u.ApiToken = user.ApiToken
+		u.ApiTokenCreated = user.ApiTokenCreated
+
 		return u, nil
 	})
 	if err != nil {
@@ -421,13 +426,14 @@ func (m Manager) runLdapSynchronizationService(ctx context.Context) {
 				logrus.Debugf("sync disabled for LDAP server: %s", cfg.ProviderName)
 				return
 			}
+
 			running := true
 			for running {
 				select {
 				case <-ctx.Done():
 					running = false
 					continue
-				case <-time.After(syncInterval * time.Second):
+				case <-time.After(syncInterval):
 					// select blocks until one of the cases evaluate to true
 				}
 
@@ -460,7 +466,7 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 		return err
 	}
 
-	logrus.Tracef("fetched %d raw ldap users...", len(rawUsers))
+	logrus.Tracef("fetched %d raw ldap users from provider %s...", len(rawUsers), provider.ProviderName)
 
 	// Update existing LDAP users
 	err = m.updateLdapUsers(ctx, provider.ProviderName, rawUsers, &provider.FieldMap, provider.ParsedAdminGroupDN)
@@ -497,13 +503,13 @@ func (m Manager) updateLdapUsers(
 			return fmt.Errorf("find error for user id %s: %w", user.Identifier, err)
 		}
 
-		tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
+		tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		tctx = domain.SetUserInfo(tctx, domain.SystemAdminContextUserInfo())
 
 		if existingUser == nil {
 			err := m.NewUser(tctx, user)
 			if err != nil {
+				cancel()
 				return fmt.Errorf("create error for user id %s: %w", user.Identifier, err)
 			}
 		}
@@ -514,6 +520,8 @@ func (m Manager) updateLdapUsers(
 			err := m.users.SaveUser(tctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
 				u.UpdatedAt = time.Now()
 				u.UpdatedBy = domain.CtxSystemLdapSyncer
+				u.Source = user.Source
+				u.ProviderName = user.ProviderName
 				u.Email = user.Email
 				u.Firstname = user.Firstname
 				u.Lastname = user.Lastname
@@ -525,9 +533,12 @@ func (m Manager) updateLdapUsers(
 				return u, nil
 			})
 			if err != nil {
+				cancel()
 				return fmt.Errorf("update error for user id %s: %w", user.Identifier, err)
 			}
 		}
+
+		cancel()
 	}
 
 	return nil
@@ -566,6 +577,8 @@ func (m Manager) disableMissingLdapUsers(
 		if existsInLDAP {
 			continue
 		}
+
+		logrus.Tracef("user %s is missing in ldap provider %s, disabling", user.Identifier, providerName)
 
 		now := time.Now()
 		user.Disabled = &now

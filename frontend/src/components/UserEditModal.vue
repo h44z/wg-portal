@@ -165,7 +165,7 @@ async function del() {
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button v-if="props.userId!=='#NEW#'&&formData.Source==='db'" class="btn btn-danger me-1" type="button" @click.prevent="del">{{ $t('general.delete') }}</button>
+        <button v-if="props.userId!=='#NEW#'" class="btn btn-danger me-1" type="button" @click.prevent="del">{{ $t('general.delete') }}</button>
       </div>
       <button class="btn btn-primary me-1" type="button" @click.prevent="save">{{ $t('general.save') }}</button>
       <button class="btn btn-secondary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>

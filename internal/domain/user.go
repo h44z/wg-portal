@@ -101,11 +101,7 @@ func (u *User) EditAllowed(new *User) error {
 }
 
 func (u *User) DeleteAllowed() error {
-	if u.Source == UserSourceDatabase {
-		return nil
-	}
-
-	return errors.New("delete only allowed for database source")
+	return nil // all users can be deleted, OAuth and LDAP users might still be recreated
 }
 
 func (u *User) CheckPassword(password string) error {
