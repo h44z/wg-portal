@@ -71,5 +71,9 @@ func userChangedInLdap(dbUser, ldapUser *domain.User) bool {
 		return true
 	}
 
+	if dbUser.ProviderName != ldapUser.ProviderName {
+		return true
+	}
+
 	return false
 }

@@ -114,9 +114,11 @@ type LdapProvider struct {
 	ParsedAdminGroupDN *ldap.DN `yaml:"-"`
 
 	// If DisableMissing is true, missing users will be deactivated
-	DisableMissing bool          `yaml:"disable_missing"`
-	SyncFilter     string        `yaml:"sync_filter"`
-	SyncInterval   time.Duration `yaml:"sync_interval"`
+	DisableMissing bool `yaml:"disable_missing"`
+	// If AutoReEnable is true, users that where disabled because they were missing will be re-enabled once they are found again
+	AutoReEnable bool          `yaml:"auto_re_enable"`
+	SyncFilter   string        `yaml:"sync_filter"`
+	SyncInterval time.Duration `yaml:"sync_interval"`
 
 	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.
 	RegistrationEnabled bool `yaml:"registration_enabled"`

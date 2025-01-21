@@ -444,6 +444,10 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 - **Default:** *(empty)*
 - **Description:** If `true`, any user **not** found in LDAP (during sync) is disabled in WireGuard Portal.
 
+#### `auto_re_enable`
+- **Default:** *(empty)*
+- **Description:** If `true`, users that where disabled because they were missing (see `disable_missing`) will be re-enabled once they are found again.
+
 #### `registration_enabled`
 - **Default:** *(empty)*
 - **Description:** If `true`, new user accounts are created in WireGuard Portal upon first login.

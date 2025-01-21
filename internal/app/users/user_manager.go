@@ -469,7 +469,7 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 	logrus.Tracef("fetched %d raw ldap users from provider %s...", len(rawUsers), provider.ProviderName)
 
 	// Update existing LDAP users
-	err = m.updateLdapUsers(ctx, provider.ProviderName, rawUsers, &provider.FieldMap, provider.ParsedAdminGroupDN)
+	err = m.updateLdapUsers(ctx, provider, rawUsers, &provider.FieldMap, provider.ParsedAdminGroupDN)
 	if err != nil {
 		return err
 	}
@@ -487,13 +487,13 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 
 func (m Manager) updateLdapUsers(
 	ctx context.Context,
-	providerName string,
+	provider *config.LdapProvider,
 	rawUsers []internal.RawLdapUser,
 	fields *config.LdapFields,
 	adminGroupDN *ldap.DN,
 ) error {
 	for _, rawUser := range rawUsers {
-		user, err := convertRawLdapUser(providerName, rawUser, fields, adminGroupDN)
+		user, err := convertRawLdapUser(provider.ProviderName, rawUser, fields, adminGroupDN)
 		if err != nil && !errors.Is(err, domain.ErrNotFound) {
 			return fmt.Errorf("failed to convert LDAP data for %v: %w", rawUser["dn"], err)
 		}
@@ -506,17 +506,27 @@ func (m Manager) updateLdapUsers(
 		tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		tctx = domain.SetUserInfo(tctx, domain.SystemAdminContextUserInfo())
 
+		// create new user
 		if existingUser == nil {
 			err := m.NewUser(tctx, user)
 			if err != nil {
 				cancel()
 				return fmt.Errorf("create error for user id %s: %w", user.Identifier, err)
 			}
+
+			cancel()
+			return nil
 		}
 
-		if existingUser != nil && existingUser.Source == domain.UserSourceLdap && userChangedInLdap(existingUser,
-			user) {
-
+		// update existing user
+		if provider.AutoReEnable && existingUser.DisabledReason == domain.DisabledReasonLdapMissing {
+			user.Disabled = nil
+			user.DisabledReason = ""
+		} else {
+			user.Disabled = existingUser.Disabled
+			user.DisabledReason = existingUser.DisabledReason
+		}
+		if existingUser.Source == domain.UserSourceLdap && userChangedInLdap(existingUser, user) {
 			err := m.users.SaveUser(tctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
 				u.UpdatedAt = time.Now()
 				u.UpdatedBy = domain.CtxSystemLdapSyncer
@@ -528,13 +538,18 @@ func (m Manager) updateLdapUsers(
 				u.Phone = user.Phone
 				u.Department = user.Department
 				u.IsAdmin = user.IsAdmin
-				u.Disabled = user.Disabled
+				u.Disabled = nil
+				u.DisabledReason = ""
 
 				return u, nil
 			})
 			if err != nil {
 				cancel()
 				return fmt.Errorf("update error for user id %s: %w", user.Identifier, err)
+			}
+
+			if existingUser.IsDisabled() && !user.IsDisabled() {
+				m.bus.Publish(app.TopicUserEnabled, *user)
 			}
 		}
 
