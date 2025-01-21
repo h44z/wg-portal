@@ -10,6 +10,7 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
+	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 )
@@ -70,7 +71,7 @@ func (e configEndpoint) handleConfigJsGet() gin.HandlerFunc {
 		buf := &bytes.Buffer{}
 		err := e.tpl.ExecuteTemplate(buf, "frontend_config.js.gotpl", gin.H{
 			"BackendUrl":      backendUrl,
-			"Version":         "unknown",
+			"Version":         internal.Version,
 			"SiteTitle":       e.app.Config.Web.SiteTitle,
 			"SiteCompanyName": e.app.Config.Web.SiteCompanyName,
 		})
