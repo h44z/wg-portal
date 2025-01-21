@@ -60,7 +60,8 @@ func getOauthFieldMapping(f config.OauthFields) config.OauthFields {
 			Phone:          "phone",
 			Department:     "department",
 		},
-		IsAdmin: "admin_flag",
+		IsAdmin:    "admin_flag",
+		UserGroups: "", // by default, do not use user groups
 	}
 	if f.UserIdentifier != "" {
 		defaultMap.UserIdentifier = f.UserIdentifier
@@ -82,6 +83,9 @@ func getOauthFieldMapping(f config.OauthFields) config.OauthFields {
 	}
 	if f.IsAdmin != "" {
 		defaultMap.IsAdmin = f.IsAdmin
+	}
+	if f.UserGroups != "" {
+		defaultMap.UserGroups = f.UserGroups
 	}
 
 	return defaultMap

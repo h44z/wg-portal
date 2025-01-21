@@ -88,6 +88,17 @@ func MapDefaultStringSlice(m map[string]interface{}, key string, dflt []string) 
 		return dflt
 	} else {
 		switch v := tmp.(type) {
+		case []any:
+			result := make([]string, 0, len(v))
+			for _, elem := range v {
+				switch vElem := elem.(type) {
+				case string:
+					result = append(result, vElem)
+				default:
+					result = append(result, fmt.Sprintf("%v", vElem))
+				}
+			}
+			return result
 		case []string:
 			return v
 		case string:
