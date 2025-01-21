@@ -1540,7 +1540,4 @@ paths:
       summary: Create a new user record.
       tags:
       - Users
-securityDefinitions:
-  BasicAuth:
-    type: basic
 swagger: "2.0"

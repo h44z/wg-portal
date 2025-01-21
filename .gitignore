@@ -38,3 +38,5 @@ venv/
 .cache/
 # ignore local frontend dist directory
 internal/app/api/core/frontend-dist
+# mkdocs output directory
+site/
