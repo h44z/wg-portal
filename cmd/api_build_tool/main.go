@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/swaggo/swag"
 	"github.com/swaggo/swag/gen"
+	"gopkg.in/yaml.v2"
 )
 
 var apiRootPath = "/internal/app/api"
@@ -26,7 +26,6 @@ func main() {
 	apiBasePath := filepath.Join(wd, apiRootPath)
 	apis := []string{"v0", "v1"}
 
-	hasError := false
 	for _, apiVersion := range apis {
 		apiPath := filepath.Join(apiBasePath, apiVersion, "handlers")
 
@@ -37,24 +36,19 @@ func main() {
 
 		err := generateApi(apiBasePath, apiPath, apiVersion)
 		if err != nil {
-			hasError = true
-			logrus.Errorf("failed to generate API docs for %s: %v", apiVersion, err)
+			log.Fatalf("failed to generate API docs for %s: %v", apiVersion, err)
 		}
 
 		// copy the latest version of the API docs for mkdocs
 		if apiVersion == apis[len(apis)-1] {
 			if err = copyDocForMkdocs(wd, apiBasePath, apiVersion); err != nil {
-				logrus.Errorf("failed to copy API docs for mkdocs: %v", err)
+				log.Printf("failed to copy API docs for mkdocs: %v", err)
 			} else {
 				log.Println("Copied API docs " + apiVersion + " for mkdocs")
 			}
 		}
 
 		log.Println("Generated swagger docs for API", apiVersion)
-	}
-
-	if hasError {
-		os.Exit(1)
 	}
 }
 
@@ -92,10 +86,32 @@ func copyDocForMkdocs(workingDir, basePath, version string) error {
 		return fmt.Errorf("error while reading swagger doc: %w", err)
 	}
 
-	err = os.WriteFile(dstPath, input, 0644)
+	output, err := removeAuthorizeButton(input)
+	if err != nil {
+		return fmt.Errorf("error while removing authorize button: %w", err)
+	}
+
+	err = os.WriteFile(dstPath, output, 0644)
 	if err != nil {
 		return fmt.Errorf("error while writing swagger doc: %w", err)
 	}
 
 	return nil
+}
+
+func removeAuthorizeButton(input []byte) ([]byte, error) {
+	var swagger map[string]interface{}
+	err := yaml.Unmarshal(input, &swagger)
+	if err != nil {
+		return nil, fmt.Errorf("error while unmarshalling swagger file: %w", err)
+	}
+
+	delete(swagger, "securityDefinitions")
+
+	output, err := yaml.Marshal(&swagger)
+	if err != nil {
+		return nil, fmt.Errorf("error while marshalling swagger file: %w", err)
+	}
+
+	return output, nil
 }
