@@ -1,6 +1,7 @@
-Below are some sample YAML configurations demonstrating how to override some default values. 
+Below are some sample YAML configurations demonstrating how to override some default values.
 
-## Basic Configuration
+## Basic
+
 ```yaml
 core:
   admin_user: test@example.com
@@ -8,7 +9,7 @@ core:
   import_existing: false
   create_default_peer: true
   self_provisioning_allowed: true
-  
+
 web:
   site_title: My WireGuard Server
   site_company_name: My Company
@@ -31,13 +32,13 @@ database:
   dsn: data/sqlite.db
 ```
 
-## LDAP Authentication and Synchronization Configuration
+## LDAP Authentication and Synchronization
+
 ```yaml
 # ... (basic configuration)
 
 auth:
   ldap:
-    
     # a sample LDAP provider with user sync enabled
     - id: ldap
       provider_name: Active Directory
@@ -63,14 +64,26 @@ auth:
       log_user_info: true
 ```
 
-## OpenID Connect (OIDC) Authentication Configuration
+## OpenID Connect (OIDC) Authentication
+
 ```yaml
 # ... (basic configuration)
 
 auth:
   oidc:
-    
-    # a sample provider where users with the attribute `wg_admin` set to `true` are considered as admins   
+    # a sample Entra ID provider with environment variable substitution
+    - id: azure
+      provider_name: azure
+      display_name: Login with</br>Entra ID
+      registration_enabled: true
+      base_url: "https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0"
+      client_id: "${AZURE_CLIENT_ID}"
+      client_secret: "${AZURE_CLIENT_SECRET}"
+      extra_scopes:
+        - profile
+        - email
+
+    # a sample provider where users with the attribute `wg_admin` set to `true` are considered as admins
     - id: oidc-with-admin-attribute
       provider_name: google
       display_name: Login with</br>Google
@@ -93,7 +106,7 @@ auth:
       registration_enabled: true
       log_user_info: true
 
-    # a sample provider where users in the group `the-admin-group` are considered as admins    
+    # a sample provider where users in the group `the-admin-group` are considered as admins
     - id: oidc-with-admin-group
       provider_name: google2
       display_name: Login with</br>Google2
@@ -117,15 +130,15 @@ auth:
       log_user_info: true
 ```
 
-## Plain OAuth2 Authentication Configuration
+## Plain OAuth2 Authentication
+
 ```yaml
 # ... (basic configuration)
 
 auth:
   oauth:
-    
     # a sample provider where users with the attribute `this-attribute-must-be-true` set to `true` or `True`
-    # are considered as admins    
+    # are considered as admins
     - id: google_plain_oauth-with-admin-attribute
       provider_name: google3
       display_name: Login with</br>Google3
@@ -148,7 +161,7 @@ auth:
       registration_enabled: true
     
     # a sample provider where either users with the attribute `this-attribute-must-be-true` set to `true` or 
-    # users in the group `admin-group-name` are considered as admins    
+    # users in the group `admin-group-name` are considered as admins
     - id: google_plain_oauth_with_groups
       provider_name: google4
       display_name: Login with</br>Google4

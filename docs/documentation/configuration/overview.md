@@ -1,17 +1,106 @@
-# WireGuard Portal Configuration
+This page provides an overview of **all available configuration options** for WireGuard Portal.
 
-This page provides an overview of **all available configuration options** for WireGuard Portal. 
 You can supply these configurations in a **YAML** file (e.g. `config.yaml`) when starting the Portal.
-Complete configuration examples are available in the [Configuration Examples](./examples.md) page.
+The path of the configuration file defaults to **config/config.yml** in the working directory of the executable.  
+It is possible to override configuration filepath using the environment variable `WG_PORTAL_CONFIG`.
+For example: `WG_PORTAL_CONFIG=/etc/wg-portal/config.yaml ./wg-portal`.  
+Also, environment variable substitution in config file is supported. Refer to [syntax](https://github.com/a8m/envsubst?tab=readme-ov-file#docs).
 
-Below you will find sections like `core`, `advanced`, `statistics`, `mail`, `auth`, `database`, and `web`.  
+Configuration examples are available on the [Examples](./examples.md) page.
+
+<details>
+<summary>Default configuration</summary>
+
+```yaml
+core:
+  admin_user: admin@wgportal.local
+  admin_password: wgportal
+  editable_keys: true
+  create_default_peer: false
+  create_default_peer_on_creation: false
+  re_enable_peer_after_user_enable: true
+  delete_peer_after_user_deleted: false
+  self_provisioning_allowed: false
+  import_existing: true
+  restore_state: true
+
+advanced:
+  log_level: info
+  log_pretty: false
+  log_json: false
+  start_listen_port: 51820
+  start_cidr_v4: 10.11.12.0/24
+  start_cidr_v6: fdfd:d3ad:c0de:1234::0/64
+  use_ip_v6: true
+  config_storage_path: ""
+  expiry_check_interval: 15m
+  rule_prio_offset: 20000
+  api_admin_only: true
+
+database:
+  debug: false
+  slow_query_threshold: 0
+  type: sqlite
+  dsn: data/sqlite.db
+
+statistics:
+  use_ping_checks: true
+  ping_check_workers: 10
+  ping_unprivileged: false
+  ping_check_interval: 1m
+  data_collection_interval: 1m
+  collect_interface_data: true
+  collect_peer_data: true
+  collect_audit_data: true
+  listening_address: :8787
+
+mail:
+  host: 127.0.0.1
+  port: 25
+  encryption: none
+  cert_validation: false
+  username: ""
+  password: ""
+  auth_type: plain
+  from: Wireguard Portal <noreply@wireguard.local>
+  link_only: false
+
+auth:
+  oidc: []
+  oauth: []
+  ldap: []
+
+web:
+  listening_address: :8888
+  external_url: http://localhost:8888
+  site_company_name: WireGuard Portal
+  site_title: WireGuard Portal
+  session_identifier: wgPortalSession
+  session_secret: very_secret
+  csrf_secret: extremely_secret
+  request_logging: false
+  cert_file: ""
+  key_File: ""
+```
+
+</details>
+
+
+Below you will find sections like
+[`core`](#core),
+[`advanced`](#advanced),
+[`database`](#database),
+[`statistics`](#statistics),
+[`mail`](#mail),
+[`auth`](#auth) and
+[`web`](#web).  
 Each section describes the individual configuration keys, their default values, and a brief explanation of their purpose.
 
 ---
 
 ## Core
 
-These are the primary configuration options that control fundamental WireGuard Portal behavior. 
+These are the primary configuration options that control fundamental WireGuard Portal behavior.
 More advanced options are found in the subsequent `Advanced` section.
 
 ### `admin_user`
@@ -107,7 +196,6 @@ Additional or more specialized configuration options for logging and interface c
 ### `api_admin_only`
 - **Default:** `true`
 - **Description:** If `true`, the public REST API is accessible only to admin users. The API docs live at [`/api/v1/doc.html`](../rest-api/api-doc.md).
-
 
 ---
 
@@ -224,12 +312,12 @@ Options for configuring email notifications or sending peer configurations via e
 
 ## Auth
 
-WireGuard Portal supports multiple authentication strategies, including **OpenID Connect** (`oidc`), **OAuth** (`oauth`), and **LDAP** (`ldap`). 
+WireGuard Portal supports multiple authentication strategies, including **OpenID Connect** (`oidc`), **OAuth** (`oauth`), and **LDAP** (`ldap`).
 Each can have multiple providers configured. Below are the relevant keys.
 
 ---
 
-### OIDC Provider Properties
+### OIDC
 
 The `oidc` array contains a list of OpenID Connect providers. 
 Below are the properties for each OIDC provider entry inside `auth.oidc`:
@@ -264,7 +352,7 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
   - Available fields: `user_identifier`, `email`, `firstname`, `lastname`, `phone`, `department`, `is_admin`, `user_groups`.
 
     | **Field**         | **Typical OIDC Claim**            | **Explanation**                                                                                                                                                                                         |
-    |-------------------|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | ----------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
     | `user_identifier` | `sub` or `preferred_username`     | A unique identifier for the user. Often the OIDC `sub` claim is used because it’s guaranteed to be unique for the user within the IdP. Some providers also support `preferred_username` if it’s unique. |
     | `email`           | `email`                           | The user’s email address as provided by the IdP. Not always verified, depending on IdP settings.                                                                                                        |
     | `firstname`       | `given_name`                      | The user’s first name, typically provided by the IdP in the `given_name` claim.                                                                                                                         |
@@ -290,7 +378,7 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 
 ---
 
-### OAuth Provider Properties
+### OAuth
 
 The `oauth` array contains a list of plain OAuth2 providers.
 Below are the properties for each OAuth provider entry inside `auth.oauth`:
@@ -333,7 +421,7 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
   - Available fields: `user_identifier`, `email`, `firstname`, `lastname`, `phone`, `department`, `is_admin`, `user_groups`.
 
     | **Field**         | **Typical Claim**                 | **Explanation**                                                                                                                                                                                         |
-    |-------------------|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | ----------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
     | `user_identifier` | `sub` or `preferred_username`     | A unique identifier for the user. Often the OIDC `sub` claim is used because it’s guaranteed to be unique for the user within the IdP. Some providers also support `preferred_username` if it’s unique. |
     | `email`           | `email`                           | The user’s email address as provided by the IdP. Not always verified, depending on IdP settings.                                                                                                        |
     | `firstname`       | `given_name`                      | The user’s first name, typically provided by the IdP in the `given_name` claim.                                                                                                                         |
@@ -359,7 +447,7 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 
 ---
 
-### LDAP Provider Properties
+### LDAP
 
 The `ldap` array contains a list of LDAP authentication providers.
 Below are the properties for each LDAP provider entry inside `auth.ldap`:
@@ -402,7 +490,7 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
     - Available fields: `user_identifier`, `email`, `firstname`, `lastname`, `phone`, `department`, `memberof`.
   
       | **WireGuard Portal Field** | **Typical LDAP Attribute** | **Short Description**                                        |
-      |----------------------------|----------------------------|--------------------------------------------------------------|
+      | -------------------------- | -------------------------- | ------------------------------------------------------------ |
       | user_identifier            | sAMAccountName / uid       | Uniquely identifies the user within the LDAP directory.      |
       | email                      | mail / userPrincipalName   | Stores the user's primary email address.                     |
       | firstname                  | givenName                  | Contains the user's first (given) name.                      |
@@ -455,3 +543,47 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 #### `log_user_info`
 - **Default:** *(empty)*
 - **Description:** If `true`, logs LDAP user data at the trace level upon login.
+
+---
+
+## Web
+
+### `listening_address`
+- **Default:** `:8888`
+- **Description:** The listening port of the web server.
+
+### `external_url`
+- **Default:** `http://localhost:8888`
+- **Description:** The URL where a client can access WireGuard Portal.
+
+### `site_company_name`
+- **Default:** `WireGuard Portal`
+- **Description:** The company name that is shown at the bottom of the web frontend.
+
+### `site_title`
+- **Default:** `WireGuard Portal`
+- **Description:** The title that is shown in the web frontend.
+
+### `session_identifier`
+- **Default:** `wgPortalSession`
+- **Description:** The session identifier for the web frontend.
+
+### `session_secret`
+- **Default:** `very_secret`
+- **Description:** The session secret for the web frontend.
+
+### `csrf_secret`
+- **Default:** `extremely_secret`
+- **Description:** The CSRF secret.
+
+### `request_logging`
+- **Default:** `false`
+- **Description:** Log all HTTP requests.
+
+### `cert_file`
+- **Default:** *(empty)*
+- **Description:** (Optional) Path to the TLS certificate file.
+
+### `key_file`
+- **Default:** *(empty)*
+- **Description:** (Optional) Path to the TLS certificate key file.
