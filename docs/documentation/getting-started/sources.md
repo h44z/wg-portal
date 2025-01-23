@@ -21,4 +21,4 @@ make build
 
 ## Install
 
-Complied binary will be available in `./dist` directory.
+Compiled binary will be available in `./dist` directory.
