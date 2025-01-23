@@ -63,7 +63,7 @@ nav:
       - Getting Started:
           - Binaries: documentation/getting-started/binaries.md
           - Docker: documentation/getting-started/docker.md
-          - Kubernetes: documentation/getting-started/kubernetes.md
+          - Helm: documentation/getting-started/helm.md
           - Sources: documentation/getting-started/sources.md
       - Configuration:
           - Overview: documentation/configuration/overview.md

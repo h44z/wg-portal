@@ -51,3 +51,16 @@ spec:
   {{- end }}
   selector: {{- include "wg-portal.selectorLabels" .context | nindent 4 }}
 {{- end -}}
+
+{{/*
+Define the service port template for the web port
+*/}}
+{{- define "wg-portal.service.webPort" -}}
+name: web
+port: {{ .Values.service.web.port }}
+protocol: TCP
+targetPort: web
+{{- if semverCompare ">=1.20-0" .Capabilities.KubeVersion.Version }}
+appProtocol: {{ ternary "https" .Values.service.web.appProtocol .Values.certificate.enabled }}
+{{- end -}}
+{{- end -}}
