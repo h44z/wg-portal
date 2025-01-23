@@ -1,0 +1,1 @@
+--8<-- "./deploy/helm/README.md:16"

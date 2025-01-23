@@ -19,6 +19,7 @@ theme:
   favicon: assets/images/favicon-large.png
   language: en
   features:
+    - content.code.copy
     - navigation.instant
     - navigation.tabs
     - navigation.expand
@@ -46,6 +47,7 @@ markdown_extensions:
   - admonition
   - meta
   - pymdownx.details
+  - pymdownx.snippets
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
@@ -59,10 +61,13 @@ nav:
   - Documentation:
       - Overview: documentation/overview.md
       - Getting Started:
-          - Building: documentation/getting-started/building.md
-          - Docker Container: documentation/getting-started/docker.md
-          - Upgrade from V1: documentation/getting-started/upgrade.md
+          - Binaries: documentation/getting-started/binaries.md
+          - Docker: documentation/getting-started/docker.md
+          - Kubernetes: documentation/getting-started/kubernetes.md
+          - Sources: documentation/getting-started/sources.md
       - Configuration:
           - Overview: documentation/configuration/overview.md
           - Examples: documentation/configuration/examples.md
+      - Upgrade: documentation/upgrade/v1.md
+      - Monitoring: documentation/monitoring/prometheus.md
       - REST API: documentation/rest-api/api-doc.md
