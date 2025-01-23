@@ -1,4 +1,4 @@
-{{- $portsWeb := list (dict "name" "web" "port" .Values.service.web.port "protocol" "TCP" "targetPort" "web") -}}
+{{- $portsWeb := list (include "wg-portal.service.webPort" . | fromYaml) -}}
 {{- $ports := list -}}
 {{- range $idx, $port := .Values.service.wireguard.ports -}}
 {{- $name := printf "wg%d" $idx -}}

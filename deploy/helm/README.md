@@ -1,6 +1,6 @@
 # wg-portal
 
-![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
+![Version: 0.6.0](https://img.shields.io/badge/Version-0.6.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v2](https://img.shields.io/badge/AppVersion-v2-informational?style=flat-square)
 
 WireGuard Configuration Portal with LDAP, OAuth, OIDC authentication
 
@@ -32,13 +32,13 @@ The [Values](#values) section lists the parameters that can be configured during
 | nameOverride | string | `""` | Partially override resource names (adds suffix) |
 | fullnameOverride | string | `""` | Fully override resource names |
 | extraDeploy | list | `[]` | Array of extra objects to deploy with the release |
-| config.advanced | tpl/object | `{}` | Advanced configuration options. |
-| config.auth | tpl/object | `{}` | Auth configuration options. |
-| config.core | tpl/object | `{}` | Core configuration options.<br> If external admins in `auth` are not defined and there are no `admin_user` and `admin_password` defined here, the default credentials will be generated. |
-| config.database | tpl/object | `{}` | Database configuration options |
-| config.mail | tpl/object | `{}` | Mail configuration options |
-| config.statistics | tpl/object | `{}` | Statistics configuration options |
-| config.web | tpl/object | `{}` | Web configuration options.<br> `listening_address` will be set automatically from `service.web.port`. `external_url` is required to enable ingress and certificate resources. |
+| config.advanced | tpl/object | `{}` | [Advanced configuration](https://wgportal.org/latest/documentation/configuration/overview/#advanced) options. |
+| config.auth | tpl/object | `{}` | [Auth configuration](https://wgportal.org/latest/documentation/configuration/overview/#auth) options. |
+| config.core | tpl/object | `{}` | [Core configuration](https://wgportal.org/latest/documentation/configuration/overview/#core) options.<br> If external admins in `auth` are not defined and there are no `admin_user` and `admin_password` defined here, the default credentials will be generated. |
+| config.database | tpl/object | `{}` | [Database configuration](https://wgportal.org/latest/documentation/configuration/overview/#database) options |
+| config.mail | tpl/object | `{}` | [Mail configuration](https://wgportal.org/latest/documentation/configuration/overview/#mail) options |
+| config.statistics | tpl/object | `{}` | [Statistics configuration](https://wgportal.org/latest/documentation/configuration/overview/#statistics) options |
+| config.web | tpl/object | `{}` | [Web configuration](https://wgportal.org/latest/documentation/configuration/overview/#web) options.<br> `listening_address` will be set automatically from `service.web.port`. `external_url` is required to enable ingress and certificate resources. |
 | revisionHistoryLimit | string | `10` | The number of old ReplicaSets to retain to allow rollback. |
 | workloadType | string | `"Deployment"` | Workload type - `Deployment` or `StatefulSet` |
 | strategy | object | `{"type":"RollingUpdate"}` | Update strategy for the workload Valid values are:  `RollingUpdate` or `Recreate` for Deployment,  `RollingUpdate` or `OnDelete` for StatefulSet |
@@ -73,6 +73,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | service.web.annotations | object | `{}` | Annotations for the web service |
 | service.web.type | string | `"ClusterIP"` | Web service type |
 | service.web.port | int | `8888` | Web service port Used for the web interface listener |
+| service.web.appProtocol | string | `"http"` | Web service appProtocol. Will be auto set to `https` if certificate is enabled. |
 | service.wireguard.annotations | object | `{}` | Annotations for the WireGuard service |
 | service.wireguard.type | string | `"LoadBalancer"` | Wireguard service type |
 | service.wireguard.ports | list | `[51820]` | Wireguard service ports. Exposes the WireGuard ports for created interfaces. Lowerest port is selected as start port for the first interface. Increment next port by 1 for each additional interface. |
