@@ -62,9 +62,9 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Define default admin credentials
+Disables default admin credentials
 If external auth is enabled and has admin group mappings,
-the admin_user and admin_password values are not used.
+the admin_user will be set to blank (disabled).
 */}}
 {{- define "wg-portal.admin" -}}
 {{- $externalAdmin := false -}}
@@ -80,9 +80,8 @@ the admin_user and admin_password values are not used.
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- if not $externalAdmin -}}
-admin_user: admin@wgportal.local
-admin_password: {{ printf "%s/%s" .Release.Name .Release.Namespace | b64enc }}
+{{- if $externalAdmin -}}
+admin_user: ""
 {{- end -}}
 {{- end -}}
 

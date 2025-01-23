@@ -1,6 +1,6 @@
 # wg-portal
 
-![Version: 0.6.0](https://img.shields.io/badge/Version-0.6.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v2](https://img.shields.io/badge/AppVersion-v2-informational?style=flat-square)
+![Version: 0.7.0](https://img.shields.io/badge/Version-0.7.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v2](https://img.shields.io/badge/AppVersion-v2-informational?style=flat-square)
 
 WireGuard Configuration Portal with LDAP, OAuth, OIDC authentication
 
@@ -34,7 +34,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | extraDeploy | list | `[]` | Array of extra objects to deploy with the release |
 | config.advanced | tpl/object | `{}` | [Advanced configuration](https://wgportal.org/latest/documentation/configuration/overview/#advanced) options. |
 | config.auth | tpl/object | `{}` | [Auth configuration](https://wgportal.org/latest/documentation/configuration/overview/#auth) options. |
-| config.core | tpl/object | `{}` | [Core configuration](https://wgportal.org/latest/documentation/configuration/overview/#core) options.<br> If external admins in `auth` are not defined and there are no `admin_user` and `admin_password` defined here, the default credentials will be generated. |
+| config.core | tpl/object | `{}` | [Core configuration](https://wgportal.org/latest/documentation/configuration/overview/#core) options.<br> If external admins in `auth` are defined and there are no `admin_user` and `admin_password` defined here, the default admin account will be disabled. |
 | config.database | tpl/object | `{}` | [Database configuration](https://wgportal.org/latest/documentation/configuration/overview/#database) options |
 | config.mail | tpl/object | `{}` | [Mail configuration](https://wgportal.org/latest/documentation/configuration/overview/#mail) options |
 | config.statistics | tpl/object | `{}` | [Statistics configuration](https://wgportal.org/latest/documentation/configuration/overview/#statistics) options |
@@ -82,7 +82,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | ingress.className | string | `""` | Ingress class name |
 | ingress.annotations | object | `{}` | Ingress annotations |
 | ingress.tls | bool | `false` | Ingress TLS configuration. Enable certificate resource or add ingress annotation to create required secret |
-| certificate.enabled | bool | `false` | Specifies whether a certificate resource should be created |
+| certificate.enabled | bool | `false` | Specifies whether a certificate resource should be created. If enabled, certificate will be used for the web. |
 | certificate.issuer.name | string | `""` | Certificate issuer name |
 | certificate.issuer.kind | string | `""` | Certificate issuer kind (ClusterIssuer or Issuer) |
 | certificate.issuer.group | string | `"cert-manager.io"` | Certificate issuer group |
