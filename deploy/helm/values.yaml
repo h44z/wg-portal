@@ -15,9 +15,9 @@ config:
   # -- (tpl/object) [Auth configuration](https://wgportal.org/latest/documentation/configuration/overview/#auth) options.
   auth: {}
   # -- (tpl/object) [Core configuration](https://wgportal.org/latest/documentation/configuration/overview/#core) options.<br>
-  # If external admins in `auth` are not defined and
+  # If external admins in `auth` are defined and
   # there are no `admin_user` and `admin_password` defined here,
-  # the default credentials will be generated.
+  # the default admin account will be disabled.
   core: {}
   # -- (tpl/object) [Database configuration](https://wgportal.org/latest/documentation/configuration/overview/#database) options
   database: {}
@@ -150,7 +150,8 @@ ingress:
   tls: false
 
 certificate:
-  # -- Specifies whether a certificate resource should be created
+  # -- Specifies whether a certificate resource should be created.
+  # If enabled, certificate will be used for the web.
   enabled: false
   issuer:
     # -- Certificate issuer name
