@@ -1,0 +1,16 @@
+// disable external web fonts
+$web-font-path: false;
+
+@import "bootswatch/dist/lux/variables";
+@import "bootstrap/scss/bootstrap";
+@import "bootswatch/dist/lux/bootswatch";
+
+
+// for future use, once bootswatch supports @use
+/*
+@use "bootswatch/dist/lux/_variables.scss" as lux-vars with (
+  $web-font-path: false
+);
+@use "bootstrap/scss/bootstrap" as bs;
+@use "bootswatch/dist/lux/_bootswatch.scss" as lux-theme;
+*/
