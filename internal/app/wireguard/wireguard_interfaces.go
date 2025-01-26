@@ -456,6 +456,10 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 	*domain.Interface,
 	error,
 ) {
+	if err := iface.Validate(); err != nil {
+		return nil, fmt.Errorf("interface validation failed: %w", err)
+	}
+
 	stateChanged := m.hasInterfaceStateChanged(ctx, iface)
 
 	if err := m.handleInterfacePreSaveHooks(stateChanged, iface); err != nil {

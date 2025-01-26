@@ -355,7 +355,7 @@
         "endpoint": {
           "label": "Endpoint Address",
           "placeholder": "Endpoint Address",
-          "description": "The endpoint address that peers will connect to."
+          "description": "The endpoint address that peers will connect to. (e.g. wg.example.com or wg.example.com:51820)"
         },
         "networks": {
           "label": "IP Networks",

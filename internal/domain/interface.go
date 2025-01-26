@@ -3,6 +3,7 @@ package domain
 import (
 	"fmt"
 	"math"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -71,8 +72,24 @@ type Interface struct {
 	PeerDefPostDown string // default action that is executed after the device is down
 }
 
-func (i *Interface) IsValid() bool {
-	return true // TODO: implement check
+// Validate performs checks to ensure that the interface is valid.
+func (i *Interface) Validate() error {
+	// validate peer default endpoint, add port if needed
+	if i.PeerDefEndpoint != "" {
+		host, port, err := net.SplitHostPort(i.PeerDefEndpoint)
+		switch {
+		case err != nil && !strings.Contains(err.Error(), "missing port in address"):
+			return fmt.Errorf("invalid default endpoint: %w", err)
+		case err != nil && strings.Contains(err.Error(), "missing port in address"):
+			// In this case, the entire string is the host, and there's no port.
+			host = i.PeerDefEndpoint
+			port = strconv.Itoa(i.ListenPort)
+		}
+
+		i.PeerDefEndpoint = net.JoinHostPort(host, port)
+	}
+
+	return nil
 }
 
 func (i *Interface) IsDisabled() bool {
