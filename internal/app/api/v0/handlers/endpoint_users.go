@@ -28,6 +28,7 @@ func (e userEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 	apiGroup.POST("/new", e.authenticator.LoggedIn(ScopeAdmin), e.handleCreatePost())
 	apiGroup.GET("/:id/peers", e.authenticator.UserIdMatch("id"), e.handlePeersGet())
 	apiGroup.GET("/:id/stats", e.authenticator.UserIdMatch("id"), e.handleStatsGet())
+	apiGroup.GET("/:id/interfaces", e.authenticator.UserIdMatch("id"), e.handleInterfacesGet())
 	apiGroup.POST("/:id/api/enable", e.authenticator.UserIdMatch("id"), e.handleApiEnablePost())
 	apiGroup.POST("/:id/api/disable", e.authenticator.UserIdMatch("id"), e.handleApiDisablePost())
 }
@@ -170,6 +171,7 @@ func (e userEndpoint) handleCreatePost() gin.HandlerFunc {
 // @ID users_handlePeersGet
 // @Tags Users
 // @Summary Get peers for the given user.
+// @Param id path string true "The user identifier"
 // @Produce json
 // @Success 200 {object} []model.Peer
 // @Failure 400 {object} model.Error
@@ -179,14 +181,14 @@ func (e userEndpoint) handlePeersGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := domain.SetUserInfoFromGin(c)
 
-		interfaceId := Base64UrlDecode(c.Param("id"))
-		if interfaceId == "" {
+		userId := Base64UrlDecode(c.Param("id"))
+		if userId == "" {
 			c.JSON(http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
 			return
 		}
 
-		peers, err := e.app.GetUserPeers(ctx, domain.UserIdentifier(interfaceId))
+		peers, err := e.app.GetUserPeers(ctx, domain.UserIdentifier(userId))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -202,6 +204,7 @@ func (e userEndpoint) handlePeersGet() gin.HandlerFunc {
 // @ID users_handleStatsGet
 // @Tags Users
 // @Summary Get peer stats for the given user.
+// @Param id path string true "The user identifier"
 // @Produce json
 // @Success 200 {object} model.PeerStats
 // @Failure 400 {object} model.Error
@@ -226,6 +229,39 @@ func (e userEndpoint) handleStatsGet() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, model.NewPeerStats(e.app.Config.Statistics.CollectPeerData, stats))
+	}
+}
+
+// handleInterfacesGet returns a gorm handler function.
+//
+// @ID users_handleInterfacesGet
+// @Tags Users
+// @Summary Get interfaces for the given user. Returns an empty list if self provisioning is disabled.
+// @Param id path string true "The user identifier"
+// @Produce json
+// @Success 200 {object} []model.Interface
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/{id}/interfaces [get]
+func (e userEndpoint) handleInterfacesGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := domain.SetUserInfoFromGin(c)
+
+		userId := Base64UrlDecode(c.Param("id"))
+		if userId == "" {
+			c.JSON(http.StatusBadRequest,
+				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
+			return
+		}
+
+		peers, err := e.app.GetUserInterfaces(ctx, domain.UserIdentifier(userId))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, model.NewInterfaces(peers, nil))
 	}
 }
 

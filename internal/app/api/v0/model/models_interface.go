@@ -109,7 +109,11 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 func NewInterfaces(src []domain.Interface, srcPeers [][]domain.Peer) []Interface {
 	results := make([]Interface, len(src))
 	for i := range src {
-		results[i] = *NewInterface(&src[i], srcPeers[i])
+		if srcPeers == nil {
+			results[i] = *NewInterface(&src[i], nil)
+		} else {
+			results[i] = *NewInterface(&src[i], srcPeers[i])
+		}
 	}
 
 	return results

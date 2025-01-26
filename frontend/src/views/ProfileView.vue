@@ -3,7 +3,7 @@ import PeerViewModal from "../components/PeerViewModal.vue";
 
 import { onMounted, ref } from "vue";
 import { profileStore } from "@/stores/profile";
-import PeerEditModal from "@/components/PeerEditModal.vue";
+import UserPeerEditModal from "@/components/UserPeerEditModal.vue";
 import { settingsStore } from "@/stores/settings";
 import { humanFileSize } from "@/helpers/utils";
 
@@ -27,10 +27,18 @@ function sortBy(key) {
   profile.sortOrder = sortOrder.value;
 }
 
+function friendlyInterfaceName(id, name) {
+  if (name) {
+    return name
+  }
+  return id
+}
+
 onMounted(async () => {
   await profile.LoadUser()
   await profile.LoadPeers()
   await profile.LoadStats()
+  await profile.LoadInterfaces()
   await profile.calculatePages(); // Forces to show initial page number
 })
 
@@ -38,7 +46,7 @@ onMounted(async () => {
 
 <template>
   <PeerViewModal :peerId="viewedPeerId" :visible="viewedPeerId !== ''" @close="viewedPeerId = ''"></PeerViewModal>
-  <PeerEditModal :peerId="editPeerId" :visible="editPeerId !== ''" @close="editPeerId = ''"></PeerEditModal>
+  <UserPeerEditModal :peerId="editPeerId" :visible="editPeerId !== ''" @close="editPeerId = ''; profile.LoadPeers()"></UserPeerEditModal>
 
   <!-- Peer list -->
   <div class="mt-4 row">
@@ -56,9 +64,17 @@ onMounted(async () => {
       </div>
     </div>
     <div class="col-12 col-lg-3 text-lg-end">
-      <a v-if="settings.Setting('SelfProvisioning')" class="btn btn-primary ms-2" href="#"
-        :title="$t('interfaces.button-add-peer')" @click.prevent="editPeerId = '#NEW#'"><i
-          class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
+      <div class="form-group" v-if="settings.Setting('SelfProvisioning')">
+        <div class="input-group mb-3">
+          <button class="input-group-text btn btn-primary" :title="$t('interfaces.button-add-peer')" @click.prevent="editPeerId = '#NEW#'">
+            <i class="fa fa-plus me-1"></i><i class="fa fa-user"></i>
+          </button>
+          <select v-model="profile.selectedInterfaceId" :disabled="profile.CountInterfaces===0" class="form-select">
+            <option v-if="profile.CountInterfaces===0" value="nothing">{{ $t('interfaces.no-interface.default-selection') }}</option>
+            <option v-for="iface in profile.interfaces" :key="iface.Identifier" :value="iface.Identifier">{{ friendlyInterfaceName(iface.Identifier,iface.DisplayName) }}</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
   <div class="mt-2 table-responsive">

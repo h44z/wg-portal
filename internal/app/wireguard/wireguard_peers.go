@@ -62,8 +62,10 @@ func (m Manager) GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]
 }
 
 func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error) {
-	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
-		return nil, err // TODO: self provisioning?
+	if !m.cfg.Core.SelfProvisioningAllowed {
+		if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	currentUser := domain.GetUserInfo(ctx)
@@ -71,6 +73,10 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 	iface, err := m.db.GetInterface(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find interface %s: %w", id, err)
+	}
+
+	if m.cfg.Core.SelfProvisioningAllowed && iface.Type != domain.InterfaceTypeServer {
+		return nil, fmt.Errorf("self provisioning is only allowed for server interfaces: %w", domain.ErrNoPermission)
 	}
 
 	ips, err := m.getFreshPeerIpConfig(ctx, iface)
@@ -149,9 +155,17 @@ func (m Manager) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain
 }
 
 func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error) {
-	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
-		return nil, err
+	if !m.cfg.Core.SelfProvisioningAllowed {
+		if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+			return nil, err
+		}
 	}
+
+	sessionUser := domain.GetUserInfo(ctx)
 
 	existingPeer, err := m.db.GetPeer(ctx, peer.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
@@ -159,6 +173,18 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 	}
 	if existingPeer != nil {
 		return nil, fmt.Errorf("peer %s already exists: %w", peer.Identifier, domain.ErrDuplicateEntry)
+	}
+
+	// if a peer is self provisioned, ensure that only allowed fields are set from the request
+	if !sessionUser.IsAdmin {
+		preparedPeer, err := m.PreparePeer(ctx, peer.InterfaceIdentifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare peer for interface %s: %w", peer.InterfaceIdentifier, err)
+		}
+
+		preparedPeer.OverwriteUserEditableFields(peer)
+
+		peer = preparedPeer
 	}
 
 	if err := m.validatePeerCreation(ctx, existingPeer, peer); err != nil {
@@ -227,6 +253,19 @@ func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 
 	if err := m.validatePeerModifications(ctx, existingPeer, peer); err != nil {
 		return nil, fmt.Errorf("update not allowed: %w", err)
+	}
+
+	sessionUser := domain.GetUserInfo(ctx)
+
+	// if a peer is self provisioned, ensure that only allowed fields are set from the request
+	if !sessionUser.IsAdmin {
+		originalPeer, err := m.db.GetPeer(ctx, peer.Identifier)
+		if err != nil {
+			return nil, fmt.Errorf("unable to load existing peer %s: %w", peer.Identifier, err)
+		}
+		originalPeer.OverwriteUserEditableFields(peer)
+
+		peer = originalPeer
 	}
 
 	// handle peer identifier change (new public key)
@@ -438,7 +477,7 @@ func (m Manager) getFreshPeerIpConfig(ctx context.Context, iface *domain.Interfa
 func (m Manager) validatePeerModifications(ctx context.Context, old, new *domain.Peer) error {
 	currentUser := domain.GetUserInfo(ctx)
 
-	if !currentUser.IsAdmin {
+	if !currentUser.IsAdmin && !m.cfg.Core.SelfProvisioningAllowed {
 		return domain.ErrNoPermission
 	}
 
@@ -452,7 +491,7 @@ func (m Manager) validatePeerCreation(ctx context.Context, old, new *domain.Peer
 		return fmt.Errorf("invalid peer identifier: %w", domain.ErrInvalidData)
 	}
 
-	if !currentUser.IsAdmin {
+	if !currentUser.IsAdmin && !m.cfg.Core.SelfProvisioningAllowed {
 		return domain.ErrNoPermission
 	}
 
@@ -467,7 +506,7 @@ func (m Manager) validatePeerCreation(ctx context.Context, old, new *domain.Peer
 func (m Manager) validatePeerDeletion(ctx context.Context, del *domain.Peer) error {
 	currentUser := domain.GetUserInfo(ctx)
 
-	if !currentUser.IsAdmin {
+	if !currentUser.IsAdmin && !m.cfg.Core.SelfProvisioningAllowed {
 		return domain.ErrNoPermission
 	}
 

@@ -24,8 +24,8 @@ func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 
 	apiGroup.GET("/iface/:iface/all", e.authenticator.LoggedIn(ScopeAdmin), e.handleAllGet())
 	apiGroup.GET("/iface/:iface/stats", e.authenticator.LoggedIn(ScopeAdmin), e.handleStatsGet())
-	apiGroup.GET("/iface/:iface/prepare", e.authenticator.LoggedIn(ScopeAdmin), e.handlePrepareGet())
-	apiGroup.POST("/iface/:iface/new", e.authenticator.LoggedIn(ScopeAdmin), e.handleCreatePost())
+	apiGroup.GET("/iface/:iface/prepare", e.authenticator.LoggedIn(), e.handlePrepareGet())
+	apiGroup.POST("/iface/:iface/new", e.authenticator.LoggedIn(), e.handleCreatePost())
 	apiGroup.POST("/iface/:iface/multiplenew", e.authenticator.LoggedIn(ScopeAdmin), e.handleCreateMultiplePost())
 	apiGroup.GET("/config-qr/:id", e.handleQrCodeGet())
 	apiGroup.POST("/config-mail", e.handleEmailPost())

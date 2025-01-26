@@ -72,6 +72,17 @@ type Interface struct {
 	PeerDefPostDown string // default action that is executed after the device is down
 }
 
+// PublicInfo returns a copy of the interface with only the public information.
+// Sensible information like keys are not included.
+func (i *Interface) PublicInfo() Interface {
+	return Interface{
+		Identifier:  i.Identifier,
+		DisplayName: i.DisplayName,
+		Type:        i.Type,
+		Disabled:    i.Disabled,
+	}
+}
+
 // Validate performs checks to ensure that the interface is valid.
 func (i *Interface) Validate() error {
 	// validate peer default endpoint, add port if needed
