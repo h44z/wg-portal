@@ -11,7 +11,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.10
 	github.com/google/uuid v1.6.0
-	github.com/prometheus-community/pro-bing v0.5.0
+	github.com/prometheus-community/pro-bing v0.6.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
