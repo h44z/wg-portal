@@ -45,13 +45,12 @@ const languageFlag = computed(() => {
   if (!appGlobal.$i18n.availableLocales.includes(lang)) {
     lang = appGlobal.$i18n.fallbackLocale;
   }
-  if (lang === "en") {
-    lang = "us";
-  }
-  if (lang === "zh") {
-    lang = "cn";
-  }
-  return "fi-" + lang;
+  const langMap = {
+    en: "us",
+    uk: "ua",
+    zh: "cn",
+  };
+  return "fi-" + (langMap[lang] || lang);
 })
 
 const companyName = ref(WGPORTAL_SITE_COMPANY_NAME);
@@ -117,12 +116,13 @@ const currentYear = ref(new Date().getFullYear())
               <button aria-expanded="false" aria-haspopup="true" class="btn btn btn-secondary pe-0"
                 data-bs-toggle="dropdown" type="button"><span :class="languageFlag" class="fi"></span></button>
               <div aria-labelledby="btnGroupDrop3" class="dropdown-menu" style="">
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span> English</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span> Deutsch</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span> English</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('fr')"><span class="fi fi-fr"></span> Français</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span> Русский</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('uk')"><span class="fi fi-ua"></span> Українська</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('vi')"><span class="fi fi-vi"></span> Tiếng Việt</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('zh')"><span class="fi fi-cn"></span> 中文</a>
-                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('fr')"><span class="fi fi-fr"></span> Français</a>
               </div>
             </div>
           </div>
