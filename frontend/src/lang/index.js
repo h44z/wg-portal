@@ -4,6 +4,7 @@ import ru from './translations/ru.json';
 import en from './translations/en.json';
 import vi from './translations/vi.json';
 import zh from './translations/zh.json';
+import fr from './translation/fr.json';
 import {createI18n} from "vue-i18n";
 
 // Create i18n instance with options
@@ -22,7 +23,8 @@ const i18n = createI18n({
     "ru": ru,
     "en": en,
     "vi": vi,
-    "zh": zh
+    "zh": zh,
+    "fr": fr
   }
 });
 
