@@ -1,0 +1,515 @@
+{
+  "languages": {
+    "uk": "Українська"
+  },
+  "general": {
+    "pagination": {
+      "size": "Кількість елементів",
+      "all": "Всі (повільно)"
+    },
+    "search": {
+      "placeholder": "Пошук...",
+      "button": "Пошук"
+    },
+    "select-all": "Вибрати все",
+    "yes": "Так",
+    "no": "Ні",
+    "cancel": "Скасувати",
+    "close": "Закрити",
+    "save": "Зберегти",
+    "delete": "Видалити"
+  },
+  "login": {
+    "headline": "Будь ласка, увійдіть",
+    "username": {
+      "label": "Ім'я користувача",
+      "placeholder": "Введіть ім'я користувача"
+    },
+    "password": {
+      "label": "Пароль",
+      "placeholder": "Введіть пароль"
+    },
+    "button": "Увійти"
+  },
+  "menu": {
+    "home": "Головна",
+    "interfaces": "Інтерфейси",
+    "users": "Користувачі",
+    "lang": "Змінити мову",
+    "profile": "Мій профіль",
+    "settings": "Налаштування",
+    "login": "Вхід",
+    "logout": "Вийти"
+  },
+  "home": {
+    "headline": "WireGuard® VPN Портал",
+    "info-headline": "Додаткова інформація",
+    "abstract": "WireGuard® — це високоефективний, сучасний і легкий VPN, який використовує передову криптографію. Розроблений для простоти та швидкості, він перевершує IPsec, усуваючи зайву складність. Крім того, він прагне забезпечити значно кращу продуктивність, ніж OpenVPN.",
+    "installation": {
+      "box-header": "Встановлення WireGuard",
+      "headline": "Встановлення",
+      "content": "Інструкції щодо встановлення клієнтського програмного забезпечення можна знайти на офіційному сайті WireGuard.",
+      "button": "Відкрити інструкції"
+    },
+    "about-wg": {
+      "box-header": "Про WireGuard",
+      "headline": "Про програму",
+      "content": "WireGuard® — це надзвичайно простий, швидкий і сучасний VPN, що використовує передову криптографію.",
+      "button": "Докладніше"
+    },
+    "about-portal": {
+      "box-header": "Про портал WireGuard",
+      "headline": "Портал WireGuard",
+      "content": "Портал WireGuard — це простий веб-інтерфейс для налаштування WireGuard.",
+      "button": "Докладніше"
+    },
+    "profiles": {
+      "headline": "VPN профілі",
+      "abstract": "Ви можете отримати доступ та завантажити свої особисті VPN-конфігурації через свій профіль користувача.",
+      "content": "Щоб переглянути всі налаштовані профілі, натисніть кнопку нижче.",
+      "button": "Відкрити мій профіль"
+    },
+    "admin": {
+      "headline": "Адміністративна панель",
+      "abstract": "У адміністративній панелі ви можете керувати клієнтами WireGuard, серверним інтерфейсом і користувачами, які мають доступ до порталу WireGuard.",
+      "content": "",
+      "button-admin": "Відкрити адміністрування сервера",
+      "button-user": "Відкрити адміністрування користувачів"
+    }
+  },
+  "interfaces": {
+    "headline": "Адміністрування інтерфейсів",
+    "headline-peers": "Поточні VPN-піри",
+    "headline-endpoints": "Поточні кінцеві точки",
+    "no-interface": {
+      "default-selection": "Немає доступного інтерфейсу",
+      "headline": "Інтерфейси не знайдено...",
+      "abstract": "Натисніть кнопку з плюсом вище, щоб створити новий інтерфейс WireGuard."
+    },
+    "no-peer": {
+      "headline": "Немає доступних пірів",
+      "abstract": "Наразі немає доступних пірів для вибраного інтерфейсу WireGuard."
+    },
+    "table-heading": {
+      "name": "Ім'я",
+      "user": "Користувач",
+      "ip": "IP-адреси",
+      "endpoint": "Кінцева точка",
+      "status": "Статус"
+    },
+    "interface": {
+      "headline": "Статус інтерфейсу для",
+      "mode": "режим",
+      "key": "Публічний ключ",
+      "endpoint": "Публічна кінцева точка",
+      "port": "Порт прослуховування",
+      "peers": "Увімкнені піри",
+      "total-peers": "Загальна кількість пірів",
+      "endpoints": "Увімкнені кінцеві точки",
+      "total-endpoints": "Загальна кількість кінцевих точок",
+      "ip": "IP-адреса",
+      "default-allowed-ip": "Типові дозволені IP-адреси",
+      "dns": "DNS-сервери",
+      "mtu": "MTU",
+      "default-keep-alive": "Типовий інтервал Keepalive",
+      "button-show-config": "Показати конфігурацію",
+      "button-download-config": "Завантажити конфігурацію",
+      "button-store-config": "Зберегти конфігурацію для wg-quick",
+      "button-edit": "Редагувати інтерфейс"
+    },
+    "button-add-interface": "Додати інтерфейс",
+    "button-add-peer": "Додати пір",
+    "button-add-peers": "Додати декілька пірів",
+    "button-show-peer": "Показати пір",
+    "button-edit-peer": "Редагувати пір",
+    "peer-disabled": "Пір вимкнено, причина:",
+    "peer-expiring": "Пір припиняє дію о",
+    "peer-connected": "Підключено",
+    "peer-not-connected": "Не підключено",
+    "peer-handshake": "Останнє рукостискання:"
+  },
+  "users": {
+    "headline": "Адміністрування користувачів",
+    "table-heading": {
+      "id": "ID",
+      "email": "E-Mail",
+      "firstname": "Ім'я",
+      "lastname": "Прізвище",
+      "source": "Джерело",
+      "peers": "Піри",
+      "admin": "Адміністратор"
+    },
+    "no-user": {
+      "headline": "Немає доступних користувачів",
+      "abstract": "Наразі немає зареєстрованих користувачів у WireGuard Portal."
+    },
+    "button-add-user": "Додати користувача",
+    "button-show-user": "Показати користувача",
+    "button-edit-user": "Редагувати користувача",
+    "user-disabled": "Користувача вимкнено, причина:",
+    "user-locked": "Обліковий запис заблоковано, причина:",
+    "admin": "Користувач має адміністративні привілеї",
+    "no-admin": "Користувач не має адміністративних привілеїв"
+  },
+
+  "profile": {
+    "headline": "Мої VPN-піри",
+    "table-heading": {
+      "name": "Ім'я",
+      "ip": "IP-адреси",
+      "stats": "Статус",
+      "interface": "Серверний інтерфейс"
+    },
+    "no-peer": {
+      "headline": "Немає доступних пірів",
+      "abstract": "Наразі немає пірів, пов'язаних із вашим профілем користувача."
+    },
+    "peer-connected": "Підключено",
+    "button-add-peer": "Додати пір",
+    "button-show-peer": "Показати пір",
+    "button-edit-peer": "Редагувати пір"
+  },
+  "settings": {
+    "headline": "Налаштування",
+    "abstract": "Тут ви можете змінити особисті налаштування.",
+    "api": {
+      "headline": "Налаштування API",
+      "abstract": "Тут ви можете налаштувати RESTful API.",
+      "active-description": "API наразі активний для вашого облікового запису. Усі API-запити автентифікуються за допомогою Basic Auth. Використовуйте такі облікові дані для автентифікації.",
+      "inactive-description": "API наразі неактивний. Натисніть кнопку нижче, щоб активувати його.",
+      "user-label": "Ім'я користувача API:",
+      "user-placeholder": "Користувач API",
+      "token-label": "Пароль API:",
+      "token-placeholder": "Токен API",
+      "token-created-label": "Доступ до API надано:",
+      "button-disable-title": "Вимкнути API, це зробить поточний токен недійсним.",
+      "button-disable-text": "Вимкнути API",
+      "button-enable-title": "Увімкнути API, це згенерує новий токен.",
+      "button-enable-text": "Увімкнути API",
+      "api-link": "Документація API"
+    }
+  },
+
+  "modals": {
+    "user-view": {
+      "headline": "Обліковий запис користувача:",
+      "tab-user": "Інформація",
+      "tab-peers": "Піри",
+      "headline-info": "Інформація про користувача:",
+      "headline-notes": "Примітки:",
+      "email": "E-Mail",
+      "firstname": "Ім'я",
+      "lastname": "Прізвище",
+      "phone": "Номер телефону",
+      "department": "Відділ",
+      "api-enabled": "Доступ до API",
+      "disabled": "Обліковий запис вимкнено",
+      "locked": "Обліковий запис заблоковано",
+      "no-peers": "У користувача немає пов'язаних пірів.",
+      "peers": {
+        "name": "Ім'я",
+        "interface": "Інтерфейс",
+        "ip": "IP-адреси"
+      }
+    },
+    "user-edit": {
+      "headline-edit": "Редагування користувача:",
+      "headline-new": "Новий користувач",
+      "header-general": "Загальні",
+      "header-personal": "Інформація про користувача",
+      "header-notes": "Примітки",
+      "header-state": "Стан",
+      "identifier": {
+        "label": "Ідентифікатор",
+        "placeholder": "Унікальний ідентифікатор користувача"
+      },
+      "source": {
+        "label": "Джерело",
+        "placeholder": "Джерело користувача"
+      },
+      "password": {
+        "label": "Пароль",
+        "placeholder": "Суперсекретний пароль",
+        "description": "Залиште це поле порожнім, щоб зберегти поточний пароль."
+      },
+      "email": {
+        "label": "Електронна адреса",
+        "placeholder": "Електронна адреса"
+      },
+      "phone": {
+        "label": "Телефон",
+        "placeholder": "Номер телефону"
+      },
+      "department": {
+        "label": "Відділ",
+        "placeholder": "Відділ"
+      },
+      "firstname": {
+        "label": "Ім'я",
+        "placeholder": "Ім'я"
+      },
+      "lastname": {
+        "label": "Прізвище",
+        "placeholder": "Прізвище"
+      },
+      "notes": {
+        "label": "Примітки",
+        "placeholder": ""
+      },
+      "disabled": {
+        "label": "Вимкнено (неможливо підключитися до WireGuard і увійти в систему)"
+      },
+      "locked": {
+        "label": "Заблоковано (неможливо увійти, але підключення WireGuard працює)"
+      },
+      "admin": {
+        "label": "Адміністратор"
+      }
+    },
+    "interface-view": {
+      "headline": "Конфігурація для інтерфейсу:"
+    },
+    "interface-edit": {
+      "headline-edit": "Редагувати інтерфейс:",
+      "headline-new": "Новий інтерфейс",
+      "tab-interface": "Інтерфейс",
+      "tab-peerdef": "За замовчуванням для пірів",
+      "header-general": "Загальне",
+      "header-network": "Мережа",
+      "header-crypto": "Криптографія",
+      "header-hooks": "Хуки інтерфейсу",
+      "header-peer-hooks": "Хуки",
+      "header-state": "Стан",
+      "identifier": {
+        "label": "Ідентифікатор",
+        "placeholder": "Унікальний ідентифікатор інтерфейсу"
+      },
+      "mode": {
+        "label": "Режим інтерфейсу",
+        "server": "Серверний режим",
+        "client": "Клієнтський режим",
+        "any": "Невідомий режим"
+      },
+      "display-name": {
+        "label": "Відображуване ім'я",
+        "placeholder": "Описове ім'я для інтерфейсу"
+      },
+      "private-key": {
+        "label": "Приватний ключ",
+        "placeholder": "Приватний ключ"
+      },
+      "public-key": {
+        "label": "Публічний ключ",
+        "placeholder": "Публічний ключ"
+      },
+      "ip": {
+        "label": "IP-адреси",
+        "placeholder": "IP-адреси (у CIDR форматі)"
+      },
+      "listen-port": {
+        "label": "Порт прослуховування",
+        "placeholder": "Порт прослуховування"
+      },
+      "dns": {
+        "label": "DNS сервер",
+        "placeholder": "DNS сервери, які слід використовувати"
+      },
+      "dns-search": {
+        "label": "DNS пошукові домени",
+        "placeholder": "DNS пошукові префікси"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "MTU інтерфейсу (0 = залишити за замовчуванням)"
+      },
+      "firewall-mark": {
+        "label": "Маркування Firewall",
+        "placeholder": "Маркування firewall, що застосовується до вихідного трафіку. (0 = автоматично)"
+      },
+      "routing-table": {
+        "label": "Маршрутна таблиця",
+        "placeholder": "ID маршрутної таблиці",
+        "description": "Особливі випадки: off = не керувати маршрутами, 0 = автоматично"
+      },
+      "pre-up": {
+        "label": "Pre-Up",
+        "placeholder": "Одна або декілька команд bash, розділених ;"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "Одна або декілька команд bash, розділених ;"
+      },
+      "pre-down": {
+        "label": "Pre-Down",
+        "placeholder": "Одна або декілька команд bash, розділених ;"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "Одна або декілька команд bash, розділених ;"
+      },
+      "disabled": {
+        "label": "Інтерфейс відключено"
+      },
+      "save-config": {
+        "label": "Автоматично зберігати конфігурацію wg-quick"
+      },
+      "defaults": {
+        "endpoint": {
+          "label": "Адреса кінцевої точки",
+          "placeholder": "Адреса кінцевої точки",
+          "description": "Адреса кінцевої точки, до якої підключатимуться піри. (наприклад, wg.example.com або wg.example.com:51820)"
+        },
+        "networks": {
+          "label": "IP мережі",
+          "placeholder": "Адреси мереж",
+          "description": "Піри отримають IP-адреси з цих підмереж."
+        },
+        "allowed-ip": {
+          "label": "Дозволені IP-адреси",
+          "placeholder": "За замовчуванням дозволені IP-адреси"
+        },
+        "mtu": {
+          "label": "MTU",
+          "placeholder": "MTU клієнта (0 = залишити за замовчуванням)"
+        },
+        "keep-alive": {
+          "label": "Інтервал Keep Alive",
+          "placeholder": "Постійний Keepalive (0 = за замовчуванням)"
+        }
+      },
+      "button-apply-defaults": "Застосувати значення за замовчуванням для пірів"
+    },
+    "peer-view": {
+      "headline-peer": "Пір:",
+      "headline-endpoint": "Кінцева точка:",
+      "section-info": "Інформація про пір",
+      "section-status": "Поточний стан",
+      "section-config": "Налаштування",
+      "identifier": "Ідентифікатор",
+      "ip": "IP-адреси",
+      "user": "Пов'язаний користувач",
+      "notes": "Примітки",
+      "expiry-status": "Закінчується",
+      "disabled-status": "Відключено",
+      "traffic": "Трафік",
+      "connection-status": "Статистика з'єднання",
+      "upload": "Передано байтів (з серверу до пір)",
+      "download": "Завантажено байтів (з пір до серверу)",
+      "pingable": "Відповідає на ping",
+      "handshake": "Останній handshake",
+      "connected-since": "Підключено з",
+      "endpoint": "Кінцева точка",
+      "button-download": "Завантажити конфігурацію",
+      "button-email": "Надіслати конфігурацію електронною поштою"
+    },
+    "peer-edit": {
+      "headline-edit-peer": "Редагувати пір:",
+      "headline-edit-endpoint": "Редагувати кінцеву точку:",
+      "headline-new-peer": "Створити пір",
+      "headline-new-endpoint": "Створити кінцеву точку",
+      "header-general": "Загальне",
+      "header-network": "Мережа",
+      "header-crypto": "Криптографія",
+      "header-hooks": "Хуки (виконуються на пірі)",
+      "header-state": "Стан",
+      "display-name": {
+        "label": "Відображуване ім'я",
+        "placeholder": "Описове ім'я для пір"
+      },
+      "linked-user": {
+        "label": "Пов'язаний користувач",
+        "placeholder": "Обліковий запис користувача, що володіє цим піром"
+      },
+      "private-key": {
+        "label": "Приватний ключ",
+        "placeholder": "Приватний ключ"
+      },
+      "public-key": {
+        "label": "Публічний ключ",
+        "placeholder": "Публічний ключ"
+      },
+      "preshared-key": {
+        "label": "Попередньо спільний ключ",
+        "placeholder": "Опціональний попередньо спільний ключ"
+      },
+      "endpoint-public-key": {
+        "label": "Публічний ключ кінцевої точки",
+        "placeholder": "Публічний ключ віддаленої кінцевої точки"
+      },
+      "endpoint": {
+        "label": "Адреса кінцевої точки",
+        "placeholder": "Адреса віддаленої кінцевої точки"
+      },
+      "ip": {
+        "label": "IP-адреси",
+        "placeholder": "IP-адреси (у CIDR форматі)"
+      },
+      "allowed-ip": {
+        "label": "Дозволені IP-адреси",
+        "placeholder": "Дозволені IP-адреси (у CIDR форматі)"
+      },
+      "extra-allowed-ip": {
+        "label": "Додаткові дозволені IP-адреси",
+        "placeholder": "Додаткові дозволені IP (на стороні сервера)",
+        "description": "Ці IP будуть додані на віддаленому інтерфейсі WireGuard як дозволені IP."
+      },
+      "dns": {
+        "label": "DNS сервер",
+        "placeholder": "DNS сервери, які слід використовувати"
+      },
+      "dns-search": {
+        "label": "DNS пошукові домени",
+        "placeholder": "DNS пошукові префікси"
+      },
+      "keep-alive": {
+        "label": "Інтервал збереження зв'язку",
+        "placeholder": "Постійний Keepalive (0 = за замовчуванням)"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "MTU клієнта (0 = залишити за замовчуванням)"
+      },
+      "pre-up": {
+        "label": "Pre-Up",
+        "placeholder": "Одна або декілька команд bash, розділених ;"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "Одна або декілька команд bash, розділених ;"
+      },
+      "pre-down": {
+        "label": "Pre-Down",
+        "placeholder": "Одна або декілька команд bash, розділених ;"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "Одна або декілька команд bash, розділених ;"
+      },
+      "disabled": {
+        "label": "Пір відключено"
+      },
+      "ignore-global": {
+        "label": "Ігнорувати глобальні налаштування"
+      },
+      "expires-at": {
+        "label": "Дата закінчення терміну дії"
+      }
+    },
+    "peer-multi-create": {
+      "headline-peer": "Створити декілька пір",
+      "headline-endpoint": "Створити декілька кінцевих точок",
+      "identifiers": {
+        "label": "Ідентифікатори користувача",
+        "placeholder": "Ідентифікатори користувача",
+        "description": "Ідентифікатор користувача (ім'я користувача), для якого слід створити пір."
+      },
+      "prefix": {
+        "headline-peer": "Пір:",
+        "headline-endpoint": "Кінцева точка:",
+        "label": "Префікс відображуваного імені",
+        "placeholder": "Префікс",
+        "description": "Префікс, що додається до відображуваного імені пірів."
+      }
+    }
+  }
+}
