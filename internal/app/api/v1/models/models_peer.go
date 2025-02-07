@@ -69,7 +69,7 @@ type Peer struct {
 	// PresharedKey is the optional pre-shared Key of the peer.
 	PresharedKey string `json:"PresharedKey" example:"yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=" binding:"omitempty,len=44"`
 	// PersistentKeepalive is the optional persistent keep-alive interval in seconds.
-	PersistentKeepalive ConfigOption[int] `json:"PersistentKeepalive" binding:"omitempty,gte=0"`
+	PersistentKeepalive ConfigOption[int] `json:"PersistentKeepalive"`
 
 	// PrivateKey is the private Key of the peer.
 	PrivateKey string `json:"PrivateKey" example:"yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=" binding:"required,len=44"`
