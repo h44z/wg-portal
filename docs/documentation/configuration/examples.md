@@ -6,6 +6,7 @@ Below are some sample YAML configurations demonstrating how to override some def
 core:
   admin_user: test@example.com
   admin_password: password
+  admin_api_token: super-s3cr3t-api-token-or-a-UUID
   import_existing: false
   create_default_peer: true
   self_provisioning_allowed: true

@@ -111,6 +111,10 @@ More advanced options are found in the subsequent `Advanced` section.
 - **Default:** `wgportal`
 - **Description:** The administrator password. The default password of `wgportal` should be changed immediately.
 
+### `admin_api_token`
+- **Default:** *(empty)*
+- **Description:** An API token for the admin user. If a token is provided, the REST API can be accessed using this token. If empty, the API is initially disabled for the admin user.
+
 ### `editable_keys`
 - **Default:** `true`
 - **Description:** Allow editing of WireGuard key-pairs directly in the UI.

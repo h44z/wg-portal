@@ -127,7 +127,7 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 	}
 
 	now := time.Now()
-	admin, err := a.CreateUser(ctx, &domain.User{
+	defaultAdmin := &domain.User{
 		BaseModel: domain.BaseModel{
 			CreatedBy: domain.CtxSystemAdminId,
 			UpdatedBy: domain.CtxSystemAdminId,
@@ -150,7 +150,16 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 		Locked:          nil,
 		LockedReason:    "",
 		LinkedPeerCount: 0,
-	})
+	}
+	if a.Config.Core.AdminApiToken != "" {
+		if len(a.Config.Core.AdminApiToken) < 18 {
+			logrus.Warnf("[SECURITY WARNING] admin API token is too short, should be at least 18 characters long")
+		}
+		defaultAdmin.ApiToken = a.Config.Core.AdminApiToken
+		defaultAdmin.ApiTokenCreated = &now
+	}
+
+	admin, err := a.CreateUser(ctx, defaultAdmin)
 	if err != nil {
 		return err
 	}

@@ -16,6 +16,7 @@ type Config struct {
 		// AdminUser defines the default administrator account that will be created
 		AdminUser     string `yaml:"admin_user"`
 		AdminPassword string `yaml:"admin_password"`
+		AdminApiToken string `yaml:"admin_api_token"` // if set, the API access is enabled automatically
 
 		EditableKeys                bool `yaml:"editable_keys"`
 		CreateDefaultPeer           bool `yaml:"create_default_peer"`
@@ -94,6 +95,7 @@ func defaultConfig() *Config {
 
 	cfg.Core.AdminUser = "admin@wgportal.local"
 	cfg.Core.AdminPassword = "wgportal"
+	cfg.Core.AdminApiToken = "" // by default, the API access is disabled
 	cfg.Core.ImportExisting = true
 	cfg.Core.RestoreState = true
 	cfg.Core.CreateDefaultPeer = false
