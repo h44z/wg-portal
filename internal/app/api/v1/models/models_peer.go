@@ -7,37 +7,7 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-const ExpiryDateTimeLayout = "\"2006-01-02\""
-
-type ExpiryDate struct {
-	*time.Time
-}
-
-// UnmarshalJSON will unmarshal using 2006-01-02 layout
-func (d *ExpiryDate) UnmarshalJSON(b []byte) error {
-	if len(b) == 0 || string(b) == "null" || string(b) == "\"\"" {
-		return nil
-	}
-	parsed, err := time.Parse(ExpiryDateTimeLayout, string(b))
-	if err != nil {
-		return err
-	}
-
-	if !parsed.IsZero() {
-		d.Time = &parsed
-	}
-	return nil
-}
-
-// MarshalJSON will marshal using 2006-01-02 layout
-func (d *ExpiryDate) MarshalJSON() ([]byte, error) {
-	if d == nil || d.Time == nil {
-		return []byte("null"), nil
-	}
-
-	s := d.Format(ExpiryDateTimeLayout)
-	return []byte(s), nil
-}
+const ExpiryDateTimeLayout = "2006-01-02"
 
 // Peer represents a WireGuard peer entry.
 type Peer struct {
@@ -54,7 +24,7 @@ type Peer struct {
 	// DisabledReason is the reason why the peer has been disabled.
 	DisabledReason string `json:"DisabledReason" binding:"required_if=Disabled true" example:"This is a reason why the peer has been disabled."`
 	// ExpiresAt is the expiry date of the peer  in YYYY-MM-DD format. An expired peer is not able to connect.
-	ExpiresAt ExpiryDate `json:"ExpiresAt,omitempty" binding:"omitempty,datetime=2006-01-02"`
+	ExpiresAt string `json:"ExpiresAt,omitempty" binding:"omitempty,datetime=2006-01-02"`
 	// Notes is a note field for peers.
 	Notes string `json:"Notes" example:"This is a note for the peer."`
 
@@ -105,6 +75,11 @@ type Peer struct {
 }
 
 func NewPeer(src *domain.Peer) *Peer {
+	expiresAt := ""
+	if src.ExpiresAt != nil && !src.ExpiresAt.IsZero() {
+		expiresAt = src.ExpiresAt.Format(ExpiryDateTimeLayout)
+	}
+
 	return &Peer{
 		Identifier:          string(src.Identifier),
 		DisplayName:         src.DisplayName,
@@ -112,7 +87,7 @@ func NewPeer(src *domain.Peer) *Peer {
 		InterfaceIdentifier: string(src.InterfaceIdentifier),
 		Disabled:            src.IsDisabled(),
 		DisabledReason:      src.DisabledReason,
-		ExpiresAt:           ExpiryDate{src.ExpiresAt},
+		ExpiresAt:           expiresAt,
 		Notes:               src.Notes,
 		Endpoint:            ConfigOptionFromDomain(src.Endpoint),
 		EndpointPublicKey:   ConfigOptionFromDomain(src.EndpointPublicKey),
@@ -150,6 +125,12 @@ func NewDomainPeer(src *Peer) *domain.Peer {
 	now := time.Now()
 
 	cidrs, _ := domain.CidrsFromArray(src.Addresses)
+	var expiresAt *time.Time
+	if src.ExpiresAt != "" {
+		if t, err := time.Parse(ExpiryDateTimeLayout, src.ExpiresAt); err == nil {
+			expiresAt = &t
+		}
+	}
 
 	res := &domain.Peer{
 		BaseModel:           domain.BaseModel{},
@@ -165,7 +146,7 @@ func NewDomainPeer(src *Peer) *domain.Peer {
 		InterfaceIdentifier: domain.InterfaceIdentifier(src.InterfaceIdentifier),
 		Disabled:            nil, // set below
 		DisabledReason:      src.DisabledReason,
-		ExpiresAt:           src.ExpiresAt.Time,
+		ExpiresAt:           expiresAt,
 		Notes:               src.Notes,
 		Interface: domain.PeerInterfaceConfig{
 			KeyPair: domain.KeyPair{

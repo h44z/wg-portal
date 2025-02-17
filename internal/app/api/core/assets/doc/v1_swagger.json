@@ -1471,14 +1471,6 @@
                 }
             }
         },
-        "models.ExpiryDate": {
-            "type": "object",
-            "properties": {
-                "time.Time": {
-                    "type": "string"
-                }
-            }
-        },
         "models.Interface": {
             "type": "object",
             "required": [
@@ -1798,11 +1790,7 @@
                 },
                 "ExpiresAt": {
                     "description": "ExpiresAt is the expiry date of the peer  in YYYY-MM-DD format. An expired peer is not able to connect.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.ExpiryDate"
-                        }
-                    ]
+                    "type": "string"
                 },
                 "ExtraAllowedIPs": {
                     "description": "ExtraAllowedIPs is a list of additional allowed IP subnets for the peer. These allowed IP subnets are added on the server side.",
