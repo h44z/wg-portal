@@ -21,7 +21,7 @@ require (
 	github.com/vardius/message-bus v1.1.5
 	github.com/vishvananda/netlink v1.3.0
 	github.com/xhit/go-simple-mail/v2 v2.16.0
-	github.com/yeqown/go-qrcode/v2 v2.2.4
+	github.com/yeqown/go-qrcode/v2 v2.2.5
 	golang.org/x/crypto v0.33.0
 	golang.org/x/oauth2 v0.26.0
 	golang.org/x/sys v0.30.0
