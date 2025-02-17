@@ -17,7 +17,7 @@ type User struct {
 	// The name of the authentication provider. This field is read-only.
 	ProviderName string `json:"ProviderName,omitempty" readonly:"true" example:""`
 	// If this field is set, the user is an admin.
-	IsAdmin bool `json:"IsAdmin" binding:"required" example:"false"`
+	IsAdmin bool `json:"IsAdmin" example:"false"`
 
 	// The first name of the user. This field is optional.
 	Firstname string `json:"Firstname" example:"Max"`

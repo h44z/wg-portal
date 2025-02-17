@@ -549,7 +549,6 @@ definitions:
         type: string
     required:
     - Identifier
-    - IsAdmin
     type: object
   models.UserInformation:
     properties:

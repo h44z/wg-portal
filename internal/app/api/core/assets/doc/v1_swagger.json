@@ -1998,8 +1998,7 @@
         "models.User": {
             "type": "object",
             "required": [
-                "Identifier",
-                "IsAdmin"
+                "Identifier"
             ],
             "properties": {
                 "ApiEnabled": {

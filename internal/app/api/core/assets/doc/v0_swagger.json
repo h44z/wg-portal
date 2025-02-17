@@ -1363,6 +1363,50 @@
                 }
             }
         },
+        "/user/{id}/interfaces": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get interfaces for the given user. Returns an empty list if self provisioning is disabled.",
+                "operationId": "users_handleInterfacesGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Interface"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/{id}/peers": {
             "get": {
                 "produces": [
@@ -1373,6 +1417,15 @@
                 ],
                 "summary": "Get peers for the given user.",
                 "operationId": "users_handlePeersGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1408,6 +1461,15 @@
                 ],
                 "summary": "Get peer stats for the given user.",
                 "operationId": "users_handleStatsGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

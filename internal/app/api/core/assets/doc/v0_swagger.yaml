@@ -1262,9 +1262,45 @@ paths:
       summary: Enable the REST API for the given user.
       tags:
       - Users
+  /user/{id}/interfaces:
+    get:
+      operationId: users_handleInterfacesGet
+      parameters:
+      - description: The user identifier
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Interface'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get interfaces for the given user. Returns an empty list if self provisioning
+        is disabled.
+      tags:
+      - Users
   /user/{id}/peers:
     get:
       operationId: users_handlePeersGet
+      parameters:
+      - description: The user identifier
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1288,6 +1324,12 @@ paths:
   /user/{id}/stats:
     get:
       operationId: users_handleStatsGet
+      parameters:
+      - description: The user identifier
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
