@@ -51,6 +51,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.Notes = selectedUser.value.Notes
           formData.value.Password = ""
           formData.value.Disabled = selectedUser.value.Disabled
+          formData.value.Locked = selectedUser.value.Locked
         }
       }
     }

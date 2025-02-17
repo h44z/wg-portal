@@ -97,10 +97,16 @@ func NewDomainUser(src *User) *domain.User {
 
 	if src.Disabled {
 		res.Disabled = &now
+		if src.DisabledReason == "" {
+			res.DisabledReason = domain.DisabledReasonAdmin
+		}
 	}
 
 	if src.Locked {
 		res.Locked = &now
+		if src.LockedReason == "" {
+			res.LockedReason = domain.LockedReasonAdmin
+		}
 	}
 
 	return res
