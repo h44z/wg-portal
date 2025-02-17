@@ -42,11 +42,6 @@ definitions:
         description: Error message.
         type: string
     type: object
-  models.ExpiryDate:
-    properties:
-      time.Time:
-        type: string
-    type: object
   models.Interface:
     properties:
       Addresses:
@@ -306,10 +301,9 @@ definitions:
         - $ref: '#/definitions/models.ConfigOption-string'
         description: EndpointPublicKey is the endpoint public key.
       ExpiresAt:
-        allOf:
-        - $ref: '#/definitions/models.ExpiryDate'
         description: ExpiresAt is the expiry date of the peer  in YYYY-MM-DD format.
           An expired peer is not able to connect.
+        type: string
       ExtraAllowedIPs:
         description: ExtraAllowedIPs is a list of additional allowed IP subnets for
           the peer. These allowed IP subnets are added on the server side.
@@ -549,7 +543,6 @@ definitions:
         type: string
     required:
     - Identifier
-    - IsAdmin
     type: object
   models.UserInformation:
     properties:
