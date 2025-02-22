@@ -506,50 +506,49 @@ func (m Manager) updateLdapUsers(
 		tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		tctx = domain.SetUserInfo(tctx, domain.SystemAdminContextUserInfo())
 
-		// create new user
 		if existingUser == nil {
+			// create new user
+			logrus.Tracef("creating new user %s from provider %s...", user.Identifier, provider.ProviderName)
+			
 			err := m.NewUser(tctx, user)
 			if err != nil {
 				cancel()
 				return fmt.Errorf("create error for user id %s: %w", user.Identifier, err)
 			}
-
-			cancel()
-			return nil
-		}
-
-		// update existing user
-		if provider.AutoReEnable && existingUser.DisabledReason == domain.DisabledReasonLdapMissing {
-			user.Disabled = nil
-			user.DisabledReason = ""
 		} else {
-			user.Disabled = existingUser.Disabled
-			user.DisabledReason = existingUser.DisabledReason
-		}
-		if existingUser.Source == domain.UserSourceLdap && userChangedInLdap(existingUser, user) {
-			err := m.users.SaveUser(tctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
-				u.UpdatedAt = time.Now()
-				u.UpdatedBy = domain.CtxSystemLdapSyncer
-				u.Source = user.Source
-				u.ProviderName = user.ProviderName
-				u.Email = user.Email
-				u.Firstname = user.Firstname
-				u.Lastname = user.Lastname
-				u.Phone = user.Phone
-				u.Department = user.Department
-				u.IsAdmin = user.IsAdmin
-				u.Disabled = nil
-				u.DisabledReason = ""
-
-				return u, nil
-			})
-			if err != nil {
-				cancel()
-				return fmt.Errorf("update error for user id %s: %w", user.Identifier, err)
+			// update existing user
+			if provider.AutoReEnable && existingUser.DisabledReason == domain.DisabledReasonLdapMissing {
+				user.Disabled = nil
+				user.DisabledReason = ""
+			} else {
+				user.Disabled = existingUser.Disabled
+				user.DisabledReason = existingUser.DisabledReason
 			}
+			if existingUser.Source == domain.UserSourceLdap && userChangedInLdap(existingUser, user) {
+				err := m.users.SaveUser(tctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
+					u.UpdatedAt = time.Now()
+					u.UpdatedBy = domain.CtxSystemLdapSyncer
+					u.Source = user.Source
+					u.ProviderName = user.ProviderName
+					u.Email = user.Email
+					u.Firstname = user.Firstname
+					u.Lastname = user.Lastname
+					u.Phone = user.Phone
+					u.Department = user.Department
+					u.IsAdmin = user.IsAdmin
+					u.Disabled = nil
+					u.DisabledReason = ""
 
-			if existingUser.IsDisabled() && !user.IsDisabled() {
-				m.bus.Publish(app.TopicUserEnabled, *user)
+					return u, nil
+				})
+				if err != nil {
+					cancel()
+					return fmt.Errorf("update error for user id %s: %w", user.Identifier, err)
+				}
+
+				if existingUser.IsDisabled() && !user.IsDisabled() {
+					m.bus.Publish(app.TopicUserEnabled, *user)
+				}
 			}
 		}
 
