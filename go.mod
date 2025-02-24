@@ -1,7 +1,6 @@
 module github.com/h44z/wg-portal
 
 go 1.23
-
 require (
 	github.com/a8m/envsubst v1.4.2
 	github.com/coreos/go-oidc/v3 v3.12.0
@@ -22,7 +21,7 @@ require (
 	github.com/vishvananda/netlink v1.3.0
 	github.com/xhit/go-simple-mail/v2 v2.16.0
 	github.com/yeqown/go-qrcode/v2 v2.2.5
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.34.0
 	golang.org/x/oauth2 v0.26.0
 	golang.org/x/sys v0.30.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10
