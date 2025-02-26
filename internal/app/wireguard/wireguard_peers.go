@@ -75,7 +75,7 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 		return nil, fmt.Errorf("unable to find interface %s: %w", id, err)
 	}
 
-	if m.cfg.Core.SelfProvisioningAllowed && iface.Type != domain.InterfaceTypeServer {
+	if m.cfg.Core.SelfProvisioningAllowed && !currentUser.IsAdmin && iface.Type != domain.InterfaceTypeServer {
 		return nil, fmt.Errorf("self provisioning is only allowed for server interfaces: %w", domain.ErrNoPermission)
 	}
 
