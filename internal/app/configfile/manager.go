@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 	"github.com/yeqown/go-qrcode/v2"
+	"github.com/yeqown/go-qrcode/writer/compressed"
 )
 
 type Manager struct {
@@ -27,7 +28,13 @@ type Manager struct {
 	wg     WireguardDatabaseRepo
 }
 
-func NewConfigFileManager(cfg *config.Config, bus evbus.MessageBus, users UserDatabaseRepo, wg WireguardDatabaseRepo, fsRepo FileSystemRepo) (*Manager, error) {
+func NewConfigFileManager(
+	cfg *config.Config,
+	bus evbus.MessageBus,
+	users UserDatabaseRepo,
+	wg WireguardDatabaseRepo,
+	fsRepo FileSystemRepo,
+) (*Manager, error) {
 	tplHandler, err := newTemplateHandler()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template handler: %w", err)
@@ -156,18 +163,19 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 		return nil, fmt.Errorf("failed to read peer config for %s: %w", id, err)
 	}
 
-	code, err := qrcode.New(sb.String())
+	code, err := qrcode.NewWith(sb.String(),
+		qrcode.WithErrorCorrectionLevel(qrcode.ErrorCorrectionLow), qrcode.WithEncodingMode(qrcode.EncModeByte))
 	if err != nil {
-		return nil, fmt.Errorf("failed to initializeqr code for %s: %w", id, err)
+		return nil, fmt.Errorf("failed to initialize qr code for %s: %w", id, err)
 	}
 
 	buf := bytes.NewBuffer(nil)
 	wr := nopCloser{Writer: buf}
-	option := Option{
+	option := compressed.Option{
 		Padding:   8, // padding pixels around the qr code.
 		BlockSize: 4, // block pixels which represents a bit data.
 	}
-	qrWriter := NewCompressedWriter(wr, &option)
+	qrWriter := compressed.NewWithWriter(wr, &option)
 	err = code.Save(qrWriter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write code for %s: %w", id, err)
