@@ -13,8 +13,9 @@ const profile = profileStore()
 const viewedPeerId = ref("")
 const editPeerId = ref("")
 
-const sortKey = ref("");
-const sortOrder = ref(1);
+const sortKey = ref("")
+const sortOrder = ref(1)
+const selectAll = ref(false)
 
 function sortBy(key) {
   if (sortKey.value === key) {
@@ -32,6 +33,12 @@ function friendlyInterfaceName(id, name) {
     return name
   }
   return id
+}
+
+function toggleSelectAll() {
+  profile.FilteredAndPagedPeers.forEach(peer => {
+    peer.IsSelected = selectAll.value;
+  });
 }
 
 onMounted(async () => {
@@ -86,8 +93,7 @@ onMounted(async () => {
       <thead>
         <tr>
           <th scope="col">
-            <input id="flexCheckDefault" class="form-check-input" :title="$t('general.select-all')" type="checkbox"
-              value="">
+            <input class="form-check-input" :title="$t('general.select-all')" type="checkbox" v-model="selectAll" @change="toggleSelectAll">
           </th><!-- select -->
           <th scope="col"></th><!-- status -->
           <th scope="col" @click="sortBy('DisplayName')">
@@ -112,7 +118,7 @@ onMounted(async () => {
       <tbody>
         <tr v-for="peer in profile.FilteredAndPagedPeers" :key="peer.Identifier">
           <th scope="row">
-            <input id="flexCheckDefault" class="form-check-input" type="checkbox" value="">
+            <input class="form-check-input" type="checkbox" v-model="peer.IsSelected">
           </th>
           <td class="text-center">
             <span v-if="peer.Disabled" class="text-danger"><i class="fa fa-circle-xmark"

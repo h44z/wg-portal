@@ -120,8 +120,9 @@ export function freshPeer() {
       Overridable: true,
     },
 
-    // Internal value
-    IgnoreGlobalSettings: false
+    // Internal values
+    IgnoreGlobalSettings: false,
+    IsSelected: false
   }
 }
 
@@ -148,7 +149,10 @@ export function freshUser() {
 
     ApiEnabled: false,
 
-    PeerCount: 0
+    PeerCount: 0,
+
+    // Internal values
+    IsSelected: false
   }
 }
 

@@ -12,6 +12,15 @@ const users = userStore()
 const editUserId = ref("")
 const viewedUserId = ref("")
 
+
+const selectAll = ref(false)
+
+function toggleSelectAll() {
+  users.FilteredAndPaged.forEach(user => {
+    user.IsSelected = selectAll.value;
+  });
+}
+
 onMounted(() => {
   users.LoadUsers()
 })
@@ -49,7 +58,7 @@ onMounted(() => {
       <thead>
         <tr>
           <th scope="col">
-            <input id="flexCheckDefault" class="form-check-input" :title="$t('general.select-all')" type="checkbox" value="">
+            <input class="form-check-input" :title="$t('general.select-all')" type="checkbox" v-model="selectAll" @change="toggleSelectAll">
           </th><!-- select -->
           <th scope="col"></th><!-- status -->
           <th scope="col">{{ $t('users.table-heading.id') }}</th>
@@ -65,7 +74,7 @@ onMounted(() => {
       <tbody>
         <tr v-for="user in users.FilteredAndPaged" :key="user.Identifier">
           <th scope="row">
-            <input id="flexCheckDefault" class="form-check-input" type="checkbox" value="">
+            <input class="form-check-input" type="checkbox" v-model="user.IsSelected">
           </th>
           <td class="text-center">
             <span v-if="user.Disabled" class="text-danger" :title="$t('users.user-disabled') + ' ' + user.DisabledReason"><i class="fa fa-circle-xmark"></i></span>
