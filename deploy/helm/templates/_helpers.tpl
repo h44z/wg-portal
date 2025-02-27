@@ -89,13 +89,17 @@ admin_user: ""
 Define PersistentVolumeClaim spec
 */}}
 {{- define "wg-portal.pvc" -}}
-accessModes: [{{ .Values.persistence.accessMode }}]
-{{- with .Values.persistence.storageClass }}
-storageClassName: {{ . }}
-{{- end }}
+accessModes:
+  - {{ .Values.persistence.accessMode }}
 resources:
   requests:
     storage: {{ .Values.persistence.size | quote }}
+{{- with .Values.persistence.storageClass }}
+storageClassName: {{ . }}
+{{- end }}
+{{- with .Values.persistence.volumeName }}
+volumeName: {{ . }}
+{{- end }}
 {{- end -}}
 
 {{/*
