@@ -29,7 +29,7 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL or Post
 ## Features
 
 * Self-hosted - the whole application is a single binary
-* Responsive multi-language web UI written in Vue.JS
+* Responsive multi-language web UI written in Vue.js
 * Automatically selects IP from the network pool assigned to the client
 * QR-Code for convenient mobile client configuration
 * Sends email to the client with QR-code and client config
@@ -42,7 +42,7 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL or Post
 * Support for multiple WireGuard interfaces
 * Peer Expiry Feature
 * Handles route and DNS settings like wg-quick does
-* Exposes Prometheus metrics for monitoring and alertingt
+* Exposes Prometheus metrics for monitoring and alerting
 * REST API for management and client deployment
 
 <!-- Text to this line # is included in docs/documentation/overview.md -->
@@ -67,7 +67,7 @@ For the complete documentation visit [wgportal.org](https://wgportal.org).
 * [wgctrl-go](https://github.com/WireGuard/wgctrl-go) and [netlink](https://github.com/vishvananda/netlink) for interface handling
 * [Gin](https://github.com/gin-gonic/gin), HTTP web framework written in Go
 * [Bootstrap](https://getbootstrap.com/), for the HTML templates
-* [Vue.JS](https://vuejs.org/), for the frontend
+* [Vue.js](https://vuejs.org/), for the frontend
 
 ## License
 
