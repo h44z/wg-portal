@@ -195,6 +195,8 @@ persistence:
   accessMode: ReadWriteOnce
   # -- Persistent Volume size
   size: 1Gi
+  # -- Persistent Volume Name (optional)
+  volumeName: ""
 
 serviceAccount:
   # -- Specifies whether a service account should be created
