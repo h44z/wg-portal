@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-ldap/ldap/v3"
 	"github.com/sirupsen/logrus"
 
-	"github.com/go-ldap/ldap/v3"
 	"github.com/h44z/wg-portal/internal/config"
 )
 

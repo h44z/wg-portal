@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"time"
 
-	"github.com/h44z/wg-portal/internal"
+	"github.com/sirupsen/logrus"
+
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/sirupsen/logrus"
 )
 
 func (m Manager) GetImportableInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
@@ -120,11 +121,11 @@ func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.Inter
 
 	imported := 0
 	for _, physicalInterface := range physicalInterfaces {
-		if internal.SliceContains(excludedInterfaces, physicalInterface.Identifier) {
+		if slices.Contains(excludedInterfaces, physicalInterface.Identifier) {
 			continue
 		}
 
-		if len(filter) != 0 && !internal.SliceContains(filter, physicalInterface.Identifier) {
+		if len(filter) != 0 && !slices.Contains(filter, physicalInterface.Identifier) {
 			continue
 		}
 
@@ -193,7 +194,7 @@ func (m Manager) RestoreInterfaceState(
 	}
 
 	for _, iface := range interfaces {
-		if len(filter) != 0 && !internal.SliceContains(filter, iface.Identifier) {
+		if len(filter) != 0 && !slices.Contains(filter, iface.Identifier) {
 			continue // ignore filtered interface
 		}
 

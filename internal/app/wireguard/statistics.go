@@ -5,12 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/h44z/wg-portal/internal/app"
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
 	probing "github.com/prometheus-community/pro-bing"
 	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
+
+	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type StatisticsCollector struct {

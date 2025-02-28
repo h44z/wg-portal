@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+
+	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type PlainOauthAuthenticator struct {
@@ -84,7 +86,7 @@ func (p PlainOauthAuthenticator) GetUserInfo(
 	ctx context.Context,
 	token *oauth2.Token,
 	_ string,
-) (map[string]interface{}, error) {
+) (map[string]any, error) {
 	req, err := http.NewRequest("GET", p.userInfoEndpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user info get request: %w", err)
@@ -96,13 +98,13 @@ func (p PlainOauthAuthenticator) GetUserInfo(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
-	defer response.Body.Close()
+	defer internal.LogClose(response.Body)
 	contents, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var userFields map[string]interface{}
+	var userFields map[string]any
 	err = json.Unmarshal(contents, &userFields)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse user info: %w", err)
@@ -115,6 +117,6 @@ func (p PlainOauthAuthenticator) GetUserInfo(
 	return userFields, nil
 }
 
-func (p PlainOauthAuthenticator) ParseUserInfo(raw map[string]interface{}) (*domain.AuthenticatorUserInfo, error) {
+func (p PlainOauthAuthenticator) ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error) {
 	return parseOauthUserInfo(p.userInfoMapping, p.userAdminMapping, raw)
 }

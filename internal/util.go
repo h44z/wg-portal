@@ -3,11 +3,21 @@ package internal
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"github.com/sirupsen/logrus"
 )
+
+// LogClose closes the given Closer and logs any error that occurs
+func LogClose(c io.Closer) {
+	if err := c.Close(); err != nil {
+		logrus.Errorf("error during Close(): %v", err)
+	}
+}
 
 // SignalAwareContext returns a context that gets closed once a given signal is retrieved.
 // By default, the following signals are handled: syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP
@@ -45,23 +55,8 @@ func AssertNoError(err error) {
 	}
 }
 
-// ByteCountSI returns the byte count as string, see: https://yourbasic.org/golang/formatting-byte-size-to-human-readable-format/
-func ByteCountSI(b int64) string {
-	const unit = 1000
-	if b < unit {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB",
-		float64(b)/float64(div), "kMGTPE"[exp])
-}
-
 // MapDefaultString returns the string value for the given key or a default value
-func MapDefaultString(m map[string]interface{}, key string, dflt string) string {
+func MapDefaultString(m map[string]any, key string, dflt string) string {
 	if m == nil {
 		return dflt
 	}
@@ -80,7 +75,7 @@ func MapDefaultString(m map[string]interface{}, key string, dflt string) string 
 }
 
 // MapDefaultStringSlice returns the string slice value for the given key or a default value
-func MapDefaultStringSlice(m map[string]interface{}, key string, dflt []string) []string {
+func MapDefaultStringSlice(m map[string]any, key string, dflt []string) []string {
 	if m == nil {
 		return dflt
 	}
@@ -124,16 +119,7 @@ func UniqueStringSlice(slice []string) []string {
 	return uniqueSlice
 }
 
-func SliceContains[T comparable](slice []T, needle T) bool {
-	for _, elem := range slice {
-		if elem == needle {
-			return true
-		}
-	}
-
-	return false
-}
-
+// SliceString returns a string slice from a comma-separated string
 func SliceString(str string) []string {
 	strParts := strings.Split(str, ",")
 	stringSlice := make([]string, 0, len(strParts))
@@ -148,10 +134,12 @@ func SliceString(str string) []string {
 	return stringSlice
 }
 
+// SliceToString returns a comma-separated string from a string slice
 func SliceToString(slice []string) string {
 	return strings.Join(slice, ",")
 }
 
+// TruncateString returns a string truncated to the given length
 func TruncateString(s string, max int) string {
 	if max > len(s) {
 		return s
@@ -159,6 +147,7 @@ func TruncateString(s string, max int) string {
 	return s[:max]
 }
 
+// BoolToFloat64 converts a boolean to a float64. True is 1.0, false is 0.0
 func BoolToFloat64(b bool) float64 {
 	if b {
 		return 1.0

@@ -12,11 +12,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/h44z/wg-portal/internal/domain"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // setup WireGuard manager with no linked store
@@ -68,13 +67,14 @@ func TestWireGuardCreateInterface(t *testing.T) {
 	ipV6Address := "1337:d34d:b33f::2"
 	defer mgr.DeleteInterface(context.Background(), interfaceName)
 
-	err := mgr.SaveInterface(context.Background(), interfaceName, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
-		pi.Addresses = []domain.Cidr{
-			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipAddress), Mask: net.CIDRMask(24, 32)}),
-			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipV6Address), Mask: net.CIDRMask(64, 128)}),
-		}
-		return pi, nil
-	})
+	err := mgr.SaveInterface(context.Background(), interfaceName,
+		func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
+			pi.Addresses = []domain.Cidr{
+				domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipAddress), Mask: net.CIDRMask(24, 32)}),
+				domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipV6Address), Mask: net.CIDRMask(64, 128)}),
+			}
+			return pi, nil
+		})
 	assert.NoError(t, err)
 
 	// Validate that the interface has been created
@@ -102,13 +102,14 @@ func TestWireGuardUpdateInterface(t *testing.T) {
 
 	ipAddress := "10.11.12.13"
 	ipV6Address := "1337:d34d:b33f::2"
-	err = mgr.SaveInterface(context.Background(), interfaceName, func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
-		pi.Addresses = []domain.Cidr{
-			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipAddress), Mask: net.CIDRMask(24, 32)}),
-			domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipV6Address), Mask: net.CIDRMask(64, 128)}),
-		}
-		return pi, nil
-	})
+	err = mgr.SaveInterface(context.Background(), interfaceName,
+		func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
+			pi.Addresses = []domain.Cidr{
+				domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipAddress), Mask: net.CIDRMask(24, 32)}),
+				domain.CidrFromIpNet(net.IPNet{IP: net.ParseIP(ipV6Address), Mask: net.CIDRMask(64, 128)}),
+			}
+			return pi, nil
+		})
 	assert.NoError(t, err)
 
 	// Validate that the interface has been updated

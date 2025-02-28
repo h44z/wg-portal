@@ -9,18 +9,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm/clause"
-	"gorm.io/gorm/logger"
-	"gorm.io/gorm/utils"
-
 	"github.com/glebarez/sqlite"
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/sirupsen/logrus"
 	gormMySQL "gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
+	"gorm.io/gorm/utils"
+
+	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 // SchemaVersion describes the current database schema version. It must be incremented if a manual migration is needed.
@@ -60,21 +60,21 @@ func (l *GormLogger) LogMode(level logger.LogLevel) logger.Interface {
 	return l
 }
 
-func (l *GormLogger) Info(ctx context.Context, s string, args ...interface{}) {
+func (l *GormLogger) Info(ctx context.Context, s string, args ...any) {
 	if l.Silent {
 		return
 	}
 	logrus.WithContext(ctx).Infof(s, args...)
 }
 
-func (l *GormLogger) Warn(ctx context.Context, s string, args ...interface{}) {
+func (l *GormLogger) Warn(ctx context.Context, s string, args ...any) {
 	if l.Silent {
 		return
 	}
 	logrus.WithContext(ctx).Warnf(s, args...)
 }
 
-func (l *GormLogger) Error(ctx context.Context, s string, args ...interface{}) {
+func (l *GormLogger) Error(ctx context.Context, s string, args ...any) {
 	if l.Silent {
 		return
 	}

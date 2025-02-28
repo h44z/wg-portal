@@ -7,6 +7,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	evbus "github.com/vardius/message-bus"
+
+	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/adapters"
+	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/core"
 	handlersV0 "github.com/h44z/wg-portal/internal/app/api/v0/handlers"
 	backendV1 "github.com/h44z/wg-portal/internal/app/api/v1/backend"
@@ -18,13 +24,7 @@ import (
 	"github.com/h44z/wg-portal/internal/app/route"
 	"github.com/h44z/wg-portal/internal/app/users"
 	"github.com/h44z/wg-portal/internal/app/wireguard"
-
-	"github.com/h44z/wg-portal/internal"
-	"github.com/h44z/wg-portal/internal/adapters"
-	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
-	"github.com/sirupsen/logrus"
-	evbus "github.com/vardius/message-bus"
 )
 
 // main entry point for WireGuard Portal

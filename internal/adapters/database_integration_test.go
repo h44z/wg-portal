@@ -5,17 +5,14 @@ package adapters
 import (
 	"database/sql"
 	"fmt"
+	"testing"
 
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
-
-	"testing"
 )
 
 func tempSqliteDb(t *testing.T) *gorm.DB {
-
-	// github.com/mattn/go-sqlite3
 	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 	if err != nil {
 		t.Fatal(err)

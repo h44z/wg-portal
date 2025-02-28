@@ -83,8 +83,7 @@ func (u *User) EditAllowed(new *User) error {
 	}
 
 	// for users which are not database users, only the notes field and the disabled flag can be updated
-	updateOk := true
-	updateOk = updateOk && u.Identifier == new.Identifier
+	updateOk := u.Identifier == new.Identifier
 	updateOk = updateOk && u.Source == new.Source
 	updateOk = updateOk && u.IsAdmin == new.IsAdmin
 	updateOk = updateOk && u.Email == new.Email

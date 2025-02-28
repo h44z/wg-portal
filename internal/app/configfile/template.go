@@ -37,10 +37,10 @@ func newTemplateHandler() (*TemplateHandler, error) {
 func (c TemplateHandler) GetInterfaceConfig(cfg *domain.Interface, peers []domain.Peer) (io.Reader, error) {
 	var tplBuff bytes.Buffer
 
-	err := c.templates.ExecuteTemplate(&tplBuff, "wg_interface.tpl", map[string]interface{}{
+	err := c.templates.ExecuteTemplate(&tplBuff, "wg_interface.tpl", map[string]any{
 		"Interface": cfg,
 		"Peers":     peers,
-		"Portal": map[string]interface{}{
+		"Portal": map[string]any{
 			"Version": "unknown",
 		},
 	})
@@ -54,9 +54,9 @@ func (c TemplateHandler) GetInterfaceConfig(cfg *domain.Interface, peers []domai
 func (c TemplateHandler) GetPeerConfig(peer *domain.Peer) (io.Reader, error) {
 	var tplBuff bytes.Buffer
 
-	err := c.templates.ExecuteTemplate(&tplBuff, "wg_peer.tpl", map[string]interface{}{
+	err := c.templates.ExecuteTemplate(&tplBuff, "wg_peer.tpl", map[string]any{
 		"Peer": peer,
-		"Portal": map[string]interface{}{
+		"Portal": map[string]any{
 			"Version": "unknown",
 		},
 	})

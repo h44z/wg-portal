@@ -10,6 +10,7 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"

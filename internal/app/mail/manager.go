@@ -3,10 +3,12 @@ package mail
 import (
 	"context"
 	"fmt"
+	"io"
+
+	"github.com/sirupsen/logrus"
+
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/sirupsen/logrus"
-	"io"
 )
 
 type Manager struct {
@@ -19,7 +21,13 @@ type Manager struct {
 	wg          WireguardDatabaseRepo
 }
 
-func NewMailManager(cfg *config.Config, mailer Mailer, configFiles ConfigFileManager, users UserDatabaseRepo, wg WireguardDatabaseRepo) (*Manager, error) {
+func NewMailManager(
+	cfg *config.Config,
+	mailer Mailer,
+	configFiles ConfigFileManager,
+	users UserDatabaseRepo,
+	wg WireguardDatabaseRepo,
+) (*Manager, error) {
 	tplHandler, err := newTemplateHandler(cfg.Web.ExternalUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template handler: %w", err)

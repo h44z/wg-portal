@@ -13,11 +13,12 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/sirupsen/logrus"
+	evbus "github.com/vardius/message-bus"
+
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/sirupsen/logrus"
-	evbus "github.com/vardius/message-bus"
 )
 
 type UserManager interface {
@@ -412,7 +413,7 @@ func (a *Authenticator) registerNewUser(
 	return user, nil
 }
 
-func (a *Authenticator) getAuthenticatorConfig(id string) (interface{}, error) {
+func (a *Authenticator) getAuthenticatorConfig(id string) (any, error) {
 	for i := range a.cfg.OpenIDConnect {
 		if a.cfg.OpenIDConnect[i].ProviderName == id {
 			return a.cfg.OpenIDConnect[i], nil

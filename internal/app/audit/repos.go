@@ -2,6 +2,7 @@ package audit
 
 import (
 	"context"
+
 	"github.com/h44z/wg-portal/internal/domain"
 )
 

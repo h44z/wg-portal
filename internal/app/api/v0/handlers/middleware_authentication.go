@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/domain"
-	"net/http"
 )
 
 type Scope string
@@ -44,7 +46,8 @@ func (h authenticationHandler) LoggedIn(scopes ...Scope) gin.HandlerFunc {
 		if !h.app.Authenticator.IsUserValid(c.Request.Context(), domain.UserIdentifier(session.UserIdentifier)) {
 			h.Session.DestroyData(c)
 			c.Abort()
-			c.JSON(http.StatusUnauthorized, model.Error{Code: http.StatusUnauthorized, Message: "session no longer available"})
+			c.JSON(http.StatusUnauthorized,
+				model.Error{Code: http.StatusUnauthorized, Message: "session no longer available"})
 			return
 		}
 

@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
+
+	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type App struct {

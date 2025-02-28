@@ -1,10 +1,11 @@
 package domain
 
 import (
-	"github.com/vishvananda/netlink"
 	"net"
 	"net/netip"
 	"strings"
+
+	"github.com/vishvananda/netlink"
 )
 
 type Cidr struct {
@@ -46,14 +47,6 @@ func CidrsFromString(str string) ([]Cidr, error) {
 	}
 
 	return cidrs, nil
-}
-
-func CidrsMust(cidrs []Cidr, err error) []Cidr {
-	if err != nil {
-		panic(err)
-	}
-
-	return cidrs
 }
 
 func CidrsFromArray(strs []string) ([]Cidr, error) {

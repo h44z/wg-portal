@@ -2,10 +2,11 @@ package adapters
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/sirupsen/logrus"
 )
 
 type FilesystemRepo struct {
@@ -36,7 +37,7 @@ func (r *FilesystemRepo) WriteFile(path string, contents io.Reader) error {
 
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("failed to open file %s: %w", file.Name(), err)
+		return fmt.Errorf("failed to open file %s: %w", filePath, err)
 	}
 	defer func(file *os.File) {
 		if err := file.Close(); err != nil {

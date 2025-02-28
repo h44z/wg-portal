@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/h44z/wg-portal/internal"
-
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+
+	"github.com/h44z/wg-portal/internal"
 )
 
 type PeerIdentifier string

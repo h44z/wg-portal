@@ -2,8 +2,9 @@ package configfile
 
 import (
 	"context"
-	"github.com/h44z/wg-portal/internal/domain"
 	"io"
+
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type UserDatabaseRepo interface {

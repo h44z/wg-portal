@@ -7,10 +7,11 @@ import (
 	"strings"
 
 	"github.com/go-ldap/ldap/v3"
+	"github.com/sirupsen/logrus"
+
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/sirupsen/logrus"
 )
 
 type LdapAuthenticator struct {
@@ -81,7 +82,7 @@ func (l LdapAuthenticator) PlaintextAuthentication(userId domain.UserIdentifier,
 }
 
 func (l LdapAuthenticator) GetUserInfo(_ context.Context, userId domain.UserIdentifier) (
-	map[string]interface{},
+	map[string]any,
 	error,
 ) {
 	conn, err := internal.LdapConnect(l.cfg)
@@ -122,7 +123,7 @@ func (l LdapAuthenticator) GetUserInfo(_ context.Context, userId domain.UserIden
 	return users[0], nil
 }
 
-func (l LdapAuthenticator) ParseUserInfo(raw map[string]interface{}) (*domain.AuthenticatorUserInfo, error) {
+func (l LdapAuthenticator) ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error) {
 	isAdmin, err := internal.LdapIsMemberOf(raw[l.cfg.FieldMap.GroupMembership].([][]byte), l.cfg.ParsedAdminGroupDN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check admin group: %w", err)

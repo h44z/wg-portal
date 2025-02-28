@@ -15,22 +15,25 @@ type BaseModel struct {
 
 type PrivateString string
 
-func (PrivateString) MarshalJSON() ([]byte, error) {
+func (ps *PrivateString) MarshalJSON() ([]byte, error) {
 	return []byte(`""`), nil
 }
 
-func (PrivateString) String() string {
+func (ps *PrivateString) String() string {
 	return ""
 }
 
-func (ps PrivateString) Value() (driver.Value, error) {
-	if len(ps) == 0 {
+func (ps *PrivateString) Value() (driver.Value, error) {
+	if ps == nil {
 		return nil, nil
 	}
-	return string(ps), nil
+	if len(*ps) == 0 {
+		return nil, nil
+	}
+	return string(*ps), nil
 }
 
-func (ps *PrivateString) Scan(value interface{}) error {
+func (ps *PrivateString) Scan(value any) error {
 	if value == nil {
 		*ps = ""
 		return nil

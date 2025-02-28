@@ -7,10 +7,11 @@ import (
 	"fmt"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+
+	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type OidcAuthenticator struct {
@@ -83,7 +84,7 @@ func (o OidcAuthenticator) Exchange(ctx context.Context, code string, opts ...oa
 }
 
 func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token, nonce string) (
-	map[string]interface{},
+	map[string]any,
 	error,
 ) {
 	rawIDToken, ok := token.Extra("id_token").(string)
@@ -98,7 +99,7 @@ func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 		return nil, errors.New("nonce mismatch")
 	}
 
-	var tokenFields map[string]interface{}
+	var tokenFields map[string]any
 	if err = idToken.Claims(&tokenFields); err != nil {
 		return nil, fmt.Errorf("failed to parse extra claims: %w", err)
 	}
@@ -111,6 +112,6 @@ func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 	return tokenFields, nil
 }
 
-func (o OidcAuthenticator) ParseUserInfo(raw map[string]interface{}) (*domain.AuthenticatorUserInfo, error) {
+func (o OidcAuthenticator) ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error) {
 	return parseOauthUserInfo(o.userInfoMapping, o.userAdminMapping, raw)
 }

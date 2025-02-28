@@ -3,12 +3,14 @@ package audit
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/sirupsen/logrus"
+	evbus "github.com/vardius/message-bus"
+
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/sirupsen/logrus"
-	evbus "github.com/vardius/message-bus"
-	"time"
 )
 
 type Recorder struct {

@@ -2,16 +2,18 @@ package adapters
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
-	"github.com/h44z/wg-portal/internal"
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+
+	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type MetricsServer struct {
@@ -88,7 +90,7 @@ func NewMetricsServer(cfg *config.Config) *MetricsServer {
 func (m *MetricsServer) Run(ctx context.Context) {
 	// Run the metrics server in a goroutine
 	go func() {
-		if err := m.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := m.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logrus.Errorf("metrics service on %s exited: %v", m.Addr, err)
 		}
 	}()

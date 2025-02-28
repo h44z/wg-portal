@@ -8,17 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/h44z/wg-portal/internal/app"
-
-	"github.com/h44z/wg-portal/internal"
-
 	"github.com/go-ldap/ldap/v3"
-
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-
 	evbus "github.com/vardius/message-bus"
 
+	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -509,7 +505,7 @@ func (m Manager) updateLdapUsers(
 		if existingUser == nil {
 			// create new user
 			logrus.Tracef("creating new user %s from provider %s...", user.Identifier, provider.ProviderName)
-			
+
 			err := m.NewUser(tctx, user)
 			if err != nil {
 				cancel()

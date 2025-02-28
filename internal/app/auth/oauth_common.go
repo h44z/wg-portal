@@ -12,7 +12,7 @@ import (
 func parseOauthUserInfo(
 	mapping config.OauthFields,
 	adminMapping *config.OauthAdminMapping,
-	raw map[string]interface{},
+	raw map[string]any,
 ) (*domain.AuthenticatorUserInfo, error) {
 	var isAdmin bool
 

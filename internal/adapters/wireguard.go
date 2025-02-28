@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/h44z/wg-portal/internal/lowlevel"
 	"github.com/vishvananda/netlink"
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+
+	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/h44z/wg-portal/internal/lowlevel"
 )
 
 // WgRepo implements all low-level WireGuard interactions.

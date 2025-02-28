@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/h44z/wg-portal/internal/app"
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/h44z/wg-portal/internal/lowlevel"
 	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+
+	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/h44z/wg-portal/internal/lowlevel"
 )
 
 type routeRuleInfo struct {

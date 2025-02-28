@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/h44z/wg-portal/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/h44z/wg-portal/internal/config"
 )
 
 func Test_parseOauthUserInfo_no_admin(t *testing.T) {
@@ -26,7 +27,7 @@ func Test_parseOauthUserInfo_no_admin(t *testing.T) {
 }
 `
 
-	userInfo := map[string]interface{}{}
+	userInfo := map[string]any{}
 	err := json.Unmarshal([]byte(userInfoStr), &userInfo)
 	require.NoError(t, err)
 
@@ -72,7 +73,7 @@ func Test_parseOauthUserInfo_admin_group(t *testing.T) {
 }
 `
 
-	userInfo := map[string]interface{}{}
+	userInfo := map[string]any{}
 	err := json.Unmarshal([]byte(userInfoStr), &userInfo)
 	require.NoError(t, err)
 
@@ -115,7 +116,7 @@ func Test_parseOauthUserInfo_admin_value(t *testing.T) {
 }
 `
 
-	userInfo := map[string]interface{}{}
+	userInfo := map[string]any{}
 	err := json.Unmarshal([]byte(userInfoStr), &userInfo)
 	require.NoError(t, err)
 
@@ -156,7 +157,7 @@ func Test_parseOauthUserInfo_admin_value_custom(t *testing.T) {
 }
 `
 
-	userInfo := map[string]interface{}{}
+	userInfo := map[string]any{}
 	err := json.Unmarshal([]byte(userInfoStr), &userInfo)
 	require.NoError(t, err)
 

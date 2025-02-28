@@ -6,11 +6,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/h44z/wg-portal/internal/adapters"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 func migrateFromV1(cfg *config.Config, db *gorm.DB, source, typ string) error {

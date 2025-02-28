@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/h44z/wg-portal/internal"
 	"github.com/sirupsen/logrus"
+
+	"github.com/h44z/wg-portal/internal"
 )
 
 const (
@@ -18,6 +19,8 @@ const (
 	InterfaceTypeClient InterfaceType = "client"
 	InterfaceTypeAny    InterfaceType = "any"
 )
+
+var allowedFileNameRegex = regexp.MustCompile("[^a-zA-Z0-9-_]+")
 
 type InterfaceIdentifier string
 type InterfaceType string
@@ -119,10 +122,8 @@ func (i *Interface) CopyCalculatedAttributes(src *Interface) {
 }
 
 func (i *Interface) GetConfigFileName() string {
-	reg := regexp.MustCompile("[^a-zA-Z0-9-_]+")
-
 	filename := internal.TruncateString(string(i.Identifier), 8)
-	filename = reg.ReplaceAllString(filename, "")
+	filename = allowedFileNameRegex.ReplaceAllString(filename, "")
 	filename += ".conf"
 
 	return filename

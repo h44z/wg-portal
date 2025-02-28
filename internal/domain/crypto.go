@@ -54,10 +54,6 @@ func NewPreSharedKey() (PreSharedKey, error) {
 	return PreSharedKey(preSharedKey.String()), nil
 }
 
-func KeyBytesToString(key []byte) string {
-	return base64.StdEncoding.EncodeToString(key)
-}
-
 func PublicKeyFromPrivateKey(key string) string {
 	privKey, err := wgtypes.ParseKey(key)
 	if err != nil {

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/h44z/wg-portal/internal"
-
 	"github.com/h44z/wg-portal/internal/domain"
 )
 

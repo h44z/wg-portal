@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
-	"github.com/sirupsen/logrus"
 )
 
 func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdentifier) error {

@@ -5,12 +5,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
+	"time"
+
+	mail "github.com/xhit/go-simple-mail/v2"
+
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
-	mail "github.com/xhit/go-simple-mail/v2"
-	"io"
-	"time"
 )
 
 type MailRepo struct {
