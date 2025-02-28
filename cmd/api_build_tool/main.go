@@ -9,7 +9,7 @@ import (
 
 	"github.com/swaggo/swag"
 	"github.com/swaggo/swag/gen"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var apiRootPath = "/internal/app/api"
