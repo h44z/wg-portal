@@ -40,7 +40,7 @@ func (e configEndpoint) GetName() string {
 	return "ConfigEndpoint"
 }
 
-func (e configEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
+func (e configEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandler) {
 	apiGroup := g.Group("/config")
 
 	apiGroup.GET("/frontend.js", e.handleConfigJsGet())

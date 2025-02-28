@@ -13,6 +13,7 @@ type FilesystemRepo struct {
 	basePath string
 }
 
+// NewFileSystemRepository creates a new FilesystemRepo instance.
 func NewFileSystemRepository(basePath string) (*FilesystemRepo, error) {
 	if basePath == "" {
 		return nil, nil // no path, return empty repository
@@ -27,6 +28,10 @@ func NewFileSystemRepository(basePath string) (*FilesystemRepo, error) {
 	return r, nil
 }
 
+// WriteFile writes the given contents to the given path.
+// The path is relative to the base path of the repository.
+// If the parent directory does not exist, it is created.
+// If the file already exists, it is overwritten.
 func (r *FilesystemRepo) WriteFile(path string, contents io.Reader) error {
 	filePath := filepath.Join(r.basePath, path)
 	parentDirectory := filepath.Dir(filePath)
@@ -51,5 +56,4 @@ func (r *FilesystemRepo) WriteFile(path string, contents io.Reader) error {
 	}
 
 	return nil
-
 }

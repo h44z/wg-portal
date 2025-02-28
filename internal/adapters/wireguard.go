@@ -20,6 +20,8 @@ type WgRepo struct {
 	nl lowlevel.NetlinkClient
 }
 
+// NewWireGuardRepository creates a new WgRepo instance.
+// This repository is used to interact with the WireGuard kernel or userspace module.
 func NewWireGuardRepository() *WgRepo {
 	wg, err := wgctrl.New()
 	if err != nil {
@@ -36,6 +38,7 @@ func NewWireGuardRepository() *WgRepo {
 	return repo
 }
 
+// GetInterfaces returns all existing WireGuard interfaces.
 func (r *WgRepo) GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, error) {
 	devices, err := r.wg.Devices()
 	if err != nil {
@@ -54,10 +57,14 @@ func (r *WgRepo) GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, e
 	return interfaces, nil
 }
 
+// GetInterface returns the interface with the given id.
+// If no interface is found, an error os.ErrNotExist is returned.
 func (r *WgRepo) GetInterface(_ context.Context, id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error) {
 	return r.getInterface(id)
 }
 
+// GetPeers returns all peers associated with the given interface id.
+// If the requested interface is found, an error os.ErrNotExist is returned.
 func (r *WgRepo) GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier) ([]domain.PhysicalPeer, error) {
 	device, err := r.wg.Device(string(deviceId))
 	if err != nil {
@@ -76,6 +83,8 @@ func (r *WgRepo) GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier
 	return peers, nil
 }
 
+// GetPeer returns the peer with the given id.
+// If the requested interface or peer is found, an error os.ErrNotExist is returned.
 func (r *WgRepo) GetPeer(
 	_ context.Context,
 	deviceId domain.InterfaceIdentifier,
@@ -157,6 +166,9 @@ func (r *WgRepo) convertWireGuardPeer(peer *wgtypes.Peer) (domain.PhysicalPeer, 
 	return peerModel, nil
 }
 
+// SaveInterface updates the interface with the given id.
+// If no existing interface is found, a new interface is created.
+// Updating the interface does not interrupt any existing connections.
 func (r *WgRepo) SaveInterface(
 	_ context.Context,
 	id domain.InterfaceIdentifier,
@@ -187,10 +199,10 @@ func (r *WgRepo) SaveInterface(
 func (r *WgRepo) getOrCreateInterface(id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error) {
 	device, err := r.getInterface(id)
 	if err == nil {
-		return device, nil
+		return device, nil // interface exists
 	}
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("device error: %w", err)
+	if !errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("device error: %w", err) // unknown error
 	}
 
 	// create new device
@@ -308,6 +320,8 @@ func (r *WgRepo) updateWireGuardInterface(pi *domain.PhysicalInterface) error {
 	return nil
 }
 
+// DeleteInterface deletes the interface with the given id.
+// If the requested interface is found, no error is returned.
 func (r *WgRepo) DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error {
 	if err := r.deleteLowLevelInterface(id); err != nil {
 		return err
@@ -334,6 +348,8 @@ func (r *WgRepo) deleteLowLevelInterface(id domain.InterfaceIdentifier) error {
 	return nil
 }
 
+// SavePeer updates the peer with the given id.
+// If no existing peer is found, a new peer is created.
 func (r *WgRepo) SavePeer(
 	_ context.Context,
 	deviceId domain.InterfaceIdentifier,
@@ -363,10 +379,10 @@ func (r *WgRepo) getOrCreatePeer(deviceId domain.InterfaceIdentifier, id domain.
 ) {
 	peer, err := r.getPeer(deviceId, id)
 	if err == nil {
-		return peer, nil
+		return peer, nil // peer exists
 	}
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("peer error: %w", err)
+	if !errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("peer error: %w", err) // unknown error
 	}
 
 	// create new peer
@@ -425,6 +441,8 @@ func (r *WgRepo) updatePeer(deviceId domain.InterfaceIdentifier, pp *domain.Phys
 	return nil
 }
 
+// DeletePeer deletes the peer with the given id.
+// If the requested interface or peer is found, no error is returned.
 func (r *WgRepo) DeletePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error {
 	if !id.IsPublicKey() {
 		return errors.New("invalid public key")

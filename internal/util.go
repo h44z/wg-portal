@@ -19,6 +19,22 @@ func LogClose(c io.Closer) {
 	}
 }
 
+// LogError logs the given error if it is not nil.
+// If a message is given, it is prepended to the error message.
+// Only the first message is used.
+func LogError(err error, msg ...string) {
+	if err == nil {
+		return
+	}
+
+	if len(msg) > 0 {
+		logrus.Errorf("%s: %v", msg[0], err)
+		return
+	}
+	logrus.Errorf("error: %v", err)
+
+}
+
 // SignalAwareContext returns a context that gets closed once a given signal is retrieved.
 // By default, the following signals are handled: syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP
 func SignalAwareContext(ctx context.Context, sig ...os.Signal) context.Context {

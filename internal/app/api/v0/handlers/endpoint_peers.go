@@ -20,7 +20,7 @@ func (e peerEndpoint) GetName() string {
 	return "PeerEndpoint"
 }
 
-func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
+func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandler) {
 	apiGroup := g.Group("/peer", e.authenticator.LoggedIn())
 
 	apiGroup.GET("/iface/:iface/all", e.authenticator.LoggedIn(ScopeAdmin), e.handleAllGet())

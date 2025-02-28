@@ -16,7 +16,7 @@ func (e testEndpoint) GetName() string {
 	return "TestEndpoint"
 }
 
-func (e testEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
+func (e testEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandler) {
 	g.GET("/now", e.handleCurrentTimeGet())
 	g.GET("/hostname", e.handleHostnameGet())
 }

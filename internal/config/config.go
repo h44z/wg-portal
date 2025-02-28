@@ -63,6 +63,7 @@ type Config struct {
 	Web WebConfig `yaml:"web"`
 }
 
+// LogStartupValues logs the startup values of the configuration in debug level
 func (c *Config) LogStartupValues() {
 	logrus.Infof("Log Level: %s", c.Advanced.LogLevel)
 
@@ -89,6 +90,7 @@ func (c *Config) LogStartupValues() {
 	logrus.Debugf("  - Ldap Providers: %d", len(c.Auth.Ldap))
 }
 
+// defaultConfig returns the default configuration
 func defaultConfig() *Config {
 	cfg := &Config{}
 
@@ -155,6 +157,8 @@ func defaultConfig() *Config {
 	return cfg
 }
 
+// GetConfig returns the configuration from the config file.
+// Environment variable substitution is supported.
 func GetConfig() (*Config, error) {
 	cfg := defaultConfig()
 

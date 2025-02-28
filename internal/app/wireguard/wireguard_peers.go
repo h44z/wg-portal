@@ -475,7 +475,7 @@ func (m Manager) getFreshPeerIpConfig(ctx context.Context, iface *domain.Interfa
 	return
 }
 
-func (m Manager) validatePeerModifications(ctx context.Context, old, new *domain.Peer) error {
+func (m Manager) validatePeerModifications(ctx context.Context, _, _ *domain.Peer) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin && !m.cfg.Core.SelfProvisioningAllowed {
@@ -485,7 +485,7 @@ func (m Manager) validatePeerModifications(ctx context.Context, old, new *domain
 	return nil
 }
 
-func (m Manager) validatePeerCreation(ctx context.Context, old, new *domain.Peer) error {
+func (m Manager) validatePeerCreation(ctx context.Context, _, new *domain.Peer) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if new.Identifier == "" {
@@ -504,7 +504,7 @@ func (m Manager) validatePeerCreation(ctx context.Context, old, new *domain.Peer
 	return nil
 }
 
-func (m Manager) validatePeerDeletion(ctx context.Context, del *domain.Peer) error {
+func (m Manager) validatePeerDeletion(ctx context.Context, _ *domain.Peer) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin && !m.cfg.Core.SelfProvisioningAllowed {

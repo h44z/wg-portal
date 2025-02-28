@@ -111,6 +111,7 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	}
 }
 
+// NewDatabase creates a new database connection and returns a Gorm database instance.
 func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 	var gormDb *gorm.DB
 	var err error
@@ -172,6 +173,7 @@ type SqlRepo struct {
 	db *gorm.DB
 }
 
+// NewSqlRepository creates a new SqlRepo instance.
 func NewSqlRepository(db *gorm.DB) (*SqlRepo, error) {
 	repo := &SqlRepo{
 		db: db,
@@ -236,6 +238,8 @@ func (r *SqlRepo) migrate() error {
 
 // region interfaces
 
+// GetInterface returns the interface with the given id.
+// If no interface is found, an error domain.ErrNotFound is returned.
 func (r *SqlRepo) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error) {
 	var in domain.Interface
 
@@ -251,6 +255,8 @@ func (r *SqlRepo) GetInterface(ctx context.Context, id domain.InterfaceIdentifie
 	return &in, nil
 }
 
+// GetInterfaceAndPeers returns the interface with the given id and all peers associated with it.
+// If no interface is found, an error domain.ErrNotFound is returned.
 func (r *SqlRepo) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (
 	*domain.Interface,
 	[]domain.Peer,
@@ -269,6 +275,7 @@ func (r *SqlRepo) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceI
 	return in, peers, nil
 }
 
+// GetPeersStats returns the stats for the given peer ids. The order of the returned stats is not guaranteed.
 func (r *SqlRepo) GetPeersStats(ctx context.Context, ids ...domain.PeerIdentifier) ([]domain.PeerStatus, error) {
 	if len(ids) == 0 {
 		return nil, nil
@@ -284,6 +291,7 @@ func (r *SqlRepo) GetPeersStats(ctx context.Context, ids ...domain.PeerIdentifie
 	return stats, nil
 }
 
+// GetAllInterfaces returns all interfaces.
 func (r *SqlRepo) GetAllInterfaces(ctx context.Context) ([]domain.Interface, error) {
 	var interfaces []domain.Interface
 
@@ -295,6 +303,8 @@ func (r *SqlRepo) GetAllInterfaces(ctx context.Context) ([]domain.Interface, err
 	return interfaces, nil
 }
 
+// GetInterfaceStats returns the stats for the given interface id.
+// If no stats are found, an error domain.ErrNotFound is returned.
 func (r *SqlRepo) GetInterfaceStats(ctx context.Context, id domain.InterfaceIdentifier) (
 	*domain.InterfaceStatus,
 	error,
@@ -319,6 +329,8 @@ func (r *SqlRepo) GetInterfaceStats(ctx context.Context, id domain.InterfaceIden
 	return &stat, nil
 }
 
+// FindInterfaces returns all interfaces that match the given search string.
+// The search string is matched against the interface identifier and display name.
 func (r *SqlRepo) FindInterfaces(ctx context.Context, search string) ([]domain.Interface, error) {
 	var users []domain.Interface
 
@@ -335,6 +347,7 @@ func (r *SqlRepo) FindInterfaces(ctx context.Context, search string) ([]domain.I
 	return users, nil
 }
 
+// SaveInterface updates the interface with the given id.
 func (r *SqlRepo) SaveInterface(
 	ctx context.Context,
 	id domain.InterfaceIdentifier,
@@ -410,6 +423,7 @@ func (r *SqlRepo) upsertInterface(ui *domain.ContextUserInfo, tx *gorm.DB, in *d
 	return nil
 }
 
+// DeleteInterface deletes the interface with the given id.
 func (r *SqlRepo) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Where("interface_identifier = ?", id).Delete(&domain.Peer{}).Error
@@ -436,6 +450,7 @@ func (r *SqlRepo) DeleteInterface(ctx context.Context, id domain.InterfaceIdenti
 	return nil
 }
 
+// GetInterfaceIps returns a map of interface identifiers to their respective IP addresses.
 func (r *SqlRepo) GetInterfaceIps(ctx context.Context) (map[domain.InterfaceIdentifier][]domain.Cidr, error) {
 	var ips []struct {
 		domain.Cidr
@@ -461,6 +476,8 @@ func (r *SqlRepo) GetInterfaceIps(ctx context.Context) (map[domain.InterfaceIden
 
 // region peers
 
+// GetPeer returns the peer with the given id.
+// If no peer is found, an error domain.ErrNotFound is returned.
 func (r *SqlRepo) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error) {
 	var peer domain.Peer
 
@@ -476,6 +493,7 @@ func (r *SqlRepo) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domai
 	return &peer, nil
 }
 
+// GetInterfacePeers returns all peers associated with the given interface id.
 func (r *SqlRepo) GetInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.Peer, error) {
 	var peers []domain.Peer
 
@@ -487,6 +505,8 @@ func (r *SqlRepo) GetInterfacePeers(ctx context.Context, id domain.InterfaceIden
 	return peers, nil
 }
 
+// FindInterfacePeers returns all peers associated with the given interface id that match the given search string.
+// The search string is matched against the peer identifier, display name and IP address.
 func (r *SqlRepo) FindInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier, search string) (
 	[]domain.Peer,
 	error,
@@ -506,6 +526,7 @@ func (r *SqlRepo) FindInterfacePeers(ctx context.Context, id domain.InterfaceIde
 	return peers, nil
 }
 
+// GetUserPeers returns all peers associated with the given user id.
 func (r *SqlRepo) GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error) {
 	var peers []domain.Peer
 
@@ -517,6 +538,8 @@ func (r *SqlRepo) GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([
 	return peers, nil
 }
 
+// FindUserPeers returns all peers associated with the given user id that match the given search string.
+// The search string is matched against the peer identifier, display name and IP address.
 func (r *SqlRepo) FindUserPeers(ctx context.Context, id domain.UserIdentifier, search string) ([]domain.Peer, error) {
 	var peers []domain.Peer
 
@@ -533,6 +556,8 @@ func (r *SqlRepo) FindUserPeers(ctx context.Context, id domain.UserIdentifier, s
 	return peers, nil
 }
 
+// SavePeer updates the peer with the given id.
+// If no existing peer is found, a new peer is created.
 func (r *SqlRepo) SavePeer(
 	ctx context.Context,
 	id domain.PeerIdentifier,
@@ -607,6 +632,7 @@ func (r *SqlRepo) upsertPeer(ui *domain.ContextUserInfo, tx *gorm.DB, peer *doma
 	return nil
 }
 
+// DeletePeer deletes the peer with the given id.
 func (r *SqlRepo) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Delete(&domain.PeerStatus{PeerId: id}).Error
@@ -628,6 +654,7 @@ func (r *SqlRepo) DeletePeer(ctx context.Context, id domain.PeerIdentifier) erro
 	return nil
 }
 
+// GetPeerIps returns a map of peer identifiers to their respective IP addresses.
 func (r *SqlRepo) GetPeerIps(ctx context.Context) (map[domain.PeerIdentifier][]domain.Cidr, error) {
 	var ips []struct {
 		domain.Cidr
@@ -649,6 +676,7 @@ func (r *SqlRepo) GetPeerIps(ctx context.Context) (map[domain.PeerIdentifier][]d
 	return result, nil
 }
 
+// GetUsedIpsPerSubnet returns a map of subnets to their respective used IP addresses.
 func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (
 	map[domain.Cidr][]domain.Cidr,
 	error,
@@ -707,6 +735,8 @@ func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr
 
 // region users
 
+// GetUser returns the user with the given id.
+// If no user is found, an error domain.ErrNotFound is returned.
 func (r *SqlRepo) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
 	var user domain.User
 
@@ -722,6 +752,9 @@ func (r *SqlRepo) GetUser(ctx context.Context, id domain.UserIdentifier) (*domai
 	return &user, nil
 }
 
+// GetUserByEmail returns the user with the given email.
+// If no user is found, an error domain.ErrNotFound is returned.
+// If multiple users are found, an error domain.ErrNotUnique is returned.
 func (r *SqlRepo) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var users []domain.User
 
@@ -746,6 +779,7 @@ func (r *SqlRepo) GetUserByEmail(ctx context.Context, email string) (*domain.Use
 	return &user, nil
 }
 
+// GetAllUsers returns all users.
 func (r *SqlRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	var users []domain.User
 
@@ -757,6 +791,8 @@ func (r *SqlRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	return users, nil
 }
 
+// FindUsers returns all users that match the given search string.
+// The search string is matched against the user identifier, firstname, lastname and email.
 func (r *SqlRepo) FindUsers(ctx context.Context, search string) ([]domain.User, error) {
 	var users []domain.User
 
@@ -774,6 +810,8 @@ func (r *SqlRepo) FindUsers(ctx context.Context, search string) ([]domain.User, 
 	return users, nil
 }
 
+// SaveUser updates the user with the given id.
+// If no user is found, a new user is created.
 func (r *SqlRepo) SaveUser(
 	ctx context.Context,
 	id domain.UserIdentifier,
@@ -807,6 +845,7 @@ func (r *SqlRepo) SaveUser(
 	return nil
 }
 
+// DeleteUser deletes the user with the given id.
 func (r *SqlRepo) DeleteUser(ctx context.Context, id domain.UserIdentifier) error {
 	err := r.db.WithContext(ctx).Delete(&domain.User{}, id).Error
 	if err != nil {
@@ -859,6 +898,8 @@ func (r *SqlRepo) upsertUser(ui *domain.ContextUserInfo, tx *gorm.DB, user *doma
 
 // region statistics
 
+// UpdateInterfaceStatus updates the interface status with the given id.
+// If no interface status is found, a new one is created.
 func (r *SqlRepo) UpdateInterfaceStatus(
 	ctx context.Context,
 	id domain.InterfaceIdentifier,
@@ -919,6 +960,8 @@ func (r *SqlRepo) upsertInterfaceStatus(tx *gorm.DB, in *domain.InterfaceStatus)
 	return nil
 }
 
+// UpdatePeerStatus updates the peer status with the given id.
+// If no peer status is found, a new one is created.
 func (r *SqlRepo) UpdatePeerStatus(
 	ctx context.Context,
 	id domain.PeerIdentifier,
@@ -976,6 +1019,7 @@ func (r *SqlRepo) upsertPeerStatus(tx *gorm.DB, in *domain.PeerStatus) error {
 	return nil
 }
 
+// DeletePeerStatus deletes the peer status with the given id.
 func (r *SqlRepo) DeletePeerStatus(ctx context.Context, id domain.PeerIdentifier) error {
 	err := r.db.WithContext(ctx).Delete(&domain.PeerStatus{}, id).Error
 	if err != nil {
@@ -989,6 +1033,7 @@ func (r *SqlRepo) DeletePeerStatus(ctx context.Context, id domain.PeerIdentifier
 
 // region audit
 
+// SaveAuditEntry saves the given audit entry.
 func (r *SqlRepo) SaveAuditEntry(ctx context.Context, entry *domain.AuditEntry) error {
 	err := r.db.WithContext(ctx).Save(entry).Error
 	if err != nil {

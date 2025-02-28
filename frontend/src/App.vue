@@ -4,6 +4,7 @@ import { computed, getCurrentInstance, onMounted, ref } from "vue";
 import { authStore } from "./stores/auth";
 import { securityStore } from "./stores/security";
 import { settingsStore } from "@/stores/settings";
+import { Notifications } from "@kyvg/vue3-notification";
 
 const appGlobal = getCurrentInstance().appContext.config.globalProperties
 const auth = authStore()

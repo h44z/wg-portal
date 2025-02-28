@@ -4,17 +4,17 @@ If you believe you've found a security issue in one of the supported versions of
 
 ## Supported Versions
 
-| Version | Supported            |
-| ------- | -------------------- |
-| v2.x    | :white_check_mark:   |
-| v1.x    | :white_check_mark:   |
+| Version | Supported          |
+|---------|--------------------|
+| v2.x    | :white_check_mark: |
+| v1.x    | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
 Please do not report security vulnerabilities through public GitHub issues. 
 
-Instead, we encourage you to submit a report through Github [private vulnerability reporting](https://github.com/h44z/wg-portal/security).
-If you prefer to submit a report without logging in to Github, please email *info (at) wgportal.org*. 
+Instead, we encourage you to submit a report through GitHub [private vulnerability reporting](https://github.com/h44z/wg-portal/security).
+If you prefer to submit a report without logging in to GitHub, please email *info (at) wgportal.org*. 
 We will respond as soon as possible, but as only two people currently maintain this project, we cannot guarantee specific response times.
 
 We prefer all communications to be in English.

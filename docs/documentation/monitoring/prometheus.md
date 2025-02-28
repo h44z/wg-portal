@@ -1,4 +1,4 @@
-By default WG-Portal exposes Prometheus metrics on port `8787` if interface/peer statistic data collection is enabled.
+By default, WG-Portal exposes Prometheus metrics on port `8787` if interface/peer statistic data collection is enabled.
 
 ## Exposed Metrics
 

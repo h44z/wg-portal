@@ -19,11 +19,12 @@ type MailRepo struct {
 	cfg *config.MailConfig
 }
 
+// NewSmtpMailRepo creates a new MailRepo instance.
 func NewSmtpMailRepo(cfg config.MailConfig) MailRepo {
 	return MailRepo{cfg: &cfg}
 }
 
-// Send sends a mail.
+// Send sends a mail using SMTP.
 func (r MailRepo) Send(_ context.Context, subject, body string, to []string, options *domain.MailOptions) error {
 	if options == nil {
 		options = &domain.MailOptions{}

@@ -18,6 +18,7 @@ type WgQuickRepo struct {
 	resolvConfIfacePrefix string
 }
 
+// NewWgQuickRepo creates a new WgQuickRepo instance.
 func NewWgQuickRepo() *WgQuickRepo {
 	return &WgQuickRepo{
 		shellCmd:              "bash",
@@ -25,6 +26,10 @@ func NewWgQuickRepo() *WgQuickRepo {
 	}
 }
 
+// ExecuteInterfaceHook executes the given hook command.
+// The hook command can contain the following placeholders:
+//
+//	%i: the interface identifier.
 func (r *WgQuickRepo) ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCmd string) error {
 	if hookCmd == "" {
 		return nil
@@ -39,6 +44,7 @@ func (r *WgQuickRepo) ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCm
 	return nil
 }
 
+// SetDNS sets the DNS settings for the given interface. It uses resolvconf to set the DNS settings.
 func (r *WgQuickRepo) SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error {
 	if dnsStr == "" && dnsSearchStr == "" {
 		return nil
@@ -68,6 +74,7 @@ func (r *WgQuickRepo) SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr
 	return nil
 }
 
+// UnsetDNS unsets the DNS settings for the given interface. It uses resolvconf to unset the DNS settings.
 func (r *WgQuickRepo) UnsetDNS(id domain.InterfaceIdentifier) error {
 	dnsCommand := "resolvconf -d %resPref%i -f"
 

@@ -86,7 +86,7 @@ func NewMetricsServer(cfg *config.Config) *MetricsServer {
 	}
 }
 
-// Run starts the metrics server
+// Run starts the metrics server. The function blocks until the context is cancelled.
 func (m *MetricsServer) Run(ctx context.Context) {
 	// Run the metrics server in a goroutine
 	go func() {
@@ -104,7 +104,7 @@ func (m *MetricsServer) Run(ctx context.Context) {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Attempt to gracefully shutdown the metrics server
+	// Attempt to gracefully shut down the metrics server
 	if err := m.Shutdown(shutdownCtx); err != nil {
 		logrus.Errorf("metrics service on %s shutdown failed: %v", m.Addr, err)
 	} else {
@@ -123,9 +123,9 @@ func (m *MetricsServer) UpdateInterfaceMetrics(status domain.InterfaceStatus) {
 func (m *MetricsServer) UpdatePeerMetrics(peer *domain.Peer, status domain.PeerStatus) {
 	labels := []string{
 		string(peer.InterfaceIdentifier),
-		string(peer.Interface.AddressStr()),
+		peer.Interface.AddressStr(),
 		string(status.PeerId),
-		string(peer.DisplayName),
+		peer.DisplayName,
 	}
 
 	if status.LastHandshake != nil {

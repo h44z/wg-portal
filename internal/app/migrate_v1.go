@@ -14,7 +14,7 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-func migrateFromV1(cfg *config.Config, db *gorm.DB, source, typ string) error {
+func migrateFromV1(db *gorm.DB, source, typ string) error {
 	sourceType := config.SupportedDatabase(typ)
 	switch sourceType {
 	case config.DatabaseMySQL, config.DatabasePostgres, config.DatabaseMsSQL:

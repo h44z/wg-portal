@@ -10,13 +10,6 @@ type ConfigOption[T any] struct {
 	Overridable bool `json:"Overridable,omitempty"`
 }
 
-func NewConfigOption[T any](value T, overridable bool) ConfigOption[T] {
-	return ConfigOption[T]{
-		Value:       value,
-		Overridable: overridable,
-	}
-}
-
 func ConfigOptionFromDomain[T any](opt domain.ConfigOption[T]) ConfigOption[T] {
 	return ConfigOption[T]{
 		Value:       opt.Value,

@@ -5,7 +5,7 @@ labels: bug
 
 ---
 <!-- Tip: you can use code blocks
-for better better formatting of yaml config or logs
+for better formatting of yaml config or logs
 
 ```yaml
 # config.yaml

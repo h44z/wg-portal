@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -42,12 +43,12 @@ func Test_wgRepository_GetInterfaces(t *testing.T) {
 	mgr := setup(t)
 
 	interfaceName := domain.InterfaceIdentifier("wg_test_001")
-	defer mgr.DeleteInterface(context.Background(), interfaceName)
+	defer internal.LogError(mgr.DeleteInterface(context.Background(), interfaceName))
 	err := mgr.SaveInterface(context.Background(), interfaceName, nil)
 	require.NoError(t, err)
 
 	interfaceName2 := domain.InterfaceIdentifier("wg_test_002")
-	defer mgr.DeleteInterface(context.Background(), interfaceName2)
+	defer internal.LogError(mgr.DeleteInterface(context.Background(), interfaceName2))
 	err = mgr.SaveInterface(context.Background(), interfaceName2, nil)
 	require.NoError(t, err)
 
@@ -65,7 +66,7 @@ func TestWireGuardCreateInterface(t *testing.T) {
 	interfaceName := domain.InterfaceIdentifier("wg_test_001")
 	ipAddress := "10.11.12.13"
 	ipV6Address := "1337:d34d:b33f::2"
-	defer mgr.DeleteInterface(context.Background(), interfaceName)
+	defer internal.LogError(mgr.DeleteInterface(context.Background(), interfaceName))
 
 	err := mgr.SaveInterface(context.Background(), interfaceName,
 		func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
@@ -90,7 +91,7 @@ func TestWireGuardUpdateInterface(t *testing.T) {
 	mgr := setup(t)
 
 	interfaceName := domain.InterfaceIdentifier("wg_test_001")
-	defer mgr.DeleteInterface(context.Background(), interfaceName)
+	defer internal.LogError(mgr.DeleteInterface(context.Background(), interfaceName))
 
 	err := mgr.SaveInterface(context.Background(), interfaceName, nil)
 	require.NoError(t, err)

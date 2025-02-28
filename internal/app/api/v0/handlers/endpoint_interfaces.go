@@ -20,7 +20,7 @@ func (e interfaceEndpoint) GetName() string {
 	return "InterfaceEndpoint"
 }
 
-func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
+func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandler) {
 	apiGroup := g.Group("/interface", e.authenticator.LoggedIn(ScopeAdmin))
 
 	apiGroup.GET("/prepare", e.handlePrepareGet())

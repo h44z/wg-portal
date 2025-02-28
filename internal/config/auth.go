@@ -9,24 +9,37 @@ import (
 )
 
 type Auth struct {
+	// OpenIDConnect contains a list of OpenID Connect providers.
 	OpenIDConnect []OpenIDConnectProvider `yaml:"oidc"`
-	OAuth         []OAuthProvider         `yaml:"oauth"`
-	Ldap          []LdapProvider          `yaml:"ldap"`
+	// OAuth contains a list of plain OAuth providers.
+	OAuth []OAuthProvider `yaml:"oauth"`
+	// Ldap contains a list of LDAP providers.
+	Ldap []LdapProvider `yaml:"ldap"`
 }
 
 type BaseFields struct {
+	// UserIdentifier is the name of the field that contains the user identifier.
 	UserIdentifier string `yaml:"user_identifier"`
-	Email          string `yaml:"email"`
-	Firstname      string `yaml:"firstname"`
-	Lastname       string `yaml:"lastname"`
-	Phone          string `yaml:"phone"`
-	Department     string `yaml:"department"`
+	// Email is the name of the field that contains the user's email address.
+	Email string `yaml:"email"`
+	// Firstname is the name of the field that contains the user's first name.
+	Firstname string `yaml:"firstname"`
+	// Lastname is the name of the field that contains the user's last name.
+	Lastname string `yaml:"lastname"`
+	// Phone is the name of the field that contains the user's phone number.
+	Phone string `yaml:"phone"`
+	// Department is the name of the field that contains the user's department.
+	Department string `yaml:"department"`
 }
 
 type OauthFields struct {
 	BaseFields `yaml:",inline"`
-	IsAdmin    string `yaml:"is_admin"`    // If the value is "true", the user is an admin.
-	UserGroups string `yaml:"user_groups"` // This value specifies the claim name that contains the users groups.
+	// IsAdmin is the name of the field that contains the admin flag.
+	// If the value matches the admin_value_regex, the user is an admin. See OauthAdminMapping for more details.
+	IsAdmin string `yaml:"is_admin"`
+	// UserGroups is the name of the field that contains the user's groups.
+	// If the value matches the admin_group_regex, the user is an admin. See OauthAdminMapping for more details.
+	UserGroups string `yaml:"user_groups"`
 }
 
 // OauthAdminMapping contains all necessary information to extract information about administrative privileges
@@ -40,7 +53,7 @@ type OauthAdminMapping struct {
 	// If the regex specified in that field matches the contents of the is_admin field, the user is an admin.
 	AdminValueRegex string `yaml:"admin_value_regex"`
 
-	// If any of the groups listed in the groups field matches the group specified in the admin_group_regex field, ]
+	// If any of the groups listed in the groups field matches the group specified in the admin_group_regex field,
 	// the user is an admin.
 	AdminGroupRegex string `yaml:"admin_group_regex"`
 
@@ -50,6 +63,8 @@ type OauthAdminMapping struct {
 	adminGroupRegex *regexp.Regexp
 }
 
+// GetAdminValueRegex returns the compiled regular expression for the admin_value_regex field.
+// If the field is empty, the default value "^true$" is used.
 func (o *OauthAdminMapping) GetAdminValueRegex() *regexp.Regexp {
 	if o.adminValueRegex != nil {
 		return o.adminValueRegex // return cached value
@@ -69,6 +84,8 @@ func (o *OauthAdminMapping) GetAdminValueRegex() *regexp.Regexp {
 	return o.adminValueRegex
 }
 
+// GetAdminGroupRegex returns the compiled regular expression for the admin_group_regex field.
+// If the field is empty, the default value "^wg_portal_default_admin_group$" is used.
 func (o *OauthAdminMapping) GetAdminGroupRegex() *regexp.Regexp {
 	if o.adminGroupRegex != nil {
 		return o.adminGroupRegex // return cached value
@@ -89,7 +106,8 @@ func (o *OauthAdminMapping) GetAdminGroupRegex() *regexp.Regexp {
 }
 
 type LdapFields struct {
-	BaseFields      `yaml:",inline"`
+	BaseFields `yaml:",inline"`
+	// GroupMembership is the name of the LDAP field that contains the groups to which the user belongs.
 	GroupMembership string `yaml:"memberof"`
 }
 
@@ -97,27 +115,43 @@ type LdapProvider struct {
 	// ProviderName is an internal name that is used to distinguish LDAP servers. It must not contain spaces or special characters.
 	ProviderName string `yaml:"provider_name"`
 
-	URL                string `yaml:"url"`
-	StartTLS           bool   `yaml:"start_tls"`
-	CertValidation     bool   `yaml:"cert_validation"`
+	// URL is the LDAP server URL, e.g. ldap://srv-ad01.company.local:389
+	URL string `yaml:"url"`
+	// StartTLS specifies whether STARTTLS should be used to secure the LDAP connection
+	StartTLS bool `yaml:"start_tls"`
+	// CertValidation specifies whether the LDAP server's TLS certificate should be validated
+	CertValidation bool `yaml:"cert_validation"`
+	// TlsCertificatePath is the path to a TLS certificate if needed for LDAP connections
 	TlsCertificatePath string `yaml:"tls_certificate_path"`
-	TlsKeyPath         string `yaml:"tls_key_path"`
+	// TlsKeyPath is the path to the corresponding TLS certificate key
+	TlsKeyPath string `yaml:"tls_key_path"`
 
-	BaseDN   string `yaml:"base_dn"`
+	// BaseDN is the base DN for user searches
+	BaseDN string `yaml:"base_dn"`
+	// BindUser is the bind user for LDAP. It is used to search for users.
 	BindUser string `yaml:"bind_user"`
+	// BindPass is the bind password for LDAP
 	BindPass string `yaml:"bind_pass"`
 
+	// FieldMap is used to map the names of the LDAP fields to wg-portal fields
 	FieldMap LdapFields `yaml:"field_map"`
 
-	LoginFilter        string   `yaml:"login_filter"` // {{login_identifier}} gets replaced with the login email address / username
-	AdminGroupDN       string   `yaml:"admin_group"`  // Members of this group receive admin rights in WG-Portal
+	// LoginFilter is used to select which users can log in.
+	// Use the placeholder {{login_identifier}} to insert the username.
+	LoginFilter string `yaml:"login_filter"`
+	// AdminGroupDN is the DN of the group that contains the administrators.
+	// Members of this group receive admin rights in wg-portal
+	AdminGroupDN string `yaml:"admin_group"`
+	// ParsedAdminGroupDN is the parsed version of AdminGroupDN
 	ParsedAdminGroupDN *ldap.DN `yaml:"-"`
 
 	// If DisableMissing is true, missing users will be deactivated
 	DisableMissing bool `yaml:"disable_missing"`
 	// If AutoReEnable is true, users that where disabled because they were missing will be re-enabled once they are found again
-	AutoReEnable bool          `yaml:"auto_re_enable"`
-	SyncFilter   string        `yaml:"sync_filter"`
+	AutoReEnable bool `yaml:"auto_re_enable"`
+	// SyncFilter is used to select which users get synchronized into wg-portal
+	SyncFilter string `yaml:"sync_filter"`
+	// SyncInterval is the interval between consecutive LDAP user syncs. If it is 0, sync is disabled.
 	SyncInterval time.Duration `yaml:"sync_interval"`
 
 	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.
@@ -134,6 +168,7 @@ type OpenIDConnectProvider struct {
 	// DisplayName is shown to the user on the login page. If it is empty, ProviderName will be displayed.
 	DisplayName string `yaml:"display_name"`
 
+	// BaseUrl is the base URL of the OIDC provider.
 	BaseUrl string `yaml:"base_url"`
 
 	// ClientID is the application's ID.
@@ -172,8 +207,11 @@ type OAuthProvider struct {
 	// ClientSecret is the application's secret.
 	ClientSecret string `yaml:"client_secret"`
 
-	AuthURL     string `yaml:"auth_url"`
-	TokenURL    string `yaml:"token_url"`
+	// AuthURL is the URL to request OAuth user authorization.
+	AuthURL string `yaml:"auth_url"`
+	// TokenURL is the URL to request a token.
+	TokenURL string `yaml:"token_url"`
+	// UserInfoURL is the URL to request user information.
 	UserInfoURL string `yaml:"user_info_url"`
 
 	// Scope specifies optional requested permissions.

@@ -356,7 +356,7 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
   - Available fields: `user_identifier`, `email`, `firstname`, `lastname`, `phone`, `department`, `is_admin`, `user_groups`.
 
     | **Field**         | **Typical OIDC Claim**            | **Explanation**                                                                                                                                                                                         |
-    | ----------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    |-------------------|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
     | `user_identifier` | `sub` or `preferred_username`     | A unique identifier for the user. Often the OIDC `sub` claim is used because it’s guaranteed to be unique for the user within the IdP. Some providers also support `preferred_username` if it’s unique. |
     | `email`           | `email`                           | The user’s email address as provided by the IdP. Not always verified, depending on IdP settings.                                                                                                        |
     | `firstname`       | `given_name`                      | The user’s first name, typically provided by the IdP in the `given_name` claim.                                                                                                                         |
@@ -425,7 +425,7 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
   - Available fields: `user_identifier`, `email`, `firstname`, `lastname`, `phone`, `department`, `is_admin`, `user_groups`.
 
     | **Field**         | **Typical Claim**                 | **Explanation**                                                                                                                                                                                         |
-    | ----------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    |-------------------|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
     | `user_identifier` | `sub` or `preferred_username`     | A unique identifier for the user. Often the OIDC `sub` claim is used because it’s guaranteed to be unique for the user within the IdP. Some providers also support `preferred_username` if it’s unique. |
     | `email`           | `email`                           | The user’s email address as provided by the IdP. Not always verified, depending on IdP settings.                                                                                                        |
     | `firstname`       | `given_name`                      | The user’s first name, typically provided by the IdP in the `given_name` claim.                                                                                                                         |
@@ -494,7 +494,7 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
     - Available fields: `user_identifier`, `email`, `firstname`, `lastname`, `phone`, `department`, `memberof`.
   
       | **WireGuard Portal Field** | **Typical LDAP Attribute** | **Short Description**                                        |
-      | -------------------------- | -------------------------- | ------------------------------------------------------------ |
+      |----------------------------|----------------------------|--------------------------------------------------------------|
       | user_identifier            | sAMAccountName / uid       | Uniquely identifies the user within the LDAP directory.      |
       | email                      | mail / userPrincipalName   | Stores the user's primary email address.                     |
       | firstname                  | givenName                  | Contains the user's first (given) name.                      |

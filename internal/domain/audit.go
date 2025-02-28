@@ -5,8 +5,6 @@ import "time"
 type AuditSeverityLevel string
 
 const AuditSeverityLevelLow AuditSeverityLevel = "low"
-const AuditSeverityLevelMedium AuditSeverityLevel = "medium"
-const AuditSeverityLevelHigh AuditSeverityLevel = "high"
 
 type AuditEntry struct {
 	UniqueId  uint64    `gorm:"primaryKey;autoIncrement:true;column:id"`

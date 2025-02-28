@@ -71,7 +71,8 @@ func (m Manager) GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interfa
 
 // GetUserInterfaces returns all interfaces that are available for users to create new peers.
 // If self-provisioning is disabled, this function will return an empty list.
-func (m Manager) GetUserInterfaces(ctx context.Context, id domain.UserIdentifier) ([]domain.Interface, error) {
+// At the moment, there are no interfaces specific to single users, thus the user id is not used.
+func (m Manager) GetUserInterfaces(ctx context.Context, _ domain.UserIdentifier) ([]domain.Interface, error) {
 	if !m.cfg.Core.SelfProvisioningAllowed {
 		return nil, nil // self-provisioning is disabled - no interfaces for users
 	}
@@ -837,7 +838,7 @@ func (m Manager) deleteInterfacePeers(ctx context.Context, id domain.InterfaceId
 	return nil
 }
 
-func (m Manager) validateInterfaceModifications(ctx context.Context, old, new *domain.Interface) error {
+func (m Manager) validateInterfaceModifications(ctx context.Context, _, _ *domain.Interface) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin {
@@ -847,7 +848,7 @@ func (m Manager) validateInterfaceModifications(ctx context.Context, old, new *d
 	return nil
 }
 
-func (m Manager) validateInterfaceCreation(ctx context.Context, old, new *domain.Interface) error {
+func (m Manager) validateInterfaceCreation(ctx context.Context, _, new *domain.Interface) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if new.Identifier == "" {
@@ -868,7 +869,7 @@ func (m Manager) validateInterfaceCreation(ctx context.Context, old, new *domain
 	return nil
 }
 
-func (m Manager) validateInterfaceDeletion(ctx context.Context, del *domain.Interface) error {
+func (m Manager) validateInterfaceDeletion(ctx context.Context, _ *domain.Interface) error {
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin {

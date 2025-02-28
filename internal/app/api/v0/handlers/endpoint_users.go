@@ -19,7 +19,7 @@ func (e userEndpoint) GetName() string {
 	return "UserEndpoint"
 }
 
-func (e userEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
+func (e userEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandler) {
 	apiGroup := g.Group("/user", e.authenticator.LoggedIn())
 
 	apiGroup.GET("/all", e.authenticator.LoggedIn(ScopeAdmin), e.handleAllGet())

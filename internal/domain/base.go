@@ -42,7 +42,7 @@ func (ps *PrivateString) Scan(value any) error {
 	case string:
 		*ps = PrivateString(v)
 	case []byte:
-		*ps = PrivateString(string(v))
+		*ps = PrivateString(v)
 	default:
 		return errors.New("invalid type for PrivateString")
 	}
@@ -57,7 +57,6 @@ const (
 	DisabledReasonAdmin            = "disabled by admin"
 	DisabledReasonApi              = "disabled through api"
 	DisabledReasonLdapMissing      = "missing in ldap"
-	DisabledReasonUserMissing      = "missing user"
 	DisabledReasonMigrationDummy   = "migration dummy user"
 	DisabledReasonInterfaceMissing = "missing WireGuard interface"
 

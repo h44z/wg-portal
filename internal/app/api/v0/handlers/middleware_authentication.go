@@ -13,9 +13,7 @@ import (
 type Scope string
 
 const (
-	ScopeAdmin   Scope = "ADMIN" // Admin scope contains all other scopes
-	ScopeSwagger Scope = "SWAGGER"
-	ScopeUser    Scope = "USER"
+	ScopeAdmin Scope = "ADMIN" // Admin scope contains all other scopes
 )
 
 type authenticationHandler struct {

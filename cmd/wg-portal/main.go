@@ -57,14 +57,14 @@ func main() {
 	cfgFileSystem, err := adapters.NewFileSystemRepository(cfg.Advanced.ConfigStoragePath)
 	internal.AssertNoError(err)
 
-	shouldExit, err := app.HandleProgramArgs(cfg, rawDb)
+	shouldExit, err := app.HandleProgramArgs(rawDb)
 	switch {
 	case shouldExit && err == nil:
 		return
-	case shouldExit && err != nil:
+	case shouldExit:
 		logrus.Errorf("Failed to process program args: %v", err)
 		os.Exit(1)
-	case !shouldExit:
+	default:
 		internal.AssertNoError(err)
 	}
 

@@ -63,7 +63,7 @@ func (m Manager) connectToMessageBus() {
 	_ = m.bus.Subscribe(app.TopicRouteRemove, m.handleRouteRemoveEvent)
 }
 
-func (m Manager) StartBackgroundJobs(ctx context.Context) {
+func (m Manager) StartBackgroundJobs(_ context.Context) {
 }
 
 func (m Manager) handleRouteUpdateEvent(srcDescription string) {
@@ -124,7 +124,7 @@ func (m Manager) syncRoutes(ctx context.Context) error {
 			return fmt.Errorf("failed to find physical link for %s: %w", iface.Identifier, err)
 		}
 
-		table, fwmark, err := m.getRoutingTableAndFwMark(&iface, allowedIPs, link)
+		table, fwmark, err := m.getRoutingTableAndFwMark(&iface, link)
 		if err != nil {
 			return fmt.Errorf("failed to get table and fwmark for %s: %w", iface.Identifier, err)
 		}
@@ -426,11 +426,11 @@ func (m Manager) removeDeprecatedRoutes(link netlink.Link, family int, allowedIP
 	return nil
 }
 
-func (m Manager) getRoutingTableAndFwMark(
-	iface *domain.Interface,
-	allowedIPs []domain.Cidr,
-	link netlink.Link,
-) (table int, fwmark uint32, err error) {
+func (m Manager) getRoutingTableAndFwMark(iface *domain.Interface, link netlink.Link) (
+	table int,
+	fwmark uint32,
+	err error,
+) {
 	table = iface.GetRoutingTable()
 	fwmark = iface.FirewallMark
 
