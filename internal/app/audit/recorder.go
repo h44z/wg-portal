@@ -3,9 +3,9 @@ package audit
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 
 	"github.com/h44z/wg-portal/internal/app"
@@ -52,7 +52,7 @@ func (r *Recorder) StartBackgroundJobs(ctx context.Context) {
 				// select blocks until one of the cases evaluate to true
 			}
 
-			logrus.Tracef("registered %d audit message within the last hour", 0) // TODO: implement
+			slog.Debug("audit status", "registered_messages", 0) // TODO: implement
 		}
 	}()
 }
@@ -77,7 +77,7 @@ func (r *Recorder) authLoginEvent(userIdentifier domain.UserIdentifier) {
 		Message:   fmt.Sprintf("user %s logged in", userIdentifier),
 	})
 	if err != nil {
-		logrus.Errorf("failed to create audit entry for handleAuthLoginEvent: %v", err)
+		slog.Error("failed to create audit entry for handleAuthLoginEvent", "error", err)
 		return
 	}
 }

@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/go-ldap/ldap/v3"
-	"github.com/sirupsen/logrus"
 
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
@@ -117,7 +117,10 @@ func (l LdapAuthenticator) GetUserInfo(_ context.Context, userId domain.UserIden
 
 	if l.cfg.LogUserInfo {
 		contents, _ := json.Marshal(users[0])
-		logrus.Tracef("User info from LDAP source %s for %s: %v", l.GetName(), userId, string(contents))
+		slog.Debug("LDAP user info",
+			"source", l.GetName(),
+			"userId", userId,
+			"info", string(contents))
 	}
 
 	return users[0], nil

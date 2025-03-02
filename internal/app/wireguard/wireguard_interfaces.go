@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"slices"
 	"time"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -130,7 +129,7 @@ func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.Inter
 			continue
 		}
 
-		logrus.Infof("importing new interface %s...", physicalInterface.Identifier)
+		slog.Info("importing new interface", "interface", physicalInterface.Identifier)
 
 		physicalPeers, err := m.wg.GetPeers(ctx, physicalInterface.Identifier)
 		if err != nil {
@@ -142,7 +141,7 @@ func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.Inter
 			return 0, fmt.Errorf("import of %s failed: %w", physicalInterface.Identifier, err)
 		}
 
-		logrus.Infof("imported new interface %s and %d peers", physicalInterface.Identifier, len(physicalPeers))
+		slog.Info("imported new interface", "interface", physicalInterface.Identifier, "peers", len(physicalPeers))
 		imported++
 	}
 
@@ -206,7 +205,7 @@ func (m Manager) RestoreInterfaceState(
 
 		_, err = m.wg.GetInterface(ctx, iface.Identifier)
 		if err != nil && !iface.IsDisabled() {
-			logrus.Debugf("creating missing interface %s...", iface.Identifier)
+			slog.Debug("creating missing interface", "interface", iface.Identifier)
 
 			// try to create a new interface
 			_, err = m.saveInterface(ctx, &iface)
@@ -224,7 +223,7 @@ func (m Manager) RestoreInterfaceState(
 				return fmt.Errorf("failed to create physical interface %s: %w", iface.Identifier, err)
 			}
 		} else {
-			logrus.Debugf("restoring interface state for %s to disabled=%t", iface.Identifier, iface.IsDisabled())
+			slog.Debug("restoring interface state", "interface", iface.Identifier, "disabled", iface.IsDisabled())
 
 			// try to move interface to stored state
 			_, err = m.saveInterface(ctx, &iface)

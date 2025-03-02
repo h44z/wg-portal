@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
 	"github.com/h44z/wg-portal/internal/config"
@@ -106,7 +106,9 @@ func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 
 	if o.userInfoLogging {
 		contents, _ := json.Marshal(tokenFields)
-		logrus.Tracef("User info from OIDC source %s: %v", o.name, string(contents))
+		slog.Debug("OIDC user info",
+			"source", o.name,
+			"info", string(contents))
 	}
 
 	return tokenFields, nil

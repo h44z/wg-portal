@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-
-	"github.com/sirupsen/logrus"
+	"log/slog"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -57,18 +56,25 @@ func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...doma
 		}
 
 		if peer.UserIdentifier == "" {
-			logrus.Debugf("skipping peer email for %s, no user linked", peerId)
+			slog.Debug("skipping peer email",
+				"peer", peerId,
+				"reason", "no user linked")
 			continue
 		}
 
 		user, err := m.users.GetUser(ctx, peer.UserIdentifier)
 		if err != nil {
-			logrus.Debugf("skipping peer email for %s, unable to fetch user: %v", peerId, err)
+			slog.Debug("skipping peer email",
+				"peer", peerId,
+				"reason", "unable to fetch user",
+				"error", err)
 			continue
 		}
 
 		if user.Email == "" {
-			logrus.Debugf("skipping peer email for %s, user has no mail address", peerId)
+			slog.Debug("skipping peer email",
+				"peer", peerId,
+				"reason", "user has no mail address")
 			continue
 		}
 

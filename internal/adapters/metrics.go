@@ -3,13 +3,13 @@ package adapters
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
@@ -91,11 +91,11 @@ func (m *MetricsServer) Run(ctx context.Context) {
 	// Run the metrics server in a goroutine
 	go func() {
 		if err := m.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logrus.Errorf("metrics service on %s exited: %v", m.Addr, err)
+			slog.Error("metrics service exited", "address", m.Addr, "error", err)
 		}
 	}()
 
-	logrus.Infof("started metrics service on %s", m.Addr)
+	slog.Info("started metrics service", "address", m.Addr)
 
 	// Wait for the context to be done
 	<-ctx.Done()
@@ -106,9 +106,9 @@ func (m *MetricsServer) Run(ctx context.Context) {
 
 	// Attempt to gracefully shut down the metrics server
 	if err := m.Shutdown(shutdownCtx); err != nil {
-		logrus.Errorf("metrics service on %s shutdown failed: %v", m.Addr, err)
+		slog.Error("metrics service shutdown failed", "address", m.Addr, "error", err)
 	} else {
-		logrus.Infof("metrics service on %s shutdown gracefully", m.Addr)
+		slog.Info("metrics service shutdown gracefully", "address", m.Addr)
 	}
 }
 

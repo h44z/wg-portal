@@ -4,18 +4,17 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-
-	"github.com/sirupsen/logrus"
 )
 
 // LogClose closes the given Closer and logs any error that occurs
 func LogClose(c io.Closer) {
 	if err := c.Close(); err != nil {
-		logrus.Errorf("error during Close(): %v", err)
+		slog.Error("error during Close()", "error", err)
 	}
 }
 
@@ -28,11 +27,10 @@ func LogError(err error, msg ...string) {
 	}
 
 	if len(msg) > 0 {
-		logrus.Errorf("%s: %v", msg[0], err)
-		return
+		slog.Error(msg[0], "error", err)
+	} else {
+		slog.Error(err.Error())
 	}
-	logrus.Errorf("error: %v", err)
-
 }
 
 // SignalAwareContext returns a context that gets closed once a given signal is retrieved.

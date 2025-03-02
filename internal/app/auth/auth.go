@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/url"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 
 	"github.com/h44z/wg-portal/internal/app"
@@ -227,7 +227,7 @@ func (a *Authenticator) passwordAuthentication(
 			rawUserInfo, err := ldapAuth.GetUserInfo(context.Background(), identifier)
 			if err != nil {
 				if !errors.Is(err, domain.ErrNotFound) {
-					logrus.Warnf("failed to fetch ldap user info for %s: %v", identifier, err)
+					slog.Warn("failed to fetch ldap user info", "identifier", identifier, "error", err)
 				}
 				continue // user not found / other ldap error
 			}
@@ -407,8 +407,10 @@ func (a *Authenticator) registerNewUser(
 		return nil, fmt.Errorf("failed to register new user: %w", err)
 	}
 
-	logrus.Tracef("registered user %s from external authentication provider, admin user: %t",
-		user.Identifier, user.IsAdmin)
+	slog.Debug("registered user from external authentication provider",
+		"user", user.Identifier,
+		"isAdmin", user.IsAdmin,
+		"provider", source)
 
 	return user, nil
 }
@@ -483,8 +485,10 @@ func (a *Authenticator) updateExternalUser(
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 
-	logrus.Tracef("updated user %s with data from external authentication provider, admin user: %t",
-		existingUser.Identifier, existingUser.IsAdmin)
+	slog.Debug("updated user with data from external authentication provider",
+		"user", existingUser.Identifier,
+		"isAdmin", existingUser.IsAdmin,
+		"provider", source)
 
 	return nil
 }

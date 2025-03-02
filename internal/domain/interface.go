@@ -2,14 +2,13 @@ package domain
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 	"net"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/h44z/wg-portal/internal"
 )
@@ -166,18 +165,22 @@ func (i *Interface) GetRoutingTable() int {
 		numberStr := strings.ReplaceAll(routingTableStr, "0x", "")
 		routingTable, err := strconv.ParseUint(numberStr, 16, 64)
 		if err != nil {
-			logrus.Errorf("invalid hex routing table %s: %v", routingTableStr, err)
+			slog.Error("failed to parse routing table number", "table", routingTableStr, "error", err)
 			return -1
 		}
 		if routingTable > math.MaxInt32 {
-			logrus.Errorf("invalid routing table %s, too big", routingTableStr)
+			slog.Error("routing table number too large", "table", routingTable, "max", math.MaxInt32)
 			return -1
 		}
 		return int(routingTable)
 	default:
 		routingTable, err := strconv.Atoi(routingTableStr)
 		if err != nil {
-			logrus.Errorf("invalid routing table %s: %v", routingTableStr, err)
+			slog.Error("failed to parse routing table number", "table", routingTableStr, "error", err)
+			return -1
+		}
+		if routingTable > math.MaxInt32 {
+			slog.Error("routing table number too large", "table", routingTable, "max", math.MaxInt32)
 			return -1
 		}
 		return routingTable

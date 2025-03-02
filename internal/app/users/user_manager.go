@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"sync"
 	"time"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 
 	"github.com/h44z/wg-portal/internal"
@@ -419,7 +419,7 @@ func (m Manager) runLdapSynchronizationService(ctx context.Context) {
 		go func(cfg config.LdapProvider) {
 			syncInterval := cfg.SyncInterval
 			if syncInterval == 0 {
-				logrus.Debugf("sync disabled for LDAP server: %s", cfg.ProviderName)
+				slog.Debug("sync disabled for LDAP server", "provider", cfg.ProviderName)
 				return
 			}
 
@@ -435,7 +435,7 @@ func (m Manager) runLdapSynchronizationService(ctx context.Context) {
 
 				err := m.synchronizeLdapUsers(ctx, &cfg)
 				if err != nil {
-					logrus.Errorf("failed to synchronize LDAP users for %s: %v", cfg.ProviderName, err)
+					slog.Error("failed to synchronize LDAP users", "provider", cfg.ProviderName, "error", err)
 				}
 			}
 		}(ldapCfg)
@@ -443,7 +443,7 @@ func (m Manager) runLdapSynchronizationService(ctx context.Context) {
 }
 
 func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.LdapProvider) error {
-	logrus.Tracef("starting to synchronize users for %s", provider.ProviderName)
+	slog.Debug("starting to synchronize users", "provider", provider.ProviderName)
 
 	dn, err := ldap.ParseDN(provider.AdminGroupDN)
 	if err != nil {
@@ -462,7 +462,7 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 		return err
 	}
 
-	logrus.Tracef("fetched %d raw ldap users from provider %s...", len(rawUsers), provider.ProviderName)
+	slog.Debug("fetched raw ldap users", "count", len(rawUsers), "provider", provider.ProviderName)
 
 	// Update existing LDAP users
 	err = m.updateLdapUsers(ctx, provider, rawUsers, &provider.FieldMap, provider.ParsedAdminGroupDN)
@@ -504,7 +504,7 @@ func (m Manager) updateLdapUsers(
 
 		if existingUser == nil {
 			// create new user
-			logrus.Tracef("creating new user %s from provider %s...", user.Identifier, provider.ProviderName)
+			slog.Debug("creating new user from provider", "user", user.Identifier, "provider", provider.ProviderName)
 
 			err := m.NewUser(tctx, user)
 			if err != nil {
@@ -588,7 +588,7 @@ func (m Manager) disableMissingLdapUsers(
 			continue
 		}
 
-		logrus.Tracef("user %s is missing in ldap provider %s, disabling", user.Identifier, providerName)
+		slog.Debug("user is missing in ldap provider, disabling", "user", user.Identifier, "provider", providerName)
 
 		now := time.Now()
 		user.Disabled = &now

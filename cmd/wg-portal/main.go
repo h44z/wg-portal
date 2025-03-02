@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
-	"strings"
 	"syscall"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 
 	"github.com/h44z/wg-portal/internal"
@@ -31,12 +30,11 @@ import (
 func main() {
 	ctx := internal.SignalAwareContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
-	logrus.Infof("Starting WireGuard Portal V2...")
-	logrus.Infof("WireGuard Portal version: %s", internal.Version)
+	slog.Info("Starting WireGuard Portal V2...", "version", internal.Version)
 
 	cfg, err := config.GetConfig()
 	internal.AssertNoError(err)
-	setupLogging(cfg)
+	internal.SetupLogging(cfg.Advanced.LogLevel, cfg.Advanced.LogPretty, cfg.Advanced.LogJson)
 
 	cfg.LogStartupValues()
 
@@ -62,7 +60,7 @@ func main() {
 	case shouldExit && err == nil:
 		return
 	case shouldExit:
-		logrus.Errorf("Failed to process program args: %v", err)
+		slog.Error("Failed to process program args", "error", err)
 		os.Exit(1)
 	default:
 		internal.AssertNoError(err)
@@ -131,41 +129,14 @@ func main() {
 	go metricsServer.Run(ctx)
 	go webSrv.Run(ctx, cfg.Web.ListeningAddress)
 
+	slog.Info("Application startup complete")
+
 	// wait until context gets cancelled
 	<-ctx.Done()
 
-	logrus.Infof("Stopping WireGuard Portal")
+	slog.Info("Stopping WireGuard Portal")
 
 	time.Sleep(5 * time.Second) // wait for (most) goroutines to finish gracefully
 
-	logrus.Infof("Stopped WireGuard Portal")
-}
-
-func setupLogging(cfg *config.Config) {
-	switch strings.ToLower(cfg.Advanced.LogLevel) {
-	case "trace":
-		logrus.SetLevel(logrus.TraceLevel)
-	case "debug":
-		logrus.SetLevel(logrus.DebugLevel)
-	case "info", "information":
-		logrus.SetLevel(logrus.InfoLevel)
-	case "warn", "warning":
-		logrus.SetLevel(logrus.WarnLevel)
-	case "error":
-		logrus.SetLevel(logrus.ErrorLevel)
-	default:
-		logrus.SetLevel(logrus.InfoLevel)
-	}
-
-	switch {
-	case cfg.Advanced.LogJson:
-		logrus.SetFormatter(&logrus.JSONFormatter{
-			PrettyPrint: cfg.Advanced.LogPretty,
-		})
-	case cfg.Advanced.LogPretty:
-		logrus.SetFormatter(&logrus.TextFormatter{
-			ForceColors:   true,
-			DisableColors: false,
-		})
-	}
+	slog.Info("Stopped WireGuard Portal")
 }

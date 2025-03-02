@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 
 	"github.com/h44z/wg-portal/internal/config"
@@ -81,7 +81,7 @@ func (a *App) Startup(ctx context.Context) error {
 
 func (a *App) importNewInterfaces(ctx context.Context) error {
 	if !a.Config.Core.ImportExisting {
-		logrus.Trace("skipping interface import - feature disabled")
+		slog.Debug("skipping interface import - feature disabled")
 		return nil // feature disabled
 	}
 
@@ -91,14 +91,14 @@ func (a *App) importNewInterfaces(ctx context.Context) error {
 	}
 
 	if importedCount > 0 {
-		logrus.Infof("%d new interfaces imported", importedCount)
+		slog.Info("new interfaces imported", "count", importedCount)
 	}
 	return nil
 }
 
 func (a *App) restoreInterfaceState(ctx context.Context) error {
 	if !a.Config.Core.RestoreState {
-		logrus.Trace("skipping interface state restore - feature disabled")
+		slog.Debug("skipping interface state restore - feature disabled")
 		return nil // feature disabled
 	}
 
@@ -107,14 +107,14 @@ func (a *App) restoreInterfaceState(ctx context.Context) error {
 		return err
 	}
 
-	logrus.Info("interface state restored")
+	slog.Info("interface state restored")
 	return nil
 }
 
 func (a *App) createDefaultUser(ctx context.Context) error {
 	adminUserId := domain.UserIdentifier(a.Config.Core.AdminUser)
 	if adminUserId == "" {
-		logrus.Trace("skipping default user creation - admin user is blank")
+		slog.Debug("skipping default user creation - admin user is blank")
 		return nil // empty admin user - do not create
 	}
 
@@ -123,7 +123,7 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 		return err
 	}
 	if err == nil {
-		logrus.Trace("skipping default user creation - admin user already exists")
+		slog.Debug("skipping default user creation - admin user already exists")
 		return nil // admin user already exists
 	}
 
@@ -154,7 +154,7 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 	}
 	if a.Config.Core.AdminApiToken != "" {
 		if len(a.Config.Core.AdminApiToken) < 18 {
-			logrus.Warnf("[SECURITY WARNING] admin API token is too short, should be at least 18 characters long")
+			slog.Warn("admin API token is too short, should be at least 18 characters long")
 		}
 		defaultAdmin.ApiToken = a.Config.Core.AdminApiToken
 		defaultAdmin.ApiTokenCreated = &now
@@ -165,7 +165,7 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 		return err
 	}
 
-	logrus.Infof("admin user %s created", admin.Identifier)
+	slog.Info("admin user created", "identifier", admin.Identifier)
 
 	return nil
 }

@@ -2,11 +2,11 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
 	"github.com/a8m/envsubst"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -65,29 +65,32 @@ type Config struct {
 
 // LogStartupValues logs the startup values of the configuration in debug level
 func (c *Config) LogStartupValues() {
-	logrus.Infof("Log Level: %s", c.Advanced.LogLevel)
+	slog.Info("Configuration loaded!", "logLevel", c.Advanced.LogLevel)
 
-	logrus.Debug("WireGuard Portal Features:")
-	logrus.Debugf("  - EditableKeys: %t", c.Core.EditableKeys)
-	logrus.Debugf("  - CreateDefaultPeerOnCreation: %t", c.Core.CreateDefaultPeerOnCreation)
-	logrus.Debugf("  - ReEnablePeerAfterUserEnable: %t", c.Core.ReEnablePeerAfterUserEnable)
-	logrus.Debugf("  - DeletePeerAfterUserDeleted: %t", c.Core.DeletePeerAfterUserDeleted)
-	logrus.Debugf("  - SelfProvisioningAllowed: %t", c.Core.SelfProvisioningAllowed)
-	logrus.Debugf("  - ImportExisting: %t", c.Core.ImportExisting)
-	logrus.Debugf("  - RestoreState: %t", c.Core.RestoreState)
-	logrus.Debugf("  - UseIpV6: %t", c.Advanced.UseIpV6)
-	logrus.Debugf("  - CollectInterfaceData: %t", c.Statistics.CollectInterfaceData)
-	logrus.Debugf("  - CollectPeerData: %t", c.Statistics.CollectPeerData)
-	logrus.Debugf("  - CollectAuditData: %t", c.Statistics.CollectAuditData)
+	slog.Debug("Config Features",
+		"editableKeys", c.Core.EditableKeys,
+		"createDefaultPeerOnCreation", c.Core.CreateDefaultPeerOnCreation,
+		"reEnablePeerAfterUserEnable", c.Core.ReEnablePeerAfterUserEnable,
+		"deletePeerAfterUserDeleted", c.Core.DeletePeerAfterUserDeleted,
+		"selfProvisioningAllowed", c.Core.SelfProvisioningAllowed,
+		"importExisting", c.Core.ImportExisting,
+		"restoreState", c.Core.RestoreState,
+		"useIpV6", c.Advanced.UseIpV6,
+		"collectInterfaceData", c.Statistics.CollectInterfaceData,
+		"collectPeerData", c.Statistics.CollectPeerData,
+		"collectAuditData", c.Statistics.CollectAuditData,
+	)
 
-	logrus.Debug("WireGuard Portal Settings:")
-	logrus.Debugf("  - ConfigStoragePath: %s", c.Advanced.ConfigStoragePath)
-	logrus.Debugf("  - ExternalUrl: %s", c.Web.ExternalUrl)
+	slog.Debug("Config Settings",
+		"configStoragePath", c.Advanced.ConfigStoragePath,
+		"externalUrl", c.Web.ExternalUrl,
+	)
 
-	logrus.Debug("WireGuard Portal Authentication:")
-	logrus.Debugf("  - OIDC Providers: %d", len(c.Auth.OpenIDConnect))
-	logrus.Debugf("  - OAuth Providers: %d", len(c.Auth.OAuth))
-	logrus.Debugf("  - Ldap Providers: %d", len(c.Auth.Ldap))
+	slog.Debug("Config Authentication",
+		"oidcProviders", len(c.Auth.OpenIDConnect),
+		"oauthProviders", len(c.Auth.OAuth),
+		"ldapProviders", len(c.Auth.Ldap),
+	)
 }
 
 // defaultConfig returns the default configuration
@@ -180,7 +183,7 @@ func loadConfigFile(cfg any, filename string) error {
 	data, err := envsubst.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			logrus.Warnf("Config file %s not found, using default values", filename)
+			slog.Warn("Config file not found, using default values", "filename", filename)
 			return nil
 		}
 		return fmt.Errorf("envsubst error: %v", err)

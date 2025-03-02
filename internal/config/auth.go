@@ -1,11 +1,11 @@
 package config
 
 import (
+	"log/slog"
 	"regexp"
 	"time"
 
 	"github.com/go-ldap/ldap/v3"
-	"github.com/sirupsen/logrus"
 )
 
 type Auth struct {
@@ -77,7 +77,8 @@ func (o *OauthAdminMapping) GetAdminValueRegex() *regexp.Regexp {
 
 	adminRegex, err := regexp.Compile(o.AdminValueRegex)
 	if err != nil {
-		logrus.Fatalf("failed to compile admin_value_regex: %v", err)
+		slog.Error("failed to compile admin_value_regex", "error", err)
+		panic("failed to compile admin_value_regex")
 	}
 	o.adminValueRegex = adminRegex
 
@@ -98,7 +99,8 @@ func (o *OauthAdminMapping) GetAdminGroupRegex() *regexp.Regexp {
 
 	groupRegex, err := regexp.Compile(o.AdminGroupRegex)
 	if err != nil {
-		logrus.Fatalf("failed to compile admin_group_regex: %v", err)
+		slog.Error("failed to compile admin_group_regex", "error", err)
+		panic("failed to compile admin_group_regex")
 	}
 	o.adminGroupRegex = groupRegex
 

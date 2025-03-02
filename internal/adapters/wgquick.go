@@ -3,10 +3,9 @@ package adapters
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"os/exec"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -35,7 +34,7 @@ func (r *WgQuickRepo) ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCm
 		return nil
 	}
 
-	logrus.Tracef("interface %s: executing hook %s", id, hookCmd)
+	slog.Debug("executing interface hook", "interface", id, "hook", hookCmd)
 	err := r.exec(hookCmd, id)
 	if err != nil {
 		return fmt.Errorf("failed to exec hook: %w", err)
@@ -107,6 +106,8 @@ func (r *WgQuickRepo) exec(command string, interfaceId domain.InterfaceIdentifie
 	if err != nil {
 		return fmt.Errorf("failed to exexute shell command %s: %w", commandWithInterfaceName, err)
 	}
-	logrus.Tracef("executed shell command %s, with output: %s", commandWithInterfaceName, string(out))
+	slog.Debug("executed shell command",
+		"command", commandWithInterfaceName,
+		"output", string(out))
 	return nil
 }

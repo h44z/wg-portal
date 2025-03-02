@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -49,7 +48,9 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdenti
 		}
 	}
 
-	logrus.Infof("created %d default peers for user %s", len(newPeers), userId)
+	slog.InfoContext(ctx, "created default peers for user",
+		"user", userId,
+		"count", len(newPeers))
 
 	return nil
 }

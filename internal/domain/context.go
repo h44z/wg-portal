@@ -3,9 +3,9 @@ package domain
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 const CtxUserInfo = "userInfo"
@@ -95,7 +95,10 @@ func ValidateUserAccessRights(ctx context.Context, requiredUser UserIdentifier) 
 		return nil // User can access own data
 	}
 
-	logrus.Warnf("insufficient permissions for %s (want %s), stack: %s", sessionUser.Id, requiredUser, GetStackTrace())
+	slog.Warn("insufficient permissions",
+		"user", sessionUser.Id,
+		"requiredUser", requiredUser,
+		"stack", GetStackTrace())
 	return ErrNoPermission
 }
 
@@ -107,6 +110,8 @@ func ValidateAdminAccessRights(ctx context.Context) error {
 		return nil
 	}
 
-	logrus.Warnf("insufficient admin permissions for %s, stack: %s", sessionUser.Id, GetStackTrace())
+	slog.Warn("insufficient admin permissions",
+		"user", sessionUser.Id,
+		"stack", GetStackTrace())
 	return ErrNoPermission
 }

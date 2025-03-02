@@ -13,10 +13,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/prometheus-community/pro-bing v0.6.1
 	github.com/prometheus/client_golang v1.21.0
-	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/swag v1.16.4
-	github.com/toorop/gin-logrus v0.0.0-20210225092905-2c785434f26f
 	github.com/utrack/gin-csrf v0.0.0-20190424104817-40fb8d2c8fca
 	github.com/vardius/message-bus v1.1.5
 	github.com/vishvananda/netlink v1.3.0

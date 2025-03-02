@@ -7,14 +7,13 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
-	ginlogrus "github.com/toorop/gin-logrus"
 
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
@@ -56,14 +55,39 @@ func NewServer(cfg *config.Config, endpoints ...ApiEndpointSetupFunc) (*Server, 
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard
 	s.server = gin.New()
+
 	if cfg.Web.RequestLogging {
-		if logrus.GetLevel() == logrus.TraceLevel {
+		if cfg.Advanced.LogLevel == "trace" {
 			gin.SetMode(gin.DebugMode)
-			s.server.Use(ginlogrus.Logger(logrus.StandardLogger()))
-		} else {
-			s.server.Use(ginlogrus.Logger(logrus.StandardLogger()))
 		}
+		s.server.Use(func(c *gin.Context) {
+			start := time.Now()
+			path := c.Request.URL.Path
+			raw := c.Request.URL.RawQuery
+
+			c.Next()
+
+			if raw != "" {
+				path = path + "?" + raw
+			}
+
+			latency := time.Since(start)
+			status := c.Writer.Status()
+			clientIP := c.ClientIP()
+			method := c.Request.Method
+			errorMsg := c.Errors.ByType(gin.ErrorTypePrivate).String()
+
+			slog.Debug("HTTP Request",
+				"status", status,
+				"latency", latency,
+				"client", clientIP,
+				"method", method,
+				"path", path,
+				"error", errorMsg,
+			)
+		})
 	}
+
 	s.server.Use(gin.Recovery()).Use(func(c *gin.Context) {
 		c.Writer.Header().Set("X-Served-By", hostname)
 		c.Next()
@@ -112,22 +136,24 @@ func (s *Server) Run(ctx context.Context, listenAddress string) {
 			err = srv.ListenAndServe()
 		}
 		if err != nil {
-			logrus.Infof("web service on %s exited: %v", listenAddress, err)
+			slog.Info("web service exited",
+				"address", listenAddress,
+				"error", err)
 			cancelFn()
 		}
 	}()
-	logrus.Infof("started web service on %s", listenAddress)
+	slog.Info("started web service", "address", listenAddress)
 
 	// Wait for the main context to end
 	<-srvContext.Done()
 
-	logrus.Debug("web service shutting down, grace period: 5 seconds...")
+	slog.Debug("web service shutting down, grace period: 5 seconds")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(shutdownCtx)
 
-	logrus.Debug("web service shut down")
+	slog.Debug("web service shut down")
 }
 
 func (s *Server) setupRoutes(endpoints ...ApiEndpointSetupFunc) {

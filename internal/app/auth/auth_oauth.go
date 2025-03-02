@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
 	"github.com/h44z/wg-portal/internal"
@@ -111,7 +111,9 @@ func (p PlainOauthAuthenticator) GetUserInfo(
 	}
 
 	if p.userInfoLogging {
-		logrus.Tracef("User info from OAuth source %s: %v", p.name, string(contents))
+		slog.Debug("OAuth user info",
+			"source", p.name,
+			"info", string(contents))
 	}
 
 	return userFields, nil

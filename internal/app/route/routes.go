@@ -3,8 +3,8 @@ package route
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -67,31 +67,33 @@ func (m Manager) StartBackgroundJobs(_ context.Context) {
 }
 
 func (m Manager) handleRouteUpdateEvent(srcDescription string) {
-	logrus.Debugf("handling route update event: %s", srcDescription)
+	slog.Debug("handling route update event", "source", srcDescription)
 
 	err := m.syncRoutes(context.Background())
 	if err != nil {
-		logrus.Errorf("failed to synchronize routes for event %s: %v", srcDescription, err)
+		slog.Error("failed to synchronize routes",
+			"source", srcDescription,
+			"error", err)
 	}
 
-	logrus.Debugf("routes synchronized, event: %s", srcDescription)
+	slog.Debug("routes synchronized", "source", srcDescription)
 }
 
 func (m Manager) handleRouteRemoveEvent(info domain.RoutingTableInfo) {
-	logrus.Debugf("handling route remove event for: %s", info.String())
+	slog.Debug("handling route remove event", "info", info.String())
 
 	if !info.ManagementEnabled() {
 		return // route management disabled
 	}
 
 	if err := m.removeFwMarkRules(info.FwMark, info.GetRoutingTable(), netlink.FAMILY_V4); err != nil {
-		logrus.Errorf("failed to remove v4 fwmark rules: %v", err)
+		slog.Error("failed to remove v4 fwmark rules", "error", err)
 	}
 	if err := m.removeFwMarkRules(info.FwMark, info.GetRoutingTable(), netlink.FAMILY_V6); err != nil {
-		logrus.Errorf("failed to remove v6 fwmark rules: %v", err)
+		slog.Error("failed to remove v6 fwmark rules", "error", err)
 	}
 
-	logrus.Debugf("routes removed, table: %s", info.String())
+	slog.Debug("routes removed", "table", info.String())
 }
 
 func (m Manager) syncRoutes(ctx context.Context) error {
@@ -437,14 +439,18 @@ func (m Manager) getRoutingTableAndFwMark(iface *domain.Interface, link netlink.
 	if fwmark == 0 {
 		// generate a new (temporary) firewall mark based on the interface index
 		fwmark = uint32(m.cfg.Advanced.RouteTableOffset + link.Attrs().Index)
-		logrus.Debugf("%s: using fwmark %d to handle routes", iface.Identifier, table)
+		slog.Debug("using fwmark to handle routes",
+			"interface", iface.Identifier,
+			"fwmark", fwmark)
 
 		// apply the temporary fwmark to the wireguard interface
 		err = m.setFwMark(iface.Identifier, int(fwmark))
 	}
 	if table == 0 {
 		table = int(fwmark) // generate a new routing table base on interface index
-		logrus.Debugf("%s: using routing table %d to handle default routes", iface.Identifier, table)
+		slog.Debug("using routing table to handle default routes",
+			"interface", iface.Identifier,
+			"table", table)
 	}
 	return
 }

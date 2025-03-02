@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/glebarez/sqlite"
-	"github.com/sirupsen/logrus"
-	gormMySQL "gorm.io/driver/mysql"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
@@ -32,13 +32,15 @@ type SysStat struct {
 	SchemaVersion uint64    `gorm:"primaryKey,column:schema_version"`
 }
 
-// GormLogger is a custom logger for Gorm, making it use logrus.
+// GormLogger is a custom logger for Gorm, making it use slog
 type GormLogger struct {
 	SlowThreshold           time.Duration
 	SourceField             string
 	IgnoreErrRecordNotFound bool
 	Debug                   bool
 	Silent                  bool
+
+	prefix string
 }
 
 func NewLogger(slowThreshold time.Duration, debug bool) *GormLogger {
@@ -48,6 +50,7 @@ func NewLogger(slowThreshold time.Duration, debug bool) *GormLogger {
 		IgnoreErrRecordNotFound: true,
 		Silent:                  false,
 		SourceField:             "src",
+		prefix:                  "GORM-SQL: ",
 	}
 }
 
@@ -64,21 +67,21 @@ func (l *GormLogger) Info(ctx context.Context, s string, args ...any) {
 	if l.Silent {
 		return
 	}
-	logrus.WithContext(ctx).Infof(s, args...)
+	slog.InfoContext(ctx, l.prefix+s, args...)
 }
 
 func (l *GormLogger) Warn(ctx context.Context, s string, args ...any) {
 	if l.Silent {
 		return
 	}
-	logrus.WithContext(ctx).Warnf(s, args...)
+	slog.WarnContext(ctx, l.prefix+s, args...)
 }
 
 func (l *GormLogger) Error(ctx context.Context, s string, args ...any) {
 	if l.Silent {
 		return
 	}
-	logrus.WithContext(ctx).Errorf(s, args...)
+	slog.ErrorContext(ctx, l.prefix+s, args...)
 }
 
 func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
@@ -88,26 +91,29 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 
 	elapsed := time.Since(begin)
 	sql, rows := fc()
-	fields := logrus.Fields{
-		"rows":     rows,
-		"duration": elapsed,
+
+	attrs := []any{
+		"rows", rows,
+		"duration", elapsed,
 	}
+
 	if l.SourceField != "" {
-		fields[l.SourceField] = utils.FileWithLineNum()
+		attrs = append(attrs, l.SourceField, utils.FileWithLineNum())
 	}
+
 	if err != nil && !(errors.Is(err, gorm.ErrRecordNotFound) && l.IgnoreErrRecordNotFound) {
-		fields[logrus.ErrorKey] = err
-		logrus.WithContext(ctx).WithFields(fields).Errorf("%s", sql)
+		attrs = append(attrs, "error", err)
+		slog.ErrorContext(ctx, l.prefix+sql, attrs...)
 		return
 	}
 
 	if l.SlowThreshold != 0 && elapsed > l.SlowThreshold {
-		logrus.WithContext(ctx).WithFields(fields).Warnf("%s", sql)
+		slog.WarnContext(ctx, l.prefix+sql, attrs...)
 		return
 	}
 
 	if l.Debug {
-		logrus.WithContext(ctx).WithFields(fields).Tracef("%s", sql)
+		slog.DebugContext(ctx, l.prefix+sql, attrs...)
 	}
 }
 
@@ -118,7 +124,7 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 
 	switch cfg.Type {
 	case config.DatabaseMySQL:
-		gormDb, err = gorm.Open(gormMySQL.Open(cfg.DSN), &gorm.Config{
+		gormDb, err = gorm.Open(mysql.Open(cfg.DSN), &gorm.Config{
 			Logger: NewLogger(cfg.SlowQueryThreshold, cfg.Debug),
 		})
 		if err != nil {
@@ -212,13 +218,13 @@ func (r *SqlRepo) preCheck() error {
 }
 
 func (r *SqlRepo) migrate() error {
-	logrus.Tracef("sysstat migration: %v", r.db.AutoMigrate(&SysStat{}))
-	logrus.Tracef("user migration: %v", r.db.AutoMigrate(&domain.User{}))
-	logrus.Tracef("interface migration: %v", r.db.AutoMigrate(&domain.Interface{}))
-	logrus.Tracef("peer migration: %v", r.db.AutoMigrate(&domain.Peer{}))
-	logrus.Tracef("peer status migration: %v", r.db.AutoMigrate(&domain.PeerStatus{}))
-	logrus.Tracef("interface status migration: %v", r.db.AutoMigrate(&domain.InterfaceStatus{}))
-	logrus.Tracef("audit data migration: %v", r.db.AutoMigrate(&domain.AuditEntry{}))
+	slog.Debug("running migration: sys-stat", "result", r.db.AutoMigrate(&SysStat{}))
+	slog.Debug("running migration: user", "result", r.db.AutoMigrate(&domain.User{}))
+	slog.Debug("running migration: interface", "result", r.db.AutoMigrate(&domain.Interface{}))
+	slog.Debug("running migration: peer", "result", r.db.AutoMigrate(&domain.Peer{}))
+	slog.Debug("running migration: peer status", "result", r.db.AutoMigrate(&domain.PeerStatus{}))
+	slog.Debug("running migration: interface status", "result", r.db.AutoMigrate(&domain.InterfaceStatus{}))
+	slog.Debug("running migration: audit data", "result", r.db.AutoMigrate(&domain.AuditEntry{}))
 
 	existingSysStat := SysStat{}
 	r.db.Where("schema_version = ?", SchemaVersion).First(&existingSysStat)
@@ -230,7 +236,7 @@ func (r *SqlRepo) migrate() error {
 		if err := r.db.Create(&sysStat).Error; err != nil {
 			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", SchemaVersion, err)
 		}
-		logrus.Debugf("sysstat entry for schema version %d written", SchemaVersion)
+		slog.Debug("sys-stat entry written", "schema_version", SchemaVersion)
 	}
 
 	return nil

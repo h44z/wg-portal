@@ -3,10 +3,9 @@ package adapters
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
-
-	"github.com/sirupsen/logrus"
 )
 
 type FilesystemRepo struct {
@@ -46,7 +45,7 @@ func (r *FilesystemRepo) WriteFile(path string, contents io.Reader) error {
 	}
 	defer func(file *os.File) {
 		if err := file.Close(); err != nil {
-			logrus.Errorf("failed to close file %s: %v", file.Name(), err)
+			slog.Error("failed to close file", "file", file.Name(), "error", err)
 		}
 	}(file)
 

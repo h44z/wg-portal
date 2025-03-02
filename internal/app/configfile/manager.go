@@ -6,10 +6,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	evbus "github.com/vardius/message-bus"
 	"github.com/yeqown/go-qrcode/v2"
 	"github.com/yeqown/go-qrcode/writer/compressed"
@@ -82,18 +82,22 @@ func (m Manager) handleInterfaceUpdatedEvent(iface *domain.Interface) {
 		return
 	}
 
-	logrus.Debugf("handling interface updated event for %s", iface.Identifier)
+	slog.Debug("handling interface updated event", "interface", iface.Identifier)
 
 	err := m.PersistInterfaceConfig(context.Background(), iface.Identifier)
 	if err != nil {
-		logrus.Errorf("failed to automatically persist interface config for %s: %v", iface.Identifier, err)
+		slog.Error("failed to automatically persist interface config",
+			"interface", iface.Identifier,
+			"error", err)
 	}
 }
 
 func (m Manager) handlePeerInterfaceUpdatedEvent(id domain.InterfaceIdentifier) {
 	peerInterface, err := m.wg.GetInterface(context.Background(), id)
 	if err != nil {
-		logrus.Errorf("failed to load interface %s: %v", id, err)
+		slog.Error("failed to load interface",
+			"interface", id,
+			"error", err)
 		return
 	}
 
@@ -101,11 +105,13 @@ func (m Manager) handlePeerInterfaceUpdatedEvent(id domain.InterfaceIdentifier) 
 		return
 	}
 
-	logrus.Debugf("handling peer interface updated event for %s", id)
+	slog.Debug("handling peer interface updated event", "interface", id)
 
 	err = m.PersistInterfaceConfig(context.Background(), peerInterface.Identifier)
 	if err != nil {
-		logrus.Errorf("failed to automatically persist interface config for %s: %v", peerInterface.Identifier, err)
+		slog.Error("failed to automatically persist interface config",
+			"interface", peerInterface.Identifier,
+			"error", err)
 	}
 }
 
