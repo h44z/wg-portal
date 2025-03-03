@@ -1,8 +1,10 @@
 module github.com/h44z/wg-portal
 
 go 1.23
+toolchain go1.24.0
+
 require (
-	github.com/a8m/envsubst v1.4.2
+	github.com/a8m/envsubst v1.4.3
 	github.com/coreos/go-oidc/v3 v3.12.0
 	github.com/gin-contrib/cors v1.7.3
 	github.com/gin-contrib/sessions v1.0.2
