@@ -5,8 +5,7 @@ import { apiWrapper } from '@/helpers/fetch-wrapper'
 
 const baseUrl = `/config`
 
-export const settingsStore = defineStore({
-    id: 'settings',
+export const settingsStore = defineStore('settings', {
     state: () => ({
         settings: {},
     }),

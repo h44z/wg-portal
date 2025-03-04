@@ -3,8 +3,7 @@ import { defineStore } from 'pinia'
 import { notify } from "@kyvg/vue3-notification";
 import { apiWrapper } from '@/helpers/fetch-wrapper'
 
-export const securityStore = defineStore({
-    id: 'security',
+export const securityStore = defineStore('security',{
     state: () => ({
         csrfToken: "",
     }),
