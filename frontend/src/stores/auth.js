@@ -4,8 +4,7 @@ import { notify } from "@kyvg/vue3-notification";
 import { apiWrapper } from '@/helpers/fetch-wrapper'
 import router from '../router'
 
-export const authStore = defineStore({
-    id: 'auth',
+export const authStore = defineStore('auth',{
     state: () => ({
         // initialize state from local storage to enable user to stay logged in
         user: JSON.parse(localStorage.getItem('user')),

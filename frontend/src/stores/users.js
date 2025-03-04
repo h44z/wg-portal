@@ -5,8 +5,7 @@ import { base64_url_encode } from '@/helpers/encoding';
 
 const baseUrl = `/user`
 
-export const userStore = defineStore({
-  id: 'users',
+export const userStore = defineStore('users', {
   state: () => ({
     userPeers: [],
     users: [],
