@@ -1,7 +1,6 @@
 module github.com/h44z/wg-portal
 
-go 1.23
-toolchain go1.24.0
+go 1.24.0
 
 require (
 	github.com/a8m/envsubst v1.4.3
