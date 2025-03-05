@@ -145,7 +145,7 @@ func defaultConfig() *Config {
 		Host:           "127.0.0.1",
 		Port:           25,
 		Encryption:     MailEncryptionNone,
-		CertValidation: false,
+		CertValidation: true,
 		Username:       "",
 		Password:       "",
 		AuthType:       MailAuthPlain,
