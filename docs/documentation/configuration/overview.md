@@ -58,7 +58,7 @@ mail:
   host: 127.0.0.1
   port: 25
   encryption: none
-  cert_validation: false
+  cert_validation: true
   username: ""
   password: ""
   auth_type: plain
@@ -289,7 +289,7 @@ Options for configuring email notifications or sending peer configurations via e
 - **Description:** SMTP encryption type. Valid values: `none`, `tls`, `starttls`.
 
 ### `cert_validation`
-- **Default:** `false`
+- **Default:** `true`
 - **Description:** If `true`, validate the SMTP server certificate (relevant if `encryption` = `tls`).
 
 ### `username`
