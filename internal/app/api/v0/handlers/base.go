@@ -1,24 +1,46 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
-	"strings"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/memstore"
-	"github.com/gin-gonic/gin"
-	csrf "github.com/utrack/gin-csrf"
+	"github.com/go-pkgz/routegroup"
 
-	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/core"
-	"github.com/h44z/wg-portal/internal/app/api/v0/model"
-	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/app/api/core/middleware/cors"
+	"github.com/h44z/wg-portal/internal/app/api/core/middleware/csrf"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 )
 
-type handler interface {
+type SessionMiddleware interface {
+	// SetData sets the session data for the given context.
+	SetData(ctx context.Context, val SessionData)
+	// GetData returns the session data for the given context. If no data is found, the default session data is returned.
+	GetData(ctx context.Context) SessionData
+	// DestroyData destroys the session data for the given context.
+	DestroyData(ctx context.Context)
+
+	// GetString returns the string value for the given key. If no value is found, an empty string is returned.
+	GetString(ctx context.Context, key string) string
+	// Put sets the value for the given key.
+	Put(ctx context.Context, key string, value any)
+	// LoadAndSave is a middleware that loads the session data for the given request and saves it after the request is
+	// finished.
+	LoadAndSave(next http.Handler) http.Handler
+}
+
+type Handler interface {
+	// GetName returns the name of the handler.
 	GetName() string
-	RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler)
+	// RegisterRoutes registers the routes for the handler. The session manager is passed to the handler.
+	RegisterRoutes(g *routegroup.Bundle)
+}
+
+type Authenticator interface {
+	// LoggedIn checks if a user is logged in. If scopes are given, they are validated as well.
+	LoggedIn(scopes ...Scope) func(next http.Handler) http.Handler
+	// UserIdMatch checks if the user id in the session matches the user id in the request. If not, the request is aborted.
+	UserIdMatch(idParameter string) func(next http.Handler) http.Handler
 }
 
 // To compile the API documentation use the
@@ -35,54 +57,33 @@ type handler interface {
 // @BasePath /api/v0
 // @query.collection.format multi
 
-func NewRestApi(cfg *config.Config, app *app.App) core.ApiEndpointSetupFunc {
-	authenticator := &authenticationHandler{
-		app:     app,
-		Session: GinSessionStore{sessionIdentifier: cfg.Web.SessionIdentifier},
-	}
-
-	handlers := make([]handler, 0, 1)
-	handlers = append(handlers, testEndpoint{})
-	handlers = append(handlers, userEndpoint{app: app, authenticator: authenticator})
-	handlers = append(handlers, newConfigEndpoint(app, authenticator))
-	handlers = append(handlers, authEndpoint{app: app, authenticator: authenticator})
-	handlers = append(handlers, interfaceEndpoint{app: app, authenticator: authenticator})
-	handlers = append(handlers, peerEndpoint{app: app, authenticator: authenticator})
-
+func NewRestApi(
+	session SessionMiddleware,
+	handlers ...Handler,
+) core.ApiEndpointSetupFunc {
 	return func() (core.ApiVersion, core.GroupSetupFn) {
-		return "v0", func(group *gin.RouterGroup) {
-			cookieStore := memstore.NewStore([]byte(cfg.Web.SessionSecret))
-			cookieStore.Options(sessions.Options{
-				Path:     "/",
-				MaxAge:   86400, // auth session is valid for 1 day
-				Secure:   strings.HasPrefix(cfg.Web.ExternalUrl, "https"),
-				HttpOnly: true,
-				SameSite: http.SameSiteLaxMode,
+		return "v0", func(group *routegroup.Bundle) {
+			csrfMiddleware := csrf.New(func(r *http.Request) string {
+				return session.GetString(r.Context(), "csrf_token")
+			}, func(r *http.Request, token string) {
+				session.Put(r.Context(), "csrf_token", token)
 			})
-			group.Use(sessions.Sessions(cfg.Web.SessionIdentifier, cookieStore))
-			group.Use(cors.Default())
-			group.Use(csrf.Middleware(csrf.Options{
-				Secret: cfg.Web.CsrfSecret,
-				ErrorFunc: func(c *gin.Context) {
-					c.JSON(http.StatusBadRequest, model.Error{
-						Code:    http.StatusBadRequest,
-						Message: "CSRF token mismatch",
-					})
-					c.Abort()
-				},
-			}))
 
-			group.GET("/csrf", handleCsrfGet())
+			group.Use(session.LoadAndSave)
+			group.Use(csrfMiddleware.Handler)
+			group.Use(cors.New().Handler)
+
+			group.With(csrfMiddleware.RefreshToken).HandleFunc("GET /csrf", handleCsrfGet())
 
 			// Handler functions
 			for _, h := range handlers {
-				h.RegisterRoutes(group, authenticator)
+				h.RegisterRoutes(group)
 			}
 		}
 	}
 }
 
-// handleCsrfGet returns a gorm handler function.
+// handleCsrfGet returns a gorm Handler function.
 //
 // @ID base_handleCsrfGet
 // @Tags Security
@@ -90,8 +91,12 @@ func NewRestApi(cfg *config.Config, app *app.App) core.ApiEndpointSetupFunc {
 // @Produce json
 // @Success 200 {object} string
 // @Router /csrf [get]
-func handleCsrfGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, csrf.GetToken(c))
+func handleCsrfGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		respond.JSON(w, http.StatusOK, csrf.GetToken(r.Context()))
 	}
 }
+
+// region session wrapper
+
+// endregion session wrapper

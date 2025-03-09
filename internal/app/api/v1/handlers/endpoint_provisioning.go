@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
+	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v1/models"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -23,12 +25,20 @@ type ProvisioningEndpointProvisioningService interface {
 }
 
 type ProvisioningEndpoint struct {
-	provisioning ProvisioningEndpointProvisioningService
+	provisioning  ProvisioningEndpointProvisioningService
+	authenticator Authenticator
+	validator     Validator
 }
 
-func NewProvisioningEndpoint(provisioning ProvisioningEndpointProvisioningService) *ProvisioningEndpoint {
+func NewProvisioningEndpoint(
+	authenticator Authenticator,
+	validator Validator,
+	provisioning ProvisioningEndpointProvisioningService,
+) *ProvisioningEndpoint {
 	return &ProvisioningEndpoint{
-		provisioning: provisioning,
+		authenticator: authenticator,
+		validator:     validator,
+		provisioning:  provisioning,
 	}
 }
 
@@ -36,14 +46,15 @@ func (e ProvisioningEndpoint) GetName() string {
 	return "ProvisioningEndpoint"
 }
 
-func (e ProvisioningEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
-	apiGroup := g.Group("/provisioning", authenticator.LoggedIn())
+func (e ProvisioningEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	apiGroup := g.Mount("/provisioning")
+	apiGroup.Use(e.authenticator.LoggedIn())
 
-	apiGroup.GET("/data/user-info", authenticator.LoggedIn(), e.handleUserInfoGet())
-	apiGroup.GET("/data/peer-config", authenticator.LoggedIn(), e.handlePeerConfigGet())
-	apiGroup.GET("/data/peer-qr", authenticator.LoggedIn(), e.handlePeerQrGet())
+	apiGroup.HandleFunc("GET /data/user-info", e.handleUserInfoGet())
+	apiGroup.HandleFunc("GET /data/peer-config", e.handlePeerConfigGet())
+	apiGroup.HandleFunc("GET /data/peer-qr", e.handlePeerQrGet())
 
-	apiGroup.POST("/new-peer", authenticator.LoggedIn(), e.handleNewPeerPost())
+	apiGroup.HandleFunc("POST /new-peer", e.handleNewPeerPost())
 }
 
 // handleUserInfoGet returns a gorm Handler function.
@@ -63,24 +74,23 @@ func (e ProvisioningEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *
 // @Failure 500 {object} models.Error
 // @Router /provisioning/data/user-info [get]
 // @Security BasicAuth
-func (e ProvisioningEndpoint) handleUserInfoGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := strings.TrimSpace(c.Query("UserId"))
-		email := strings.TrimSpace(c.Query("Email"))
+func (e ProvisioningEndpoint) handleUserInfoGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := strings.TrimSpace(request.Query(r, "UserId"))
+		email := strings.TrimSpace(request.Query(r, "Email"))
 
 		if id == "" && email == "" {
-			id = string(domain.GetUserInfo(ctx).Id)
+			id = string(domain.GetUserInfo(r.Context()).Id)
 		}
 
-		user, peers, err := e.provisioning.GetUserAndPeers(ctx, domain.UserIdentifier(id), email)
+		user, peers, err := e.provisioning.GetUserAndPeers(r.Context(), domain.UserIdentifier(id), email)
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewUserInformation(user, peers))
+		respond.JSON(w, http.StatusOK, models.NewUserInformation(user, peers))
 	}
 }
 
@@ -101,23 +111,23 @@ func (e ProvisioningEndpoint) handleUserInfoGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /provisioning/data/peer-config [get]
 // @Security BasicAuth
-func (e ProvisioningEndpoint) handlePeerConfigGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := strings.TrimSpace(c.Query("PeerId"))
+func (e ProvisioningEndpoint) handlePeerConfigGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := strings.TrimSpace(request.Query(r, "PeerId"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
 			return
 		}
 
-		peerConfig, err := e.provisioning.GetPeerConfig(ctx, domain.PeerIdentifier(id))
+		peerConfig, err := e.provisioning.GetPeerConfig(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.Data(http.StatusOK, "text/plain", peerConfig)
+		respond.Data(w, http.StatusOK, "text/plain", peerConfig)
 	}
 }
 
@@ -138,23 +148,23 @@ func (e ProvisioningEndpoint) handlePeerConfigGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /provisioning/data/peer-qr [get]
 // @Security BasicAuth
-func (e ProvisioningEndpoint) handlePeerQrGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := strings.TrimSpace(c.Query("PeerId"))
+func (e ProvisioningEndpoint) handlePeerQrGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := strings.TrimSpace(request.Query(r, "PeerId"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
 			return
 		}
 
-		peerConfigQrCode, err := e.provisioning.GetPeerQrPng(ctx, domain.PeerIdentifier(id))
+		peerConfigQrCode, err := e.provisioning.GetPeerQrPng(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.Data(http.StatusOK, "image/png", peerConfigQrCode)
+		respond.Data(w, http.StatusOK, "image/png", peerConfigQrCode)
 	}
 }
 
@@ -174,23 +184,25 @@ func (e ProvisioningEndpoint) handlePeerQrGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /provisioning/new-peer [post]
 // @Security BasicAuth
-func (e ProvisioningEndpoint) handleNewPeerPost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
+func (e ProvisioningEndpoint) handleNewPeerPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var req models.ProvisioningRequest
-		err := c.BindJSON(&req)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		peer, err := e.provisioning.NewPeer(ctx, req)
+		peer, err := e.provisioning.NewPeer(r.Context(), req)
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewPeer(peer))
+		respond.JSON(w, http.StatusOK, models.NewPeer(peer))
 	}
 }

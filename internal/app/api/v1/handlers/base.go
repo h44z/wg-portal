@@ -4,17 +4,19 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
 	"github.com/h44z/wg-portal/internal/app/api/core"
+	"github.com/h44z/wg-portal/internal/app/api/core/middleware/cors"
 	"github.com/h44z/wg-portal/internal/app/api/v1/models"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type Handler interface {
+	// GetName returns the name of the handler.
 	GetName() string
-	RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler)
+	// RegisterRoutes registers the routes for the handler. The session manager is passed to the handler.
+	RegisterRoutes(g *routegroup.Bundle)
 }
 
 // To compile the API documentation use the
@@ -38,18 +40,14 @@ type Handler interface {
 // @BasePath /api/v1
 // @query.collection.format multi
 
-func NewRestApi(userSource UserSource, handlers ...Handler) core.ApiEndpointSetupFunc {
-	authenticator := &authenticationHandler{
-		userSource: userSource,
-	}
-
+func NewRestApi(handlers ...Handler) core.ApiEndpointSetupFunc {
 	return func() (core.ApiVersion, core.GroupSetupFn) {
-		return "v1", func(group *gin.RouterGroup) {
-			group.Use(cors.Default())
+		return "v1", func(group *routegroup.Bundle) {
+			group.Use(cors.New().Handler)
 
 			// Handler functions
 			for _, h := range handlers {
-				h.RegisterRoutes(group, authenticator)
+				h.RegisterRoutes(group)
 			}
 		}
 	}
@@ -79,4 +77,13 @@ func ParseServiceError(err error) (int, models.Error) {
 		Code:    code,
 		Message: err.Error(),
 	}
+}
+
+type Authenticator interface {
+	// LoggedIn checks if a user is logged in. If scopes are given, they are validated as well.
+	LoggedIn(scopes ...Scope) func(next http.Handler) http.Handler
+}
+
+type Validator interface {
+	Struct(s interface{}) error
 }

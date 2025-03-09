@@ -4,8 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
+	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v1/models"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -19,12 +21,20 @@ type InterfaceEndpointInterfaceService interface {
 }
 
 type InterfaceEndpoint struct {
-	interfaces InterfaceEndpointInterfaceService
+	interfaces    InterfaceEndpointInterfaceService
+	authenticator Authenticator
+	validator     Validator
 }
 
-func NewInterfaceEndpoint(interfaceService InterfaceEndpointInterfaceService) *InterfaceEndpoint {
+func NewInterfaceEndpoint(
+	authenticator Authenticator,
+	validator Validator,
+	interfaceService InterfaceEndpointInterfaceService,
+) *InterfaceEndpoint {
 	return &InterfaceEndpoint{
-		interfaces: interfaceService,
+		authenticator: authenticator,
+		validator:     validator,
+		interfaces:    interfaceService,
 	}
 }
 
@@ -32,15 +42,16 @@ func (e InterfaceEndpoint) GetName() string {
 	return "InterfaceEndpoint"
 }
 
-func (e InterfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
-	apiGroup := g.Group("/interface", authenticator.LoggedIn())
+func (e InterfaceEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	apiGroup := g.Mount("/interface")
+	apiGroup.Use(e.authenticator.LoggedIn(ScopeAdmin))
 
-	apiGroup.GET("/all", authenticator.LoggedIn(ScopeAdmin), e.handleAllGet())
-	apiGroup.GET("/by-id/:id", authenticator.LoggedIn(ScopeAdmin), e.handleByIdGet())
+	apiGroup.HandleFunc("GET /all", e.handleAllGet())
+	apiGroup.HandleFunc("GET /by-id/{id}", e.handleByIdGet())
 
-	apiGroup.POST("/new", authenticator.LoggedIn(ScopeAdmin), e.handleCreatePost())
-	apiGroup.PUT("/by-id/:id", authenticator.LoggedIn(ScopeAdmin), e.handleUpdatePut())
-	apiGroup.DELETE("/by-id/:id", authenticator.LoggedIn(ScopeAdmin), e.handleDelete())
+	apiGroup.HandleFunc("POST /new", e.handleCreatePost())
+	apiGroup.HandleFunc("PUT /by-id/{id}", e.handleUpdatePut())
+	apiGroup.HandleFunc("DELETE /by-id/{id}", e.handleDelete())
 }
 
 // handleAllGet returns a gorm Handler function.
@@ -54,17 +65,16 @@ func (e InterfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *aut
 // @Failure 500 {object} models.Error
 // @Router /interface/all [get]
 // @Security BasicAuth
-func (e InterfaceEndpoint) handleAllGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		allInterfaces, allPeersPerInterface, err := e.interfaces.GetAll(ctx)
+func (e InterfaceEndpoint) handleAllGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		allInterfaces, allPeersPerInterface, err := e.interfaces.GetAll(r.Context())
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewInterfaces(allInterfaces, allPeersPerInterface))
+		respond.JSON(w, http.StatusOK, models.NewInterfaces(allInterfaces, allPeersPerInterface))
 	}
 }
 
@@ -82,23 +92,23 @@ func (e InterfaceEndpoint) handleAllGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /interface/by-id/{id} [get]
 // @Security BasicAuth
-func (e InterfaceEndpoint) handleByIdGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e InterfaceEndpoint) handleByIdGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
-		iface, interfacePeers, err := e.interfaces.GetById(ctx, domain.InterfaceIdentifier(id))
+		iface, interfacePeers, err := e.interfaces.GetById(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewInterface(iface, interfacePeers))
+		respond.JSON(w, http.StatusOK, models.NewInterface(iface, interfacePeers))
 	}
 }
 
@@ -117,24 +127,26 @@ func (e InterfaceEndpoint) handleByIdGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /interface/new [post]
 // @Security BasicAuth
-func (e InterfaceEndpoint) handleCreatePost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
+func (e InterfaceEndpoint) handleCreatePost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var iface models.Interface
-		err := c.BindJSON(&iface)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &iface); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(iface); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		newInterface, err := e.interfaces.Create(ctx, models.NewDomainInterface(&iface))
+		newInterface, err := e.interfaces.Create(r.Context(), models.NewDomainInterface(&iface))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewInterface(newInterface, nil))
+		respond.JSON(w, http.StatusOK, models.NewInterface(newInterface, nil))
 	}
 }
 
@@ -154,34 +166,43 @@ func (e InterfaceEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /interface/by-id/{id} [put]
 // @Security BasicAuth
-func (e InterfaceEndpoint) handleUpdatePut() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e InterfaceEndpoint) handleUpdatePut() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
 		var iface models.Interface
-		err := c.BindJSON(&iface)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &iface); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(iface); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		if id != iface.Identifier {
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
 			return
 		}
 
 		updatedInterface, updatedInterfacePeers, err := e.interfaces.Update(
-			ctx,
+			r.Context(),
 			domain.InterfaceIdentifier(id),
 			models.NewDomainInterface(&iface),
 		)
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewInterface(updatedInterface, updatedInterfacePeers))
+		respond.JSON(w, http.StatusOK, models.NewInterface(updatedInterface, updatedInterfacePeers))
 	}
 }
 
@@ -200,22 +221,22 @@ func (e InterfaceEndpoint) handleUpdatePut() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /interface/by-id/{id} [delete]
 // @Security BasicAuth
-func (e InterfaceEndpoint) handleDelete() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e InterfaceEndpoint) handleDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
-		err := e.interfaces.Delete(ctx, domain.InterfaceIdentifier(id))
+		err := e.interfaces.Delete(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.Status(http.StatusNoContent)
+		respond.Status(w, http.StatusNoContent)
 	}
 }

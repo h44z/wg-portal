@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	evbus "github.com/vardius/message-bus"
 
 	"github.com/h44z/wg-portal/internal"
@@ -101,27 +102,56 @@ func main() {
 	err = backend.Startup(ctx)
 	internal.AssertNoError(err)
 
-	apiFrontend := handlersV0.NewRestApi(cfg, backend)
+	validatorManager := validator.New()
 
+	// region API v0 (SPA frontend)
+
+	apiV0Session := handlersV0.NewSessionWrapper(cfg)
+	apiV0Auth := handlersV0.NewAuthenticationHandler(authenticator, apiV0Session)
+
+	apiV0EndpointAuth := handlersV0.NewAuthEndpoint(backend, apiV0Auth, apiV0Session, validatorManager)
+	apiV0EndpointUsers := handlersV0.NewUserEndpoint(backend, apiV0Auth, validatorManager)
+	apiV0EndpointInterfaces := handlersV0.NewInterfaceEndpoint(backend, apiV0Auth, validatorManager)
+	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(backend, apiV0Auth, validatorManager)
+	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth)
+	apiV0EndpointTest := handlersV0.NewTestEndpoint(apiV0Auth)
+
+	apiFrontend := handlersV0.NewRestApi(apiV0Session,
+		apiV0EndpointAuth,
+		apiV0EndpointUsers,
+		apiV0EndpointInterfaces,
+		apiV0EndpointPeers,
+		apiV0EndpointConfig,
+		apiV0EndpointTest,
+	)
+
+	// endregion API v0 (SPA frontend)
+
+	// region API v1 (User REST API)
+
+	apiV1Auth := handlersV1.NewAuthenticationHandler(userManager)
 	apiV1BackendUsers := backendV1.NewUserService(cfg, userManager)
 	apiV1BackendPeers := backendV1.NewPeerService(cfg, wireGuardManager, userManager)
 	apiV1BackendInterfaces := backendV1.NewInterfaceService(cfg, wireGuardManager)
 	apiV1BackendProvisioning := backendV1.NewProvisioningService(cfg, userManager, wireGuardManager, cfgFileManager)
 	apiV1BackendMetrics := backendV1.NewMetricsService(cfg, database, userManager, wireGuardManager)
-	apiV1EndpointUsers := handlersV1.NewUserEndpoint(apiV1BackendUsers)
-	apiV1EndpointPeers := handlersV1.NewPeerEndpoint(apiV1BackendPeers)
-	apiV1EndpointInterfaces := handlersV1.NewInterfaceEndpoint(apiV1BackendInterfaces)
-	apiV1EndpointProvisioning := handlersV1.NewProvisioningEndpoint(apiV1BackendProvisioning)
-	apiV1EndpointMetrics := handlersV1.NewMetricsEndpoint(apiV1BackendMetrics)
+
+	apiV1EndpointUsers := handlersV1.NewUserEndpoint(apiV1Auth, validatorManager, apiV1BackendUsers)
+	apiV1EndpointPeers := handlersV1.NewPeerEndpoint(apiV1Auth, validatorManager, apiV1BackendPeers)
+	apiV1EndpointInterfaces := handlersV1.NewInterfaceEndpoint(apiV1Auth, validatorManager, apiV1BackendInterfaces)
+	apiV1EndpointProvisioning := handlersV1.NewProvisioningEndpoint(apiV1Auth, validatorManager,
+		apiV1BackendProvisioning)
+	apiV1EndpointMetrics := handlersV1.NewMetricsEndpoint(apiV1Auth, validatorManager, apiV1BackendMetrics)
 
 	apiV1 := handlersV1.NewRestApi(
-		userManager,
 		apiV1EndpointUsers,
 		apiV1EndpointPeers,
 		apiV1EndpointInterfaces,
 		apiV1EndpointProvisioning,
 		apiV1EndpointMetrics,
 	)
+
+	// endregion API v1 (User REST API)
 
 	webSrv, err := core.NewServer(cfg, apiFrontend, apiV1)
 	internal.AssertNoError(err)

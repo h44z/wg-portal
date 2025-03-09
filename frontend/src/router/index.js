@@ -4,6 +4,7 @@ import LoginView from '../views/LoginView.vue'
 import InterfaceView from '../views/InterfaceView.vue'
 
 import {authStore} from '@/stores/auth'
+import {securityStore} from '@/stores/security'
 import {notify} from "@kyvg/vue3-notification";
 
 const router = createRouter({
@@ -63,6 +64,7 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = authStore()
+  const sec = securityStore()
 
   // check if the request was a successful oauth login
   if ('wgLoginState' in to.query && !auth.IsAuthenticated) {
@@ -111,6 +113,10 @@ router.beforeEach(async (to) => {
   if (authRequired && !auth.IsAuthenticated) {
     auth.SetReturnUrl(to.fullPath) // store original destination before starting the auth process
     return '/login'
+  }
+
+  if (publicPages.includes(to.path)) {
+    await sec.LoadSecurityProperties() // make sure we have a valid csrf token
   }
 })
 

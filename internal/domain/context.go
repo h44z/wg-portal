@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-
-	"github.com/gin-gonic/gin"
 )
 
 const CtxUserInfo = "userInfo"
@@ -45,21 +43,6 @@ func SystemAdminContextUserInfo() *ContextUserInfo {
 		Id:      CtxSystemAdminId,
 		IsAdmin: true,
 	}
-}
-
-// SetUserInfoFromGin sets the user info from the gin context to the request context.
-func SetUserInfoFromGin(c *gin.Context) context.Context {
-	ginUserInfo, exists := c.Get(CtxUserInfo)
-
-	info := DefaultContextUserInfo()
-	if exists {
-		if ginInfo, ok := ginUserInfo.(*ContextUserInfo); ok {
-			info = ginInfo
-		}
-	}
-
-	ctx := SetUserInfo(c.Request.Context(), info)
-	return ctx
 }
 
 // SetUserInfo sets the user info in the context.

@@ -5,20 +5,29 @@ import (
 	"os"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 )
 
-type testEndpoint struct{}
+type TestEndpoint struct {
+	authenticator Authenticator
+}
 
-func (e testEndpoint) GetName() string {
+func NewTestEndpoint(authenticator Authenticator) TestEndpoint {
+	return TestEndpoint{
+		authenticator: authenticator,
+	}
+}
+
+func (e TestEndpoint) GetName() string {
 	return "TestEndpoint"
 }
 
-func (e testEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandler) {
-	g.GET("/now", e.handleCurrentTimeGet())
-	g.GET("/hostname", e.handleHostnameGet())
+func (e TestEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	g.HandleFunc("GET /now", e.handleCurrentTimeGet())
+	g.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /hostname", e.handleHostnameGet())
 }
 
 // handleCurrentTimeGet represents the GET endpoint that responds the current time
@@ -31,15 +40,15 @@ func (e testEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandle
 // @Success 200 {object} string
 // @Failure 500 {object} model.Error
 // @Router /now [get]
-func (e testEndpoint) handleCurrentTimeGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (e TestEndpoint) handleCurrentTimeGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if time.Now().Second() == 0 {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code:    http.StatusInternalServerError,
 				Message: "invalid time",
 			})
 		}
-		c.JSON(http.StatusOK, time.Now().String())
+		respond.JSON(w, http.StatusOK, time.Now().String())
 	}
 }
 
@@ -53,15 +62,15 @@ func (e testEndpoint) handleCurrentTimeGet() gin.HandlerFunc {
 // @Success 200 {object} string
 // @Failure 500 {object} model.Error
 // @Router /hostname [get]
-func (e testEndpoint) handleHostnameGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (e TestEndpoint) handleHostnameGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		hostname, err := os.Hostname()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code:    http.StatusInternalServerError,
 				Message: err.Error(),
 			})
 		}
-		c.JSON(http.StatusOK, hostname)
+		respond.JSON(w, http.StatusOK, hostname)
 	}
 }

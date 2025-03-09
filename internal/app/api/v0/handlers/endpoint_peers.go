@@ -4,39 +4,52 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-type peerEndpoint struct {
+type PeerEndpoint struct {
 	app           *app.App
-	authenticator *authenticationHandler
+	authenticator Authenticator
+	validator     Validator
 }
 
-func (e peerEndpoint) GetName() string {
+func NewPeerEndpoint(app *app.App, authenticator Authenticator, validator Validator) PeerEndpoint {
+	return PeerEndpoint{
+		app:           app,
+		authenticator: authenticator,
+		validator:     validator,
+	}
+}
+
+func (e PeerEndpoint) GetName() string {
 	return "PeerEndpoint"
 }
 
-func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandler) {
-	apiGroup := g.Group("/peer", e.authenticator.LoggedIn())
+func (e PeerEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	apiGroup := g.Mount("/peer")
+	apiGroup.Use(e.authenticator.LoggedIn())
 
-	apiGroup.GET("/iface/:iface/all", e.authenticator.LoggedIn(ScopeAdmin), e.handleAllGet())
-	apiGroup.GET("/iface/:iface/stats", e.authenticator.LoggedIn(ScopeAdmin), e.handleStatsGet())
-	apiGroup.GET("/iface/:iface/prepare", e.authenticator.LoggedIn(), e.handlePrepareGet())
-	apiGroup.POST("/iface/:iface/new", e.authenticator.LoggedIn(), e.handleCreatePost())
-	apiGroup.POST("/iface/:iface/multiplenew", e.authenticator.LoggedIn(ScopeAdmin), e.handleCreateMultiplePost())
-	apiGroup.GET("/config-qr/:id", e.handleQrCodeGet())
-	apiGroup.POST("/config-mail", e.handleEmailPost())
-	apiGroup.GET("/config/:id", e.handleConfigGet())
-	apiGroup.GET("/:id", e.handleSingleGet())
-	apiGroup.PUT("/:id", e.handleUpdatePut())
-	apiGroup.DELETE("/:id", e.handleDelete())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /iface/{iface}/all", e.handleAllGet())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /iface/{iface}/stats", e.handleStatsGet())
+	apiGroup.HandleFunc("GET /iface/{iface}/prepare", e.handlePrepareGet())
+	apiGroup.HandleFunc("POST /iface/{iface}/new", e.handleCreatePost())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /iface/{iface}/multiplenew",
+		e.handleCreateMultiplePost())
+	apiGroup.HandleFunc("GET /config-qr/{id}", e.handleQrCodeGet())
+	apiGroup.HandleFunc("POST /config-mail", e.handleEmailPost())
+	apiGroup.HandleFunc("GET /config/{id}", e.handleConfigGet())
+	apiGroup.HandleFunc("GET /{id}", e.handleSingleGet())
+	apiGroup.HandleFunc("PUT /{id}", e.handleUpdatePut())
+	apiGroup.HandleFunc("DELETE /{id}", e.handleDelete())
 }
 
-// handleAllGet returns a gorm handler function.
+// handleAllGet returns a gorm Handler function.
 //
 // @ID peers_handleAllGet
 // @Tags Peer
@@ -47,28 +60,27 @@ func (e peerEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandle
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/iface/{iface}/all [get]
-func (e peerEndpoint) handleAllGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		interfaceId := Base64UrlDecode(c.Param("iface"))
+func (e PeerEndpoint) handleAllGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
 			return
 		}
 
-		_, peers, err := e.app.GetInterfaceAndPeers(ctx, domain.InterfaceIdentifier(interfaceId))
+		_, peers, err := e.app.GetInterfaceAndPeers(r.Context(), domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
+			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewPeers(peers))
+		respond.JSON(w, http.StatusOK, model.NewPeers(peers))
 	}
 }
 
-// handleSingleGet returns a gorm handler function.
+// handleSingleGet returns a gorm Handler function.
 //
 // @ID peers_handleSingleGet
 // @Tags Peer
@@ -79,28 +91,27 @@ func (e peerEndpoint) handleAllGet() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/{id} [get]
-func (e peerEndpoint) handleSingleGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		peerId := Base64UrlDecode(c.Param("id"))
+func (e PeerEndpoint) handleSingleGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		peerId := Base64UrlDecode(request.Path(r, "id"))
 		if peerId == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing id parameter"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing id parameter"})
 			return
 		}
 
-		peer, err := e.app.GetPeer(ctx, domain.PeerIdentifier(peerId))
+		peer, err := e.app.GetPeer(r.Context(), domain.PeerIdentifier(peerId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
+			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewPeer(peer))
+		respond.JSON(w, http.StatusOK, model.NewPeer(peer))
 	}
 }
 
-// handlePrepareGet returns a gorm handler function.
+// handlePrepareGet returns a gorm Handler function.
 //
 // @ID peers_handlePrepareGet
 // @Tags Peer
@@ -111,28 +122,27 @@ func (e peerEndpoint) handleSingleGet() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/iface/{iface}/prepare [get]
-func (e peerEndpoint) handlePrepareGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		interfaceId := Base64UrlDecode(c.Param("iface"))
+func (e PeerEndpoint) handlePrepareGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
 			return
 		}
 
-		peer, err := e.app.PreparePeer(ctx, domain.InterfaceIdentifier(interfaceId))
+		peer, err := e.app.PreparePeer(r.Context(), domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
+			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewPeer(peer))
+		respond.JSON(w, http.StatusOK, model.NewPeer(peer))
 	}
 }
 
-// handleCreatePost returns a gorm handler function.
+// handleCreatePost returns a gorm Handler function.
 //
 // @ID peers_handleCreatePost
 // @Tags Peer
@@ -144,40 +154,43 @@ func (e peerEndpoint) handlePrepareGet() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/iface/{iface}/new [post]
-func (e peerEndpoint) handleCreatePost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		interfaceId := Base64UrlDecode(c.Param("iface"))
+func (e PeerEndpoint) handleCreatePost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
 			return
 		}
 
 		var p model.Peer
-		err := c.BindJSON(&p)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &p); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(p); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
 		if p.InterfaceIdentifier != interfaceId {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
 			return
 		}
 
-		newPeer, err := e.app.CreatePeer(ctx, model.NewDomainPeer(&p))
+		newPeer, err := e.app.CreatePeer(r.Context(), model.NewDomainPeer(&p))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
+			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewPeer(newPeer))
+		respond.JSON(w, http.StatusOK, model.NewPeer(newPeer))
 	}
 }
 
-// handleCreateMultiplePost returns a gorm handler function.
+// handleCreateMultiplePost returns a gorm Handler function.
 //
 // @ID peers_handleCreateMultiplePost
 // @Tags Peer
@@ -189,36 +202,38 @@ func (e peerEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/iface/{iface}/multiplenew [post]
-func (e peerEndpoint) handleCreateMultiplePost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		interfaceId := Base64UrlDecode(c.Param("iface"))
+func (e PeerEndpoint) handleCreateMultiplePost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
 			return
 		}
 
 		var req model.MultiPeerRequest
-		err := c.BindJSON(&req)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		newPeers, err := e.app.CreateMultiplePeers(ctx, domain.InterfaceIdentifier(interfaceId),
+		newPeers, err := e.app.CreateMultiplePeers(r.Context(), domain.InterfaceIdentifier(interfaceId),
 			model.NewDomainPeerCreationRequest(&req))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
+			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewPeers(newPeers))
+		respond.JSON(w, http.StatusOK, model.NewPeers(newPeers))
 	}
 }
 
-// handleUpdatePut returns a gorm handler function.
+// handleUpdatePut returns a gorm Handler function.
 //
 // @ID peers_handleUpdatePut
 // @Tags Peer
@@ -230,40 +245,43 @@ func (e peerEndpoint) handleCreateMultiplePost() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/{id} [put]
-func (e peerEndpoint) handleUpdatePut() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		peerId := Base64UrlDecode(c.Param("id"))
+func (e PeerEndpoint) handleUpdatePut() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		peerId := Base64UrlDecode(request.Path(r, "id"))
 		if peerId == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing id parameter"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing id parameter"})
 			return
 		}
 
 		var p model.Peer
-		err := c.BindJSON(&p)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &p); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(p); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
 		if p.Identifier != peerId {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "peer id mismatch"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "peer id mismatch"})
 			return
 		}
 
-		updatedPeer, err := e.app.UpdatePeer(ctx, model.NewDomainPeer(&p))
+		updatedPeer, err := e.app.UpdatePeer(r.Context(), model.NewDomainPeer(&p))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
+			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewPeer(updatedPeer))
+		respond.JSON(w, http.StatusOK, model.NewPeer(updatedPeer))
 	}
 }
 
-// handleDelete returns a gorm handler function.
+// handleDelete returns a gorm Handler function.
 //
 // @ID peers_handleDelete
 // @Tags Peer
@@ -274,28 +292,26 @@ func (e peerEndpoint) handleUpdatePut() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/{id} [delete]
-func (e peerEndpoint) handleDelete() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := Base64UrlDecode(c.Param("id"))
+func (e PeerEndpoint) handleDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
 			return
 		}
 
-		err := e.app.DeletePeer(ctx, domain.PeerIdentifier(id))
+		err := e.app.DeletePeer(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
+			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.Status(http.StatusNoContent)
+		respond.Status(w, http.StatusNoContent)
 	}
 }
 
-// handleConfigGet returns a gorm handler function.
+// handleConfigGet returns a gorm Handler function.
 //
 // @ID peers_handleConfigGet
 // @Tags Peer
@@ -306,21 +322,19 @@ func (e peerEndpoint) handleDelete() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/config/{id} [get]
-func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := Base64UrlDecode(c.Param("id"))
+func (e PeerEndpoint) handleConfigGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{
+			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
 			})
 			return
 		}
 
-		config, err := e.app.GetPeerConfig(ctx, domain.PeerIdentifier(id))
+		config, err := e.app.GetPeerConfig(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
@@ -328,17 +342,17 @@ func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
 
 		configString, err := io.ReadAll(config)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, string(configString))
+		respond.JSON(w, http.StatusOK, string(configString))
 	}
 }
 
-// handleQrCodeGet returns a gorm handler function.
+// handleQrCodeGet returns a gorm Handler function.
 //
 // @ID peers_handleQrCodeGet
 // @Tags Peer
@@ -350,20 +364,19 @@ func (e peerEndpoint) handleConfigGet() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/config-qr/{id} [get]
-func (e peerEndpoint) handleQrCodeGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-		id := Base64UrlDecode(c.Param("id"))
+func (e PeerEndpoint) handleQrCodeGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{
+			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
 			})
 			return
 		}
 
-		config, err := e.app.GetPeerConfigQrCode(ctx, domain.PeerIdentifier(id))
+		config, err := e.app.GetPeerConfigQrCode(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
@@ -371,17 +384,17 @@ func (e peerEndpoint) handleQrCodeGet() gin.HandlerFunc {
 
 		configData, err := io.ReadAll(config)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.Data(http.StatusOK, "image/png", configData)
+		respond.Data(w, http.StatusOK, "image/png", configData)
 	}
 }
 
-// handleEmailPost returns a gorm handler function.
+// handleEmailPost returns a gorm Handler function.
 //
 // @ID peers_handleEmailPost
 // @Tags Peer
@@ -392,38 +405,39 @@ func (e peerEndpoint) handleQrCodeGet() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/config-mail [post]
-func (e peerEndpoint) handleEmailPost() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (e PeerEndpoint) handleEmailPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var req model.PeerMailRequest
-		err := c.BindJSON(&req)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
 		if len(req.Identifiers) == 0 {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing peer identifiers"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing peer identifiers"})
 			return
 		}
-
-		ctx := domain.SetUserInfoFromGin(c)
 
 		peerIds := make([]domain.PeerIdentifier, len(req.Identifiers))
 		for i := range req.Identifiers {
 			peerIds[i] = domain.PeerIdentifier(req.Identifiers[i])
 		}
-		err = e.app.SendPeerEmail(ctx, req.LinkOnly, peerIds...)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError,
+		if err := e.app.SendPeerEmail(r.Context(), req.LinkOnly, peerIds...); err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.Status(http.StatusNoContent)
+		respond.Status(w, http.StatusNoContent)
 	}
 }
 
-// handleStatsGet returns a gorm handler function.
+// handleStatsGet returns a gorm Handler function.
 //
 // @ID peers_handleStatsGet
 // @Tags Peer
@@ -434,23 +448,22 @@ func (e peerEndpoint) handleEmailPost() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /peer/iface/{iface}/stats [get]
-func (e peerEndpoint) handleStatsGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		interfaceId := Base64UrlDecode(c.Param("iface"))
+func (e PeerEndpoint) handleStatsGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
 			return
 		}
 
-		stats, err := e.app.GetPeerStats(ctx, domain.InterfaceIdentifier(interfaceId))
+		stats, err := e.app.GetPeerStats(r.Context(), domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError,
+			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewPeerStats(e.app.Config.Statistics.CollectPeerData, stats))
+		respond.JSON(w, http.StatusOK, model.NewPeerStats(e.app.Config.Statistics.CollectPeerData, stats))
 	}
 }

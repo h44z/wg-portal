@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"embed"
 	"fmt"
 	"html/template"
@@ -9,57 +8,61 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
 	"github.com/h44z/wg-portal/internal"
-	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/h44z/wg-portal/internal/config"
 )
 
 //go:embed frontend_config.js.gotpl
 var frontendJs embed.FS
 
-type configEndpoint struct {
-	app           *app.App
-	authenticator *authenticationHandler
+type ConfigEndpoint struct {
+	cfg           *config.Config
+	authenticator Authenticator
 
-	tpl *template.Template
+	tpl *respond.TemplateRenderer
 }
 
-func newConfigEndpoint(app *app.App, authenticator *authenticationHandler) configEndpoint {
-	ep := configEndpoint{
-		app:           app,
+func NewConfigEndpoint(cfg *config.Config, authenticator Authenticator) ConfigEndpoint {
+	ep := ConfigEndpoint{
+		cfg:           cfg,
 		authenticator: authenticator,
-		tpl:           template.Must(template.ParseFS(frontendJs, "frontend_config.js.gotpl")),
+		tpl: respond.NewTemplateRenderer(template.Must(template.ParseFS(frontendJs,
+			"frontend_config.js.gotpl"))),
 	}
 
 	return ep
 }
 
-func (e configEndpoint) GetName() string {
+func (e ConfigEndpoint) GetName() string {
 	return "ConfigEndpoint"
 }
 
-func (e configEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandler) {
-	apiGroup := g.Group("/config")
+func (e ConfigEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	apiGroup := g.Mount("/config")
 
-	apiGroup.GET("/frontend.js", e.handleConfigJsGet())
-	apiGroup.GET("/settings", e.authenticator.LoggedIn(), e.handleSettingsGet())
+	apiGroup.HandleFunc("GET /frontend.js", e.handleConfigJsGet())
+	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("GET /settings", e.handleSettingsGet())
 }
 
-// handleConfigJsGet returns a gorm handler function.
+// handleConfigJsGet returns a gorm Handler function.
 //
 // @ID config_handleConfigJsGet
 // @Tags Configuration
 // @Summary Get the dynamic frontend configuration javascript.
 // @Produce text/javascript
 // @Success 200 string javascript "The JavaScript contents"
+// @Failure 500
 // @Router /config/frontend.js [get]
-func (e configEndpoint) handleConfigJsGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		backendUrl := fmt.Sprintf("%s/api/v0", e.app.Config.Web.ExternalUrl)
-		if c.GetHeader("x-wg-dev") != "" {
-			referer := c.Request.Header.Get("Referer")
+func (e ConfigEndpoint) handleConfigJsGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		backendUrl := fmt.Sprintf("%s/api/v0", e.cfg.Web.ExternalUrl)
+		if request.Header(r, "x-wg-dev") != "" {
+			referer := request.Header(r, "Referer")
 			host := "localhost"
 			port := "5000"
 			parsedReferer, err := url.Parse(referer)
@@ -69,23 +72,17 @@ func (e configEndpoint) handleConfigJsGet() gin.HandlerFunc {
 			backendUrl = fmt.Sprintf("http://%s:%s/api/v0", host,
 				port) // override if request comes from frontend started with npm run dev
 		}
-		buf := &bytes.Buffer{}
-		err := e.tpl.ExecuteTemplate(buf, "frontend_config.js.gotpl", gin.H{
+
+		e.tpl.Render(w, http.StatusOK, "frontend_config.js.gotpl", "text/javascript", map[string]any{
 			"BackendUrl":      backendUrl,
 			"Version":         internal.Version,
-			"SiteTitle":       e.app.Config.Web.SiteTitle,
-			"SiteCompanyName": e.app.Config.Web.SiteCompanyName,
+			"SiteTitle":       e.cfg.Web.SiteTitle,
+			"SiteCompanyName": e.cfg.Web.SiteCompanyName,
 		})
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-
-		c.Data(http.StatusOK, "application/javascript", buf.Bytes())
 	}
 }
 
-// handleSettingsGet returns a gorm handler function.
+// handleSettingsGet returns a gorm Handler function.
 //
 // @ID config_handleSettingsGet
 // @Tags Configuration
@@ -94,13 +91,13 @@ func (e configEndpoint) handleConfigJsGet() gin.HandlerFunc {
 // @Success 200 {object} model.Settings
 // @Success 200 string javascript "The JavaScript contents"
 // @Router /config/settings [get]
-func (e configEndpoint) handleSettingsGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, model.Settings{
-			MailLinkOnly:              e.app.Config.Mail.LinkOnly,
-			PersistentConfigSupported: e.app.Config.Advanced.ConfigStoragePath != "",
-			SelfProvisioning:          e.app.Config.Core.SelfProvisioningAllowed,
-			ApiAdminOnly:              e.app.Config.Advanced.ApiAdminOnly,
+func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		respond.JSON(w, http.StatusOK, model.Settings{
+			MailLinkOnly:              e.cfg.Mail.LinkOnly,
+			PersistentConfigSupported: e.cfg.Advanced.ConfigStoragePath != "",
+			SelfProvisioning:          e.cfg.Core.SelfProvisioningAllowed,
+			ApiAdminOnly:              e.cfg.Advanced.ApiAdminOnly,
 		})
 	}
 }

@@ -3,6 +3,8 @@ package config
 type WebConfig struct {
 	// RequestLogging enables logging of all HTTP requests.
 	RequestLogging bool `yaml:"request_logging"`
+	// ExposeHostInfo sets whether the host information should be exposed in a response header.
+	ExposeHostInfo bool `yaml:"expose_host_info"`
 	// ExternalUrl is the URL where a client can access WireGuard Portal.
 	// This is used for the callback URL of the OAuth providers.
 	ExternalUrl string `yaml:"external_url"`

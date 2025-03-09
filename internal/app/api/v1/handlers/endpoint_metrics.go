@@ -4,8 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
+	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v1/models"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -17,12 +19,20 @@ type MetricsEndpointStatisticsService interface {
 }
 
 type MetricsEndpoint struct {
-	metrics MetricsEndpointStatisticsService
+	metrics       MetricsEndpointStatisticsService
+	authenticator Authenticator
+	validator     Validator
 }
 
-func NewMetricsEndpoint(metrics MetricsEndpointStatisticsService) *MetricsEndpoint {
+func NewMetricsEndpoint(
+	authenticator Authenticator,
+	validator Validator,
+	metrics MetricsEndpointStatisticsService,
+) *MetricsEndpoint {
 	return &MetricsEndpoint{
-		metrics: metrics,
+		authenticator: authenticator,
+		validator:     validator,
+		metrics:       metrics,
 	}
 }
 
@@ -30,12 +40,14 @@ func (e MetricsEndpoint) GetName() string {
 	return "MetricsEndpoint"
 }
 
-func (e MetricsEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
-	apiGroup := g.Group("/metrics", authenticator.LoggedIn())
+func (e MetricsEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	apiGroup := g.Mount("/metrics")
+	apiGroup.Use(e.authenticator.LoggedIn())
 
-	apiGroup.GET("/by-interface/:id", authenticator.LoggedIn(ScopeAdmin), e.handleMetricsForInterfaceGet())
-	apiGroup.GET("/by-user/:id", authenticator.LoggedIn(), e.handleMetricsForUserGet())
-	apiGroup.GET("/by-peer/:id", authenticator.LoggedIn(), e.handleMetricsForPeerGet())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /by-interface/{id}",
+		e.handleMetricsForInterfaceGet())
+	apiGroup.HandleFunc("GET /by-user/{id}", e.handleMetricsForUserGet())
+	apiGroup.HandleFunc("GET /by-peer/{id}", e.handleMetricsForPeerGet())
 }
 
 // handleMetricsForInterfaceGet returns a gorm Handler function.
@@ -52,23 +64,23 @@ func (e MetricsEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authe
 // @Failure 500 {object} models.Error
 // @Router /metrics/by-interface/{id} [get]
 // @Security BasicAuth
-func (e MetricsEndpoint) handleMetricsForInterfaceGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e MetricsEndpoint) handleMetricsForInterfaceGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
-		interfaceMetrics, err := e.metrics.GetForInterface(ctx, domain.InterfaceIdentifier(id))
+		interfaceMetrics, err := e.metrics.GetForInterface(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewInterfaceMetrics(interfaceMetrics))
+		respond.JSON(w, http.StatusOK, models.NewInterfaceMetrics(interfaceMetrics))
 	}
 }
 
@@ -86,23 +98,23 @@ func (e MetricsEndpoint) handleMetricsForInterfaceGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /metrics/by-user/{id} [get]
 // @Security BasicAuth
-func (e MetricsEndpoint) handleMetricsForUserGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e MetricsEndpoint) handleMetricsForUserGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
-		user, userMetrics, err := e.metrics.GetForUser(ctx, domain.UserIdentifier(id))
+		user, userMetrics, err := e.metrics.GetForUser(r.Context(), domain.UserIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewUserMetrics(user, userMetrics))
+		respond.JSON(w, http.StatusOK, models.NewUserMetrics(user, userMetrics))
 	}
 }
 
@@ -120,22 +132,22 @@ func (e MetricsEndpoint) handleMetricsForUserGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /metrics/by-peer/{id} [get]
 // @Security BasicAuth
-func (e MetricsEndpoint) handleMetricsForPeerGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e MetricsEndpoint) handleMetricsForPeerGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
 			return
 		}
 
-		peerMetrics, err := e.metrics.GetForPeer(ctx, domain.PeerIdentifier(id))
+		peerMetrics, err := e.metrics.GetForPeer(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewPeerMetrics(peerMetrics))
+		respond.JSON(w, http.StatusOK, models.NewPeerMetrics(peerMetrics))
 	}
 }

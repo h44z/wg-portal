@@ -4,8 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
+	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v1/models"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -20,12 +22,19 @@ type PeerService interface {
 }
 
 type PeerEndpoint struct {
-	peers PeerService
+	peers         PeerService
+	authenticator Authenticator
+	validator     Validator
 }
 
-func NewPeerEndpoint(peerService PeerService) *PeerEndpoint {
+func NewPeerEndpoint(
+	authenticator Authenticator,
+	validator Validator, peerService PeerService,
+) *PeerEndpoint {
 	return &PeerEndpoint{
-		peers: peerService,
+		authenticator: authenticator,
+		validator:     validator,
+		peers:         peerService,
 	}
 }
 
@@ -33,16 +42,18 @@ func (e PeerEndpoint) GetName() string {
 	return "PeerEndpoint"
 }
 
-func (e PeerEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
-	apiGroup := g.Group("/peer", authenticator.LoggedIn())
+func (e PeerEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	apiGroup := g.Mount("/peer")
+	apiGroup.Use(e.authenticator.LoggedIn())
 
-	apiGroup.GET("/by-interface/:id", authenticator.LoggedIn(ScopeAdmin), e.handleAllForInterfaceGet())
-	apiGroup.GET("/by-user/:id", authenticator.LoggedIn(), e.handleAllForUserGet())
-	apiGroup.GET("/by-id/:id", authenticator.LoggedIn(), e.handleByIdGet())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /by-interface/{id}",
+		e.handleAllForInterfaceGet())
+	apiGroup.HandleFunc("GET /by-user/{id}", e.handleAllForUserGet())
+	apiGroup.HandleFunc("GET /by-id/{id}", e.handleByIdGet())
 
-	apiGroup.POST("/new", authenticator.LoggedIn(ScopeAdmin), e.handleCreatePost())
-	apiGroup.PUT("/by-id/:id", authenticator.LoggedIn(ScopeAdmin), e.handleUpdatePut())
-	apiGroup.DELETE("/by-id/:id", authenticator.LoggedIn(ScopeAdmin), e.handleDelete())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /new", e.handleCreatePost())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("PUT /by-id/{id}", e.handleUpdatePut())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("DELETE /by-id/{id}", e.handleDelete())
 }
 
 // handleAllForInterfaceGet returns a gorm Handler function.
@@ -57,23 +68,23 @@ func (e PeerEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 // @Failure 500 {object} models.Error
 // @Router /peer/by-interface/{id} [get]
 // @Security BasicAuth
-func (e PeerEndpoint) handleAllForInterfaceGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e PeerEndpoint) handleAllForInterfaceGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
-		interfacePeers, err := e.peers.GetForInterface(ctx, domain.InterfaceIdentifier(id))
+		interfacePeers, err := e.peers.GetForInterface(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewPeers(interfacePeers))
+		respond.JSON(w, http.StatusOK, models.NewPeers(interfacePeers))
 	}
 }
 
@@ -90,23 +101,23 @@ func (e PeerEndpoint) handleAllForInterfaceGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /peer/by-user/{id} [get]
 // @Security BasicAuth
-func (e PeerEndpoint) handleAllForUserGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e PeerEndpoint) handleAllForUserGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
 		}
 
-		interfacePeers, err := e.peers.GetForUser(ctx, domain.UserIdentifier(id))
+		interfacePeers, err := e.peers.GetForUser(r.Context(), domain.UserIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewPeers(interfacePeers))
+		respond.JSON(w, http.StatusOK, models.NewPeers(interfacePeers))
 	}
 }
 
@@ -125,23 +136,23 @@ func (e PeerEndpoint) handleAllForUserGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /peer/by-id/{id} [get]
 // @Security BasicAuth
-func (e PeerEndpoint) handleByIdGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e PeerEndpoint) handleByIdGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
 			return
 		}
 
-		peer, err := e.peers.GetById(ctx, domain.PeerIdentifier(id))
+		peer, err := e.peers.GetById(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewPeer(peer))
+		respond.JSON(w, http.StatusOK, models.NewPeer(peer))
 	}
 }
 
@@ -161,24 +172,26 @@ func (e PeerEndpoint) handleByIdGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /peer/new [post]
 // @Security BasicAuth
-func (e PeerEndpoint) handleCreatePost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
+func (e PeerEndpoint) handleCreatePost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var peer models.Peer
-		err := c.BindJSON(&peer)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &peer); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(peer); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		newPeer, err := e.peers.Create(ctx, models.NewDomainPeer(&peer))
+		newPeer, err := e.peers.Create(r.Context(), models.NewDomainPeer(&peer))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewPeer(newPeer))
+		respond.JSON(w, http.StatusOK, models.NewPeer(newPeer))
 	}
 }
 
@@ -199,30 +212,33 @@ func (e PeerEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /peer/by-id/{id} [put]
 // @Security BasicAuth
-func (e PeerEndpoint) handleUpdatePut() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e PeerEndpoint) handleUpdatePut() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
 			return
 		}
 
 		var peer models.Peer
-		err := c.BindJSON(&peer)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &peer); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(peer); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		updatedPeer, err := e.peers.Update(ctx, domain.PeerIdentifier(id), models.NewDomainPeer(&peer))
+		updatedPeer, err := e.peers.Update(r.Context(), domain.PeerIdentifier(id), models.NewDomainPeer(&peer))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewPeer(updatedPeer))
+		respond.JSON(w, http.StatusOK, models.NewPeer(updatedPeer))
 	}
 }
 
@@ -241,22 +257,22 @@ func (e PeerEndpoint) handleUpdatePut() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /peer/by-id/{id} [delete]
 // @Security BasicAuth
-func (e PeerEndpoint) handleDelete() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e PeerEndpoint) handleDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
 			return
 		}
 
-		err := e.peers.Delete(ctx, domain.PeerIdentifier(id))
+		err := e.peers.Delete(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.Status(http.StatusNoContent)
+		respond.Status(w, http.StatusNoContent)
 	}
 }

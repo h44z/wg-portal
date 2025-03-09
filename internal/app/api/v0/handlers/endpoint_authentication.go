@@ -8,36 +8,62 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-type authEndpoint struct {
-	app           *app.App
-	authenticator *authenticationHandler
+type Session interface {
+	// SetData sets the session data for the given context.
+	SetData(ctx context.Context, val SessionData)
+	// GetData returns the session data for the given context. If no data is found, the default session data is returned.
+	GetData(ctx context.Context) SessionData
+	// DestroyData destroys the session data for the given context.
+	DestroyData(ctx context.Context)
 }
 
-func (e authEndpoint) GetName() string {
+type Validator interface {
+	Struct(s interface{}) error
+}
+
+type AuthEndpoint struct {
+	app           *app.App
+	authenticator Authenticator
+	session       Session
+	validate      Validator
+}
+
+func NewAuthEndpoint(app *app.App, authenticator Authenticator, session Session, validator Validator) AuthEndpoint {
+	return AuthEndpoint{
+		app:           app,
+		authenticator: authenticator,
+		session:       session,
+		validate:      validator,
+	}
+}
+
+func (e AuthEndpoint) GetName() string {
 	return "AuthEndpoint"
 }
 
-func (e authEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
-	apiGroup := g.Group("/auth")
+func (e AuthEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	apiGroup := g.Mount("/auth")
 
-	apiGroup.GET("/providers", e.handleExternalLoginProvidersGet())
-	apiGroup.GET("/session", e.handleSessionInfoGet())
+	apiGroup.HandleFunc("GET /providers", e.handleExternalLoginProvidersGet())
+	apiGroup.HandleFunc("GET /session", e.handleSessionInfoGet())
 
-	apiGroup.GET("/login/:provider/init", e.handleOauthInitiateGet())
-	apiGroup.GET("/login/:provider/callback", e.handleOauthCallbackGet())
+	apiGroup.HandleFunc("GET /login/{provider}/init", e.handleOauthInitiateGet())
+	apiGroup.HandleFunc("GET /login/{provider}/callback", e.handleOauthCallbackGet())
 
-	apiGroup.POST("/login", e.handleLoginPost())
-	apiGroup.POST("/logout", authenticator.LoggedIn(), e.handleLogoutPost())
+	apiGroup.HandleFunc("POST /login", e.handleLoginPost())
+	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("POST /logout", e.handleLogoutPost())
 }
 
-// handleExternalLoginProvidersGet returns a gorm handler function.
+// handleExternalLoginProvidersGet returns a gorm Handler function.
 //
 // @ID auth_handleExternalLoginProvidersGet
 // @Tags Authentication
@@ -45,16 +71,15 @@ func (e authEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 // @Produce json
 // @Success 200 {object} []model.LoginProviderInfo
 // @Router /auth/providers [get]
-func (e authEndpoint) handleExternalLoginProvidersGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-		providers := e.app.Authenticator.GetExternalLoginProviders(ctx)
+func (e AuthEndpoint) handleExternalLoginProvidersGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		providers := e.app.Authenticator.GetExternalLoginProviders(r.Context())
 
-		c.JSON(http.StatusOK, model.NewLoginProviderInfos(providers))
+		respond.JSON(w, http.StatusOK, model.NewLoginProviderInfos(providers))
 	}
 }
 
-// handleSessionInfoGet returns a gorm handler function.
+// handleSessionInfoGet returns a gorm Handler function.
 //
 // @ID auth_handleSessionInfoGet
 // @Tags Authentication
@@ -63,9 +88,9 @@ func (e authEndpoint) handleExternalLoginProvidersGet() gin.HandlerFunc {
 // @Success 200 {object} []model.SessionInfo
 // @Failure 500 {object} model.Error
 // @Router /auth/session [get]
-func (e authEndpoint) handleSessionInfoGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		currentSession := e.authenticator.Session.GetData(c)
+func (e AuthEndpoint) handleSessionInfoGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		currentSession := e.session.GetData(r.Context())
 
 		var loggedInUid *string
 		var firstname *string
@@ -83,7 +108,7 @@ func (e authEndpoint) handleSessionInfoGet() gin.HandlerFunc {
 			email = &e
 		}
 
-		c.JSON(http.StatusOK, model.SessionInfo{
+		respond.JSON(w, http.StatusOK, model.SessionInfo{
 			LoggedIn:       currentSession.LoggedIn,
 			IsAdmin:        currentSession.IsAdmin,
 			UserIdentifier: loggedInUid,
@@ -94,7 +119,7 @@ func (e authEndpoint) handleSessionInfoGet() gin.HandlerFunc {
 	}
 }
 
-// handleOauthInitiateGet returns a gorm handler function.
+// handleOauthInitiateGet returns a gorm Handler function.
 //
 // @ID auth_handleOauthInitiateGet
 // @Tags Authentication
@@ -102,23 +127,24 @@ func (e authEndpoint) handleSessionInfoGet() gin.HandlerFunc {
 // @Produce json
 // @Success 200 {object} []model.LoginProviderInfo
 // @Router /auth/{provider}/init [get]
-func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		currentSession := e.authenticator.Session.GetData(c)
+func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		currentSession := e.session.GetData(r.Context())
 
-		autoRedirect, _ := strconv.ParseBool(c.DefaultQuery("redirect", "false"))
-		returnTo := c.Query("return")
-		provider := c.Param("provider")
+		autoRedirect, _ := strconv.ParseBool(request.QueryDefault(r, "redirect", "false"))
+		returnTo := request.Query(r, "return")
+		provider := request.Path(r, "provider")
 
 		var returnUrl *url.URL
 		var returnParams string
 		redirectToReturn := func() {
-			c.Redirect(http.StatusFound, returnUrl.String()+"?"+returnParams)
+			respond.Redirect(w, r, http.StatusFound, returnUrl.String()+"?"+returnParams)
 		}
 
 		if returnTo != "" {
 			if !e.isValidReturnUrl(returnTo) {
-				c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "invalid return URL"})
+				respond.JSON(w, http.StatusBadRequest,
+					model.Error{Code: http.StatusBadRequest, Message: "invalid return URL"})
 				return
 			}
 			if u, err := url.Parse(returnTo); err == nil {
@@ -137,34 +163,34 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 				returnParams = queryParams.Encode()
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "already logged in"})
+				respond.JSON(w, http.StatusBadRequest,
+					model.Error{Code: http.StatusBadRequest, Message: "already logged in"})
 			}
 			return
 		}
 
-		ctx := domain.SetUserInfoFromGin(c)
-		authCodeUrl, state, nonce, err := e.app.Authenticator.OauthLoginStep1(ctx, provider)
+		authCodeUrl, state, nonce, err := e.app.Authenticator.OauthLoginStep1(context.Background(), provider)
 		if err != nil {
 			if autoRedirect && e.isValidReturnUrl(returnTo) {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusInternalServerError,
+				respond.JSON(w, http.StatusInternalServerError,
 					model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			}
 			return
 		}
 
-		authSession := e.authenticator.Session.DefaultSessionData()
+		authSession := e.session.GetData(r.Context())
 		authSession.OauthState = state
 		authSession.OauthNonce = nonce
 		authSession.OauthProvider = provider
 		authSession.OauthReturnTo = returnTo
-		e.authenticator.Session.SetData(c, authSession)
+		e.session.SetData(r.Context(), authSession)
 
 		if autoRedirect {
-			c.Redirect(http.StatusFound, authCodeUrl)
+			respond.Redirect(w, r, http.StatusFound, authCodeUrl)
 		} else {
-			c.JSON(http.StatusOK, model.OauthInitiationResponse{
+			respond.JSON(w, http.StatusOK, model.OauthInitiationResponse{
 				RedirectUrl: authCodeUrl,
 				State:       state,
 			})
@@ -172,7 +198,7 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 	}
 }
 
-// handleOauthCallbackGet returns a gorm handler function.
+// handleOauthCallbackGet returns a gorm Handler function.
 //
 // @ID auth_handleOauthCallbackGet
 // @Tags Authentication
@@ -180,14 +206,14 @@ func (e authEndpoint) handleOauthInitiateGet() gin.HandlerFunc {
 // @Produce json
 // @Success 200 {object} []model.LoginProviderInfo
 // @Router /auth/{provider}/callback [get]
-func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		currentSession := e.authenticator.Session.GetData(c)
+func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		currentSession := e.session.GetData(r.Context())
 
 		var returnUrl *url.URL
 		var returnParams string
 		redirectToReturn := func() {
-			c.Redirect(http.StatusFound, returnUrl.String()+"?"+returnParams)
+			respond.Redirect(w, r, http.StatusFound, returnUrl.String()+"?"+returnParams)
 		}
 
 		if currentSession.OauthReturnTo != "" {
@@ -207,20 +233,20 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 				returnParams = queryParams.Encode()
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusBadRequest, model.Error{Message: "already logged in"})
+				respond.JSON(w, http.StatusBadRequest, model.Error{Message: "already logged in"})
 			}
 			return
 		}
 
-		provider := c.Param("provider")
-		oauthCode := c.Query("code")
-		oauthState := c.Query("state")
+		provider := request.Path(r, "provider")
+		oauthCode := request.Query(r, "code")
+		oauthState := request.Query(r, "state")
 
 		if provider != currentSession.OauthProvider {
 			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusBadRequest,
+				respond.JSON(w, http.StatusBadRequest,
 					model.Error{Code: http.StatusBadRequest, Message: "invalid oauth provider"})
 			}
 			return
@@ -229,7 +255,8 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "invalid oauth state"})
+				respond.JSON(w, http.StatusBadRequest,
+					model.Error{Code: http.StatusBadRequest, Message: "invalid oauth state"})
 			}
 			return
 		}
@@ -241,12 +268,13 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				redirectToReturn()
 			} else {
-				c.JSON(http.StatusUnauthorized, model.Error{Code: http.StatusUnauthorized, Message: err.Error()})
+				respond.JSON(w, http.StatusUnauthorized,
+					model.Error{Code: http.StatusUnauthorized, Message: err.Error()})
 			}
 			return
 		}
 
-		e.setAuthenticatedUser(c, user)
+		e.setAuthenticatedUser(r, user)
 
 		if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 			queryParams := returnUrl.Query()
@@ -254,13 +282,13 @@ func (e authEndpoint) handleOauthCallbackGet() gin.HandlerFunc {
 			returnParams = queryParams.Encode()
 			redirectToReturn()
 		} else {
-			c.JSON(http.StatusOK, user)
+			respond.JSON(w, http.StatusOK, user)
 		}
 	}
 }
 
-func (e authEndpoint) setAuthenticatedUser(c *gin.Context, user *domain.User) {
-	currentSession := e.authenticator.Session.GetData(c)
+func (e AuthEndpoint) setAuthenticatedUser(r *http.Request, user *domain.User) {
+	currentSession := e.session.GetData(r.Context())
 
 	currentSession.LoggedIn = true
 	currentSession.IsAdmin = user.IsAdmin
@@ -274,10 +302,10 @@ func (e authEndpoint) setAuthenticatedUser(c *gin.Context, user *domain.User) {
 	currentSession.OauthProvider = ""
 	currentSession.OauthReturnTo = ""
 
-	e.authenticator.Session.SetData(c, currentSession)
+	e.session.SetData(r.Context(), currentSession)
 }
 
-// handleLoginPost returns a gorm handler function.
+// handleLoginPost returns a gorm Handler function.
 //
 // @ID auth_handleLoginPost
 // @Tags Authentication
@@ -285,11 +313,11 @@ func (e authEndpoint) setAuthenticatedUser(c *gin.Context, user *domain.User) {
 // @Produce json
 // @Success 200 {object} []model.LoginProviderInfo
 // @Router /auth/login [post]
-func (e authEndpoint) handleLoginPost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		currentSession := e.authenticator.Session.GetData(c)
+func (e AuthEndpoint) handleLoginPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		currentSession := e.session.GetData(r.Context())
 		if currentSession.LoggedIn {
-			c.JSON(http.StatusOK, model.Error{Code: http.StatusOK, Message: "already logged in"})
+			respond.JSON(w, http.StatusOK, model.Error{Code: http.StatusOK, Message: "already logged in"})
 			return
 		}
 
@@ -298,25 +326,29 @@ func (e authEndpoint) handleLoginPost() gin.HandlerFunc {
 			Password string `json:"password" binding:"required,min=4"`
 		}
 
-		if err := c.ShouldBindJSON(&loginData); err != nil {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &loginData); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validate.Struct(loginData); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		ctx := domain.SetUserInfoFromGin(c)
-		user, err := e.app.Authenticator.PlainLogin(ctx, loginData.Username, loginData.Password)
+		user, err := e.app.Authenticator.PlainLogin(context.Background(), loginData.Username, loginData.Password)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, model.Error{Code: http.StatusUnauthorized, Message: "login failed"})
+			respond.JSON(w, http.StatusUnauthorized,
+				model.Error{Code: http.StatusUnauthorized, Message: "login failed"})
 			return
 		}
 
-		e.setAuthenticatedUser(c, user)
+		e.setAuthenticatedUser(r, user)
 
-		c.JSON(http.StatusOK, user)
+		respond.JSON(w, http.StatusOK, user)
 	}
 }
 
-// handleLogoutPost returns a gorm handler function.
+// handleLogoutPost returns a gorm Handler function.
 //
 // @ID auth_handleLogoutGet
 // @Tags Authentication
@@ -324,22 +356,22 @@ func (e authEndpoint) handleLoginPost() gin.HandlerFunc {
 // @Produce json
 // @Success 200 {object} []model.LoginProviderInfo
 // @Router /auth/logout [get]
-func (e authEndpoint) handleLogoutPost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		currentSession := e.authenticator.Session.GetData(c)
+func (e AuthEndpoint) handleLogoutPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		currentSession := e.session.GetData(r.Context())
 
 		if !currentSession.LoggedIn { // Not logged in
-			c.JSON(http.StatusOK, model.Error{Code: http.StatusOK, Message: "not logged in"})
+			respond.JSON(w, http.StatusOK, model.Error{Code: http.StatusOK, Message: "not logged in"})
 			return
 		}
 
-		e.authenticator.Session.DestroyData(c)
-		c.JSON(http.StatusOK, model.Error{Code: http.StatusOK, Message: "logout ok"})
+		e.session.DestroyData(r.Context())
+		respond.JSON(w, http.StatusOK, model.Error{Code: http.StatusOK, Message: "logout ok"})
 	}
 }
 
 // isValidReturnUrl checks if the given return URL matches the configured external URL of the application.
-func (e authEndpoint) isValidReturnUrl(returnUrl string) bool {
+func (e AuthEndpoint) isValidReturnUrl(returnUrl string) bool {
 	if !strings.HasPrefix(returnUrl, e.app.Config.Web.ExternalUrl) {
 		return false
 	}

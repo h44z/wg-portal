@@ -4,39 +4,51 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-type interfaceEndpoint struct {
+type InterfaceEndpoint struct {
 	app           *app.App
-	authenticator *authenticationHandler
+	authenticator Authenticator
+	validator     Validator
 }
 
-func (e interfaceEndpoint) GetName() string {
+func NewInterfaceEndpoint(app *app.App, authenticator Authenticator, validator Validator) InterfaceEndpoint {
+	return InterfaceEndpoint{
+		app:           app,
+		authenticator: authenticator,
+		validator:     validator,
+	}
+}
+
+func (e InterfaceEndpoint) GetName() string {
 	return "InterfaceEndpoint"
 }
 
-func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationHandler) {
-	apiGroup := g.Group("/interface", e.authenticator.LoggedIn(ScopeAdmin))
+func (e InterfaceEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	apiGroup := g.Mount("/interface")
+	apiGroup.Use(e.authenticator.LoggedIn(ScopeAdmin))
 
-	apiGroup.GET("/prepare", e.handlePrepareGet())
-	apiGroup.GET("/all", e.handleAllGet())
-	apiGroup.GET("/get/:id", e.handleSingleGet())
-	apiGroup.PUT("/:id", e.handleUpdatePut())
-	apiGroup.DELETE("/:id", e.handleDelete())
-	apiGroup.POST("/new", e.handleCreatePost())
-	apiGroup.GET("/config/:id", e.handleConfigGet())
-	apiGroup.POST("/:id/save-config", e.handleSaveConfigPost())
-	apiGroup.POST("/:id/apply-peer-defaults", e.handleApplyPeerDefaultsPost())
+	apiGroup.HandleFunc("GET /prepare", e.handlePrepareGet())
+	apiGroup.HandleFunc("GET /all", e.handleAllGet())
+	apiGroup.HandleFunc("GET /get/{id}", e.handleSingleGet())
+	apiGroup.HandleFunc("PUT /{id}", e.handleUpdatePut())
+	apiGroup.HandleFunc("DELETE /{id}", e.handleDelete())
+	apiGroup.HandleFunc("POST /new", e.handleCreatePost())
+	apiGroup.HandleFunc("GET /config/{id}", e.handleConfigGet())
+	apiGroup.HandleFunc("POST /{id}/save-config", e.handleSaveConfigPost())
+	apiGroup.HandleFunc("POST /{id}/apply-peer-defaults", e.handleApplyPeerDefaultsPost())
 
-	apiGroup.GET("/peers/:id", e.handlePeersGet())
+	apiGroup.HandleFunc("GET /peers/{id}", e.handlePeersGet())
 }
 
-// handlePrepareGet returns a gorm handler function.
+// handlePrepareGet returns a gorm Handler function.
 //
 // @ID interfaces_handlePrepareGet
 // @Tags Interface
@@ -45,22 +57,21 @@ func (e interfaceEndpoint) RegisterRoutes(g *gin.RouterGroup, _ *authenticationH
 // @Success 200 {object} model.Interface
 // @Failure 500 {object} model.Error
 // @Router /interface/prepare [get]
-func (e interfaceEndpoint) handlePrepareGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-		in, err := e.app.PrepareInterface(ctx)
+func (e InterfaceEndpoint) handlePrepareGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		in, err := e.app.PrepareInterface(r.Context())
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterface(in, nil))
+		respond.JSON(w, http.StatusOK, model.NewInterface(in, nil))
 	}
 }
 
-// handleAllGet returns a gorm handler function.
+// handleAllGet returns a gorm Handler function.
 //
 // @ID interfaces_handleAllGet
 // @Tags Interface
@@ -69,22 +80,21 @@ func (e interfaceEndpoint) handlePrepareGet() gin.HandlerFunc {
 // @Success 200 {object} []model.Interface
 // @Failure 500 {object} model.Error
 // @Router /interface/all [get]
-func (e interfaceEndpoint) handleAllGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-		interfaces, peers, err := e.app.GetAllInterfacesAndPeers(ctx)
+func (e InterfaceEndpoint) handleAllGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		interfaces, peers, err := e.app.GetAllInterfacesAndPeers(r.Context())
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterfaces(interfaces, peers))
+		respond.JSON(w, http.StatusOK, model.NewInterfaces(interfaces, peers))
 	}
 }
 
-// handleSingleGet returns a gorm handler function.
+// handleSingleGet returns a gorm Handler function.
 //
 // @ID interfaces_handleSingleGet
 // @Tags Interface
@@ -94,30 +104,29 @@ func (e interfaceEndpoint) handleAllGet() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /interface/get/{id} [get]
-func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-		id := Base64UrlDecode(c.Param("id"))
+func (e InterfaceEndpoint) handleSingleGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{
+			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
 			})
 			return
 		}
 
-		iface, peers, err := e.app.GetInterfaceAndPeers(ctx, domain.InterfaceIdentifier(id))
+		iface, peers, err := e.app.GetInterfaceAndPeers(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterface(iface, peers))
+		respond.JSON(w, http.StatusOK, model.NewInterface(iface, peers))
 	}
 }
 
-// handleConfigGet returns a gorm handler function.
+// handleConfigGet returns a gorm Handler function.
 //
 // @ID interfaces_handleConfigGet
 // @Tags Interface
@@ -127,20 +136,19 @@ func (e interfaceEndpoint) handleSingleGet() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /interface/config/{id} [get]
-func (e interfaceEndpoint) handleConfigGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-		id := Base64UrlDecode(c.Param("id"))
+func (e InterfaceEndpoint) handleConfigGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{
+			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
 			})
 			return
 		}
 
-		config, err := e.app.GetInterfaceConfig(ctx, domain.InterfaceIdentifier(id))
+		config, err := e.app.GetInterfaceConfig(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
@@ -148,17 +156,17 @@ func (e interfaceEndpoint) handleConfigGet() gin.HandlerFunc {
 
 		configString, err := io.ReadAll(config)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, string(configString))
+		respond.JSON(w, http.StatusOK, string(configString))
 	}
 }
 
-// handleUpdatePut returns a gorm handler function.
+// handleUpdatePut returns a gorm Handler function.
 //
 // @ID interfaces_handleUpdatePut
 // @Tags Interface
@@ -170,41 +178,44 @@ func (e interfaceEndpoint) handleConfigGet() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /interface/{id} [put]
-func (e interfaceEndpoint) handleUpdatePut() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := Base64UrlDecode(c.Param("id"))
+func (e InterfaceEndpoint) handleUpdatePut() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
 		var in model.Interface
-		err := c.BindJSON(&in)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &in); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(in); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
 		if id != in.Identifier {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
 			return
 		}
 
-		updatedInterface, peers, err := e.app.UpdateInterface(ctx, model.NewDomainInterface(&in))
+		updatedInterface, peers, err := e.app.UpdateInterface(r.Context(), model.NewDomainInterface(&in))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterface(updatedInterface, peers))
+		respond.JSON(w, http.StatusOK, model.NewInterface(updatedInterface, peers))
 	}
 }
 
-// handleCreatePost returns a gorm handler function.
+// handleCreatePost returns a gorm Handler function.
 //
 // @ID interfaces_handleCreatePost
 // @Tags Interface
@@ -215,30 +226,31 @@ func (e interfaceEndpoint) handleUpdatePut() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /interface/new [post]
-func (e interfaceEndpoint) handleCreatePost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
+func (e InterfaceEndpoint) handleCreatePost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var in model.Interface
-		err := c.BindJSON(&in)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &in); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(in); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		newInterface, err := e.app.CreateInterface(ctx, model.NewDomainInterface(&in))
+		newInterface, err := e.app.CreateInterface(r.Context(), model.NewDomainInterface(&in))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewInterface(newInterface, nil))
+		respond.JSON(w, http.StatusOK, model.NewInterface(newInterface, nil))
 	}
 }
 
-// handlePeersGet returns a gorm handler function.
+// handlePeersGet returns a gorm Handler function.
 //
 // @ID interfaces_handlePeersGet
 // @Tags Interface
@@ -247,31 +259,29 @@ func (e interfaceEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Success 200 {object} []model.Peer
 // @Failure 500 {object} model.Error
 // @Router /interface/peers/{id} [get]
-func (e interfaceEndpoint) handlePeersGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := Base64UrlDecode(c.Param("id"))
+func (e InterfaceEndpoint) handlePeersGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{
+			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
 			})
 			return
 		}
 
-		_, peers, err := e.app.GetInterfaceAndPeers(ctx, domain.InterfaceIdentifier(id))
+		_, peers, err := e.app.GetInterfaceAndPeers(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.JSON(http.StatusOK, model.NewPeers(peers))
+		respond.JSON(w, http.StatusOK, model.NewPeers(peers))
 	}
 }
 
-// handleDelete returns a gorm handler function.
+// handleDelete returns a gorm Handler function.
 //
 // @ID interfaces_handleDelete
 // @Tags Interface
@@ -282,29 +292,28 @@ func (e interfaceEndpoint) handlePeersGet() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /interface/{id} [delete]
-func (e interfaceEndpoint) handleDelete() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := Base64UrlDecode(c.Param("id"))
+func (e InterfaceEndpoint) handleDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
-		err := e.app.DeleteInterface(ctx, domain.InterfaceIdentifier(id))
+		err := e.app.DeleteInterface(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.Status(http.StatusNoContent)
+		respond.Status(w, http.StatusNoContent)
 	}
 }
 
-// handleSaveConfigPost returns a gorm handler function.
+// handleSaveConfigPost returns a gorm Handler function.
 //
 // @ID interfaces_handleSaveConfigPost
 // @Tags Interface
@@ -315,29 +324,28 @@ func (e interfaceEndpoint) handleDelete() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /interface/{id}/save-config [post]
-func (e interfaceEndpoint) handleSaveConfigPost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := Base64UrlDecode(c.Param("id"))
+func (e InterfaceEndpoint) handleSaveConfigPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
-		err := e.app.PersistInterfaceConfig(ctx, domain.InterfaceIdentifier(id))
+		err := e.app.PersistInterfaceConfig(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.Status(http.StatusNoContent)
+		respond.Status(w, http.StatusNoContent)
 	}
 }
 
-// handleApplyPeerDefaultsPost returns a gorm handler function.
+// handleApplyPeerDefaultsPost returns a gorm Handler function.
 //
 // @ID interfaces_handleApplyPeerDefaultsPost
 // @Tags Interface
@@ -349,36 +357,38 @@ func (e interfaceEndpoint) handleSaveConfigPost() gin.HandlerFunc {
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
 // @Router /interface/{id}/apply-peer-defaults [post]
-func (e interfaceEndpoint) handleApplyPeerDefaultsPost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := Base64UrlDecode(c.Param("id"))
+func (e InterfaceEndpoint) handleApplyPeerDefaultsPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
 			return
 		}
 
 		var in model.Interface
-		err := c.BindJSON(&in)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &in); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(in); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
 		if id != in.Identifier {
-			c.JSON(http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "interface id mismatch"})
 			return
 		}
 
-		err = e.app.ApplyPeerDefaults(ctx, model.NewDomainInterface(&in))
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, model.Error{
+		if err := e.app.ApplyPeerDefaults(r.Context(), model.NewDomainInterface(&in)); err != nil {
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})
 			return
 		}
 
-		c.Status(http.StatusNoContent)
+		respond.Status(w, http.StatusNoContent)
 	}
 }

@@ -4,8 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-pkgz/routegroup"
 
+	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v1/models"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -19,12 +21,20 @@ type UserService interface {
 }
 
 type UserEndpoint struct {
-	users UserService
+	users         UserService
+	authenticator Authenticator
+	validator     Validator
 }
 
-func NewUserEndpoint(userService UserService) *UserEndpoint {
+func NewUserEndpoint(
+	authenticator Authenticator,
+	validator Validator,
+	userService UserService,
+) *UserEndpoint {
 	return &UserEndpoint{
-		users: userService,
+		authenticator: authenticator,
+		validator:     validator,
+		users:         userService,
 	}
 }
 
@@ -32,14 +42,15 @@ func (e UserEndpoint) GetName() string {
 	return "UserEndpoint"
 }
 
-func (e UserEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenticationHandler) {
-	apiGroup := g.Group("/user", authenticator.LoggedIn())
+func (e UserEndpoint) RegisterRoutes(g *routegroup.Bundle) {
+	apiGroup := g.Mount("/user")
+	apiGroup.Use(e.authenticator.LoggedIn())
 
-	apiGroup.GET("/all", authenticator.LoggedIn(ScopeAdmin), e.handleAllGet())
-	apiGroup.GET("/by-id/:id", authenticator.LoggedIn(), e.handleByIdGet())
-	apiGroup.POST("/new", authenticator.LoggedIn(ScopeAdmin), e.handleCreatePost())
-	apiGroup.PUT("/by-id/:id", authenticator.LoggedIn(ScopeAdmin), e.handleUpdatePut())
-	apiGroup.DELETE("/by-id/:id", authenticator.LoggedIn(ScopeAdmin), e.handleDelete())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /all", e.handleAllGet())
+	apiGroup.HandleFunc("GET /by-id/{id}", e.handleByIdGet())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /new", e.handleCreatePost())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("PUT /by-id/{id}", e.handleUpdatePut())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("DELETE /by-id/{id}", e.handleDelete())
 }
 
 // handleAllGet returns a gorm Handler function.
@@ -53,17 +64,16 @@ func (e UserEndpoint) RegisterRoutes(g *gin.RouterGroup, authenticator *authenti
 // @Failure 500 {object} models.Error
 // @Router /user/all [get]
 // @Security BasicAuth
-func (e UserEndpoint) handleAllGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		users, err := e.users.GetAll(ctx)
+func (e UserEndpoint) handleAllGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		users, err := e.users.GetAll(r.Context())
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewUsers(users))
+		respond.JSON(w, http.StatusOK, models.NewUsers(users))
 	}
 }
 
@@ -82,23 +92,23 @@ func (e UserEndpoint) handleAllGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /user/by-id/{id} [get]
 // @Security BasicAuth
-func (e UserEndpoint) handleByIdGet() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e UserEndpoint) handleByIdGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
 		}
 
-		user, err := e.users.GetById(ctx, domain.UserIdentifier(id))
+		user, err := e.users.GetById(r.Context(), domain.UserIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewUser(user, true))
+		respond.JSON(w, http.StatusOK, models.NewUser(user, true))
 	}
 }
 
@@ -118,24 +128,26 @@ func (e UserEndpoint) handleByIdGet() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /user/new [post]
 // @Security BasicAuth
-func (e UserEndpoint) handleCreatePost() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
+func (e UserEndpoint) handleCreatePost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var user models.User
-		err := c.BindJSON(&user)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &user); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(user); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		newUser, err := e.users.Create(ctx, models.NewDomainUser(&user))
+		newUser, err := e.users.Create(r.Context(), models.NewDomainUser(&user))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewUser(newUser, true))
+		respond.JSON(w, http.StatusOK, models.NewUser(newUser, true))
 	}
 }
 
@@ -156,30 +168,33 @@ func (e UserEndpoint) handleCreatePost() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /user/by-id/{id} [put]
 // @Security BasicAuth
-func (e UserEndpoint) handleUpdatePut() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e UserEndpoint) handleUpdatePut() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
 		}
 
 		var user models.User
-		err := c.BindJSON(&user)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+		if err := request.BodyJson(r, &user); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		if err := e.validator.Struct(user); err != nil {
+			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
 
-		updateUser, err := e.users.Update(ctx, domain.UserIdentifier(id), models.NewDomainUser(&user))
+		updateUser, err := e.users.Update(r.Context(), domain.UserIdentifier(id), models.NewDomainUser(&user))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.JSON(http.StatusOK, models.NewUser(updateUser, true))
+		respond.JSON(w, http.StatusOK, models.NewUser(updateUser, true))
 	}
 }
 
@@ -198,22 +213,22 @@ func (e UserEndpoint) handleUpdatePut() gin.HandlerFunc {
 // @Failure 500 {object} models.Error
 // @Router /user/by-id/{id} [delete]
 // @Security BasicAuth
-func (e UserEndpoint) handleDelete() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := domain.SetUserInfoFromGin(c)
-
-		id := c.Param("id")
+func (e UserEndpoint) handleDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := request.Path(r, "id")
 		if id == "" {
-			c.JSON(http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
+			respond.JSON(w, http.StatusBadRequest,
+				models.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
 		}
 
-		err := e.users.Delete(ctx, domain.UserIdentifier(id))
+		err := e.users.Delete(r.Context(), domain.UserIdentifier(id))
 		if err != nil {
-			c.JSON(ParseServiceError(err))
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
 			return
 		}
 
-		c.Status(http.StatusNoContent)
+		respond.Status(w, http.StatusNoContent)
 	}
 }
