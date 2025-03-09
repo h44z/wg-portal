@@ -10,36 +10,42 @@ import (
 
 	"github.com/go-pkgz/routegroup"
 
-	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/core/request"
 	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-type Session interface {
-	// SetData sets the session data for the given context.
-	SetData(ctx context.Context, val SessionData)
-	// GetData returns the session data for the given context. If no data is found, the default session data is returned.
-	GetData(ctx context.Context) SessionData
-	// DestroyData destroys the session data for the given context.
-	DestroyData(ctx context.Context)
-}
-
-type Validator interface {
-	Struct(s interface{}) error
+type AuthenticationService interface {
+	// GetExternalLoginProviders returns a list of all available external login providers.
+	GetExternalLoginProviders(_ context.Context) []domain.LoginProviderInfo
+	// PlainLogin authenticates a user with a username and password.
+	PlainLogin(ctx context.Context, username, password string) (*domain.User, error)
+	// OauthLoginStep1 initiates the OAuth login flow.
+	OauthLoginStep1(_ context.Context, providerId string) (authCodeUrl, state, nonce string, err error)
+	// OauthLoginStep2 completes the OAuth login flow and logins the user in.
+	OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, error)
 }
 
 type AuthEndpoint struct {
-	app           *app.App
+	cfg           *config.Config
+	authService   AuthenticationService
 	authenticator Authenticator
 	session       Session
 	validate      Validator
 }
 
-func NewAuthEndpoint(app *app.App, authenticator Authenticator, session Session, validator Validator) AuthEndpoint {
+func NewAuthEndpoint(
+	cfg *config.Config,
+	authenticator Authenticator,
+	session Session,
+	validator Validator,
+	authService AuthenticationService,
+) AuthEndpoint {
 	return AuthEndpoint{
-		app:           app,
+		cfg:           cfg,
+		authService:   authService,
 		authenticator: authenticator,
 		session:       session,
 		validate:      validator,
@@ -73,7 +79,7 @@ func (e AuthEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 // @Router /auth/providers [get]
 func (e AuthEndpoint) handleExternalLoginProvidersGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		providers := e.app.Authenticator.GetExternalLoginProviders(r.Context())
+		providers := e.authService.GetExternalLoginProviders(r.Context())
 
 		respond.JSON(w, http.StatusOK, model.NewLoginProviderInfos(providers))
 	}
@@ -169,7 +175,7 @@ func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 			return
 		}
 
-		authCodeUrl, state, nonce, err := e.app.Authenticator.OauthLoginStep1(context.Background(), provider)
+		authCodeUrl, state, nonce, err := e.authService.OauthLoginStep1(context.Background(), provider)
 		if err != nil {
 			if autoRedirect && e.isValidReturnUrl(returnTo) {
 				redirectToReturn()
@@ -262,7 +268,8 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 		}
 
 		loginCtx, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
-		user, err := e.app.Authenticator.OauthLoginStep2(loginCtx, provider, currentSession.OauthNonce, oauthCode)
+		user, err := e.authService.OauthLoginStep2(loginCtx, provider, currentSession.OauthNonce,
+			oauthCode)
 		cancel()
 		if err != nil {
 			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
@@ -335,7 +342,8 @@ func (e AuthEndpoint) handleLoginPost() http.HandlerFunc {
 			return
 		}
 
-		user, err := e.app.Authenticator.PlainLogin(context.Background(), loginData.Username, loginData.Password)
+		user, err := e.authService.PlainLogin(context.Background(), loginData.Username,
+			loginData.Password)
 		if err != nil {
 			respond.JSON(w, http.StatusUnauthorized,
 				model.Error{Code: http.StatusUnauthorized, Message: "login failed"})
@@ -372,7 +380,7 @@ func (e AuthEndpoint) handleLogoutPost() http.HandlerFunc {
 
 // isValidReturnUrl checks if the given return URL matches the configured external URL of the application.
 func (e AuthEndpoint) isValidReturnUrl(returnUrl string) bool {
-	if !strings.HasPrefix(returnUrl, e.app.Config.Web.ExternalUrl) {
+	if !strings.HasPrefix(returnUrl, e.cfg.Web.ExternalUrl) {
 		return false
 	}
 

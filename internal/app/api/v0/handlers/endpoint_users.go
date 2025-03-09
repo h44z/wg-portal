@@ -1,26 +1,57 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-pkgz/routegroup"
 
-	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/core/request"
 	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
+type UserService interface {
+	// GetUser returns the user with the given id.
+	GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
+	// GetAllUsers returns all users.
+	GetAllUsers(ctx context.Context) ([]domain.User, error)
+	// UpdateUser updates the user with the given id.
+	UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error)
+	// CreateUser creates a new user.
+	CreateUser(ctx context.Context, user *domain.User) (*domain.User, error)
+	// DeleteUser deletes the user with the given id.
+	DeleteUser(ctx context.Context, id domain.UserIdentifier) error
+	// ActivateApi enables the API for the user with the given id.
+	ActivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
+	// DeactivateApi disables the API for the user with the given id.
+	DeactivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
+	// GetUserPeers returns all peers for the given user.
+	GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error)
+	// GetUserPeerStats returns all peer stats for the given user.
+	GetUserPeerStats(ctx context.Context, id domain.UserIdentifier) ([]domain.PeerStatus, error)
+	// GetUserInterfaces returns all interfaces for the given user.
+	GetUserInterfaces(ctx context.Context, id domain.UserIdentifier) ([]domain.Interface, error)
+}
+
 type UserEndpoint struct {
-	app           *app.App
+	cfg           *config.Config
+	userService   UserService
 	authenticator Authenticator
 	validator     Validator
 }
 
-func NewUserEndpoint(app *app.App, authenticator Authenticator, validator Validator) UserEndpoint {
+func NewUserEndpoint(
+	cfg *config.Config,
+	authenticator Authenticator,
+	validator Validator,
+	userService UserService,
+) UserEndpoint {
 	return UserEndpoint{
-		app:           app,
+		cfg:           cfg,
+		userService:   userService,
 		authenticator: authenticator,
 		validator:     validator,
 	}
@@ -57,7 +88,7 @@ func (e UserEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 // @Router /user/all [get]
 func (e UserEndpoint) handleAllGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		users, err := e.app.GetAllUsers(r.Context())
+		users, err := e.userService.GetAllUsers(r.Context())
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -86,7 +117,7 @@ func (e UserEndpoint) handleSingleGet() http.HandlerFunc {
 			return
 		}
 
-		user, err := e.app.GetUser(r.Context(), domain.UserIdentifier(id))
+		user, err := e.userService.GetUser(r.Context(), domain.UserIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -133,7 +164,7 @@ func (e UserEndpoint) handleUpdatePut() http.HandlerFunc {
 			return
 		}
 
-		updateUser, err := e.app.UpdateUser(r.Context(), model.NewDomainUser(&user))
+		updateUser, err := e.userService.UpdateUser(r.Context(), model.NewDomainUser(&user))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -167,7 +198,7 @@ func (e UserEndpoint) handleCreatePost() http.HandlerFunc {
 			return
 		}
 
-		newUser, err := e.app.CreateUser(r.Context(), model.NewDomainUser(&user))
+		newUser, err := e.userService.CreateUser(r.Context(), model.NewDomainUser(&user))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -198,7 +229,7 @@ func (e UserEndpoint) handlePeersGet() http.HandlerFunc {
 			return
 		}
 
-		peers, err := e.app.GetUserPeers(r.Context(), domain.UserIdentifier(userId))
+		peers, err := e.userService.GetUserPeers(r.Context(), domain.UserIdentifier(userId))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -229,14 +260,14 @@ func (e UserEndpoint) handleStatsGet() http.HandlerFunc {
 			return
 		}
 
-		stats, err := e.app.GetUserPeerStats(r.Context(), domain.UserIdentifier(userId))
+		stats, err := e.userService.GetUserPeerStats(r.Context(), domain.UserIdentifier(userId))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		respond.JSON(w, http.StatusOK, model.NewPeerStats(e.app.Config.Statistics.CollectPeerData, stats))
+		respond.JSON(w, http.StatusOK, model.NewPeerStats(e.cfg.Statistics.CollectPeerData, stats))
 	}
 }
 
@@ -260,7 +291,7 @@ func (e UserEndpoint) handleInterfacesGet() http.HandlerFunc {
 			return
 		}
 
-		peers, err := e.app.GetUserInterfaces(r.Context(), domain.UserIdentifier(userId))
+		peers, err := e.userService.GetUserInterfaces(r.Context(), domain.UserIdentifier(userId))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -290,7 +321,7 @@ func (e UserEndpoint) handleDelete() http.HandlerFunc {
 			return
 		}
 
-		err := e.app.DeleteUser(r.Context(), domain.UserIdentifier(id))
+		err := e.userService.DeleteUser(r.Context(), domain.UserIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -320,7 +351,7 @@ func (e UserEndpoint) handleApiEnablePost() http.HandlerFunc {
 			return
 		}
 
-		user, err := e.app.ActivateApi(r.Context(), domain.UserIdentifier(userId))
+		user, err := e.userService.ActivateApi(r.Context(), domain.UserIdentifier(userId))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -350,7 +381,7 @@ func (e UserEndpoint) handleApiDisablePost() http.HandlerFunc {
 			return
 		}
 
-		user, err := e.app.DeactivateApi(r.Context(), domain.UserIdentifier(userId))
+		user, err := e.userService.DeactivateApi(r.Context(), domain.UserIdentifier(userId))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})

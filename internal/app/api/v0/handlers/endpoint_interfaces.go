@@ -1,29 +1,58 @@
 package handlers
 
 import (
+	"context"
 	"io"
 	"net/http"
 
 	"github.com/go-pkgz/routegroup"
 
-	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/core/request"
 	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-type InterfaceEndpoint struct {
-	app           *app.App
-	authenticator Authenticator
-	validator     Validator
+type InterfaceService interface {
+	// GetInterfaceAndPeers returns the interface with the given id and all peers associated with it.
+	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
+	// PrepareInterface returns a new interface with default values.
+	PrepareInterface(ctx context.Context) (*domain.Interface, error)
+	// CreateInterface creates a new interface.
+	CreateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error)
+	// UpdateInterface updates the interface with the given id.
+	UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, []domain.Peer, error)
+	// DeleteInterface deletes the interface with the given id.
+	DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error
+	// GetAllInterfacesAndPeers returns all interfaces and all peers associated with them.
+	GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interface, [][]domain.Peer, error)
+	// GetInterfaceConfig returns the interface configuration as string.
+	GetInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) (io.Reader, error)
+	// PersistInterfaceConfig persists the interface configuration to a file.
+	PersistInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) error
+	// ApplyPeerDefaults applies the peer defaults to all peers of the given interface.
+	ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error
 }
 
-func NewInterfaceEndpoint(app *app.App, authenticator Authenticator, validator Validator) InterfaceEndpoint {
+type InterfaceEndpoint struct {
+	cfg              *config.Config
+	interfaceService InterfaceService
+	authenticator    Authenticator
+	validator        Validator
+}
+
+func NewInterfaceEndpoint(
+	cfg *config.Config,
+	authenticator Authenticator,
+	validator Validator,
+	interfaceService InterfaceService,
+) InterfaceEndpoint {
 	return InterfaceEndpoint{
-		app:           app,
-		authenticator: authenticator,
-		validator:     validator,
+		cfg:              cfg,
+		interfaceService: interfaceService,
+		authenticator:    authenticator,
+		validator:        validator,
 	}
 }
 
@@ -59,7 +88,7 @@ func (e InterfaceEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 // @Router /interface/prepare [get]
 func (e InterfaceEndpoint) handlePrepareGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		in, err := e.app.PrepareInterface(r.Context())
+		in, err := e.interfaceService.PrepareInterface(r.Context())
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -82,7 +111,7 @@ func (e InterfaceEndpoint) handlePrepareGet() http.HandlerFunc {
 // @Router /interface/all [get]
 func (e InterfaceEndpoint) handleAllGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		interfaces, peers, err := e.app.GetAllInterfacesAndPeers(r.Context())
+		interfaces, peers, err := e.interfaceService.GetAllInterfacesAndPeers(r.Context())
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -114,7 +143,7 @@ func (e InterfaceEndpoint) handleSingleGet() http.HandlerFunc {
 			return
 		}
 
-		iface, peers, err := e.app.GetInterfaceAndPeers(r.Context(), domain.InterfaceIdentifier(id))
+		iface, peers, err := e.interfaceService.GetInterfaceAndPeers(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -146,7 +175,7 @@ func (e InterfaceEndpoint) handleConfigGet() http.HandlerFunc {
 			return
 		}
 
-		config, err := e.app.GetInterfaceConfig(r.Context(), domain.InterfaceIdentifier(id))
+		config, err := e.interfaceService.GetInterfaceConfig(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -203,7 +232,7 @@ func (e InterfaceEndpoint) handleUpdatePut() http.HandlerFunc {
 			return
 		}
 
-		updatedInterface, peers, err := e.app.UpdateInterface(r.Context(), model.NewDomainInterface(&in))
+		updatedInterface, peers, err := e.interfaceService.UpdateInterface(r.Context(), model.NewDomainInterface(&in))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -238,7 +267,7 @@ func (e InterfaceEndpoint) handleCreatePost() http.HandlerFunc {
 			return
 		}
 
-		newInterface, err := e.app.CreateInterface(r.Context(), model.NewDomainInterface(&in))
+		newInterface, err := e.interfaceService.CreateInterface(r.Context(), model.NewDomainInterface(&in))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -269,7 +298,7 @@ func (e InterfaceEndpoint) handlePeersGet() http.HandlerFunc {
 			return
 		}
 
-		_, peers, err := e.app.GetInterfaceAndPeers(r.Context(), domain.InterfaceIdentifier(id))
+		_, peers, err := e.interfaceService.GetInterfaceAndPeers(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -301,7 +330,7 @@ func (e InterfaceEndpoint) handleDelete() http.HandlerFunc {
 			return
 		}
 
-		err := e.app.DeleteInterface(r.Context(), domain.InterfaceIdentifier(id))
+		err := e.interfaceService.DeleteInterface(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -333,7 +362,7 @@ func (e InterfaceEndpoint) handleSaveConfigPost() http.HandlerFunc {
 			return
 		}
 
-		err := e.app.PersistInterfaceConfig(r.Context(), domain.InterfaceIdentifier(id))
+		err := e.interfaceService.PersistInterfaceConfig(r.Context(), domain.InterfaceIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -382,7 +411,7 @@ func (e InterfaceEndpoint) handleApplyPeerDefaultsPost() http.HandlerFunc {
 			return
 		}
 
-		if err := e.app.ApplyPeerDefaults(r.Context(), model.NewDomainInterface(&in)); err != nil {
+		if err := e.interfaceService.ApplyPeerDefaults(r.Context(), model.NewDomainInterface(&in)); err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})

@@ -36,13 +36,6 @@ type Handler interface {
 	RegisterRoutes(g *routegroup.Bundle)
 }
 
-type Authenticator interface {
-	// LoggedIn checks if a user is logged in. If scopes are given, they are validated as well.
-	LoggedIn(scopes ...Scope) func(next http.Handler) http.Handler
-	// UserIdMatch checks if the user id in the session matches the user id in the request. If not, the request is aborted.
-	UserIdMatch(idParameter string) func(next http.Handler) http.Handler
-}
-
 // To compile the API documentation use the
 // api_build_tool
 // command that can be found in the $PROJECT_ROOT/cmd/api_build_tool directory.
@@ -97,6 +90,27 @@ func handleCsrfGet() http.HandlerFunc {
 	}
 }
 
-// region session wrapper
+// region handler-interfaces
 
-// endregion session wrapper
+type Authenticator interface {
+	// LoggedIn checks if a user is logged in. If scopes are given, they are validated as well.
+	LoggedIn(scopes ...Scope) func(next http.Handler) http.Handler
+	// UserIdMatch checks if the user id in the session matches the user id in the request. If not, the request is aborted.
+	UserIdMatch(idParameter string) func(next http.Handler) http.Handler
+}
+
+type Session interface {
+	// SetData sets the session data for the given context.
+	SetData(ctx context.Context, val SessionData)
+	// GetData returns the session data for the given context. If no data is found, the default session data is returned.
+	GetData(ctx context.Context) SessionData
+	// DestroyData destroys the session data for the given context.
+	DestroyData(ctx context.Context)
+}
+
+type Validator interface {
+	// Struct validates the given struct.
+	Struct(s interface{}) error
+}
+
+// endregion handler-interfaces

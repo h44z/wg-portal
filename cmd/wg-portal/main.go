@@ -109,10 +109,10 @@ func main() {
 	apiV0Session := handlersV0.NewSessionWrapper(cfg)
 	apiV0Auth := handlersV0.NewAuthenticationHandler(authenticator, apiV0Session)
 
-	apiV0EndpointAuth := handlersV0.NewAuthEndpoint(backend, apiV0Auth, apiV0Session, validatorManager)
-	apiV0EndpointUsers := handlersV0.NewUserEndpoint(backend, apiV0Auth, validatorManager)
-	apiV0EndpointInterfaces := handlersV0.NewInterfaceEndpoint(backend, apiV0Auth, validatorManager)
-	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(backend, apiV0Auth, validatorManager)
+	apiV0EndpointAuth := handlersV0.NewAuthEndpoint(cfg, apiV0Auth, apiV0Session, validatorManager, backend)
+	apiV0EndpointUsers := handlersV0.NewUserEndpoint(cfg, apiV0Auth, validatorManager, backend)
+	apiV0EndpointInterfaces := handlersV0.NewInterfaceEndpoint(cfg, apiV0Auth, validatorManager, backend)
+	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, backend)
 	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth)
 	apiV0EndpointTest := handlersV0.NewTestEndpoint(apiV0Auth)
 

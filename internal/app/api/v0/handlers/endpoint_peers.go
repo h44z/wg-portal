@@ -1,27 +1,64 @@
 package handlers
 
 import (
+	"context"
 	"io"
 	"net/http"
 
 	"github.com/go-pkgz/routegroup"
 
-	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/core/request"
 	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
+type PeerService interface {
+	// GetInterfaceAndPeers returns the interface with the given id and all peers associated with it.
+	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
+	// PreparePeer returns a new peer with default values for the given interface.
+	PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error)
+	// GetPeer returns the peer with the given id.
+	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
+	// CreatePeer creates a new peer.
+	CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error)
+	// CreateMultiplePeers creates multiple new peers.
+	CreateMultiplePeers(
+		ctx context.Context,
+		interfaceId domain.InterfaceIdentifier,
+		r *domain.PeerCreationRequest,
+	) ([]domain.Peer, error)
+	// UpdatePeer updates the peer with the given id.
+	UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error)
+	// DeletePeer deletes the peer with the given id.
+	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
+	// GetPeerConfig returns the peer configuration for the given id.
+	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	// GetPeerConfigQrCode returns the peer configuration as qr code for the given id.
+	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	// SendPeerEmail sends the peer configuration via email.
+	SendPeerEmail(ctx context.Context, linkOnly bool, peers ...domain.PeerIdentifier) error
+	// GetPeerStats returns the peer stats for the given interface.
+	GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error)
+}
+
 type PeerEndpoint struct {
-	app           *app.App
+	cfg           *config.Config
+	peerService   PeerService
 	authenticator Authenticator
 	validator     Validator
 }
 
-func NewPeerEndpoint(app *app.App, authenticator Authenticator, validator Validator) PeerEndpoint {
+func NewPeerEndpoint(
+	cfg *config.Config,
+	authenticator Authenticator,
+	validator Validator,
+	peerService PeerService,
+) PeerEndpoint {
 	return PeerEndpoint{
-		app:           app,
+		cfg:           cfg,
+		peerService:   peerService,
 		authenticator: authenticator,
 		validator:     validator,
 	}
@@ -69,7 +106,7 @@ func (e PeerEndpoint) handleAllGet() http.HandlerFunc {
 			return
 		}
 
-		_, peers, err := e.app.GetInterfaceAndPeers(r.Context(), domain.InterfaceIdentifier(interfaceId))
+		_, peers, err := e.peerService.GetInterfaceAndPeers(r.Context(), domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -100,7 +137,7 @@ func (e PeerEndpoint) handleSingleGet() http.HandlerFunc {
 			return
 		}
 
-		peer, err := e.app.GetPeer(r.Context(), domain.PeerIdentifier(peerId))
+		peer, err := e.peerService.GetPeer(r.Context(), domain.PeerIdentifier(peerId))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -131,7 +168,7 @@ func (e PeerEndpoint) handlePrepareGet() http.HandlerFunc {
 			return
 		}
 
-		peer, err := e.app.PreparePeer(r.Context(), domain.InterfaceIdentifier(interfaceId))
+		peer, err := e.peerService.PreparePeer(r.Context(), domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -179,7 +216,7 @@ func (e PeerEndpoint) handleCreatePost() http.HandlerFunc {
 			return
 		}
 
-		newPeer, err := e.app.CreatePeer(r.Context(), model.NewDomainPeer(&p))
+		newPeer, err := e.peerService.CreatePeer(r.Context(), model.NewDomainPeer(&p))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -221,7 +258,7 @@ func (e PeerEndpoint) handleCreateMultiplePost() http.HandlerFunc {
 			return
 		}
 
-		newPeers, err := e.app.CreateMultiplePeers(r.Context(), domain.InterfaceIdentifier(interfaceId),
+		newPeers, err := e.peerService.CreateMultiplePeers(r.Context(), domain.InterfaceIdentifier(interfaceId),
 			model.NewDomainPeerCreationRequest(&req))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
@@ -270,7 +307,7 @@ func (e PeerEndpoint) handleUpdatePut() http.HandlerFunc {
 			return
 		}
 
-		updatedPeer, err := e.app.UpdatePeer(r.Context(), model.NewDomainPeer(&p))
+		updatedPeer, err := e.peerService.UpdatePeer(r.Context(), model.NewDomainPeer(&p))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -300,7 +337,7 @@ func (e PeerEndpoint) handleDelete() http.HandlerFunc {
 			return
 		}
 
-		err := e.app.DeletePeer(r.Context(), domain.PeerIdentifier(id))
+		err := e.peerService.DeletePeer(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -332,7 +369,7 @@ func (e PeerEndpoint) handleConfigGet() http.HandlerFunc {
 			return
 		}
 
-		config, err := e.app.GetPeerConfig(r.Context(), domain.PeerIdentifier(id))
+		configTxt, err := e.peerService.GetPeerConfig(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -340,7 +377,7 @@ func (e PeerEndpoint) handleConfigGet() http.HandlerFunc {
 			return
 		}
 
-		configString, err := io.ReadAll(config)
+		configTxtString, err := io.ReadAll(configTxt)
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -348,7 +385,7 @@ func (e PeerEndpoint) handleConfigGet() http.HandlerFunc {
 			return
 		}
 
-		respond.JSON(w, http.StatusOK, string(configString))
+		respond.JSON(w, http.StatusOK, string(configTxtString))
 	}
 }
 
@@ -374,7 +411,7 @@ func (e PeerEndpoint) handleQrCodeGet() http.HandlerFunc {
 			return
 		}
 
-		config, err := e.app.GetPeerConfigQrCode(r.Context(), domain.PeerIdentifier(id))
+		configQr, err := e.peerService.GetPeerConfigQrCode(r.Context(), domain.PeerIdentifier(id))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -382,7 +419,7 @@ func (e PeerEndpoint) handleQrCodeGet() http.HandlerFunc {
 			return
 		}
 
-		configData, err := io.ReadAll(config)
+		configQrData, err := io.ReadAll(configQr)
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -390,7 +427,7 @@ func (e PeerEndpoint) handleQrCodeGet() http.HandlerFunc {
 			return
 		}
 
-		respond.Data(w, http.StatusOK, "image/png", configData)
+		respond.Data(w, http.StatusOK, "image/png", configQrData)
 	}
 }
 
@@ -427,7 +464,7 @@ func (e PeerEndpoint) handleEmailPost() http.HandlerFunc {
 		for i := range req.Identifiers {
 			peerIds[i] = domain.PeerIdentifier(req.Identifiers[i])
 		}
-		if err := e.app.SendPeerEmail(r.Context(), req.LinkOnly, peerIds...); err != nil {
+		if err := e.peerService.SendPeerEmail(r.Context(), req.LinkOnly, peerIds...); err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
@@ -457,13 +494,13 @@ func (e PeerEndpoint) handleStatsGet() http.HandlerFunc {
 			return
 		}
 
-		stats, err := e.app.GetPeerStats(r.Context(), domain.InterfaceIdentifier(interfaceId))
+		stats, err := e.peerService.GetPeerStats(r.Context(), domain.InterfaceIdentifier(interfaceId))
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
 		}
 
-		respond.JSON(w, http.StatusOK, model.NewPeerStats(e.app.Config.Statistics.CollectPeerData, stats))
+		respond.JSON(w, http.StatusOK, model.NewPeerStats(e.cfg.Statistics.CollectPeerData, stats))
 	}
 }

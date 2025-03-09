@@ -79,11 +79,16 @@ func ParseServiceError(err error) (int, models.Error) {
 	}
 }
 
+// region handler-interfaces
+
 type Authenticator interface {
 	// LoggedIn checks if a user is logged in. If scopes are given, they are validated as well.
 	LoggedIn(scopes ...Scope) func(next http.Handler) http.Handler
 }
 
 type Validator interface {
+	// Struct validates the given struct.
 	Struct(s interface{}) error
 }
+
+// endregion handler-interfaces
