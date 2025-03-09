@@ -7,8 +7,7 @@ import { base64_url_encode } from '@/helpers/encoding';
 
 const baseUrl = `/interface`
 
-export const interfaceStore = defineStore({
-  id: 'interfaces',
+export const interfaceStore = defineStore('interfaces', {
   state: () => ({
     interfaces: [],
     prepared: freshInterface(),

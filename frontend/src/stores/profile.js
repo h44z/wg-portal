@@ -8,8 +8,7 @@ import { ipToBigInt } from '@/helpers/utils';
 
 const baseUrl = `/user`
 
-export const profileStore = defineStore({
-  id: 'profile',
+export const profileStore = defineStore('profile', {
   state: () => ({
     peers: [],
     interfaces: [],
