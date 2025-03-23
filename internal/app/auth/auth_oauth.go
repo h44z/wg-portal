@@ -16,6 +16,8 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
+// PlainOauthAuthenticator is an authenticator that uses OAuth for authentication.
+// User information is retrieved from the specified user info endpoint.
 type PlainOauthAuthenticator struct {
 	name                string
 	cfg                 *oauth2.Config
@@ -58,22 +60,27 @@ func newPlainOauthAuthenticator(
 	return provider, nil
 }
 
+// GetName returns the name of the OAuth authenticator.
 func (p PlainOauthAuthenticator) GetName() string {
 	return p.name
 }
 
+// RegistrationEnabled returns whether registration is enabled for the OAuth authenticator.
 func (p PlainOauthAuthenticator) RegistrationEnabled() bool {
 	return p.registrationEnabled
 }
 
-func (p PlainOauthAuthenticator) GetType() domain.AuthenticatorType {
-	return domain.AuthenticatorTypeOAuth
+// GetType returns the type of the authenticator.
+func (p PlainOauthAuthenticator) GetType() AuthenticatorType {
+	return AuthenticatorTypeOAuth
 }
 
+// AuthCodeURL returns the URL to redirect the user to for authentication.
 func (p PlainOauthAuthenticator) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string {
 	return p.cfg.AuthCodeURL(state, opts...)
 }
 
+// Exchange exchanges the OAuth code for a token.
 func (p PlainOauthAuthenticator) Exchange(
 	ctx context.Context,
 	code string,
@@ -82,6 +89,7 @@ func (p PlainOauthAuthenticator) Exchange(
 	return p.cfg.Exchange(ctx, code, opts...)
 }
 
+// GetUserInfo retrieves the user information from the user info endpoint.
 func (p PlainOauthAuthenticator) GetUserInfo(
 	ctx context.Context,
 	token *oauth2.Token,
@@ -119,6 +127,7 @@ func (p PlainOauthAuthenticator) GetUserInfo(
 	return userFields, nil
 }
 
+// ParseUserInfo parses the user information from the raw data.
 func (p PlainOauthAuthenticator) ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error) {
 	return parseOauthUserInfo(p.userInfoMapping, p.userAdminMapping, raw)
 }

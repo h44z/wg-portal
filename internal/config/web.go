@@ -1,5 +1,6 @@
 package config
 
+// WebConfig contains the configuration for the web server.
 type WebConfig struct {
 	// RequestLogging enables logging of all HTTP requests.
 	RequestLogging bool `yaml:"request_logging"`

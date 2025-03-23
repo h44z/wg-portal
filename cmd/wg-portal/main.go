@@ -14,6 +14,7 @@ import (
 	"github.com/h44z/wg-portal/internal/adapters"
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/api/core"
+	backendV0 "github.com/h44z/wg-portal/internal/app/api/v0/backend"
 	handlersV0 "github.com/h44z/wg-portal/internal/app/api/v0/handlers"
 	backendV1 "github.com/h44z/wg-portal/internal/app/api/v1/backend"
 	handlersV1 "github.com/h44z/wg-portal/internal/app/api/v1/handlers"
@@ -70,17 +71,24 @@ func main() {
 	queueSize := 100
 	eventBus := evbus.New(queueSize)
 
+	auditRecorder, err := audit.NewAuditRecorder(cfg, eventBus, database)
+	internal.AssertNoError(err)
+	auditRecorder.StartBackgroundJobs(ctx)
+
 	userManager, err := users.NewUserManager(cfg, eventBus, database, database)
 	internal.AssertNoError(err)
+	userManager.StartBackgroundJobs(ctx)
 
 	authenticator, err := auth.NewAuthenticator(&cfg.Auth, cfg.Web.ExternalUrl, eventBus, userManager)
 	internal.AssertNoError(err)
 
 	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, wgQuick, database)
 	internal.AssertNoError(err)
+	wireGuardManager.StartBackgroundJobs(ctx)
 
 	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, eventBus, database, wireGuard, metricsServer)
 	internal.AssertNoError(err)
+	statisticsCollector.StartBackgroundJobs(ctx)
 
 	cfgFileManager, err := configfile.NewConfigFileManager(cfg, eventBus, database, database, cfgFileSystem)
 	internal.AssertNoError(err)
@@ -88,18 +96,11 @@ func main() {
 	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)
 	internal.AssertNoError(err)
 
-	auditRecorder, err := audit.NewAuditRecorder(cfg, eventBus, database)
-	internal.AssertNoError(err)
-	auditRecorder.StartBackgroundJobs(ctx)
-
 	routeManager, err := route.NewRouteManager(cfg, eventBus, database)
 	internal.AssertNoError(err)
 	routeManager.StartBackgroundJobs(ctx)
 
-	backend, err := app.New(cfg, eventBus, authenticator, userManager, wireGuardManager,
-		statisticsCollector, cfgFileManager, mailManager)
-	internal.AssertNoError(err)
-	err = backend.Startup(ctx)
+	err = app.Initialize(cfg, wireGuardManager, userManager)
 	internal.AssertNoError(err)
 
 	validatorManager := validator.New()
@@ -109,10 +110,14 @@ func main() {
 	apiV0Session := handlersV0.NewSessionWrapper(cfg)
 	apiV0Auth := handlersV0.NewAuthenticationHandler(authenticator, apiV0Session)
 
-	apiV0EndpointAuth := handlersV0.NewAuthEndpoint(cfg, apiV0Auth, apiV0Session, validatorManager, backend)
-	apiV0EndpointUsers := handlersV0.NewUserEndpoint(cfg, apiV0Auth, validatorManager, backend)
-	apiV0EndpointInterfaces := handlersV0.NewInterfaceEndpoint(cfg, apiV0Auth, validatorManager, backend)
-	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, backend)
+	apiV0BackendUsers := backendV0.NewUserService(cfg, userManager, wireGuardManager)
+	apiV0BackendInterfaces := backendV0.NewInterfaceService(cfg, wireGuardManager, cfgFileManager)
+	apiV0BackendPeers := backendV0.NewPeerService(cfg, wireGuardManager, cfgFileManager, mailManager)
+
+	apiV0EndpointAuth := handlersV0.NewAuthEndpoint(cfg, apiV0Auth, apiV0Session, validatorManager, authenticator)
+	apiV0EndpointUsers := handlersV0.NewUserEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendUsers)
+	apiV0EndpointInterfaces := handlersV0.NewInterfaceEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendInterfaces)
+	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendPeers)
 	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth)
 	apiV0EndpointTest := handlersV0.NewTestEndpoint(apiV0Auth)
 

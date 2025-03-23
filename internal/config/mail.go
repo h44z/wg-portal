@@ -1,5 +1,7 @@
 package config
 
+// MailEncryption is the type of the SMTP encryption.
+// Supported: none, tls, starttls
 type MailEncryption string
 
 const (
@@ -8,6 +10,8 @@ const (
 	MailEncryptionStartTLS MailEncryption = "starttls"
 )
 
+// MailAuthType is the type of the SMTP authentication.
+// Supported: plain, login, crammd5
 type MailAuthType string
 
 const (
@@ -16,6 +20,7 @@ const (
 	MailAuthCramMD5 MailAuthType = "crammd5"
 )
 
+// MailConfig contains the configuration for the mail server which is used to send emails.
 type MailConfig struct {
 	// Host is the hostname or IP of the SMTP server
 	Host string `yaml:"host"`

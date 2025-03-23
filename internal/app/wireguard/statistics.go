@@ -7,31 +7,63 @@ import (
 	"time"
 
 	probing "github.com/prometheus-community/pro-bing"
-	evbus "github.com/vardius/message-bus"
 
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
+type StatisticsDatabaseRepo interface {
+	GetAllInterfaces(ctx context.Context) ([]domain.Interface, error)
+	GetInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.Peer, error)
+	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
+	UpdatePeerStatus(
+		ctx context.Context,
+		id domain.PeerIdentifier,
+		updateFunc func(in *domain.PeerStatus) (*domain.PeerStatus, error),
+	) error
+	UpdateInterfaceStatus(
+		ctx context.Context,
+		id domain.InterfaceIdentifier,
+		updateFunc func(in *domain.InterfaceStatus) (*domain.InterfaceStatus, error),
+	) error
+	DeletePeerStatus(ctx context.Context, id domain.PeerIdentifier) error
+}
+
+type StatisticsInterfaceController interface {
+	GetInterface(_ context.Context, id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error)
+	GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier) ([]domain.PhysicalPeer, error)
+}
+
+type StatisticsMetricsServer interface {
+	UpdateInterfaceMetrics(status domain.InterfaceStatus)
+	UpdatePeerMetrics(peer *domain.Peer, status domain.PeerStatus)
+}
+
+type StatisticsEventBus interface {
+	// Subscribe subscribes to a topic
+	Subscribe(topic string, fn interface{}) error
+}
+
 type StatisticsCollector struct {
 	cfg *config.Config
-	bus evbus.MessageBus
+	bus StatisticsEventBus
 
 	pingWaitGroup sync.WaitGroup
 	pingJobs      chan domain.Peer
 
 	db StatisticsDatabaseRepo
-	wg InterfaceController
-	ms MetricsServer
+	wg StatisticsInterfaceController
+	ms StatisticsMetricsServer
 }
 
+// NewStatisticsCollector creates a new statistics collector.
 func NewStatisticsCollector(
 	cfg *config.Config,
-	bus evbus.MessageBus,
+	bus StatisticsEventBus,
 	db StatisticsDatabaseRepo,
-	wg InterfaceController,
-	ms MetricsServer,
+	wg StatisticsInterfaceController,
+	ms StatisticsMetricsServer,
 ) (*StatisticsCollector, error) {
 	c := &StatisticsCollector{
 		cfg: cfg,
@@ -47,6 +79,8 @@ func NewStatisticsCollector(
 	return c, nil
 }
 
+// StartBackgroundJobs starts the background jobs for the statistics collector.
+// This method is non-blocking and returns immediately.
 func (c *StatisticsCollector) StartBackgroundJobs(ctx context.Context) {
 	c.startPingWorkers(ctx)
 	c.startInterfaceDataFetcher(ctx)

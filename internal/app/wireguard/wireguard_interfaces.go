@@ -13,6 +13,8 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
+// GetImportableInterfaces returns all physical interfaces that are available on the system.
+// This function also returns interfaces that are already available in the database.
 func (m Manager) GetImportableInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, err
@@ -26,6 +28,7 @@ func (m Manager) GetImportableInterfaces(ctx context.Context) ([]domain.Physical
 	return physicalInterfaces, nil
 }
 
+// GetInterfaceAndPeers returns the interface and all peers for the given interface identifier.
 func (m Manager) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (
 	*domain.Interface,
 	[]domain.Peer,
@@ -38,6 +41,7 @@ func (m Manager) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceId
 	return m.db.GetInterfaceAndPeers(ctx, id)
 }
 
+// GetAllInterfaces returns all interfaces that are available in the database.
 func (m Manager) GetAllInterfaces(ctx context.Context) ([]domain.Interface, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, err
@@ -46,6 +50,7 @@ func (m Manager) GetAllInterfaces(ctx context.Context) ([]domain.Interface, erro
 	return m.db.GetAllInterfaces(ctx)
 }
 
+// GetAllInterfacesAndPeers returns all interfaces and their peers.
 func (m Manager) GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interface, [][]domain.Peer, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, nil, err
@@ -97,6 +102,7 @@ func (m Manager) GetUserInterfaces(ctx context.Context, _ domain.UserIdentifier)
 	return userInterfaces, nil
 }
 
+// ImportNewInterfaces imports all new physical interfaces that are available on the system.
 func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) (int, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return 0, err
@@ -148,6 +154,7 @@ func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.Inter
 	return imported, nil
 }
 
+// ApplyPeerDefaults applies the interface defaults to all peers of the given interface.
 func (m Manager) ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return err
@@ -179,6 +186,8 @@ func (m Manager) ApplyPeerDefaults(ctx context.Context, in *domain.Interface) er
 	return nil
 }
 
+// RestoreInterfaceState restores the state of all physical interfaces and their peers.
+// The final state of the interfaces and peers will be the same as stored in the database.
 func (m Manager) RestoreInterfaceState(
 	ctx context.Context,
 	updateDbOnError bool,
@@ -296,6 +305,7 @@ func (m Manager) RestoreInterfaceState(
 	return nil
 }
 
+// PrepareInterface generates a new interface with fresh keys, ip addresses and a listen port.
 func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, err
@@ -376,6 +386,7 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 	return freshInterface, nil
 }
 
+// CreateInterface creates a new interface with the given configuration.
 func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, err
@@ -401,6 +412,7 @@ func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*do
 	return in, nil
 }
 
+// UpdateInterface updates the given interface with the new configuration.
 func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, []domain.Peer, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return nil, nil, err
@@ -423,6 +435,7 @@ func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*do
 	return in, existingPeers, nil
 }
 
+// DeleteInterface deletes the given interface.
 func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return err

@@ -2,6 +2,8 @@ package config
 
 import "time"
 
+// SupportedDatabase is a type for the supported database types.
+// Supported: mysql, mssql, postgres, sqlite
 type SupportedDatabase string
 
 const (
@@ -11,6 +13,7 @@ const (
 	DatabaseSQLite   SupportedDatabase = "sqlite"
 )
 
+// DatabaseConfig contains the configuration for the database connection.
 type DatabaseConfig struct {
 	// Debug enables logging of all database statements
 	Debug bool `yaml:"debug"`

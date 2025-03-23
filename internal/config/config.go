@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Config is the main configuration struct.
 type Config struct {
 	Core struct {
 		// AdminUser defines the default administrator account that will be created
@@ -179,6 +180,7 @@ func GetConfig() (*Config, error) {
 	return cfg, nil
 }
 
+// loadConfigFile loads the configuration from a YAML file into the given cfg struct.
 func loadConfigFile(cfg any, filename string) error {
 	data, err := envsubst.ReadFile(filename)
 	if err != nil {

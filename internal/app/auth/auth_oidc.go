@@ -14,6 +14,7 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
+// OidcAuthenticator is an authenticator for OpenID Connect providers.
 type OidcAuthenticator struct {
 	name                string
 	provider            *oidc.Provider
@@ -60,22 +61,27 @@ func newOidcAuthenticator(
 	return provider, nil
 }
 
+// GetName returns the name of the authenticator.
 func (o OidcAuthenticator) GetName() string {
 	return o.name
 }
 
+// RegistrationEnabled returns whether registration is enabled for this authenticator.
 func (o OidcAuthenticator) RegistrationEnabled() bool {
 	return o.registrationEnabled
 }
 
-func (o OidcAuthenticator) GetType() domain.AuthenticatorType {
-	return domain.AuthenticatorTypeOidc
+// GetType returns the type of the authenticator.
+func (o OidcAuthenticator) GetType() AuthenticatorType {
+	return AuthenticatorTypeOidc
 }
 
+// AuthCodeURL returns the URL for the OAuth2 flow.
 func (o OidcAuthenticator) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string {
 	return o.cfg.AuthCodeURL(state, opts...)
 }
 
+// Exchange exchanges the code for a token.
 func (o OidcAuthenticator) Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (
 	*oauth2.Token,
 	error,
@@ -83,6 +89,7 @@ func (o OidcAuthenticator) Exchange(ctx context.Context, code string, opts ...oa
 	return o.cfg.Exchange(ctx, code, opts...)
 }
 
+// GetUserInfo retrieves the user info from the token.
 func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token, nonce string) (
 	map[string]any,
 	error,
@@ -114,6 +121,7 @@ func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 	return tokenFields, nil
 }
 
+// ParseUserInfo parses the user info.
 func (o OidcAuthenticator) ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error) {
 	return parseOauthUserInfo(o.userInfoMapping, o.userAdminMapping, raw)
 }

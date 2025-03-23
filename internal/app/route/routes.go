@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	evbus "github.com/vardius/message-bus"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 	"golang.zx2c4.com/wireguard/wgctrl"
@@ -16,6 +15,22 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/h44z/wg-portal/internal/lowlevel"
 )
+
+// region dependencies
+
+type InterfaceAndPeerDatabaseRepo interface {
+	// GetAllInterfaces returns all interfaces
+	GetAllInterfaces(ctx context.Context) ([]domain.Interface, error)
+	// GetInterfacePeers returns all peers for a given interface
+	GetInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.Peer, error)
+}
+
+type EventBus interface {
+	// Subscribe subscribes to a topic
+	Subscribe(topic string, fn interface{}) error
+}
+
+// endregion dependencies
 
 type routeRuleInfo struct {
 	ifaceId    domain.InterfaceIdentifier
@@ -29,14 +44,15 @@ type routeRuleInfo struct {
 // for default routes.
 type Manager struct {
 	cfg *config.Config
-	bus evbus.MessageBus
 
-	wg lowlevel.WireGuardClient
-	nl lowlevel.NetlinkClient
-	db InterfaceAndPeerDatabaseRepo
+	bus EventBus
+	wg  lowlevel.WireGuardClient
+	nl  lowlevel.NetlinkClient
+	db  InterfaceAndPeerDatabaseRepo
 }
 
-func NewRouteManager(cfg *config.Config, bus evbus.MessageBus, db InterfaceAndPeerDatabaseRepo) (*Manager, error) {
+// NewRouteManager creates a new route manager instance.
+func NewRouteManager(cfg *config.Config, bus EventBus, db InterfaceAndPeerDatabaseRepo) (*Manager, error) {
 	wg, err := wgctrl.New()
 	if err != nil {
 		panic("failed to init wgctrl: " + err.Error())
@@ -63,7 +79,10 @@ func (m Manager) connectToMessageBus() {
 	_ = m.bus.Subscribe(app.TopicRouteRemove, m.handleRouteRemoveEvent)
 }
 
+// StartBackgroundJobs starts background jobs for the route manager.
+// This method is non-blocking and returns immediately.
 func (m Manager) StartBackgroundJobs(_ context.Context) {
+	// this is a no-op for now
 }
 
 func (m Manager) handleRouteUpdateEvent(srcDescription string) {

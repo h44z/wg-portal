@@ -33,6 +33,7 @@ func (p KeyPair) GetPublicKey() wgtypes.Key {
 
 type PreSharedKey string
 
+// NewFreshKeypair generates a new key pair.
 func NewFreshKeypair() (KeyPair, error) {
 	privateKey, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
@@ -45,6 +46,7 @@ func NewFreshKeypair() (KeyPair, error) {
 	}, nil
 }
 
+// NewPreSharedKey generates a new pre-shared key.
 func NewPreSharedKey() (PreSharedKey, error) {
 	preSharedKey, err := wgtypes.GenerateKey()
 	if err != nil {
@@ -54,6 +56,8 @@ func NewPreSharedKey() (PreSharedKey, error) {
 	return PreSharedKey(preSharedKey.String()), nil
 }
 
+// PublicKeyFromPrivateKey returns the public key for a given private key.
+// If the private key is invalid, an empty string is returned.
 func PublicKeyFromPrivateKey(key string) string {
 	privKey, err := wgtypes.ParseKey(key)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
+// Auth contains all authentication providers.
 type Auth struct {
 	// OpenIDConnect contains a list of OpenID Connect providers.
 	OpenIDConnect []OpenIDConnectProvider `yaml:"oidc"`
@@ -17,6 +18,7 @@ type Auth struct {
 	Ldap []LdapProvider `yaml:"ldap"`
 }
 
+// BaseFields contains the basic fields that are used to map user information from the authentication providers.
 type BaseFields struct {
 	// UserIdentifier is the name of the field that contains the user identifier.
 	UserIdentifier string `yaml:"user_identifier"`
@@ -32,6 +34,7 @@ type BaseFields struct {
 	Department string `yaml:"department"`
 }
 
+// OauthFields contains extra fields that are used to map user information from OAuth providers.
 type OauthFields struct {
 	BaseFields `yaml:",inline"`
 	// IsAdmin is the name of the field that contains the admin flag.
@@ -107,12 +110,14 @@ func (o *OauthAdminMapping) GetAdminGroupRegex() *regexp.Regexp {
 	return o.adminGroupRegex
 }
 
+// LdapFields contains extra fields that are used to map user information from LDAP providers.
 type LdapFields struct {
 	BaseFields `yaml:",inline"`
 	// GroupMembership is the name of the LDAP field that contains the groups to which the user belongs.
 	GroupMembership string `yaml:"memberof"`
 }
 
+// LdapProvider contains the configuration for the LDAP connection.
 type LdapProvider struct {
 	// ProviderName is an internal name that is used to distinguish LDAP servers. It must not contain spaces or special characters.
 	ProviderName string `yaml:"provider_name"`
@@ -163,6 +168,7 @@ type LdapProvider struct {
 	LogUserInfo bool `yaml:"log_user_info"`
 }
 
+// OpenIDConnectProvider contains the configuration for the OpenID Connect provider.
 type OpenIDConnectProvider struct {
 	// ProviderName is an internal name that is used to distinguish oauth endpoints. It must not contain spaces or special characters.
 	ProviderName string `yaml:"provider_name"`
@@ -196,6 +202,7 @@ type OpenIDConnectProvider struct {
 	LogUserInfo bool `yaml:"log_user_info"`
 }
 
+// OAuthProvider contains the configuration for the OAuth provider.
 type OAuthProvider struct {
 	// ProviderName is an internal name that is used to distinguish oauth endpoints. It must not contain spaces or special characters.
 	ProviderName string `yaml:"provider_name"`

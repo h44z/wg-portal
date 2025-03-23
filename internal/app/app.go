@@ -7,46 +7,43 @@ import (
 	"log/slog"
 	"time"
 
-	evbus "github.com/vardius/message-bus"
-
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-type App struct {
-	Config *config.Config
-	bus    evbus.MessageBus
+// region dependencies
 
-	Authenticator
-	UserManager
-	WireGuardManager
-	StatisticsCollector
-	ConfigFileManager
-	MailManager
-	ApiV1Manager
+type WireGuardManager interface {
+	ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) (int, error)
+	RestoreInterfaceState(ctx context.Context, updateDbOnError bool, filter ...domain.InterfaceIdentifier) error
 }
 
-func New(
+type UserManager interface {
+	GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
+	CreateUser(ctx context.Context, user *domain.User) (*domain.User, error)
+}
+
+// endregion dependencies
+
+// App is the main application struct.
+type App struct {
+	cfg *config.Config
+
+	wg    WireGuardManager
+	users UserManager
+}
+
+// Initialize creates a new App instance and initializes it.
+func Initialize(
 	cfg *config.Config,
-	bus evbus.MessageBus,
-	authenticator Authenticator,
+	wg WireGuardManager,
 	users UserManager,
-	wireGuard WireGuardManager,
-	stats StatisticsCollector,
-	cfgFiles ConfigFileManager,
-	mailer MailManager,
-) (*App, error) {
-
+) error {
 	a := &App{
-		Config: cfg,
-		bus:    bus,
+		cfg: cfg,
 
-		Authenticator:       authenticator,
-		UserManager:         users,
-		WireGuardManager:    wireGuard,
-		StatisticsCollector: stats,
-		ConfigFileManager:   cfgFiles,
-		MailManager:         mailer,
+		wg:    wg,
+		users: users,
 	}
 
 	startupContext, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -56,36 +53,27 @@ func New(
 	startupContext = domain.SetUserInfo(startupContext, domain.SystemAdminContextUserInfo())
 
 	if err := a.createDefaultUser(startupContext); err != nil {
-		return nil, fmt.Errorf("failed to create default user: %w", err)
+		return fmt.Errorf("failed to create default user: %w", err)
 	}
 
 	if err := a.importNewInterfaces(startupContext); err != nil {
-		return nil, fmt.Errorf("failed to import new interfaces: %w", err)
+		return fmt.Errorf("failed to import new interfaces: %w", err)
 	}
 
 	if err := a.restoreInterfaceState(startupContext); err != nil {
-		return nil, fmt.Errorf("failed to restore interface state: %w", err)
+		return fmt.Errorf("failed to restore interface state: %w", err)
 	}
-
-	return a, nil
-}
-
-func (a *App) Startup(ctx context.Context) error {
-
-	a.UserManager.StartBackgroundJobs(ctx)
-	a.StatisticsCollector.StartBackgroundJobs(ctx)
-	a.WireGuardManager.StartBackgroundJobs(ctx)
 
 	return nil
 }
 
 func (a *App) importNewInterfaces(ctx context.Context) error {
-	if !a.Config.Core.ImportExisting {
+	if !a.cfg.Core.ImportExisting {
 		slog.Debug("skipping interface import - feature disabled")
 		return nil // feature disabled
 	}
 
-	importedCount, err := a.ImportNewInterfaces(ctx)
+	importedCount, err := a.wg.ImportNewInterfaces(ctx)
 	if err != nil {
 		return err
 	}
@@ -97,12 +85,12 @@ func (a *App) importNewInterfaces(ctx context.Context) error {
 }
 
 func (a *App) restoreInterfaceState(ctx context.Context) error {
-	if !a.Config.Core.RestoreState {
+	if !a.cfg.Core.RestoreState {
 		slog.Debug("skipping interface state restore - feature disabled")
 		return nil // feature disabled
 	}
 
-	err := a.RestoreInterfaceState(ctx, true)
+	err := a.wg.RestoreInterfaceState(ctx, true)
 	if err != nil {
 		return err
 	}
@@ -112,13 +100,13 @@ func (a *App) restoreInterfaceState(ctx context.Context) error {
 }
 
 func (a *App) createDefaultUser(ctx context.Context) error {
-	adminUserId := domain.UserIdentifier(a.Config.Core.AdminUser)
+	adminUserId := domain.UserIdentifier(a.cfg.Core.AdminUser)
 	if adminUserId == "" {
 		slog.Debug("skipping default user creation - admin user is blank")
 		return nil // empty admin user - do not create
 	}
 
-	_, err := a.GetUser(ctx, adminUserId)
+	_, err := a.users.GetUser(ctx, adminUserId)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return err
 	}
@@ -145,22 +133,22 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 		Phone:           "",
 		Department:      "",
 		Notes:           "default administrator user",
-		Password:        domain.PrivateString(a.Config.Core.AdminPassword),
+		Password:        domain.PrivateString(a.cfg.Core.AdminPassword),
 		Disabled:        nil,
 		DisabledReason:  "",
 		Locked:          nil,
 		LockedReason:    "",
 		LinkedPeerCount: 0,
 	}
-	if a.Config.Core.AdminApiToken != "" {
-		if len(a.Config.Core.AdminApiToken) < 18 {
+	if a.cfg.Core.AdminApiToken != "" {
+		if len(a.cfg.Core.AdminApiToken) < 18 {
 			slog.Warn("admin API token is too short, should be at least 18 characters long")
 		}
-		defaultAdmin.ApiToken = a.Config.Core.AdminApiToken
+		defaultAdmin.ApiToken = a.cfg.Core.AdminApiToken
 		defaultAdmin.ApiTokenCreated = &now
 	}
 
-	admin, err := a.CreateUser(ctx, defaultAdmin)
+	admin, err := a.users.CreateUser(ctx, defaultAdmin)
 	if err != nil {
 		return err
 	}

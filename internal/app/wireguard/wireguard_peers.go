@@ -11,6 +11,7 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
+// CreateDefaultPeer creates a default peer for the given user on all server interfaces.
 func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdentifier) error {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return err
@@ -55,6 +56,7 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdenti
 	return nil
 }
 
+// GetUserPeers returns all peers for the given user.
 func (m Manager) GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error) {
 	if err := domain.ValidateUserAccessRights(ctx, id); err != nil {
 		return nil, err
@@ -63,6 +65,7 @@ func (m Manager) GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]
 	return m.db.GetUserPeers(ctx, id)
 }
 
+// PreparePeer prepares a new peer for the given interface with fresh keys and ip addresses.
 func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error) {
 	if !m.cfg.Core.SelfProvisioningAllowed {
 		if err := domain.ValidateAdminAccessRights(ctx); err != nil {
@@ -143,6 +146,7 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 	return freshPeer, nil
 }
 
+// GetPeer returns the peer with the given identifier.
 func (m Manager) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error) {
 	peer, err := m.db.GetPeer(ctx, id)
 	if err != nil {
@@ -156,6 +160,7 @@ func (m Manager) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain
 	return peer, nil
 }
 
+// CreatePeer creates a new peer.
 func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error) {
 	if !m.cfg.Core.SelfProvisioningAllowed {
 		if err := domain.ValidateAdminAccessRights(ctx); err != nil {
@@ -201,6 +206,8 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 	return peer, nil
 }
 
+// CreateMultiplePeers creates multiple new peers for the given user identifiers.
+// It calls PreparePeer for each user identifier in the request.
 func (m Manager) CreateMultiplePeers(
 	ctx context.Context,
 	interfaceId domain.InterfaceIdentifier,
@@ -243,6 +250,7 @@ func (m Manager) CreateMultiplePeers(
 	return createdPeers, nil
 }
 
+// UpdatePeer updates the given peer.
 func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error) {
 	existingPeer, err := m.db.GetPeer(ctx, peer.Identifier)
 	if err != nil {
@@ -309,6 +317,7 @@ func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 	return peer, nil
 }
 
+// DeletePeer deletes the peer with the given identifier.
 func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error {
 	peer, err := m.db.GetPeer(ctx, id)
 	if err != nil {
@@ -341,6 +350,7 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	return nil
 }
 
+// GetPeerStats returns the status of the peer with the given identifier.
 func (m Manager) GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error) {
 	_, peers, err := m.db.GetInterfaceAndPeers(ctx, id)
 	if err != nil {
@@ -359,6 +369,7 @@ func (m Manager) GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier
 	return m.db.GetPeersStats(ctx, peerIds...)
 }
 
+// GetUserPeerStats returns the status of all peers for the given user.
 func (m Manager) GetUserPeerStats(ctx context.Context, id domain.UserIdentifier) ([]domain.PeerStatus, error) {
 	if err := domain.ValidateUserAccessRights(ctx, id); err != nil {
 		return nil, err
