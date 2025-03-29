@@ -3,15 +3,11 @@ import {userStore} from "@/stores/users";
 import {ref,onMounted} from "vue";
 import UserEditModal from "../components/UserEditModal.vue";
 import UserViewModal from "../components/UserViewModal.vue";
-import {notify} from "@kyvg/vue3-notification";
-import {settingsStore} from "@/stores/settings";
 
-const settings = settingsStore()
 const users = userStore()
 
 const editUserId = ref("")
 const viewedUserId = ref("")
-
 
 const selectAll = ref(false)
 

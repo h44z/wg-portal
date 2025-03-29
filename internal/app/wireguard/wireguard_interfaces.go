@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/audit"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -549,6 +550,13 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 	}
 
 	m.bus.Publish(app.TopicInterfaceUpdated, iface)
+	m.bus.Publish(app.TopicAuditInterfaceChanged, domain.AuditEventWrapper[audit.InterfaceEvent]{
+		Ctx: ctx,
+		Event: audit.InterfaceEvent{
+			Interface: *iface,
+			Action:    "save",
+		},
+	})
 
 	return iface, nil
 }

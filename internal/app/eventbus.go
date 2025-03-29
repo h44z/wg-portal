@@ -13,3 +13,9 @@ const TopicRouteRemove = "route:remove"
 const TopicInterfaceUpdated = "interface:updated"
 const TopicPeerInterfaceUpdated = "peer:interface:updated"
 const TopicPeerIdentifierUpdated = "peer:identifier:updated"
+
+const TopicAuditLoginSuccess = "audit:login:success"
+const TopicAuditLoginFailed = "audit:login:failed"
+
+const TopicAuditInterfaceChanged = "audit:interface:changed"
+const TopicAuditPeerChanged = "audit:peer:changed"

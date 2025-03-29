@@ -1,13 +1,8 @@
 <script setup>
-import PeerViewModal from "../components/PeerViewModal.vue";
-
-import { onMounted, ref } from "vue";
+import { onMounted } from "vue";
 import { profileStore } from "@/stores/profile";
-import PeerEditModal from "@/components/PeerEditModal.vue";
 import { settingsStore } from "@/stores/settings";
-import { humanFileSize } from "@/helpers/utils";
-import {RouterLink} from "vue-router";
-import {authStore} from "../stores/auth";
+import { authStore } from "../stores/auth";
 
 const profile = profileStore()
 const settings = settingsStore()

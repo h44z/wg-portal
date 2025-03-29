@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/audit"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -425,6 +426,15 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 		if err != nil {
 			return fmt.Errorf("save failure for peer %s: %w", peer.Identifier, err)
 		}
+
+		// publish event
+		m.bus.Publish(app.TopicAuditPeerChanged, domain.AuditEventWrapper[audit.PeerEvent]{
+			Ctx: ctx,
+			Event: audit.PeerEvent{
+				Action: "save",
+				Peer:   *peer,
+			},
+		})
 
 		interfaces[peer.InterfaceIdentifier] = struct{}{}
 	}

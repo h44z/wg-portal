@@ -17,6 +17,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/audit"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -245,10 +246,24 @@ func (a *Authenticator) PlainLogin(ctx context.Context, username, password strin
 
 	user, err := a.passwordAuthentication(ctx, domain.UserIdentifier(username), password)
 	if err != nil {
+		a.bus.Publish(app.TopicAuditLoginFailed, domain.AuditEventWrapper[audit.AuthEvent]{
+			Ctx:    ctx,
+			Source: "plain",
+			Event: audit.AuthEvent{
+				Username: username, Error: err.Error(),
+			},
+		})
 		return nil, fmt.Errorf("login failed: %w", err)
 	}
 
 	a.bus.Publish(app.TopicAuthLogin, user.Identifier)
+	a.bus.Publish(app.TopicAuditLoginSuccess, domain.AuditEventWrapper[audit.AuthEvent]{
+		Ctx:    ctx,
+		Source: "plain",
+		Event: audit.AuthEvent{
+			Username: string(user.Identifier),
+		},
+	})
 
 	return user, nil
 }
@@ -405,14 +420,37 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 	user, err := a.processUserInfo(ctx, userInfo, domain.UserSourceOauth, oauthProvider.GetName(),
 		oauthProvider.RegistrationEnabled())
 	if err != nil {
+		a.bus.Publish(app.TopicAuditLoginFailed, domain.AuditEventWrapper[audit.AuthEvent]{
+			Ctx:    ctx,
+			Source: "oauth " + providerId,
+			Event: audit.AuthEvent{
+				Username: string(userInfo.Identifier),
+				Error:    err.Error(),
+			},
+		})
 		return nil, fmt.Errorf("unable to process user information: %w", err)
 	}
 
 	if user.IsLocked() || user.IsDisabled() {
+		a.bus.Publish(app.TopicAuditLoginFailed, domain.AuditEventWrapper[audit.AuthEvent]{
+			Ctx:    ctx,
+			Source: "oauth " + providerId,
+			Event: audit.AuthEvent{
+				Username: string(user.Identifier),
+				Error:    "user is locked",
+			},
+		})
 		return nil, errors.New("user is locked")
 	}
 
 	a.bus.Publish(app.TopicAuthLogin, user.Identifier)
+	a.bus.Publish(app.TopicAuditLoginSuccess, domain.AuditEventWrapper[audit.AuthEvent]{
+		Ctx:    ctx,
+		Source: "oauth " + providerId,
+		Event: audit.AuthEvent{
+			Username: string(user.Identifier),
+		},
+	})
 
 	return user, nil
 }

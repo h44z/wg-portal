@@ -52,10 +52,6 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL or Post
 
 For the complete documentation visit [wgportal.org](https://wgportal.org).
 
-## V2 TODOs
-
-* Audit UI
-
 ## What is out of scope
 
 * Automatic generation or application of any `iptables` or `nftables` rules.

@@ -78,22 +78,98 @@ func (r *Recorder) connectToMessageBus() error {
 		return nil // noting to do
 	}
 
-	if err := r.bus.Subscribe(app.TopicAuthLogin, r.authLoginEvent); err != nil {
-		return fmt.Errorf("failed to subscribe to %s: %w", app.TopicAuthLogin, err)
+	if err := r.bus.Subscribe(app.TopicAuditLoginSuccess, r.handleAuthEvent); err != nil {
+		return fmt.Errorf("failed to subscribe to %s: %w", app.TopicAuditLoginSuccess, err)
+	}
+	if err := r.bus.Subscribe(app.TopicAuditLoginFailed, r.handleAuthEvent); err != nil {
+		return fmt.Errorf("failed to subscribe to %s: %w", app.TopicAuditLoginFailed, err)
+	}
+	if err := r.bus.Subscribe(app.TopicAuditInterfaceChanged, r.handleInterfaceEvent); err != nil {
+		return fmt.Errorf("failed to subscribe to %s: %w", app.TopicAuditInterfaceChanged, err)
+	}
+	if err := r.bus.Subscribe(app.TopicAuditPeerChanged, r.handleInterfaceEvent); err != nil {
+		return fmt.Errorf("failed to subscribe to %s: %w", app.TopicAuditPeerChanged, err)
 	}
 
 	return nil
 }
 
-func (r *Recorder) authLoginEvent(userIdentifier domain.UserIdentifier) {
-	err := r.db.SaveAuditEntry(context.Background(), &domain.AuditEntry{
-		CreatedAt: time.Time{},
-		Severity:  domain.AuditSeverityLevelLow,
-		Origin:    "authLoginEvent",
-		Message:   fmt.Sprintf("user %s logged in", userIdentifier),
-	})
+func (r *Recorder) handleAuthEvent(event domain.AuditEventWrapper[AuthEvent]) {
+	err := r.db.SaveAuditEntry(context.Background(), r.authEventToAuditEntry(event))
 	if err != nil {
-		slog.Error("failed to create audit entry for handleAuthLoginEvent", "error", err)
+		slog.Error("failed to create audit entry for auth event", "error", err)
 		return
 	}
+}
+
+func (r *Recorder) handleInterfaceEvent(event domain.AuditEventWrapper[InterfaceEvent]) {
+	err := r.db.SaveAuditEntry(context.Background(), r.interfaceEventToAuditEntry(event))
+	if err != nil {
+		slog.Error("failed to create audit entry for interface event", "error", err)
+		return
+	}
+}
+
+func (r *Recorder) handlePeerEvent(event domain.AuditEventWrapper[PeerEvent]) {
+	err := r.db.SaveAuditEntry(context.Background(), r.peerEventToAuditEntry(event))
+	if err != nil {
+		slog.Error("failed to create audit entry for peer event", "error", err)
+		return
+	}
+}
+
+func (r *Recorder) authEventToAuditEntry(event domain.AuditEventWrapper[AuthEvent]) *domain.AuditEntry {
+	contextUser := domain.GetUserInfo(event.Ctx)
+	e := domain.AuditEntry{
+		CreatedAt:   time.Now(),
+		Severity:    domain.AuditSeverityLevelLow,
+		ContextUser: contextUser.UserId(),
+		Origin:      fmt.Sprintf("auth: %s", event.Source),
+		Message:     fmt.Sprintf("%s logged in", event.Event.Username),
+	}
+
+	if event.Event.Error != "" {
+		e.Severity = domain.AuditSeverityLevelHigh
+		e.Message = fmt.Sprintf("%s failed to login: %s", event.Event.Username, event.Event.Error)
+	}
+
+	return &e
+}
+
+func (r *Recorder) interfaceEventToAuditEntry(event domain.AuditEventWrapper[InterfaceEvent]) *domain.AuditEntry {
+	contextUser := domain.GetUserInfo(event.Ctx)
+	e := domain.AuditEntry{
+		CreatedAt:   time.Now(),
+		Severity:    domain.AuditSeverityLevelLow,
+		ContextUser: contextUser.UserId(),
+		Origin:      fmt.Sprintf("interface: %s", event.Event.Action),
+	}
+
+	switch event.Event.Action {
+	case "save":
+		e.Message = fmt.Sprintf("%s updated", event.Event.Interface.Identifier)
+	default:
+		e.Message = fmt.Sprintf("%s: unknown action", event.Event.Interface.Identifier)
+	}
+
+	return &e
+}
+
+func (r *Recorder) peerEventToAuditEntry(event domain.AuditEventWrapper[PeerEvent]) *domain.AuditEntry {
+	contextUser := domain.GetUserInfo(event.Ctx)
+	e := domain.AuditEntry{
+		CreatedAt:   time.Now(),
+		Severity:    domain.AuditSeverityLevelLow,
+		ContextUser: contextUser.UserId(),
+		Origin:      fmt.Sprintf("peer: %s", event.Event.Action),
+	}
+
+	switch event.Event.Action {
+	case "save":
+		e.Message = fmt.Sprintf("%s updated", event.Event.Peer.Identifier)
+	default:
+		e.Message = fmt.Sprintf("%s: unknown action", event.Event.Peer.Identifier)
+	}
+
+	return &e
 }

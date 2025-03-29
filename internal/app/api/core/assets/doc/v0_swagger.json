@@ -11,6 +11,29 @@
     },
     "basePath": "/api/v0",
     "paths": {
+        "/audit/entries": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Get all available audit entries. Ordered by timestamp.",
+                "operationId": "audit_handleEntriesGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.AuditEntry"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "produces": [
@@ -171,6 +194,9 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -1494,6 +1520,30 @@
         }
     },
     "definitions": {
+        "model.AuditEntry": {
+            "type": "object",
+            "properties": {
+                "Message": {
+                    "type": "string"
+                },
+                "ctx_user": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "origin": {
+                    "description": "origin: for example user auth, stats, ...",
+                    "type": "string"
+                },
+                "severity": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
         "model.ConfigOption-array_string": {
             "type": "object",
             "properties": {

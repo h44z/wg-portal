@@ -71,6 +71,8 @@ func main() {
 	queueSize := 100
 	eventBus := evbus.New(queueSize)
 
+	auditManager := audit.NewManager(database)
+
 	auditRecorder, err := audit.NewAuditRecorder(cfg, eventBus, database)
 	internal.AssertNoError(err)
 	auditRecorder.StartBackgroundJobs(ctx)
@@ -115,6 +117,7 @@ func main() {
 	apiV0BackendPeers := backendV0.NewPeerService(cfg, wireGuardManager, cfgFileManager, mailManager)
 
 	apiV0EndpointAuth := handlersV0.NewAuthEndpoint(cfg, apiV0Auth, apiV0Session, validatorManager, authenticator)
+	apiV0EndpointAudit := handlersV0.NewAuditEndpoint(cfg, apiV0Auth, auditManager)
 	apiV0EndpointUsers := handlersV0.NewUserEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendUsers)
 	apiV0EndpointInterfaces := handlersV0.NewInterfaceEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendInterfaces)
 	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendPeers)
@@ -123,6 +126,7 @@ func main() {
 
 	apiFrontend := handlersV0.NewRestApi(apiV0Session,
 		apiV0EndpointAuth,
+		apiV0EndpointAudit,
 		apiV0EndpointUsers,
 		apiV0EndpointInterfaces,
 		apiV0EndpointPeers,

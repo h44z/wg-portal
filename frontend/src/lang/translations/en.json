@@ -38,6 +38,7 @@
     "lang": "Toggle Language",
     "profile": "My Profile",
     "settings": "Settings",
+    "audit": "Audit Log",
     "login": "Login",
     "logout": "Logout"
   },
@@ -186,6 +187,23 @@
       "button-enable-title": "Enable API, this will generate a new token.",
       "button-enable-text": "Enable API",
       "api-link": "API Documentation"
+    }
+  },
+  "audit": {
+    "headline": "Audit Log",
+    "abstract": "Here you can find the audit log of all actions performed in the WireGuard Portal.",
+    "no-entries": {
+      "headline": "No log entries available",
+      "abstract": "Currently, there are no audit logs recorded."
+    },
+    "entries-headline": "Log Entries",
+    "table-heading": {
+      "id": "#",
+      "time": "Time",
+      "user": "User",
+      "severity": "Severity",
+      "origin": "Origin",
+      "message": "Message"
     }
   },
   "modals": {

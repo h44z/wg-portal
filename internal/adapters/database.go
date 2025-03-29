@@ -1049,4 +1049,16 @@ func (r *SqlRepo) SaveAuditEntry(ctx context.Context, entry *domain.AuditEntry) 
 	return nil
 }
 
+// GetAllAuditEntries retrieves all audit entries from the database.
+// The entries are ordered by timestamp, with the newest entries first.
+func (r *SqlRepo) GetAllAuditEntries(ctx context.Context) ([]domain.AuditEntry, error) {
+	var entries []domain.AuditEntry
+	err := r.db.WithContext(ctx).Order("created_at desc").Find(&entries).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return entries, nil
+}
+
 // endregion audit
