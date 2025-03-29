@@ -68,13 +68,13 @@ func (m *Middleware) RefreshToken(next http.Handler) http.Handler {
 
 		// mask the token
 		maskedToken := maskToken(token, key)
-
-		// store the encoded token in the session
 		encodedToken := encodeToken(maskedToken)
-		m.o.sessionWriter(r, encodedToken)
 
 		// pass the token down the chain via the context
 		r = r.WithContext(setToken(r.Context(), encodedToken))
+
+		// store the token in the session
+		m.o.sessionWriter(r, encodedToken)
 
 		next.ServeHTTP(w, r)
 	})

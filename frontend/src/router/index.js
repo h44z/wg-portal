@@ -72,7 +72,6 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = authStore()
-  const sec = securityStore()
 
   // check if the request was a successful oauth login
   if ('wgLoginState' in to.query && !auth.IsAuthenticated) {
@@ -122,8 +121,13 @@ router.beforeEach(async (to) => {
     auth.SetReturnUrl(to.fullPath) // store original destination before starting the auth process
     return '/login'
   }
+})
 
-  if (publicPages.includes(to.path)) {
+router.afterEach(async (to, from) => {
+  const sec = securityStore()
+  const csrfPages = ['/login']
+
+  if (csrfPages.includes(to.path)) {
     await sec.LoadSecurityProperties() // make sure we have a valid csrf token
   }
 })
