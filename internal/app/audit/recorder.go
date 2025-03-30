@@ -87,7 +87,7 @@ func (r *Recorder) connectToMessageBus() error {
 	if err := r.bus.Subscribe(app.TopicAuditInterfaceChanged, r.handleInterfaceEvent); err != nil {
 		return fmt.Errorf("failed to subscribe to %s: %w", app.TopicAuditInterfaceChanged, err)
 	}
-	if err := r.bus.Subscribe(app.TopicAuditPeerChanged, r.handleInterfaceEvent); err != nil {
+	if err := r.bus.Subscribe(app.TopicAuditPeerChanged, r.handlePeerEvent); err != nil {
 		return fmt.Errorf("failed to subscribe to %s: %w", app.TopicAuditPeerChanged, err)
 	}
 
