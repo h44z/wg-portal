@@ -125,7 +125,7 @@ router.beforeEach(async (to) => {
 
 router.afterEach(async (to, from) => {
   const sec = securityStore()
-  const csrfPages = ['/login']
+  const csrfPages = ['/', '/login']
 
   if (csrfPages.includes(to.path)) {
     await sec.LoadSecurityProperties() // make sure we have a valid csrf token

@@ -57,9 +57,11 @@ func NewRestApi(
 	return func() (core.ApiVersion, core.GroupSetupFn) {
 		return "v0", func(group *routegroup.Bundle) {
 			csrfMiddleware := csrf.New(func(r *http.Request) string {
-				return session.GetString(r.Context(), "csrf_token")
+				return session.GetData(r.Context()).CsrfToken
 			}, func(r *http.Request, token string) {
-				session.Put(r.Context(), "csrf_token", token)
+				currentSession := session.GetData(r.Context())
+				currentSession.CsrfToken = token
+				session.SetData(r.Context(), currentSession)
 			})
 
 			group.Use(session.LoadAndSave)

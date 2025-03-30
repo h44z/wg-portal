@@ -2,18 +2,18 @@ basePath: /api/v0
 definitions:
   model.AuditEntry:
     properties:
+      ContextUser:
+        type: string
+      Id:
+        type: integer
       Message:
         type: string
-      ctx_user:
-        type: string
-      id:
-        type: integer
-      origin:
+      Origin:
         description: 'origin: for example user auth, stats, ...'
         type: string
-      severity:
+      Severity:
         type: string
-      timestamp:
+      Timestamp:
         type: string
     type: object
   model.ConfigOption-array_string:
@@ -496,17 +496,15 @@ paths:
       tags:
       - Authentication
   /auth/logout:
-    get:
-      operationId: auth_handleLogoutGet
+    post:
+      operationId: auth_handleLogoutPost
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/model.LoginProviderInfo'
-            type: array
+            $ref: '#/definitions/model.Error'
       summary: Get all available external login providers.
       tags:
       - Authentication

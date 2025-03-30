@@ -43,7 +43,6 @@ type SessionWrapper struct {
 func NewSessionWrapper(cfg *config.Config) *SessionWrapper {
 	sessionManager := scs.New()
 	sessionManager.Lifetime = 24 * time.Hour
-	sessionManager.IdleTimeout = 1 * time.Hour
 	sessionManager.Cookie.Name = cfg.Web.SessionIdentifier
 	sessionManager.Cookie.Secure = strings.HasPrefix(cfg.Web.ExternalUrl, "https")
 	sessionManager.Cookie.HttpOnly = true

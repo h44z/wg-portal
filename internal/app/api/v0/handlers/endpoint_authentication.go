@@ -295,6 +295,9 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 }
 
 func (e AuthEndpoint) setAuthenticatedUser(r *http.Request, user *domain.User) {
+	// start a fresh session
+	e.session.DestroyData(r.Context())
+
 	currentSession := e.session.GetData(r.Context())
 
 	currentSession.LoggedIn = true
@@ -358,12 +361,12 @@ func (e AuthEndpoint) handleLoginPost() http.HandlerFunc {
 
 // handleLogoutPost returns a gorm Handler function.
 //
-// @ID auth_handleLogoutGet
+// @ID auth_handleLogoutPost
 // @Tags Authentication
 // @Summary Get all available external login providers.
 // @Produce json
-// @Success 200 {object} []model.LoginProviderInfo
-// @Router /auth/logout [get]
+// @Success 200 {object} model.Error
+// @Router /auth/logout [post]
 func (e AuthEndpoint) handleLogoutPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentSession := e.session.GetData(r.Context())

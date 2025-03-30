@@ -58,7 +58,7 @@
             }
         },
         "/auth/logout": {
-            "get": {
+            "post": {
                 "produces": [
                     "application/json"
                 ],
@@ -66,15 +66,12 @@
                     "Authentication"
                 ],
                 "summary": "Get all available external login providers.",
-                "operationId": "auth_handleLogoutGet",
+                "operationId": "auth_handleLogoutPost",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.LoginProviderInfo"
-                            }
+                            "$ref": "#/definitions/model.Error"
                         }
                     }
                 }
@@ -1523,23 +1520,23 @@
         "model.AuditEntry": {
             "type": "object",
             "properties": {
+                "ContextUser": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
                 "Message": {
                     "type": "string"
                 },
-                "ctx_user": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "origin": {
+                "Origin": {
                     "description": "origin: for example user auth, stats, ...",
                     "type": "string"
                 },
-                "severity": {
+                "Severity": {
                     "type": "string"
                 },
-                "timestamp": {
+                "Timestamp": {
                     "type": "string"
                 }
             }
