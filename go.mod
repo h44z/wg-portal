@@ -8,7 +8,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.10
 	github.com/go-pkgz/routegroup v1.4.1
-	github.com/go-playground/validator/v10 v10.25.0
+	github.com/go-playground/validator/v10 v10.26.0
 	github.com/google/uuid v1.6.0
 	github.com/prometheus-community/pro-bing v0.6.1
 	github.com/prometheus/client_golang v1.21.1
