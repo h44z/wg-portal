@@ -1,14 +1,13 @@
 module github.com/h44z/wg-portal
 
 go 1.24.0
-
 require (
 	github.com/a8m/envsubst v1.4.3
 	github.com/alexedwards/scs/v2 v2.8.0
 	github.com/coreos/go-oidc/v3 v3.13.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.10
-	github.com/go-pkgz/routegroup v1.3.1
+	github.com/go-pkgz/routegroup v1.4.1
 	github.com/go-playground/validator/v10 v10.25.0
 	github.com/google/uuid v1.6.0
 	github.com/prometheus-community/pro-bing v0.6.1
