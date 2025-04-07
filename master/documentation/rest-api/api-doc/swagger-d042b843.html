@@ -9,7 +9,7 @@
   
 </head>
 
-<body style="overflow:hidden;background: ;">
+<body style="overflow:hidden;">
   <div id="swagger-ui"></div>
   <script src="../../../assets/javascripts/swagger-ui-bundle.js" charset="UTF-8"> </script>
   <script src="../../../assets/javascripts/swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
@@ -46,14 +46,14 @@
     "validatorUrl": "none",
     "extra_css": [],
     "dark_scheme_name": "slate",
+    "filter_files": [],
     "syntaxHighlight.theme": "agate"
 
       })
 
       
 
-      const scheme = parent.scheme
-      if (scheme === "slate") {
+      if (parent.__init_is_dark_mode) {
           enable_dark_mode();
       }
     }
@@ -67,7 +67,7 @@
     }
 
     const resize_ob = new ResizeObserver(function(entries) {
-      parent.update_swagger_ui_iframe_height("483b3727");
+      parent.update_swagger_ui_iframe_height("d042b843");
     });
 
     // start observing for resizing
