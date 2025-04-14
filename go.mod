@@ -11,7 +11,7 @@ require (
 	github.com/go-pkgz/routegroup v1.4.1
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/google/uuid v1.6.0
-	github.com/prometheus-community/pro-bing v0.6.1
+	github.com/prometheus-community/pro-bing v0.7.0
 	github.com/prometheus/client_golang v1.21.1
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/swag v1.16.4
@@ -81,7 +81,7 @@ require (
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/yeqown/reedsolomon v1.0.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/tools v0.31.0 // indirect
