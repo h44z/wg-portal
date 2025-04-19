@@ -463,6 +463,15 @@ func (m Manager) runLdapSynchronizationService(ctx context.Context) {
 				return
 			}
 
+			// perform initial sync
+			err := m.synchronizeLdapUsers(ctx, &cfg)
+			if err != nil {
+				slog.Error("failed to synchronize LDAP users", "provider", cfg.ProviderName, "error", err)
+			} else {
+				slog.Debug("initial LDAP user sync completed", "provider", cfg.ProviderName)
+			}
+
+			// start periodic sync
 			running := true
 			for running {
 				select {
