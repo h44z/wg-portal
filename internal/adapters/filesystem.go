@@ -56,3 +56,16 @@ func (r *FilesystemRepo) WriteFile(path string, contents io.Reader) error {
 
 	return nil
 }
+
+// DeleteFile deletes the file at the given path.
+// The path is relative to the base path of the repository.
+// If the file does not exist, it is ignored.
+func (r *FilesystemRepo) DeleteFile(path string) error {
+	filePath := filepath.Join(r.basePath, path)
+
+	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to delete file %s: %w", filePath, err)
+	}
+
+	return nil
+}

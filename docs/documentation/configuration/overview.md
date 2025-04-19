@@ -81,6 +81,11 @@ web:
   request_logging: false
   cert_file: ""
   key_File: ""
+
+webhook:
+  url: ""
+  authentication: ""
+  timeout: 10s
 ```
 
 </details>
@@ -92,8 +97,9 @@ Below you will find sections like
 [`database`](#database),
 [`statistics`](#statistics),
 [`mail`](#mail),
-[`auth`](#auth) and
-[`web`](#web).  
+[`auth`](#auth),
+[`web`](#web) and
+[`webhook`](#webhook).  
 Each section describes the individual configuration keys, their default values, and a brief explanation of their purpose.
 
 ---
@@ -556,6 +562,10 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 
 ## Web
 
+The web section contains configuration options for the web server, including the listening address, session management, and CSRF protection.
+It is important to specify a valid `external_url` for the web server, especially if you are using a reverse proxy. 
+Without a valid `external_url`, the login process may fail due to CSRF protection.
+
 ### `listening_address`
 - **Default:** `:8888`
 - **Description:** The listening port of the web server.
@@ -596,3 +606,33 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 ### `key_file`
 - **Default:** *(empty)*
 - **Description:** (Optional) Path to the TLS certificate key file.
+
+---
+
+## Webhook
+
+The webhook section allows you to configure a webhook that is called on certain events in WireGuard Portal.
+A JSON object is sent in a POST request to the webhook URL with the following structure:
+```json
+{
+  "event": "peer_created",
+  "entity": "peer",
+  "identifier": "the-peer-identifier",
+  "payload": {
+    // The payload of the event, e.g. peer data.
+    // Check the API documentation for the exact structure.
+  }
+}
+```
+
+### `url`
+- **Default:** *(empty)*
+- **Description:** The POST endpoint to which the webhook is sent. The URL must be reachable from the WireGuard Portal server. If the URL is empty, the webhook is disabled.
+
+### `authentication`
+- **Default:** *(empty)*
+- **Description:** The Authorization header for the webhook endpoint. The value is send as-is in the header. For example: `Bearer <token>`.
+
+### `timeout`
+- **Default:** `10s`
+- **Description:** The timeout for the webhook request. If the request takes longer than this, it is aborted.

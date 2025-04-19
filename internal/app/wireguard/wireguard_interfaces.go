@@ -410,6 +410,8 @@ func (m Manager) CreateInterface(ctx context.Context, in *domain.Interface) (*do
 		return nil, fmt.Errorf("creation failure: %w", err)
 	}
 
+	m.bus.Publish(app.TopicInterfaceCreated, *in)
+
 	return in, nil
 }
 
@@ -432,6 +434,8 @@ func (m Manager) UpdateInterface(ctx context.Context, in *domain.Interface) (*do
 	if err != nil {
 		return nil, nil, fmt.Errorf("update failure: %w", err)
 	}
+
+	m.bus.Publish(app.TopicInterfaceUpdated, *in)
 
 	return in, existingPeers, nil
 }
@@ -489,6 +493,8 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 	if err := m.handleInterfacePostSaveHooks(true, existingInterface); err != nil {
 		return fmt.Errorf("post-delete hooks failed: %w", err)
 	}
+
+	m.bus.Publish(app.TopicInterfaceDeleted, *existingInterface)
 
 	return nil
 }
@@ -549,7 +555,6 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 		return nil, fmt.Errorf("post-save hooks failed: %w", err)
 	}
 
-	m.bus.Publish(app.TopicInterfaceUpdated, iface)
 	m.bus.Publish(app.TopicAuditInterfaceChanged, domain.AuditEventWrapper[audit.InterfaceEvent]{
 		Ctx: ctx,
 		Event: audit.InterfaceEvent{

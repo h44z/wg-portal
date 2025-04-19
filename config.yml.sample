@@ -13,6 +13,11 @@ web:
   external_url: http://localhost:8888
   request_logging: true
 
+webhook:
+  url: ""
+  authentication: ""
+  timeout: 10s
+
 auth:
   ldap:
     - id: ldap1

@@ -44,6 +44,7 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL or Post
 * Handles route and DNS settings like wg-quick does
 * Exposes Prometheus metrics for monitoring and alerting
 * REST API for management and client deployment
+* Webhook for custom actions on peer, interface or user updates
 
 <!-- Text to this line # is included in docs/documentation/overview.md -->
 ![Screenshot](docs/assets/images/screenshot.png)
@@ -61,7 +62,6 @@ For the complete documentation visit [wgportal.org](https://wgportal.org).
 ## Application stack
 
 * [wgctrl-go](https://github.com/WireGuard/wgctrl-go) and [netlink](https://github.com/vishvananda/netlink) for interface handling
-* [Gin](https://github.com/gin-gonic/gin), HTTP web framework written in Go
 * [Bootstrap](https://getbootstrap.com/), for the HTML templates
 * [Vue.js](https://vuejs.org/), for the frontend
 

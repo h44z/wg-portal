@@ -24,6 +24,7 @@ import (
 	"github.com/h44z/wg-portal/internal/app/mail"
 	"github.com/h44z/wg-portal/internal/app/route"
 	"github.com/h44z/wg-portal/internal/app/users"
+	"github.com/h44z/wg-portal/internal/app/webhooks"
 	"github.com/h44z/wg-portal/internal/app/wireguard"
 	"github.com/h44z/wg-portal/internal/config"
 )
@@ -101,6 +102,10 @@ func main() {
 	routeManager, err := route.NewRouteManager(cfg, eventBus, database)
 	internal.AssertNoError(err)
 	routeManager.StartBackgroundJobs(ctx)
+
+	webhookManager, err := webhooks.NewManager(cfg, eventBus)
+	internal.AssertNoError(err)
+	webhookManager.StartBackgroundJobs(ctx)
 
 	err = app.Initialize(cfg, wireGuardManager, userManager)
 	internal.AssertNoError(err)

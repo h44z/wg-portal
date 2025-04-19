@@ -204,6 +204,8 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		return nil, fmt.Errorf("creation failure: %w", err)
 	}
 
+	m.bus.Publish(app.TopicPeerCreated, *peer)
+
 	return peer, nil
 }
 
@@ -246,6 +248,8 @@ func (m Manager) CreateMultiplePeers(
 	createdPeers := make([]domain.Peer, len(newPeers))
 	for i := range newPeers {
 		createdPeers[i] = *newPeers[i]
+
+		m.bus.Publish(app.TopicPeerCreated, *newPeers[i])
 	}
 
 	return createdPeers, nil
@@ -315,6 +319,8 @@ func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		}
 	}
 
+	m.bus.Publish(app.TopicPeerUpdated, *peer)
+
 	return peer, nil
 }
 
@@ -343,6 +349,7 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 		return fmt.Errorf("failed to delete peer %s: %w", id, err)
 	}
 
+	m.bus.Publish(app.TopicPeerDeleted, *peer)
 	// Update routes after peers have changed
 	m.bus.Publish(app.TopicRouteUpdate, "peers updated")
 	// Update interface after peers have changed
@@ -428,6 +435,7 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 		}
 
 		// publish event
+
 		m.bus.Publish(app.TopicAuditPeerChanged, domain.AuditEventWrapper[audit.PeerEvent]{
 			Ctx: ctx,
 			Event: audit.PeerEvent{

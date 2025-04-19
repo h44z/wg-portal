@@ -37,6 +37,9 @@ type WireguardDatabaseRepo interface {
 type FileSystemRepo interface {
 	// WriteFile writes the contents to the file at the given path.
 	WriteFile(path string, contents io.Reader) error
+
+	// DeleteFile deletes the file at the given path.
+	DeleteFile(path string) error
 }
 
 type TemplateRenderer interface {
@@ -109,22 +112,37 @@ func (m Manager) createStorageDirectory() error {
 }
 
 func (m Manager) connectToMessageBus() {
-	_ = m.bus.Subscribe(app.TopicInterfaceUpdated, m.handleInterfaceUpdatedEvent)
+	_ = m.bus.Subscribe(app.TopicInterfaceCreated, m.handleInterfaceSavedEvent)
+	_ = m.bus.Subscribe(app.TopicInterfaceUpdated, m.handleInterfaceSavedEvent)
+	_ = m.bus.Subscribe(app.TopicInterfaceDeleted, m.handleInterfaceDeleteEvent)
 	_ = m.bus.Subscribe(app.TopicPeerInterfaceUpdated, m.handlePeerInterfaceUpdatedEvent)
 }
 
-func (m Manager) handleInterfaceUpdatedEvent(iface *domain.Interface) {
+func (m Manager) handleInterfaceSavedEvent(iface domain.Interface) {
 	if !iface.SaveConfig {
 		return
 	}
 
-	slog.Debug("handling interface updated event", "interface", iface.Identifier)
+	slog.Debug("handling interface save event", "interface", iface.Identifier)
 
 	err := m.PersistInterfaceConfig(context.Background(), iface.Identifier)
 	if err != nil {
 		slog.Error("failed to automatically persist interface config",
-			"interface", iface.Identifier,
-			"error", err)
+			"interface", iface.Identifier, "error", err)
+	}
+}
+
+func (m Manager) handleInterfaceDeleteEvent(iface domain.Interface) {
+	if !iface.SaveConfig {
+		return
+	}
+
+	slog.Debug("handling interface delete event", "interface", iface.Identifier)
+
+	err := m.UnpersistInterfaceConfig(context.Background(), iface.GetConfigFileName())
+	if err != nil {
+		slog.Error("failed to remove persisted interface config",
+			"interface", iface.Identifier, "error", err)
 	}
 }
 
@@ -246,6 +264,15 @@ func (m Manager) PersistInterfaceConfig(ctx context.Context, id domain.Interface
 
 	if err := m.fsRepo.WriteFile(iface.GetConfigFileName(), cfg); err != nil {
 		return fmt.Errorf("failed to write interface config: %w", err)
+	}
+
+	return nil
+}
+
+// UnpersistInterfaceConfig removes the configuration file for the given interface from the file system.
+func (m Manager) UnpersistInterfaceConfig(_ context.Context, filename string) error {
+	if err := m.fsRepo.DeleteFile(filename); err != nil {
+		return fmt.Errorf("failed to remove interface config: %w", err)
 	}
 
 	return nil

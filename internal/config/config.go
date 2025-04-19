@@ -62,6 +62,8 @@ type Config struct {
 	Database DatabaseConfig `yaml:"database"`
 
 	Web WebConfig `yaml:"web"`
+
+	Webhook WebhookConfig `yaml:"webhook"`
 }
 
 // LogStartupValues logs the startup values of the configuration in debug level
@@ -157,6 +159,10 @@ func defaultConfig() *Config {
 		From:           "Wireguard Portal <noreply@wireguard.local>",
 		LinkOnly:       false,
 	}
+
+	cfg.Webhook.Url = "" // no webhook by default
+	cfg.Webhook.Authentication = ""
+	cfg.Webhook.Timeout = 10 * time.Second
 
 	return cfg
 }
