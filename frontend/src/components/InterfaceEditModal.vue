@@ -4,7 +4,7 @@ import {interfaceStore} from "@/stores/interfaces";
 import {computed, ref, watch} from "vue";
 import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
-import Vue3TagsInput from 'vue3-tags-input';
+import { VueTagsInput } from '@vojtechlanka/vue-tags-input';
 import { validateCIDR, validateIP, validateDomain } from '@/helpers/validators';
 import isCidr from "is-cidr";
 import {isIP} from 'is-ip';
@@ -38,6 +38,15 @@ const title = computed(() => {
   return t("modals.interface-edit.headline-new")
 })
 
+const currentTags = ref({
+  Addresses: "",
+  Dns: "",
+  DnsSearch: "",
+  PeerDefNetwork: "",
+  PeerDefAllowedIPs: "",
+  PeerDefDns: "",
+  PeerDefDnsSearch: ""
+})
 const formData = ref(freshInterface())
 
 // functions
@@ -137,94 +146,94 @@ function close() {
 function handleChangeAddresses(tags) {
   let validInput = true
   tags.forEach(tag => {
-    if(isCidr(tag) === 0) {
+    if(isCidr(tag.text) === 0) {
       validInput = false
       notify({
         title: "Invalid CIDR",
-        text: tag + " is not a valid IP address",
+        text: tag.text + " is not a valid IP address",
         type: 'error',
       })
     }
   })
   if(validInput) {
-    formData.value.Addresses = tags
+    formData.value.Addresses = tags.map(tag => tag.text)
   }
 }
 
 function handleChangeDns(tags) {
   let validInput = true
   tags.forEach(tag => {
-    if(!isIP(tag)) {
+    if(!isIP(tag.text)) {
       validInput = false
       notify({
         title: "Invalid IP",
-        text: tag + " is not a valid IP address",
+        text: tag.text + " is not a valid IP address",
         type: 'error',
       })
     }
   })
   if(validInput) {
-    formData.value.Dns = tags
+    formData.value.Dns = tags.map(tag => tag.text)
   }
 }
 
 function handleChangeDnsSearch(tags) {
-  formData.value.DnsSearch = tags
+  formData.value.DnsSearch = tags.map(tag => tag.text)
 }
 
 function handleChangePeerDefNetwork(tags) {
   let validInput = true
   tags.forEach(tag => {
-    if(isCidr(tag) === 0) {
+    if(isCidr(tag.text) === 0) {
       validInput = false
       notify({
         title: "Invalid CIDR",
-        text: tag + " is not a valid IP address",
+        text: tag.text + " is not a valid IP address",
         type: 'error',
       })
     }
   })
   if(validInput) {
-    formData.value.PeerDefNetwork = tags
+    formData.value.PeerDefNetwork = tags.map(tag => tag.text)
   }
 }
 
 function handleChangePeerDefAllowedIPs(tags) {
   let validInput = true
   tags.forEach(tag => {
-    if(isCidr(tag) === 0) {
+    if(isCidr(tag.text) === 0) {
       validInput = false
       notify({
         title: "Invalid CIDR",
-        text: tag + " is not a valid IP address",
+        text: tag.text + " is not a valid IP address",
         type: 'error',
       })
     }
   })
   if(validInput) {
-    formData.value.PeerDefAllowedIPs = tags
+    formData.value.PeerDefAllowedIPs = tags.map(tag => tag.text)
   }
 }
 
 function handleChangePeerDefDns(tags) {
   let validInput = true
   tags.forEach(tag => {
-    if(!isIP(tag)) {
+    if(!isIP(tag.text)) {
       validInput = false
       notify({
         title: "Invalid IP",
-        text: tag + " is not a valid IP address",
+        text: tag.text + " is not a valid IP address",
         type: 'error',
       })
     }
   })
   if(validInput) {
-    formData.value.PeerDefDns = tags
+    formData.value.PeerDefDns = tags.map(tag => tag.text)
   }
 }
 
 function handleChangePeerDefDnsSearch(tags) {
-  formData.value.PeerDefDnsSearch = tags
+  formData.value.PeerDefDnsSearch = tags.map(tag => tag.text)
 }
 
 async function save() {
@@ -333,11 +342,15 @@ async function del() {
             <legend class="mt-4">{{ $t('modals.interface-edit.header-network') }}</legend>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.ip.label') }}</label>
-              <vue3-tags-input class="form-control" :tags="formData.Addresses"
-                               :placeholder="$t('modals.interface-edit.ip.placeholder')"
-                               :add-tag-on-keys="[13, 188, 32, 9]"
-                               :validate="validateCIDR"
-                               @on-tags-changed="handleChangeAddresses"/>
+              <vue-tags-input class="form-control" v-model="currentTags.Addresses"
+                              :tags="formData.Addresses.map(str => ({ text: str }))"
+                              :placeholder="$t('modals.interface-edit.ip.placeholder')"
+                              :validation="validateCIDR()"
+                              :add-on-key="[13, 188, 32, 9]"
+                              :save-on-key="[13, 188, 32, 9]"
+                              :allow-edit-tags="true"
+                              :separators="[',', ';', ' ']"
+                              @tags-changed="handleChangeAddresses"/>
             </div>
             <div v-if="formData.Mode==='server'" class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.listen-port.label') }}</label>
@@ -345,19 +358,27 @@ async function del() {
             </div>
             <div v-if="formData.Mode!=='server'" class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.dns.label') }}</label>
-              <vue3-tags-input class="form-control" :tags="formData.Dns"
-                               :placeholder="$t('modals.interface-edit.dns.placeholder')"
-                               :add-tag-on-keys="[13, 188, 32, 9]"
-                               :validate="validateIP"
-                               @on-tags-changed="handleChangeDns"/>
+              <vue-tags-input class="form-control" v-model="currentTags.Dns"
+                              :tags="formData.Dns.map(str => ({ text: str }))"
+                              :placeholder="$t('modals.interface-edit.dns.placeholder')"
+                              :validation="validateIP()"
+                              :add-on-key="[13, 188, 32, 9]"
+                              :save-on-key="[13, 188, 32, 9]"
+                              :allow-edit-tags="true"
+                              :separators="[',', ';', ' ']"
+                              @tags-changed="handleChangeDns"/>
             </div>
             <div v-if="formData.Mode!=='server'" class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.dns-search.label') }}</label>
-              <vue3-tags-input class="form-control" :tags="formData.DnsSearch"
-                               :placeholder="$t('modals.interface-edit.dns-search.placeholder')"
-                               :add-tag-on-keys="[13, 188, 32, 9]"
-                               :validate="validateDomain"
-                               @on-tags-changed="handleChangeDnsSearch"/>
+              <vue-tags-input class="form-control" v-model="currentTags.DnsSearch"
+                              :tags="formData.DnsSearch.map(str => ({ text: str }))"
+                              :placeholder="$t('modals.interface-edit.dns-search.placeholder')"
+                              :validation="validateDomain()"
+                              :add-on-key="[13, 188, 32, 9]"
+                              :save-on-key="[13, 188, 32, 9]"
+                              :allow-edit-tags="true"
+                              :separators="[',', ';', ' ']"
+                              @tags-changed="handleChangeDnsSearch"/>
             </div>
             <div class="row">
               <div class="form-group col-md-6">
@@ -420,36 +441,52 @@ async function del() {
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.networks.label') }}</label>
-              <vue3-tags-input class="form-control" :tags="formData.PeerDefNetwork"
-                               :placeholder="$t('modals.interface-edit.defaults.networks.placeholder')"
-                               :add-tag-on-keys="[13, 188, 32, 9]"
-                               :validate="validateCIDR"
-                               @on-tags-changed="handleChangePeerDefNetwork"/>
+              <vue-tags-input class="form-control" v-model="currentTags.PeerDefNetwork"
+                              :tags="formData.PeerDefNetwork.map(str => ({ text: str }))"
+                              :placeholder="$t('modals.interface-edit.defaults.networks.placeholder')"
+                              :validation="validateCIDR()"
+                              :add-on-key="[13, 188, 32, 9]"
+                              :save-on-key="[13, 188, 32, 9]"
+                              :allow-edit-tags="true"
+                              :separators="[',', ';', ' ']"
+                              @tags-changed="handleChangePeerDefNetwork"/>
               <small class="form-text text-muted">{{ $t('modals.interface-edit.defaults.networks.description') }}</small>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.allowed-ip.label') }}</label>
-              <vue3-tags-input class="form-control" :tags="formData.PeerDefAllowedIPs"
-                               :placeholder="$t('modals.interface-edit.defaults.allowed-ip.placeholder')"
-                               :add-tag-on-keys="[13, 188, 32, 9]"
-                               :validate="validateCIDR"
-                               @on-tags-changed="handleChangePeerDefAllowedIPs"/>
+              <vue-tags-input class="form-control" v-model="currentTags.PeerDefAllowedIPs"
+                              :tags="formData.PeerDefAllowedIPs.map(str => ({ text: str }))"
+                              :placeholder="$t('modals.interface-edit.defaults.allowed-ip.placeholder')"
+                              :validation="validateCIDR()"
+                              :add-on-key="[13, 188, 32, 9]"
+                              :save-on-key="[13, 188, 32, 9]"
+                              :allow-edit-tags="true"
+                              :separators="[',', ';', ' ']"
+                              @tags-changed="handleChangePeerDefAllowedIPs"/>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.dns.label') }}</label>
-              <vue3-tags-input class="form-control" :tags="formData.PeerDefDns"
-                               :placeholder="$t('modals.interface-edit.dns.placeholder')"
-                               :add-tag-on-keys="[13, 188, 32, 9]"
-                               :validate="validateIP"
-                               @on-tags-changed="handleChangePeerDefDns"/>
+              <vue-tags-input class="form-control" v-model="currentTags.PeerDefDns"
+                              :tags="formData.PeerDefDns.map(str => ({ text: str }))"
+                              :placeholder="$t('modals.interface-edit.dns.placeholder')"
+                              :validation="validateIP()"
+                              :add-on-key="[13, 188, 32, 9]"
+                              :save-on-key="[13, 188, 32, 9]"
+                              :allow-edit-tags="true"
+                              :separators="[',', ';', ' ']"
+                              @tags-changed="handleChangePeerDefDns"/>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.dns-search.label') }}</label>
-              <vue3-tags-input class="form-control" :tags="formData.PeerDefDnsSearch"
-                               :placeholder="$t('modals.interface-edit.dns-search.placeholder')"
-                               :add-tag-on-keys="[13, 188, 32, 9]"
-                               :validate="validateDomain"
-                               @on-tags-changed="handleChangePeerDefDnsSearch"/>
+              <vue-tags-input class="form-control" v-model="currentTags.PeerDefDnsSearch"
+                              :tags="formData.PeerDefDnsSearch.map(str => ({ text: str }))"
+                              :placeholder="$t('modals.interface-edit.dns-search.placeholder')"
+                              :validation="validateDomain()"
+                              :add-on-key="[13, 188, 32, 9]"
+                              :save-on-key="[13, 188, 32, 9]"
+                              :allow-edit-tags="true"
+                              :separators="[',', ';', ' ']"
+                              @tags-changed="handleChangePeerDefDnsSearch"/>
             </div>
             <div class="row">
               <div class="form-group col-md-6">

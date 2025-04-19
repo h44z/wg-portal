@@ -5,7 +5,7 @@ import {interfaceStore} from "@/stores/interfaces";
 import {computed, ref} from "vue";
 import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
-import Vue3TagsInput from "vue3-tags-input";
+import { VueTagsInput } from '@vojtechlanka/vue-tags-input';
 import { freshInterface } from '@/helpers/models';
 
 const { t } = useI18n()
@@ -36,6 +36,7 @@ function freshForm() {
   }
 }
 
+const currentTag = ref("")
 const formData = ref(freshForm())
 
 const title = computed(() => {
@@ -55,7 +56,7 @@ function close() {
 }
 
 function handleChangeUserIdentifiers(tags) {
-  formData.value.Identifiers = tags
+  formData.value.Identifiers = tags.map(tag => tag.text)
 }
 
 async function save() {
@@ -89,10 +90,14 @@ async function save() {
       <fieldset>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-multi-create.identifiers.label') }}</label>
-          <vue3-tags-input class="form-control" :tags="formData.Identifiers"
-                           :placeholder="$t('modals.peer-multi-create.identifiers.placeholder')"
-                           :add-tag-on-keys="[13, 188, 32, 9]"
-                           @on-tags-changed="handleChangeUserIdentifiers"/>
+          <vue-tags-input class="form-control" v-model="currentTag"
+                          :tags="formData.Identifiers.map(str => ({ text: str }))"
+                          :placeholder="$t('modals.peer-multi-create.identifiers.placeholder')"
+                          :add-on-key="[13, 188, 32, 9]"
+                          :save-on-key="[13, 188, 32, 9]"
+                          :allow-edit-tags="true"
+                          :separators="[',', ';', ' ']"
+                          @tags-changed="handleChangeUserIdentifiers"/>
           <small class="form-text text-muted">{{ $t('modals.peer-multi-create.identifiers.description') }}</small>
         </div>
         <div class="form-group">

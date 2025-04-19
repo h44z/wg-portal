@@ -15,3 +15,85 @@ a.disabled {
 .desc::after {
   content: " ↓";
 }
+
+/* style the background and the text color of the input ... */
+.vue-tags-input {
+  max-width: 100% !important;
+  background-color: #f7f7f9 !important;
+  padding: 0 0;
+}
+
+.vue-tags-input .ti-input {
+  padding: 0 0;
+  border: none !important;
+  transition: border-bottom 200ms ease;
+}
+
+.vue-tags-input .ti-new-tag-input {
+  background: transparent;
+  color: var(--bs-body-color);
+  padding: 0.75rem 1.5rem !important;
+}
+
+
+/* style the placeholders color across all browser */
+.vue-tags-input ::-webkit-input-placeholder {
+  color: var(--bs-secondary-color);
+}
+.vue-tags-input .ti-input::placeholder {
+  color: var(--bs-secondary-color);
+}
+
+.vue-tags-input ::-moz-placeholder {
+  color: var(--bs-secondary-color);
+}
+
+.vue-tags-input :-ms-input-placeholder {
+  color: var(--bs-secondary-color);
+}
+
+.vue-tags-input :-moz-placeholder {
+  color: var(--bs-secondary-color);
+}
+
+/* default styles for all the tags */
+.vue-tags-input .ti-tag {
+  position: relative;
+  background: #ffffff;
+  border: 2px solid var(--bs-body-color);
+  margin: 6px;
+  color: var(--bs-body-color);
+}
+
+/* the styles if a tag is invalid */
+.vue-tags-input .ti-tag.ti-invalid {
+  background-color: #e88a74;
+}
+
+/* if the user input is invalid, the input color should be red */
+.vue-tags-input .ti-new-tag-input.ti-invalid {
+  color: #e88a74;
+}
+
+/* if a tag or the user input is a duplicate, it should be crossed out */
+.vue-tags-input .ti-duplicate span,
+.vue-tags-input .ti-new-tag-input.ti-duplicate {
+  text-decoration: line-through;
+}
+
+/* if the user presses backspace, the complete tag should be crossed out, to mark it for deletion */
+.vue-tags-input .ti-tag:after {
+  transition: transform .2s;
+  position: absolute;
+  content: '';
+  height: 2px;
+  width: 108%;
+  left: -4%;
+  top: calc(50% - 1px);
+  background-color: #000;
+  transform: scaleX(0);
+}
+
+.vue-tags-input .ti-deletion-mark:after {
+  transform: scaleX(1);
+}

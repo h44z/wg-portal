@@ -5,7 +5,7 @@ import { interfaceStore } from "@/stores/interfaces";
 import { computed, ref, watch } from "vue";
 import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
-import Vue3TagsInput from "vue3-tags-input";
+import { VueTagsInput } from '@vojtechlanka/vue-tags-input';
 import { validateCIDR, validateIP, validateDomain } from '@/helpers/validators';
 import isCidr from "is-cidr";
 import { isIP } from 'is-ip';
@@ -65,6 +65,13 @@ const title = computed(() => {
   }
 })
 
+const currentTags = ref({
+  Addresses: "",
+  AllowedIPs: "",
+  ExtraAllowedIPs: "",
+  Dns: "",
+  DnsSearch: ""
+})
 const formData = ref(freshPeer())
 
 // functions
@@ -193,73 +200,73 @@ function close() {
 function handleChangeAddresses(tags) {
   let validInput = true
   tags.forEach(tag => {
-    if (isCidr(tag) === 0) {
+    if (isCidr(tag.text) === 0) {
       validInput = false
       notify({
         title: "Invalid CIDR",
-        text: tag + " is not a valid IP address",
+        text: tag.text + " is not a valid IP address",
         type: 'error',
       })
     }
   })
   if (validInput) {
-    formData.value.Addresses = tags
+    formData.value.Addresses = tags.map(tag => tag.text)
   }
 }
 
 function handleChangeAllowedIPs(tags) {
   let validInput = true
   tags.forEach(tag => {
-    if (isCidr(tag) === 0) {
+    if (isCidr(tag.text) === 0) {
       validInput = false
       notify({
         title: "Invalid CIDR",
-        text: tag + " is not a valid IP address",
+        text: tag.text + " is not a valid IP address",
         type: 'error',
       })
     }
   })
   if (validInput) {
-    formData.value.AllowedIPs.Value = tags
+    formData.value.AllowedIPs.Value = tags.map(tag => tag.text)
   }
 }
 
 function handleChangeExtraAllowedIPs(tags) {
   let validInput = true
   tags.forEach(tag => {
-    if (isCidr(tag) === 0) {
+    if (isCidr(tag.text) === 0) {
       validInput = false
       notify({
         title: "Invalid CIDR",
-        text: tag + " is not a valid IP address",
+        text: tag.text + " is not a valid IP address",
         type: 'error',
       })
     }
   })
   if (validInput) {
-    formData.value.ExtraAllowedIPs = tags
+    formData.value.ExtraAllowedIPs = tags.map(tag => tag.text)
   }
 }
 
 function handleChangeDns(tags) {
   let validInput = true
   tags.forEach(tag => {
-    if (!isIP(tag)) {
+    if (!isIP(tag.text)) {
       validInput = false
       notify({
         title: "Invalid IP",
-        text: tag + " is not a valid IP address",
+        text: tag.text + " is not a valid IP address",
         type: 'error',
       })
     }
   })
   if (validInput) {
-    formData.value.Dns.Value = tags
+    formData.value.Dns.Value = tags.map(tag => tag.text)
   }
 }
 
 function handleChangeDnsSearch(tags) {
-  formData.value.DnsSearch.Value = tags
+  formData.value.DnsSearch.Value = tags.map(tag => tag.text)
 }
 
 async function save() {
@@ -344,34 +351,64 @@ async function del() {
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.ip.label') }}</label>
-          <vue3-tags-input class="form-control" :tags="formData.Addresses"
-            :placeholder="$t('modals.peer-edit.ip.placeholder')" :add-tag-on-keys="[13, 188, 32, 9]"
-            :validate="validateCIDR" @on-tags-changed="handleChangeAddresses" />
+          <vue-tags-input class="form-control" v-model="currentTags.Addresses"
+                           :tags="formData.Addresses.map(str => ({ text: str }))"
+                           :placeholder="$t('modals.peer-edit.ip.placeholder')"
+                           :validation="validateCIDR()"
+                           :add-on-key="[13, 188, 32, 9]"
+                           :save-on-key="[13, 188, 32, 9]"
+                           :allow-edit-tags="true"
+                           :separators="[',', ';', ' ']"
+                           @tags-changed="handleChangeAddresses" />
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.allowed-ip.label') }}</label>
-          <vue3-tags-input class="form-control" :tags="formData.AllowedIPs.Value"
-            :placeholder="$t('modals.peer-edit.allowed-ip.placeholder')" :add-tag-on-keys="[13, 188, 32, 9]"
-            :validate="validateCIDR" @on-tags-changed="handleChangeAllowedIPs" />
+          <vue-tags-input class="form-control" v-model="currentTags.AllowedIPs"
+                           :tags="formData.AllowedIPs.Value.map(str => ({ text: str }))"
+                           :placeholder="$t('modals.peer-edit.allowed-ip.placeholder')"
+                           :validation="validateCIDR()"
+                           :add-on-key="[13, 188, 32, 9]"
+                           :save-on-key="[13, 188, 32, 9]"
+                           :allow-edit-tags="true"
+                           :separators="[',', ';', ' ']"
+                           @tags-changed="handleChangeAllowedIPs" />
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.extra-allowed-ip.label') }}</label>
-          <vue3-tags-input class="form-control" :tags="formData.ExtraAllowedIPs"
-            :placeholder="$t('modals.peer-edit.extra-allowed-ip.placeholder')" :add-tag-on-keys="[13, 188, 32, 9]"
-            :validate="validateCIDR" @on-tags-changed="handleChangeExtraAllowedIPs" />
+          <vue-tags-input class="form-control" v-model="currentTags.ExtraAllowedIPs"
+                          :tags="formData.ExtraAllowedIPs.map(str => ({ text: str }))"
+                          :placeholder="$t('modals.peer-edit.extra-allowed-ip.placeholder')"
+                          :validation="validateCIDR()"
+                          :add-on-key="[13, 188, 32, 9]"
+                          :save-on-key="[13, 188, 32, 9]"
+                          :allow-edit-tags="true"
+                          :separators="[',', ';', ' ']"
+                          @tags-changed="handleChangeExtraAllowedIPs" />
           <small class="form-text text-muted">{{ $t('modals.peer-edit.extra-allowed-ip.description') }}</small>
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.dns.label') }}</label>
-          <vue3-tags-input class="form-control" :tags="formData.Dns.Value"
-            :placeholder="$t('modals.peer-edit.dns.placeholder')" :add-tag-on-keys="[13, 188, 32, 9]"
-            :validate="validateIP" @on-tags-changed="handleChangeDns" />
+          <vue-tags-input class="form-control" v-model="currentTags.Dns"
+                          :tags="formData.Dns.Value.map(str => ({ text: str }))"
+                          :placeholder="$t('modals.peer-edit.dns.placeholder')"
+                          :validation="validateIP()"
+                          :add-on-key="[13, 188, 32, 9]"
+                          :save-on-key="[13, 188, 32, 9]"
+                          :allow-edit-tags="true"
+                          :separators="[',', ';', ' ']"
+                          @tags-changed="handleChangeDns" />
         </div>
-        <div hidden class="form-group">
+        <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.dns-search.label') }}</label>
-          <vue3-tags-input class="form-control" :tags="formData.DnsSearch.Value"
-            :placeholder="$t('modals.peer-edit.dns-search.label')" :add-tag-on-keys="[13, 188, 32, 9]"
-            :validate="validateDomain" @on-tags-changed="handleChangeDnsSearch" />
+          <vue-tags-input class="form-control" v-model="currentTags.DnsSearch"
+                          :tags="formData.DnsSearch.Value.map(str => ({ text: str }))"
+                          :placeholder="$t('modals.peer-edit.dns-search.label')"
+                          :validation="validateDomain()"
+                          :add-on-key="[13, 188, 32, 9]"
+                          :save-on-key="[13, 188, 32, 9]"
+                          :allow-edit-tags="true"
+                          :separators="[',', ';', ' ']"
+                          @tags-changed="handleChangeDnsSearch" />
         </div>
         <div class="row">
           <div class="form-group col-md-6">
