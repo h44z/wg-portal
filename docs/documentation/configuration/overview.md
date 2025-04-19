@@ -562,7 +562,8 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 
 ### `external_url`
 - **Default:** `http://localhost:8888`
-- **Description:** The URL where a client can access WireGuard Portal.
+- **Description:** The URL where a client can access WireGuard Portal. This URL is used for generating links in emails and for performing OAUTH redirects.  
+  **Important:** If you are using a reverse proxy, set this to the external URL of the reverse proxy, otherwise login will fail. If you access the portal via IP address, set this to the IP address of the server.
 
 ### `site_company_name`
 - **Default:** `WireGuard Portal`
