@@ -73,6 +73,10 @@ type Peer struct {
 	PostUp   ConfigOption[string] `json:"PostUp"`   // action that is executed after the device is up
 	PreDown  ConfigOption[string] `json:"PreDown"`  // action that is executed before the device is down
 	PostDown ConfigOption[string] `json:"PostDown"` // action that is executed after the device is down
+
+	// Calculated values
+
+	Filename string `json:"Filename"` // the filename of the config file, for example: wg_peer_x.conf
 }
 
 func NewPeer(src *domain.Peer) *Peer {
@@ -105,6 +109,7 @@ func NewPeer(src *domain.Peer) *Peer {
 		PostUp:              ConfigOptionFromDomain(src.Interface.PostUp),
 		PreDown:             ConfigOptionFromDomain(src.Interface.PreDown),
 		PostDown:            ConfigOptionFromDomain(src.Interface.PostDown),
+		Filename:            src.GetConfigFileName(),
 	}
 }
 

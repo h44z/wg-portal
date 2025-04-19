@@ -88,6 +88,9 @@ definitions:
         type: array
       EnabledPeers:
         type: integer
+      Filename:
+        description: 'the filename of the config file, for example: wg0.conf'
+        type: string
       FirewallMark:
         description: a firewall mark
         type: integer
@@ -256,6 +259,9 @@ definitions:
         items:
           type: string
         type: array
+      Filename:
+        description: 'the filename of the config file, for example: wg_peer_x.conf'
+        type: string
       FirewallMark:
         allOf:
         - $ref: '#/definitions/model.ConfigOption-uint32'

@@ -49,12 +49,11 @@ async function download() {
   await interfaces.LoadInterfaceConfig(interfaces.GetSelected.Identifier)
 
   // credit: https://www.bitdegree.org/learn/javascript-download
-  let filename = interfaces.GetSelected.Identifier + ".conf"
   let text = interfaces.configuration
 
   let element = document.createElement('a')
   element.setAttribute('href', 'data:application/octet-stream;charset=utf-8,' + encodeURIComponent(text))
-  element.setAttribute('download', filename)
+  element.setAttribute('download', interfaces.GetSelected.Filename)
 
   element.style.display = 'none'
   document.body.appendChild(element)

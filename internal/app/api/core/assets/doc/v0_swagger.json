@@ -1646,6 +1646,10 @@
                 "EnabledPeers": {
                     "type": "integer"
                 },
+                "Filename": {
+                    "description": "the filename of the config file, for example: wg0.conf",
+                    "type": "string"
+                },
                 "FirewallMark": {
                     "description": "a firewall mark",
                     "type": "integer"
@@ -1886,6 +1890,10 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "Filename": {
+                    "description": "the filename of the config file, for example: wg_peer_x.conf",
+                    "type": "string"
                 },
                 "FirewallMark": {
                     "description": "a firewall mark",

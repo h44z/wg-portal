@@ -1531,6 +1531,13 @@
                     "type": "integer",
                     "readOnly": true
                 },
+                "Filename": {
+                    "description": "Filename is the name of the config file for this interface.\nThis value is read only and is not settable by the user.",
+                    "type": "string",
+                    "maxLength": 21,
+                    "readOnly": true,
+                    "example": "wg0.conf"
+                },
                 "FirewallMark": {
                     "description": "FirewallMark is an optional firewall mark which is used to handle interface traffic.",
                     "type": "integer"
@@ -1798,6 +1805,13 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "Filename": {
+                    "description": "Filename is the name of the config file for this peer.\nThis value is read only and is not settable by the user.",
+                    "type": "string",
+                    "maxLength": 21,
+                    "readOnly": true,
+                    "example": "wg_peer_x.conf"
                 },
                 "FirewallMark": {
                     "description": "FirewallMark is an optional firewall mark which is used to handle peer traffic.",

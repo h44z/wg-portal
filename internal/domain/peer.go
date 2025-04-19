@@ -3,7 +3,6 @@ package domain
 import (
 	"fmt"
 	"net"
-	"regexp"
 	"strings"
 	"time"
 
@@ -87,17 +86,19 @@ func (p *Peer) CopyCalculatedAttributes(src *Peer) {
 
 func (p *Peer) GetConfigFileName() string {
 	filename := ""
-	reg := regexp.MustCompile("[^a-zA-Z0-9-_]+")
 
 	if p.DisplayName != "" {
 		filename = p.DisplayName
 		filename = strings.ReplaceAll(filename, " ", "_")
-		filename = reg.ReplaceAllString(filename, "")
+		// Eliminate the automatically detected peer part,
+		// as it makes the filename indistinguishable among multiple auto-detected peers.
+		filename = strings.ReplaceAll(filename, "Autodetected_", "")
+		filename = allowedFileNameRegex.ReplaceAllString(filename, "")
 		filename = internal.TruncateString(filename, 16)
 		filename += ".conf"
 	} else {
 		filename = fmt.Sprintf("wg_%s", internal.TruncateString(string(p.Identifier), 8))
-		filename = reg.ReplaceAllString(filename, "")
+		filename = allowedFileNameRegex.ReplaceAllString(filename, "")
 		filename += ".conf"
 	}
 

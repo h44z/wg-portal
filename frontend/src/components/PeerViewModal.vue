@@ -89,19 +89,11 @@ watch(() => props.visible, async (newValue, oldValue) => {
 
 function download() {
   // credit: https://www.bitdegree.org/learn/javascript-download
-  let filename = 'WireGuard-Tunnel.conf'
-  if (selectedPeer.value.DisplayName) {
-    filename = selectedPeer.value.DisplayName
-      .replace(/ /g, "_")
-      .replace(/[^a-zA-Z0-9-_]/g, "")
-      .substring(0, 16)
-      + ".conf"
-  }
   let text = configString.value
 
   let element = document.createElement('a')
   element.setAttribute('href', 'data:application/octet-stream;charset=utf-8,' + encodeURIComponent(text))
-  element.setAttribute('download', filename)
+  element.setAttribute('download', selectedPeer.value.Filename)
 
   element.style.display = 'none'
   document.body.appendChild(element)

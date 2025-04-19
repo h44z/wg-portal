@@ -87,6 +87,14 @@ definitions:
           Only enabled peers are able to connect.
         readOnly: true
         type: integer
+      Filename:
+        description: |-
+          Filename is the name of the config file for this interface.
+          This value is read only and is not settable by the user.
+        example: wg0.conf
+        maxLength: 21
+        readOnly: true
+        type: string
       FirewallMark:
         description: FirewallMark is an optional firewall mark which is used to handle
           interface traffic.
@@ -310,6 +318,14 @@ definitions:
         items:
           type: string
         type: array
+      Filename:
+        description: |-
+          Filename is the name of the config file for this peer.
+          This value is read only and is not settable by the user.
+        example: wg_peer_x.conf
+        maxLength: 21
+        readOnly: true
+        type: string
       FirewallMark:
         allOf:
         - $ref: '#/definitions/models.ConfigOption-uint32'

@@ -121,8 +121,8 @@ func (i *Interface) CopyCalculatedAttributes(src *Interface) {
 }
 
 func (i *Interface) GetConfigFileName() string {
-	filename := internal.TruncateString(string(i.Identifier), 8)
-	filename = allowedFileNameRegex.ReplaceAllString(filename, "")
+	filename := allowedFileNameRegex.ReplaceAllString(string(i.Identifier), "")
+	filename = internal.TruncateString(filename, 16)
 	filename += ".conf"
 
 	return filename

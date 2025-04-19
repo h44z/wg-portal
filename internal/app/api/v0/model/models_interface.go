@@ -47,8 +47,9 @@ type Interface struct {
 
 	// Calculated values
 
-	EnabledPeers int `json:"EnabledPeers"`
-	TotalPeers   int `json:"TotalPeers"`
+	EnabledPeers int    `json:"EnabledPeers"`
+	TotalPeers   int    `json:"TotalPeers"`
+	Filename     string `json:"Filename"` // the filename of the config file, for example: wg0.conf
 }
 
 func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
@@ -88,6 +89,7 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 
 		EnabledPeers: 0,
 		TotalPeers:   0,
+		Filename:     src.GetConfigFileName(),
 	}
 
 	if len(peers) > 0 {

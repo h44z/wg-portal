@@ -42,7 +42,8 @@ export function freshInterface() {
     PeerDefPostDown: "",
 
     TotalPeers: 0,
-    EnabledPeers: 0
+    EnabledPeers: 0,
+    Filename: ""
   }
 }
 
@@ -119,6 +120,8 @@ export function freshPeer() {
       Value: "",
       Overridable: true,
     },
+
+    Filename: "",
 
     // Internal values
     IgnoreGlobalSettings: false,

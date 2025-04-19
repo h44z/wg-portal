@@ -72,6 +72,10 @@ type Peer struct {
 	PreDown ConfigOption[string] `json:"PreDown"`
 	// PostDown is an optional action that is executed after the device is down.
 	PostDown ConfigOption[string] `json:"PostDown"`
+
+	// Filename is the name of the config file for this peer.
+	// This value is read only and is not settable by the user.
+	Filename string `json:"Filename" example:"wg_peer_x.conf" binding:"omitempty,max=21" readonly:"true"`
 }
 
 func NewPeer(src *domain.Peer) *Peer {
@@ -109,6 +113,7 @@ func NewPeer(src *domain.Peer) *Peer {
 		PostUp:              ConfigOptionFromDomain(src.Interface.PostUp),
 		PreDown:             ConfigOptionFromDomain(src.Interface.PreDown),
 		PostDown:            ConfigOptionFromDomain(src.Interface.PostDown),
+		Filename:            src.GetConfigFileName(),
 	}
 }
 

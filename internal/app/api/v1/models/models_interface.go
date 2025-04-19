@@ -84,6 +84,9 @@ type Interface struct {
 	EnabledPeers int `json:"EnabledPeers" readonly:"true"`
 	// TotalPeers is the total number of peers for this interface.
 	TotalPeers int `json:"TotalPeers" readonly:"true"`
+	// Filename is the name of the config file for this interface.
+	// This value is read only and is not settable by the user.
+	Filename string `json:"Filename" example:"wg0.conf" binding:"omitempty,max=21" readonly:"true"`
 }
 
 func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
@@ -123,6 +126,7 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 
 		EnabledPeers: 0,
 		TotalPeers:   0,
+		Filename:     src.GetConfigFileName(),
 	}
 
 	if len(peers) > 0 {
