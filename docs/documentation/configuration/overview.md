@@ -456,6 +456,10 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 The `ldap` array contains a list of LDAP authentication providers.
 Below are the properties for each LDAP provider entry inside `auth.ldap`:
 
+#### `provider_name`
+- **Default:** *(empty)*
+- **Description:** A **unique** name for this provider. Must not conflict with other providers.
+
 #### `url`
 - **Default:** *(empty)*
 - **Description:** The LDAP server URL (e.g., `ldap://srv-ad01.company.local:389`).

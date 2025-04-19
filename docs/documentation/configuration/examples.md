@@ -43,7 +43,6 @@ auth:
     # a sample LDAP provider with user sync enabled
     - id: ldap
       provider_name: Active Directory
-      display_name: Login with</br>AD
       url: ldap://srv-ad1.company.local:389
       bind_user: ldap_wireguard@company.local
       bind_pass: super-s3cr3t-ldap

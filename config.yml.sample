@@ -17,7 +17,6 @@ auth:
   ldap:
     - id: ldap1
       provider_name: company ldap
-      display_name: Login with</br>LDAP
       url: ldap://ldap.yourcompany.local:389
       bind_user: ldap_wireguard@yourcompany.local
       bind_pass: super_Secret_PASSWORD
