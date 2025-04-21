@@ -82,7 +82,7 @@ func (m Manager) RegisterUser(ctx context.Context, user *domain.User) error {
 		return err
 	}
 
-	m.bus.Publish(app.TopicUserRegistered, createdUser)
+	m.bus.Publish(app.TopicUserRegistered, *createdUser)
 
 	return nil
 }
@@ -294,8 +294,8 @@ func (m Manager) ActivateApi(ctx context.Context, id domain.UserIdentifier) (*do
 		return nil, fmt.Errorf("update failure: %w", err)
 	}
 
-	m.bus.Publish(app.TopicUserUpdated, user)
-	m.bus.Publish(app.TopicUserApiEnabled, user)
+	m.bus.Publish(app.TopicUserUpdated, *user)
+	m.bus.Publish(app.TopicUserApiEnabled, *user)
 
 	return user, nil
 }
@@ -322,8 +322,8 @@ func (m Manager) DeactivateApi(ctx context.Context, id domain.UserIdentifier) (*
 		return nil, fmt.Errorf("update failure: %w", err)
 	}
 
-	m.bus.Publish(app.TopicUserUpdated, user)
-	m.bus.Publish(app.TopicUserApiDisabled, user)
+	m.bus.Publish(app.TopicUserUpdated, *user)
+	m.bus.Publish(app.TopicUserApiDisabled, *user)
 
 	return user, nil
 }

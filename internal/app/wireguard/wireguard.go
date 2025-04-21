@@ -112,7 +112,7 @@ func (m Manager) connectToMessageBus() {
 	_ = m.bus.Subscribe(app.TopicUserDeleted, m.handleUserDeletedEvent)
 }
 
-func (m Manager) handleUserCreationEvent(user *domain.User) {
+func (m Manager) handleUserCreationEvent(user domain.User) {
 	if !m.cfg.Core.CreateDefaultPeerOnCreation {
 		return
 	}
