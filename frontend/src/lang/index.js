@@ -2,6 +2,7 @@
 import de from './translations/de.json';
 import en from './translations/en.json';
 import fr from './translations/fr.json';
+import pt from './translations/pt.json';
 import ru from './translations/ru.json';
 import uk from './translations/uk.json';
 import vi from './translations/vi.json';
@@ -23,6 +24,7 @@ const i18n = createI18n({
     "de": de,
     "en": en,
     "fr": fr,
+    "pt": pt,
     "ru": ru,
     "uk": uk,
     "vi": vi,
