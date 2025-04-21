@@ -389,12 +389,14 @@ func (m Manager) validateCreation(ctx context.Context, new *domain.User) error {
 		return fmt.Errorf("reserved user identifier: %w", domain.ErrInvalidData)
 	}
 
-	if new.Source != domain.UserSourceDatabase {
+	// Admins are allowed to create users for arbitrary sources.
+	if new.Source != domain.UserSourceDatabase && !currentUser.IsAdmin {
 		return fmt.Errorf("invalid user source: %s, only %s is allowed: %w",
 			new.Source, domain.UserSourceDatabase, domain.ErrInvalidData)
 	}
 
-	if string(new.Password) == "" {
+	// database users must have a password
+	if new.Source == domain.UserSourceDatabase && string(new.Password) == "" {
 		return fmt.Errorf("invalid password: %w", domain.ErrInvalidData)
 	}
 
@@ -430,6 +432,8 @@ func (m Manager) validateApiChange(ctx context.Context, user *domain.User) error
 }
 
 func (m Manager) runLdapSynchronizationService(ctx context.Context) {
+	ctx = domain.SetUserInfo(ctx, domain.LdapSyncContextUserInfo()) // switch to service context for LDAP sync
+
 	for _, ldapCfg := range m.cfg.Auth.Ldap { // LDAP Auth providers
 		go func(cfg config.LdapProvider) {
 			syncInterval := cfg.SyncInterval

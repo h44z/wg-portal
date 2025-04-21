@@ -45,6 +45,14 @@ func SystemAdminContextUserInfo() *ContextUserInfo {
 	}
 }
 
+// LdapSyncContextUserInfo returns a context user info for the LDAP syncer.
+func LdapSyncContextUserInfo() *ContextUserInfo {
+	return &ContextUserInfo{
+		Id:      CtxSystemLdapSyncer,
+		IsAdmin: true,
+	}
+}
+
 // SetUserInfo sets the user info in the context.
 func SetUserInfo(ctx context.Context, info *ContextUserInfo) context.Context {
 	ctx = context.WithValue(ctx, CtxUserInfo, info)
