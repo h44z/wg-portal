@@ -51,6 +51,8 @@ const languageFlag = computed(() => {
     pt: "pt",
     uk: "ua",
     zh: "cn",
+    ko: "kr",
+
   };
   return "fi-" + (langMap[lang] || lang);
 })
@@ -122,11 +124,13 @@ const currentYear = ref(new Date().getFullYear())
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span> Deutsch</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('en')"><span class="fi fi-us"></span> English</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('fr')"><span class="fi fi-fr"></span> Français</a>
-  		<a class="dropdown-item" href="#" @click.prevent="switchLanguage('pt')"><span class="fi fi-pt"></span> Português</a>
+  	          	<a class="dropdown-item" href="#" @click.prevent="switchLanguage('ko')"><span class="fi fi-kr"></span> 한국어</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('pt')"><span class="fi fi-pt"></span> Português</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('ru')"><span class="fi fi-ru"></span> Русский</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('uk')"><span class="fi fi-ua"></span> Українська</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('vi')"><span class="fi fi-vi"></span> Tiếng Việt</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('zh')"><span class="fi fi-cn"></span> 中文</a>
+                
               </div>
             </div>
           </div>
