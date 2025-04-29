@@ -27,6 +27,7 @@ type PlainOauthAuthenticator struct {
 	userAdminMapping    *config.OauthAdminMapping
 	registrationEnabled bool
 	userInfoLogging     bool
+	allowedDomains      []string
 }
 
 func newPlainOauthAuthenticator(
@@ -56,6 +57,7 @@ func newPlainOauthAuthenticator(
 	provider.userAdminMapping = &cfg.AdminMapping
 	provider.registrationEnabled = cfg.RegistrationEnabled
 	provider.userInfoLogging = cfg.LogUserInfo
+	provider.allowedDomains = cfg.AllowedDomains
 
 	return provider, nil
 }
@@ -63,6 +65,10 @@ func newPlainOauthAuthenticator(
 // GetName returns the name of the OAuth authenticator.
 func (p PlainOauthAuthenticator) GetName() string {
 	return p.name
+}
+
+func (p PlainOauthAuthenticator) GetAllowedDomains() []string {
+	return p.allowedDomains
 }
 
 // RegistrationEnabled returns whether registration is enabled for the OAuth authenticator.
