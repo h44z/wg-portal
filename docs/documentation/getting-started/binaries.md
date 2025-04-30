@@ -31,4 +31,4 @@ sudo install wg-portal /opt/wg-portal/
 ## Unreleased
 
 Unreleased versions could be downloaded from
-[GitHub Workflow](https://github.com/h44z/wg-portal/actions/workflows/docker-publish.yml?query=branch%3Amaster) artifacs also.
+[GitHub Workflow](https://github.com/h44z/wg-portal/actions/workflows/docker-publish.yml?query=branch%3Amaster) artifacts also.
