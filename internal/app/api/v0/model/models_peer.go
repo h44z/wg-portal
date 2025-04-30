@@ -7,7 +7,7 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-const ExpiryDateTimeLayout = "\"2006-01-02\""
+const ExpiryDateTimeLayout = "\"2006-01-02T15:04:05\""
 
 type ExpiryDate struct {
 	*time.Time

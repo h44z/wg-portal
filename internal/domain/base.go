@@ -59,6 +59,7 @@ const (
 	DisabledReasonLdapMissing      = "missing in ldap"
 	DisabledReasonMigrationDummy   = "migration dummy user"
 	DisabledReasonInterfaceMissing = "missing WireGuard interface"
+	DisabledReasonPendingActivation = "pending activation"
 
 	LockedReasonAdmin = "locked by admin"
 	LockedReasonApi   = "locked by admin"

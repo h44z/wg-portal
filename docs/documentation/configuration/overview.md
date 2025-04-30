@@ -44,6 +44,7 @@ advanced:
   route_table_offset: 20000
   api_admin_only: true
   limit_additional_user_peers: 0
+  two_factor_lifetime: 0
 
 database:
   debug: false
@@ -339,6 +340,10 @@ Additional or more specialized configuration options for logging and interface c
 - **Environment Variable:** `WG_PORTAL_ADVANCED_LIMIT_ADDITIONAL_USER_PEERS`
 - **Description:** Limit additional peers a normal user can create. `0` means unlimited.
 
+### `two_factor_lifetime`
+- **Default:** `0`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_TWO_FACTOR_LIFETIME`
+- **Description:** Require a login after the set interval, otherwise the peer will be disabled. `0` disables this feature.
 ---
 
 ## Database

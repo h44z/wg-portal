@@ -7,7 +7,7 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-const ExpiryDateTimeLayout = "2006-01-02"
+const ExpiryDateTimeLayout = "2006-01-02T15:04:05"
 
 // Peer represents a WireGuard peer entry.
 type Peer struct {
@@ -24,7 +24,7 @@ type Peer struct {
 	// DisabledReason is the reason why the peer has been disabled.
 	DisabledReason string `json:"DisabledReason" binding:"required_if=Disabled true" example:"This is a reason why the peer has been disabled."`
 	// ExpiresAt is the expiry date of the peer  in YYYY-MM-DD format. An expired peer is not able to connect.
-	ExpiresAt string `json:"ExpiresAt,omitempty" binding:"omitempty,datetime=2006-01-02"`
+	ExpiresAt string `json:"ExpiresAt,omitempty" binding:"omitempty,datetime=2006-01-02T15:04:05"`
 	// Notes is a note field for peers.
 	Notes string `json:"Notes" example:"This is a note for the peer."`
 
