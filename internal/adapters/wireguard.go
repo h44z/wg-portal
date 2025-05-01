@@ -393,8 +393,14 @@ func (r *WgRepo) getOrCreatePeer(deviceId domain.InterfaceIdentifier, id domain.
 			},
 		},
 	})
+	if err != nil {
+		return nil, fmt.Errorf("peer create error for %s: %w", id.ToPublicKey(), err)
+	}
 
 	peer, err = r.getPeer(deviceId, id)
+	if err != nil {
+		return nil, fmt.Errorf("peer error after create: %w", err)
+	}
 	return peer, nil
 }
 
