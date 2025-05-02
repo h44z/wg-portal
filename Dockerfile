@@ -52,7 +52,7 @@ COPY --from=builder /build/dist/wg-portal /
 ######
 FROM alpine:3.19
 # Install OS-level dependencies
-RUN apk add --no-cache bash curl iptables nftables openresolv
+RUN apk add --no-cache bash curl iptables nftables openresolv wireguard-tools
 # Setup timezone
 ENV TZ=UTC
 # Copy binaries
