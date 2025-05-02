@@ -7,7 +7,7 @@ This container allows you to establish WireGuard VPN connections without relying
 
 The recommended method for deploying WireGuard Portal is via Docker Compose for ease of configuration and management.
 
-A sample docker-compose.yml:
+A sample docker-compose.yml (managing WireGuard interfaces directly on the host) is provided below:
 
 ```yaml
 --8<-- "docker-compose.yml::17"
@@ -36,7 +36,25 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
  - **Within the WireGuard Portal Docker container**: 
    WireGuard interfaces can be managed directly from within the WireGuard Portal container itself.
    This is the recommended approach when running WireGuard Portal via Docker, as it encapsulates all functionality in a single, portable container without requiring a separate WireGuard host or image.
-   The sample docker-compose.yml file provided above is configured for this method.
+   ```yaml
+   services:
+     wg-portal:
+       image: wgportal/wg-portal:latest
+       container_name: wg-portal
+       ...
+       cap_add:
+         - NET_ADMIN
+       ports:
+         # WireGuard port, needs to match the port in wg-portal interface config (add one port mapping for each interface)
+         - "51820:51820/udp" 
+         # Web UI port
+         - "8888:8888/tcp"
+       sysctls:
+         - net.ipv4.conf.all.src_valid_mark=1
+       volumes:
+         - ./wg/data:/app/data
+         - ./wg/config:/app/config
+   ```
 
  - **Via a separate Docker container**: 
    WireGuard Portal can interface with and control WireGuard running in another Docker container, such as the [linuxserver/wireguard](https://docs.linuxserver.io/images/docker-wireguard/) image.
