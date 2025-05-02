@@ -211,17 +211,18 @@ async function del() {
         <legend class="mt-4">{{ $t('modals.peer-edit.header-crypto') }}</legend>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.private-key.label') }}</label>
-          <input type="email" class="form-control" :placeholder="$t('modals.peer-edit.private-key.placeholder')" required
+          <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.private-key.placeholder')" required
             v-model="formData.PrivateKey">
+          <small id="privateKeyHelp" class="form-text text-muted">{{ $t('modals.peer-edit.private-key.help') }}</small>
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.public-key.label') }}</label>
-          <input type="email" class="form-control" :placeholder="$t('modals.peer-edit.public-key.placeholder')" required
+          <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.public-key.placeholder')" required
             v-model="formData.PublicKey">
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.preshared-key.label') }}</label>
-          <input type="email" class="form-control" :placeholder="$t('modals.peer-edit.preshared-key.placeholder')"
+          <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.preshared-key.placeholder')"
             v-model="formData.PresharedKey">
         </div>
       </fieldset>

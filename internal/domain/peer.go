@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
-	"github.com/h44z/wg-portal/internal/config"
 
 	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/config"
 )
 
 type PeerIdentifier string
@@ -36,7 +36,7 @@ type Peer struct {
 	EndpointPublicKey   ConfigOption[string] `gorm:"embedded;embeddedPrefix:endpoint_pubkey_"` // the endpoint public key
 	AllowedIPsStr       ConfigOption[string] `gorm:"embedded;embeddedPrefix:allowed_ips_str_"` // all allowed ip subnets, comma seperated
 	ExtraAllowedIPsStr  string               // all allowed ip subnets on the server side, comma seperated
-	PresharedKey        PreSharedKey         // the pre-shared Key of the peer
+	PresharedKey        PreSharedKey         `gorm:"serializer:encstr"`                              // the pre-shared Key of the peer
 	PersistentKeepalive ConfigOption[int]    `gorm:"embedded;embeddedPrefix:persistent_keep_alive_"` // the persistent keep-alive interval
 
 	// WG Portal specific

@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	evbus "github.com/vardius/message-bus"
+	"gorm.io/gorm/schema"
 
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/adapters"
@@ -41,6 +42,8 @@ func main() {
 
 	cfg.LogStartupValues()
 
+	dbEncryptedSerializer := app.NewGormEncryptedStringSerializer(cfg.Database.EncryptionPassphrase)
+	schema.RegisterSerializer("encstr", dbEncryptedSerializer)
 	rawDb, err := adapters.NewDatabase(cfg.Database)
 	internal.AssertNoError(err)
 

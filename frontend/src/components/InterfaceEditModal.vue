@@ -331,11 +331,11 @@ async function del() {
             <legend class="mt-4">{{ $t('modals.interface-edit.header-crypto') }}</legend>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.private-key.label') }}</label>
-              <input v-model="formData.PrivateKey" class="form-control" :placeholder="$t('modals.interface-edit.private-key.placeholder')" required type="email">
+              <input v-model="formData.PrivateKey" class="form-control" :placeholder="$t('modals.interface-edit.private-key.placeholder')" required type="text">
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.public-key.label') }}</label>
-              <input v-model="formData.PublicKey" class="form-control" :placeholder="$t('modals.interface-edit.public-key.placeholder')" required type="email">
+              <input v-model="formData.PublicKey" class="form-control" :placeholder="$t('modals.interface-edit.public-key.placeholder')" required type="text">
             </div>
           </fieldset>
           <fieldset>

@@ -214,6 +214,8 @@ Additional or more specialized configuration options for logging and interface c
 Configuration for the underlying database used by WireGuard Portal. 
 Supported databases include SQLite, MySQL, Microsoft SQL Server, and Postgres.
 
+If sensitive values (like private keys) should be stored in an encrypted format, set the `encryption_passphrase` option.
+
 ### `debug`
 - **Default:** `false`
 - **Description:** If `true`, logs all database statements (verbose).
@@ -233,6 +235,12 @@ Supported databases include SQLite, MySQL, Microsoft SQL Server, and Postgres.
   ```text
   user:pass@tcp(1.2.3.4:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local
   ```
+
+### `encryption_passphrase`
+- **Default:** *(empty)*
+- **Description:** Passphrase for encrypting sensitive values such as private keys in the database. Encryption is only applied if this passphrase is set.
+  **Important:** Once you enable encryption by setting this passphrase, you cannot disable it or change it afterward. 
+  New or updated records will be encrypted; existing data remains in plaintext until it’s next modified.
 
 ---
 

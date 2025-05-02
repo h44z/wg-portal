@@ -25,4 +25,7 @@ type DatabaseConfig struct {
 	// For SQLite, it is the path to the database file.
 	// For other databases, it is the connection string, see: https://gorm.io/docs/connecting_to_the_database.html
 	DSN string `yaml:"dsn"`
+	// EncryptionPassphrase is the passphrase used to encrypt sensitive data (WireGuard keys) in the database.
+	// If no passphrase is provided, no encryption will be used.
+	EncryptionPassphrase string `yaml:"encryption_passphrase"`
 }

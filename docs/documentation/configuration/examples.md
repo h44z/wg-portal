@@ -31,6 +31,7 @@ database:
   debug: true
   type: sqlite
   dsn: data/sqlite.db
+  encryption_passphrase: change-this-s3cr3t-encryption-passphrase
 ```
 
 ## LDAP Authentication and Synchronization

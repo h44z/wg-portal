@@ -7,7 +7,7 @@ import (
 )
 
 type KeyPair struct {
-	PrivateKey string
+	PrivateKey string `gorm:"serializer:encstr"`
 	PublicKey  string
 }
 

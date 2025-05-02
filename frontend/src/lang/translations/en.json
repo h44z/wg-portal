@@ -40,7 +40,8 @@
     "settings": "Settings",
     "audit": "Audit Log",
     "login": "Login",
-    "logout": "Logout"
+    "logout": "Logout",
+    "keygen": "Key Generator"
   },
   "home": {
     "headline": "WireGuard® VPN Portal",
@@ -204,6 +205,25 @@
       "severity": "Severity",
       "origin": "Origin",
       "message": "Message"
+    }
+  },
+  "keygen": {
+    "headline": "WireGuard Key Generator",
+    "abstract": "Generate a new WireGuard keys. The keys are generated in your local browser and are never sent to the server.",
+    "headline-keypair": "New Key Pair",
+    "headline-preshared-key": "New Preshared Key",
+    "button-generate": "Generate",
+    "private-key": {
+        "label": "Private Key",
+        "placeholder": "The private key"
+    },
+    "public-key": {
+        "label": "Public Key",
+        "placeholder": "The public key"
+    },
+    "preshared-key": {
+        "label": "Preshared Key",
+        "placeholder": "The pre-shared key"
     }
   },
   "modals": {
@@ -439,7 +459,8 @@
       },
       "private-key": {
         "label": "Private Key",
-        "placeholder": "The private key"
+        "placeholder": "The private key",
+        "help": "The private key is stored securely on the server. If the user already holds a copy, you may omit this field. The server still functions exclusively with the peer’s public key."
       },
       "public-key": {
         "label": "Public Key",

@@ -39,7 +39,8 @@
     "profile": "Mein Profil",
     "settings": "Einstellungen",
     "login": "Anmelden",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "keygen": "Schlüsselgenerator"
   },
   "home": {
     "headline": "WireGuard® VPN Portal",
@@ -186,6 +187,25 @@
       "button-enable-title": "Aktivieren Sie die API, dadurch wird ein neuer Token generiert.",
       "button-enable-text": "API aktivieren",
       "api-link": "API Dokumentation"
+    }
+  },
+  "keygen": {
+    "headline": "WireGuard Key Generator",
+    "abstract": "Hier können Sie WireGuard Schlüsselpaare generieren. Die Schlüssel werden lokal auf Ihrem Computer generiert und niemals an den Server gesendet.",
+    "headline-keypair": "Neues Schlüsselpaar",
+    "headline-preshared-key": "Neuer Pre-shared Key",
+    "button-generate": "Erzeugen",
+    "private-key": {
+      "label": "Private Key",
+      "placeholder": "Der private Schlüssel"
+    },
+    "public-key": {
+      "label": "Public Key",
+      "placeholder": "Der öffentliche Schlüssel"
+    },
+    "preshared-key": {
+      "label": "Preshared Key",
+      "placeholder": "Der Pre-shared Schlüssel"
     }
   },
   "modals": {
@@ -420,7 +440,8 @@
       },
       "private-key": {
         "label": "Private Key",
-        "placeholder": "The private key"
+        "placeholder": "The private key",
+        "help": "Der private Schlüssel wird sicher auf dem Server gespeichert. Wenn der Benutzer bereits eine Kopie besitzt, kann dieses Feld entfallen. Der Server funktioniert auch ausschließlich mit dem öffentlichen Schlüssel des Peers."
       },
       "public-key": {
         "label": "Public Key",
