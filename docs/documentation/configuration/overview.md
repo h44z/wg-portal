@@ -1,7 +1,7 @@
 This page provides an overview of **all available configuration options** for WireGuard Portal.
 
 You can supply these configurations in a **YAML** file (e.g. `config.yaml`) when starting the Portal.
-The path of the configuration file defaults to **config/config.yml** in the working directory of the executable.  
+The path of the configuration file defaults to **config/config.yaml** (or config/config.yml) in the working directory of the executable.  
 It is possible to override configuration filepath using the environment variable `WG_PORTAL_CONFIG`.
 For example: `WG_PORTAL_CONFIG=/etc/wg-portal/config.yaml ./wg-portal`.  
 Also, environment variable substitution in config file is supported. Refer to [syntax](https://github.com/a8m/envsubst?tab=readme-ov-file#docs).
@@ -39,7 +39,7 @@ advanced:
 
 database:
   debug: false
-  slow_query_threshold: 0
+  slow_query_threshold: "0"
   type: sqlite
   dsn: data/sqlite.db
 
@@ -221,8 +221,8 @@ If sensitive values (like private keys) should be stored in an encrypted format,
 - **Description:** If `true`, logs all database statements (verbose).
 
 ### `slow_query_threshold`
-- **Default:** 0
-- **Description:** A time threshold (e.g., `100ms`) above which queries are considered slow and logged as warnings. If empty or zero, slow query logging is disabled. Format uses `s`, `ms` for seconds, milliseconds, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
+- **Default:** "0"
+- **Description:** A time threshold (e.g., `100ms`) above which queries are considered slow and logged as warnings. If zero, slow query logging is disabled. Format uses `s`, `ms` for seconds, milliseconds, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration). The value must be a string.
 
 ### `type`
 - **Default:** `sqlite`

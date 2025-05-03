@@ -174,9 +174,16 @@ func GetConfig() (*Config, error) {
 
 	// override config values from YAML file
 
-	cfgFileName := "config/config.yml"
+	cfgFileName := "config/config.yaml"
+	cfgFileNameFallback := "config/config.yml"
 	if envCfgFileName := os.Getenv("WG_PORTAL_CONFIG"); envCfgFileName != "" {
 		cfgFileName = envCfgFileName
+		cfgFileNameFallback = envCfgFileName
+	}
+
+	// check if the config file exists, otherwise use the fallback file name
+	if _, err := os.Stat(cfgFileName); os.IsNotExist(err) {
+		cfgFileName = cfgFileNameFallback
 	}
 
 	if err := loadConfigFile(cfg, cfgFileName); err != nil {

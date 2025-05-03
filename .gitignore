@@ -33,6 +33,7 @@ ssh.key
 wg_portal.db
 sqlite.db
 /config.yml
+/config.yaml
 /config/
 venv/
 .cache/

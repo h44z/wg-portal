@@ -65,6 +65,7 @@ nav:
           - Docker: documentation/getting-started/docker.md
           - Helm: documentation/getting-started/helm.md
           - Sources: documentation/getting-started/sources.md
+          - Reverse Proxy (HTTPS): documentation/getting-started/reverse-proxy.md
       - Configuration:
           - Overview: documentation/configuration/overview.md
           - Examples: documentation/configuration/examples.md

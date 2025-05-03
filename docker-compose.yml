@@ -12,6 +12,7 @@ services:
       - NET_ADMIN
     network_mode: "host"
     volumes:
+      # left side is the host path, right side is the container path
       - /etc/wireguard:/etc/wireguard
       - ./data:/app/data
       - ./config:/app/config

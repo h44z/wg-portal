@@ -45,6 +45,7 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
        cap_add:
          - NET_ADMIN
        ports:
+         # host port : container port
          # WireGuard port, needs to match the port in wg-portal interface config (add one port mapping for each interface)
          - "51820:51820/udp" 
          # Web UI port
@@ -52,6 +53,7 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
        sysctls:
          - net.ipv4.conf.all.src_valid_mark=1
        volumes:
+         # host path : container path
          - ./wg/data:/app/data
          - ./wg/config:/app/config
    ```
@@ -70,6 +72,7 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
          - NET_ADMIN
        network_mode: "service:wireguard" # So we ensure to stay on the same network as the wireguard container.
        volumes:
+         # host path : container path
          - ./wg/etc:/etc/wireguard
          - ./wg/data:/app/data
          - ./wg/config:/app/config
@@ -81,6 +84,7 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
        cap_add:
          - NET_ADMIN
        ports:
+         # host port : container port
          - "51820:51820/udp" # WireGuard port, needs to match the port in wg-portal interface config
          - "8888:8888/tcp" # Noticed that the port of the web UI is exposed in the wireguard container.
        volumes:
@@ -133,7 +137,7 @@ For each commit in the master and the stable branch, a corresponding Docker imag
 ## Configuration
 
 You can configure WireGuard Portal using a YAML configuration file.
-The filepath of the YAML configuration file defaults to `/app/config/config.yml`.
+The filepath of the YAML configuration file defaults to `/app/config/config.yaml`.
 It is possible to override the configuration filepath using the environment variable **WG_PORTAL_CONFIG**.
 
 By default, WireGuard Portal uses an SQLite database. The database is stored in `/app/data/sqlite.db`.
