@@ -1,0 +1,515 @@
+{
+  "languages": {
+    "fr": "Français"
+  },
+  "general": {
+    "pagination": {
+      "size": "Nombre d'éléments",
+      "all": "Tous (lent)"
+    },
+    "search": {
+      "placeholder": "Rechercher...",
+      "button": "Rechercher"
+    },
+    "select-all": "Tout sélectionner",
+    "yes": "Oui",
+    "no": "Non",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "delete": "Supprimer"
+  },
+  "login": {
+    "headline": "Veuillez vous connecter",
+    "username": {
+      "label": "Nom d'utilisateur",
+      "placeholder": "Veuillez entrer votre nom d'utilisateur"
+    },
+    "password": {
+      "label": "Mot de passe",
+      "placeholder": "Veuillez entrer votre mot de passe"
+    },
+    "button": "Se connecter"
+  },
+  "menu": {
+    "home": "Accueil",
+    "interfaces": "Interfaces",
+    "users": "Utilisateurs",
+    "lang": "Changer de langue",
+    "profile": "Mon profil",
+    "settings": "Paramètres",
+    "login": "Se connecter",
+    "logout": "Se déconnecter"
+  },
+  "home": {
+    "headline": "Portail VPN WireGuard®",
+    "info-headline": "Plus d'informations",
+    "abstract": "WireGuard® est un VPN extrêmement simple mais rapide et moderne qui utilise une cryptographie de pointe. Il vise à être plus rapide, plus simple, plus léger et plus utile qu'IPsec, tout en évitant le casse-tête massif. Il se veut considérablement plus performant qu'OpenVPN.",
+    "installation": {
+      "box-header": "Installation de WireGuard",
+      "headline": "Installation",
+      "content": "Les instructions d'installation du logiciel client sont disponibles sur le site Web officiel de WireGuard.",
+      "button": "Ouvrir les instructions"
+    },
+    "about-wg": {
+      "box-header": "À propos de WireGuard",
+      "headline": "À propos",
+      "content": "WireGuard® est un VPN extrêmement simple mais rapide et moderne qui utilise une cryptographie de pointe.",
+      "button": "Plus d'informations"
+    },
+    "about-portal": {
+      "box-header": "À propos du Portail WireGuard",
+      "headline": "Portail WireGuard",
+      "content": "Le Portail WireGuard est un portail de configuration simple basé sur le Web pour WireGuard.",
+      "button": "Plus d'informations"
+    },
+    "profiles": {
+      "headline": "Profils VPN",
+      "abstract": "Vous pouvez accéder et télécharger vos configurations VPN personnelles via votre profil utilisateur.",
+      "content": "Pour trouver tous vos profils configurés, cliquez sur le bouton ci-dessous.",
+      "button": "Ouvrir mon profil"
+    },
+    "admin": {
+      "headline": "Zone d'administration",
+      "abstract": "Dans la zone d'administration, vous pouvez gérer les pairs WireGuard et l'interface du serveur, ainsi que les utilisateurs autorisés à se connecter au Portail WireGuard.",
+      "content": "",
+      "button-admin": "Ouvrir l'administration du serveur",
+      "button-user": "Ouvrir l'administration des utilisateurs"
+    }
+  },
+  "interfaces": {
+    "headline": "Administration des interfaces",
+    "headline-peers": "Pairs VPN actuels",
+    "headline-endpoints": "Points de terminaison actuels",
+    "no-interface": {
+      "default-selection": "Aucune interface disponible",
+      "headline": "Aucune interface trouvée...",
+      "abstract": "Cliquez sur le bouton plus ci-dessus pour créer une nouvelle interface WireGuard."
+    },
+    "no-peer": {
+      "headline": "Aucun pair disponible",
+      "abstract": "Actuellement, aucun pair n'est disponible pour l'interface WireGuard sélectionnée."
+    },
+    "table-heading": {
+      "name": "Nom",
+      "user": "Utilisateur",
+      "ip": "IP",
+      "endpoint": "Point de terminaison",
+      "status": "Statut"
+    },
+    "interface": {
+      "headline": "État de l'interface pour",
+      "mode": "mode",
+      "key": "Clé publique",
+      "endpoint": "Point de terminaison public",
+      "port": "Port d'écoute",
+      "peers": "Pairs activés",
+      "total-peers": "Total des pairs",
+      "endpoints": "Points de terminaison activés",
+      "total-endpoints": "Total des points de terminaison",
+      "ip": "Adresse IP",
+      "default-allowed-ip": "IP autorisées par défaut",
+      "dns": "Serveurs DNS",
+      "mtu": "MTU",
+      "default-keep-alive": "Intervalle Keepalive par défaut",
+      "button-show-config": "Afficher la configuration",
+      "button-download-config": "Télécharger la configuration",
+      "button-store-config": "Enregistrer la configuration pour wg-quick",
+      "button-edit": "Modifier l'interface"
+    },
+    "button-add-interface": "Ajouter une interface",
+    "button-add-peer": "Ajouter un pair",
+    "button-add-peers": "Ajouter plusieurs pairs",
+    "button-show-peer": "Afficher le pair",
+    "button-edit-peer": "Modifier le pair",
+    "peer-disabled": "Le pair est désactivé, raison :",
+    "peer-expiring": "Le pair expire le",
+    "peer-connected": "Connecté",
+    "peer-not-connected": "Non connecté",
+    "peer-handshake": "Dernière négociation :",
+    "button-show-peer": "Afficher le pair",
+    "button-edit-peer": "Modifier le pair"
+  },
+  "users": {
+    "headline": "Administration des utilisateurs",
+    "table-heading": {
+      "id": "ID",
+      "email": "E-mail",
+      "firstname": "Prénom",
+      "lastname": "Nom",
+      "source": "Source",
+      "peers": "Pairs",
+      "admin": "Admin"
+    },
+    "no-user": {
+      "headline": "Aucun utilisateur disponible",
+      "abstract": "Actuellement, aucun utilisateur n'est enregistré auprès du Portail WireGuard."
+    },
+    "button-add-user": "Ajouter un utilisateur",
+    "button-show-user": "Afficher l'utilisateur",
+    "button-edit-user": "Modifier l'utilisateur",
+    "user-disabled": "L'utilisateur est désactivé, raison :",
+    "user-locked": "Le compte est verrouillé, raison :",
+    "admin": "L'utilisateur a des privilèges d'administrateur",
+    "no-admin": "L'utilisateur n'a pas de privilèges d'administrateur"
+  },
+  "profile": {
+    "headline": "Mes pairs VPN",
+    "table-heading": {
+      "name": "Nom",
+      "ip": "IP",
+      "stats": "Statut",
+      "interface": "Interface serveur"
+    },
+    "no-peer": {
+      "headline": "Aucun pair disponible",
+      "abstract": "Actuellement, aucun pair n'est associé à votre profil utilisateur."
+    },
+    "peer-connected": "Connecté",
+    "button-add-peer": "Ajouter un pair",
+    "button-show-peer": "Afficher le pair",
+    "button-edit-peer": "Modifier le pair"
+  },
+  "settings": {
+    "headline": "Paramètres",
+    "abstract": "Ici, vous pouvez modifier vos paramètres personnels.",
+    "api": {
+      "headline": "Paramètres de l'API",
+      "abstract": "Ici, vous pouvez configurer les paramètres de l'API RESTful.",
+      "active-description": "L'API est actuellement active pour votre compte utilisateur. Toutes les requêtes API sont authentifiées avec l'authentification de base. Utilisez les informations d'identification suivantes pour l'authentification.",
+      "inactive-description": "L'API est actuellement inactive. Appuyez sur le bouton ci-dessous pour l'activer.",
+      "user-label": "Nom d'utilisateur de l'API :",
+      "user-placeholder": "L'utilisateur de l'API",
+      "token-label": "Mot de passe de l'API :",
+      "token-placeholder": "Le jeton de l'API",
+      "token-created-label": "Accès API accordé le :",
+      "button-disable-title": "Désactiver l'API, cela invalidera le jeton actuel.",
+      "button-disable-text": "Désactiver l'API",
+      "button-enable-title": "Activer l'API, cela générera un nouveau jeton.",
+      "button-enable-text": "Activer l'API",
+      "api-link": "Documentation de l'API"
+    }
+  },
+  "modals": {
+    "user-view": {
+      "headline": "Compte utilisateur :",
+      "tab-user": "Informations",
+      "tab-peers": "Pairs",
+      "headline-info": "Informations sur l'utilisateur :",
+      "headline-notes": "Notes :",
+      "email": "E-mail",
+      "firstname": "Prénom",
+      "lastname": "Nom",
+      "phone": "Numéro de téléphone",
+      "department": "Département",
+      "api-enabled": "Accès API",
+      "disabled": "Compte désactivé",
+      "locked": "Compte verrouillé",
+      "no-peers": "L'utilisateur n'a pas de pairs associés.",
+      "peers": {
+        "name": "Nom",
+        "interface": "Interface",
+        "ip": "IP"
+      }
+    },
+    "user-edit": {
+      "headline-edit": "Modifier l'utilisateur :",
+      "headline-new": "Nouvel utilisateur",
+      "header-general": "Général",
+      "header-personal": "Informations sur l'utilisateur",
+      "header-notes": "Notes",
+      "header-state": "État",
+      "identifier": {
+        "label": "Identifiant",
+        "placeholder": "L'identifiant unique de l'utilisateur"
+      },
+      "source": {
+        "label": "Source",
+        "placeholder": "La source de l'utilisateur"
+      },
+      "password": {
+        "label": "Mot de passe",
+        "placeholder": "Un mot de passe super secret",
+        "description": "Laissez ce champ vide pour conserver le mot de passe actuel."
+      },
+      "email": {
+        "label": "E-mail",
+        "placeholder": "L'adresse e-mail"
+      },
+      "phone": {
+        "label": "Téléphone",
+        "placeholder": "Le numéro de téléphone"
+      },
+      "department": {
+        "label": "Département",
+        "placeholder": "Le département"
+      },
+      "firstname": {
+        "label": "Prénom",
+        "placeholder": "Prénom"
+      },
+      "lastname": {
+        "label": "Nom",
+        "placeholder": "Nom"
+      },
+      "notes": {
+        "label": "Notes",
+        "placeholder": ""
+      },
+      "disabled": {
+        "label": "Désactivé (aucune connexion WireGuard et aucune connexion possible)"
+      },
+      "locked": {
+        "label": "Verrouillé (aucune connexion possible, les connexions WireGuard fonctionnent toujours)"
+      },
+      "admin": {
+        "label": "Est Admin"
+      }
+    },
+    "interface-view": {
+      "headline": "Configuration pour l'interface :"
+    },
+    "interface-edit": {
+      "headline-edit": "Modifier l'interface :",
+      "headline-new": "Nouvelle interface",
+      "tab-interface": "Interface",
+      "tab-peerdef": "Valeurs par défaut des pairs",
+      "header-general": "Général",
+      "header-network": "Réseau",
+      "header-crypto": "Cryptographie",
+      "header-hooks": "Hooks d'interface",
+      "header-peer-hooks": "Hooks",
+      "header-state": "État",
+      "identifier": {
+        "label": "Identifiant",
+        "placeholder": "L'identifiant unique de l'interface"
+      },
+      "mode": {
+        "label": "Mode de l'interface",
+        "server": "Mode serveur",
+        "client": "Mode client",
+        "any": "Mode inconnu"
+      },
+      "display-name": {
+        "label": "Nom d'affichage",
+        "placeholder": "Le nom descriptif de l'interface"
+      },
+      "private-key": {
+        "label": "Clé privée",
+        "placeholder": "La clé privée"
+      },
+      "public-key": {
+        "label": "Clé publique",
+        "placeholder": "La clé publique"
+      },
+      "ip": {
+        "label": "Adresses IP",
+        "placeholder": "Adresses IP (format CIDR)"
+      },
+      "listen-port": {
+        "label": "Port d'écoute",
+        "placeholder": "Le port d'écoute"
+      },
+      "dns": {
+        "label": "Serveur DNS",
+        "placeholder": "Les serveurs DNS qui doivent être utilisés"
+      },
+      "dns-search": {
+        "label": "Domaines de recherche DNS",
+        "placeholder": "Préfixes de recherche DNS"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "Le MTU de l'interface (0 = conserver la valeur par défaut)"
+      },
+      "firewall-mark": {
+        "label": "Marque de pare-feu",
+        "placeholder": "Marque de pare-feu appliquée au trafic sortant. (0 = automatique)"
+      },
+      "routing-table": {
+        "label": "Table de routage",
+        "placeholder": "L'ID de la table de routage",
+        "description": "Cas particuliers : off = ne pas gérer les routes, 0 = automatique"
+      },
+      "pre-up": {
+        "label": "Pré-Up",
+        "placeholder": "Une ou plusieurs commandes bash séparées par ;"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "Une ou plusieurs commandes bash séparées par ;"
+      },
+      "pre-down": {
+        "label": "Pré-Down",
+        "placeholder": "Une ou plusieurs commandes bash séparées par ;"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "Une ou plusieurs commandes bash séparées par ;"
+      },
+      "disabled": {
+        "label": "Interface désactivée"
+      },
+      "save-config": {
+        "label": "Enregistrer automatiquement la configuration wg-quick"
+      },
+      "defaults": {
+        "endpoint": {
+          "label": "Adresse du point de terminaison",
+          "placeholder": "Adresse du point de terminaison",
+          "description": "L'adresse du point de terminaison auquel les pairs se connecteront. (par exemple, wg.example.com ou wg.example.com:51820)"
+        },
+        "networks": {
+          "label": "Réseaux IP",
+          "placeholder": "Adresses de réseau",
+          "description": "Les pairs recevront des adresses IP de ces sous-réseaux."
+        },
+        "allowed-ip": {
+          "label": "Adresses IP autorisées",
+          "placeholder": "Adresses IP autorisées par défaut"
+        },
+        "mtu": {
+          "label": "MTU",
+          "placeholder": "Le MTU du client (0 = conserver la valeur par défaut)"
+        },
+        "keep-alive": {
+          "label": "Intervalle Keep Alive",
+          "placeholder": "Persistent Keepalive (0 = par défaut)"
+        }
+      },
+      "button-apply-defaults": "Appliquer les valeurs par défaut des pairs"
+    },
+    "peer-view": {
+      "headline-peer": "Pair :",
+      "headline-endpoint": "Point de terminaison :",
+      "section-info": "Informations sur le pair",
+      "section-status": "État actuel",
+      "section-config": "Configuration",
+      "identifier": "Identifiant",
+      "ip": "Adresses IP",
+      "user": "Utilisateur associé",
+      "notes": "Notes",
+      "expiry-status": "Expire le",
+      "disabled-status": "Désactivé le",
+      "traffic": "Trafic",
+      "connection-status": "Statistiques de connexion",
+      "upload": "Octets envoyés (du serveur au pair)",
+      "download": "Octets téléchargés (du pair au serveur)",
+      "pingable": "Peut être pingé",
+      "handshake": "Dernière négociation",
+      "connected-since": "Connecté depuis",
+      "endpoint": "Point de terminaison",
+      "button-download": "Télécharger la configuration",
+      "button-email": "Envoyer la configuration par e-mail"
+    },
+    "peer-edit": {
+      "headline-edit-peer": "Modifier le pair :",
+      "headline-edit-endpoint": "Modifier le point de terminaison :",
+      "headline-new-peer": "Créer un pair",
+      "headline-new-endpoint": "Créer un point de terminaison",
+      "header-general": "Général",
+      "header-network": "Réseau",
+      "header-crypto": "Cryptographie",
+      "header-hooks": "Hooks (exécutés sur le pair)",
+      "header-state": "État",
+      "display-name": {
+        "label": "Nom d'affichage",
+        "placeholder": "Le nom descriptif du pair"
+      },
+      "linked-user": {
+        "label": "Utilisateur lié",
+        "placeholder": "Le compte utilisateur qui possède ce pair"
+      },
+      "private-key": {
+        "label": "Clé privée",
+        "placeholder": "La clé privée"
+      },
+      "public-key": {
+        "label": "Clé publique",
+        "placeholder": "La clé publique"
+      },
+      "preshared-key": {
+        "label": "Clé pré-partagée",
+        "placeholder": "Clé pré-partagée facultative"
+      },
+      "endpoint-public-key": {
+        "label": "Clé publique du point de terminaison",
+        "placeholder": "La clé publique du point de terminaison distant"
+      },
+      "endpoint": {
+        "label": "Adresse du point de terminaison",
+        "placeholder": "L'adresse du point de terminaison distant"
+      },
+      "ip": {
+        "label": "Adresses IP",
+        "placeholder": "Adresses IP (format CIDR)"
+      },
+      "allowed-ip": {
+        "label": "Adresses IP autorisées",
+        "placeholder": "Adresses IP autorisées (format CIDR)"
+      },
+      "extra-allowed-ip": {
+        "label": "Adresses IP autorisées supplémentaires",
+        "placeholder": "IP autorisées supplémentaires (côté serveur)",
+        "description": "Ces IP seront ajoutées à l'interface WireGuard distante comme IP autorisées."
+      },
+      "dns": {
+        "label": "Serveur DNS",
+        "placeholder": "Les serveurs DNS qui doivent être utilisés"
+      },
+      "dns-search": {
+        "label": "Domaines de recherche DNS",
+        "placeholder": "Préfixes de recherche DNS"
+      },
+      "keep-alive": {
+        "label": "Intervalle Keep Alive",
+        "placeholder": "Persistent Keepalive (0 = par défaut)"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "Le MTU du client (0 = conserver la valeur par défaut)"
+      },
+      "pre-up": {
+        "label": "Pré-Up",
+        "placeholder": "Une ou plusieurs commandes bash séparées par ;"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "Une ou plusieurs commandes bash séparées par ;"
+      },
+      "pre-down": {
+        "label": "Pré-Down",
+        "placeholder": "Une ou plusieurs commandes bash séparées par ;"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "Une ou plusieurs commandes bash séparées par ;"
+      },
+      "disabled": {
+        "label": "Pair désactivé"
+      },
+      "ignore-global": {
+        "label": "Ignorer les paramètres globaux"
+      },
+      "expires-at": {
+        "label": "Date d'expiration"
+      }
+    },
+    "peer-multi-create": {
+      "headline-peer": "Créer plusieurs pairs",
+      "headline-endpoint": "Créer plusieurs points de terminaison",
+      "identifiers": {
+        "label": "Identifiants d'utilisateur",
+        "placeholder": "Identifiants d'utilisateur",
+        "description": "Un identifiant d'utilisateur (le nom d'utilisateur) pour lequel un pair doit être créé."
+      },
+      "prefix": {
+        "headline-peer": "Pair :",
+        "headline-endpoint": "Point de terminaison :",
+        "label": "Préfixe du nom d'affichage",
+        "placeholder": "Le préfixe",
+        "description": "Un préfixe qui est ajouté au nom d'affichage des pairs."
+      }
+    }
+  }
+}

@@ -28,12 +28,16 @@
 out/
 dist/
 data/
-docker_images/
 ssh.key
 .testCoverage.txt
 wg_portal.db
-swagger.json
-swagger.yaml
-/config.yml
 sqlite.db
-node_modules/
+/config.yml
+/config.yaml
+/config/
+venv/
+.cache/
+# ignore local frontend dist directory
+internal/app/api/core/frontend-dist
+# mkdocs output directory
+site/

@@ -1,8 +1,7 @@
 ---
-version: '3.6'
 services:
   wg-portal:
-    image: wgportal/wg-portal:v1
+    image: wgportal/wg-portal:v2
     container_name: wg-portal
     restart: unless-stopped
     logging:
@@ -11,9 +10,13 @@ services:
         max-file: "3"
     cap_add:
       - NET_ADMIN
+    # Use host network mode for WireGuard and the UI. Ensure that access to the UI is properly secured.
     network_mode: "host"
     volumes:
+      # left side is the host path, right side is the container path
       - /etc/wireguard:/etc/wireguard
       - ./data:/app/data
-    environment:
-      - EXTERNAL_URL=http://localhost:8123
+      - ./config:/app/config
+#    restart: no
+#    command: ["-migrateFrom=/app/data/wg_portal.db"]
+

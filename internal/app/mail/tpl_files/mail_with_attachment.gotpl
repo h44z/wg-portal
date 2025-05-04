@@ -1,0 +1,24 @@
+{{if $.User.Firstname}}
+Hello {{$.User.Firstname}} {{$.User.Lastname}},
+{{else}}
+Hello,
+{{end}}
+
+You or your administrator probably requested this VPN configuration.
+Scan the attached Qrcode or open the attached configuration file ({{$.ConfigFileName}})
+in the WireGuard VPN client to establish a secure VPN connection.
+
+
+
+About WireGuard:
+
+WireGuard is an extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography.
+It aims to be faster, simpler, leaner, and more useful than IPsec, while avoiding the massive headache.
+It intends to be considerably more performant than OpenVPN.
+
+You can download and install the WireGuard VPN client from:
+https://www.wireguard.com/install/
+
+
+This mail was generated using WireGuard Portal.
+{{$.PortalUrl}}

@@ -1,0 +1,44 @@
+{{- with .Values.monitoring -}}
+{{- if and .enabled ($.Capabilities.APIVersions.Has .apiVersion) -}}
+{{- $endpointsKey := (eq .kind "PodMonitor") | ternary "podMetricsEndpoints" "endpoints" -}}
+apiVersion: {{ .apiVersion }}
+kind: {{ .kind }}
+metadata:
+  {{- with .annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels: {{- include "wg-portal.util.merge" (list $ .labels "wg-portal.labels") | nindent 4 }}
+  name: {{ include "wg-portal.fullname" $ }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "wg-portal.selectorLabels" $ | nindent 6 }}
+  {{ $endpointsKey }}:
+    - port: metrics
+      path: /metrics
+      interval: {{ coalesce .interval ($.Values.config.statistics).data_collection_interval "1m" }}
+      {{- with .metricRelabelings }}
+      metricRelabelings: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      relabelings:
+        - action: replace
+          sourceLabels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_name
+          targetLabel: instance
+      {{- with .relabelings }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+  {{- with .jobLabel }}
+  jobLabel: {{ . }}
+  {{- end }}
+  {{- with .podTargetLabels }}
+  podTargetLabels: {{- toYaml . | nindent 2 }}
+  {{- end }}
+{{- end -}}
+{{- end -}}

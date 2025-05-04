@@ -1,0 +1,11 @@
+{{- if and .Values.persistence.enabled (eq .Values.workloadType "Deployment") -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  {{- with .Values.persistence.annotations }}
+  annotations: {{- toYaml . | nindent 4}}
+  {{- end }}
+  name: {{ include "wg-portal.fullname" . }}
+  labels: {{- include "wg-portal.labels" . | nindent 4 }}
+spec: {{- include "wg-portal.pvc" . | nindent 2 }}
+{{- end -}}

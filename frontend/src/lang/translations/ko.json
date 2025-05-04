@@ -1,0 +1,532 @@
+{
+    "languages": {
+      "ko": "한국어"
+    },
+    "general": {
+      "pagination": {
+        "size": "항목 수",
+        "all": "전체 (느림)"
+      },
+      "search": {
+        "placeholder": "검색...",
+        "button": "검색"
+      },
+      "select-all": "모두 선택",
+      "yes": "예",
+      "no": "아니오",
+      "cancel": "취소",
+      "close": "닫기",
+      "save": "저장",
+      "delete": "삭제"
+    },
+    "login": {
+      "headline": "로그인하세요",
+      "username": {
+        "label": "사용자 이름",
+        "placeholder": "사용자 이름을 입력하세요"
+      },
+      "password": {
+        "label": "비밀번호",
+        "placeholder": "비밀번호를 입력하세요"
+      },
+      "button": "로그인"
+    },
+    "menu": {
+      "home": "홈",
+      "interfaces": "인터페이스",
+      "users": "사용자",
+      "lang": "언어 변경",
+      "profile": "내 프로필",
+      "settings": "설정",
+      "audit": "감사 로그",
+      "login": "로그인",
+      "logout": "로그아웃"
+    },
+    "home": {
+      "headline": "WireGuard® VPN 포털",
+      "info-headline": "추가 정보",
+      "abstract": "WireGuard®는 암호화 기술을 활용하는 매우 간단하면서도 빠르고 현대적인 VPN입니다. IPsec보다 빠르고, 간단하며, 가볍고, 더 유용하면서도 엄청난 골칫거리를 피하는 것을 목표로 합니다. OpenVPN보다 훨씬 더 성능이 뛰어날 것으로 예상됩니다.",
+      "installation": {
+        "box-header": "WireGuard 설치",
+        "headline": "설치",
+        "content": "클라이언트 소프트웨어 설치 지침은 공식 WireGuard 웹사이트에서 찾을 수 있습니다.",
+        "button": "지침 열기"
+      },
+      "about-wg": {
+        "box-header": "WireGuard 정보",
+        "headline": "정보",
+        "content": "WireGuard®는 암호화 기술을 활용하는 매우 간단하면서도 빠르고 현대적인 VPN입니다.",
+        "button": "더 보기"
+      },
+      "about-portal": {
+        "box-header": "WireGuard 포털 정보",
+        "headline": "WireGuard 포털",
+        "content": "WireGuard 포털은 WireGuard를 위한 간단한 웹 기반 구성 포털입니다.",
+        "button": "더 보기"
+      },
+      "profiles": {
+        "headline": "VPN 프로필",
+        "abstract": "사용자 프로필을 통해 개인 VPN 구성에 액세스하고 다운로드할 수 있습니다.",
+        "content": "구성된 모든 프로필을 찾으려면 아래 버튼을 클릭하세요.",
+        "button": "내 프로필 열기"
+      },
+      "admin": {
+        "headline": "관리 영역",
+        "abstract": "관리 영역에서는 WireGuard 피어 및 서버 인터페이스뿐만 아니라 WireGuard 포털에 로그인할 수 있는 사용자도 관리할 수 있습니다.",
+        "content": "",
+        "button-admin": "서버 관리 열기",
+        "button-user": "사용자 관리 열기"
+      }
+    },
+    "interfaces": {
+      "headline": "인터페이스 관리",
+      "headline-peers": "현재 VPN 피어",
+      "headline-endpoints": "현재 엔드포인트",
+      "no-interface": {
+        "default-selection": "사용 가능한 인터페이스 없음",
+        "headline": "인터페이스를 찾을 수 없습니다...",
+        "abstract": "새 WireGuard 인터페이스를 만들려면 위의 플러스 버튼을 클릭하세요."
+      },
+      "no-peer": {
+        "headline": "사용 가능한 피어 없음",
+        "abstract": "현재 선택한 WireGuard 인터페이스에 사용 가능한 피어가 없습니다."
+      },
+      "table-heading": {
+        "name": "이름",
+        "user": "사용자",
+        "ip": "IP 주소",
+        "endpoint": "엔드포인트",
+        "status": "상태"
+      },
+      "interface": {
+        "headline": "인터페이스 상태:",
+        "mode": "모드",
+        "key": "공개 키",
+        "endpoint": "공개 엔드포인트",
+        "port": "수신 포트",
+        "peers": "활성화된 피어",
+        "total-peers": "총 피어 수",
+        "endpoints": "활성화된 엔드포인트",
+        "total-endpoints": "총 엔드포인트 수",
+        "ip": "IP 주소",
+        "default-allowed-ip": "기본 허용 IP",
+        "dns": "DNS 서버",
+        "mtu": "MTU",
+        "default-keep-alive": "기본 Keepalive 간격",
+        "button-show-config": "구성 보기",
+        "button-download-config": "구성 다운로드",
+        "button-store-config": "wg-quick용 구성 저장",
+        "button-edit": "인터페이스 편집"
+      },
+      "button-add-interface": "인터페이스 추가",
+      "button-add-peer": "피어 추가",
+      "button-add-peers": "여러 피어 추가",
+      "button-show-peer": "피어 보기",
+      "button-edit-peer": "피어 편집",
+      "peer-disabled": "피어가 비활성화됨, 이유:",
+      "peer-expiring": "피어 만료 예정:",
+      "peer-connected": "연결됨",
+      "peer-not-connected": "연결되지 않음",
+      "peer-handshake": "마지막 핸드셰이크:"
+    },
+    "users": {
+      "headline": "사용자 관리",
+      "table-heading": {
+        "id": "ID",
+        "email": "이메일",
+        "firstname": "이름",
+        "lastname": "성",
+        "source": "소스",
+        "peers": "피어",
+        "admin": "관리자"
+      },
+      "no-user": {
+        "headline": "사용 가능한 사용자 없음",
+        "abstract": "현재 WireGuard 포털에 등록된 사용자가 없습니다."
+      },
+      "button-add-user": "사용자 추가",
+      "button-show-user": "사용자 보기",
+      "button-edit-user": "사용자 편집",
+      "user-disabled": "사용자가 비활성화됨, 이유:",
+      "user-locked": "계정이 잠김, 이유:",
+      "admin": "사용자에게 관리자 권한이 있습니다",
+      "no-admin": "사용자에게 관리자 권한이 없습니다"
+    },
+    "profile": {
+      "headline": "내 VPN 피어",
+      "table-heading": {
+        "name": "이름",
+        "ip": "IP 주소",
+        "stats": "상태",
+        "interface": "서버 인터페이스"
+      },
+      "no-peer": {
+        "headline": "사용 가능한 피어 없음",
+        "abstract": "현재 사용자 프로필과 연결된 피어가 없습니다."
+      },
+      "peer-connected": "연결됨",
+      "button-add-peer": "피어 추가",
+      "button-show-peer": "피어 보기",
+      "button-edit-peer": "피어 편집"
+    },
+    "settings": {
+      "headline": "설정",
+      "abstract": "여기에서 개인 설정을 변경할 수 있습니다.",
+      "api": {
+        "headline": "API 설정",
+        "abstract": "여기에서 RESTful API 설정을 구성할 수 있습니다.",
+        "active-description": "현재 사용자 계정에 대해 API가 활성화되어 있습니다. 모든 API 요청은 기본 인증(Basic Auth)으로 인증됩니다. 인증에 다음 자격 증명을 사용하세요.",
+        "inactive-description": "현재 API가 비활성화되어 있습니다. 활성화하려면 아래 버튼을 누르세요.",
+        "user-label": "API 사용자 이름:",
+        "user-placeholder": "API 사용자",
+        "token-label": "API 비밀번호:",
+        "token-placeholder": "API 토큰",
+        "token-created-label": "API 액세스 권한 부여 시각: ",
+        "button-disable-title": "API를 비활성화합니다. 현재 토큰이 무효화됩니다.",
+        "button-disable-text": "API 비활성화",
+        "button-enable-title": "API를 활성화합니다. 새 토큰이 생성됩니다.",
+        "button-enable-text": "API 활성화",
+        "api-link": "API 문서"
+      }
+    },
+    "audit": {
+      "headline": "감사 로그",
+      "abstract": "여기에서 WireGuard 포털에서 수행된 모든 작업의 감사 로그를 찾을 수 있습니다.",
+      "no-entries": {
+        "headline": "로그 항목 없음",
+        "abstract": "현재 기록된 감사 로그가 없습니다."
+      },
+      "entries-headline": "로그 항목",
+      "table-heading": {
+        "id": "#",
+        "time": "시간",
+        "user": "사용자",
+        "severity": "심각도",
+        "origin": "출처",
+        "message": "메시지"
+      }
+    },
+    "modals": {
+      "user-view": {
+        "headline": "사용자 계정:",
+        "tab-user": "정보",
+        "tab-peers": "피어",
+        "headline-info": "사용자 정보:",
+        "headline-notes": "메모:",
+        "email": "이메일",
+        "firstname": "이름",
+        "lastname": "성",
+        "phone": "전화번호",
+        "department": "부서",
+        "api-enabled": "API 액세스",
+        "disabled": "계정 비활성화됨",
+        "locked": "계정 잠김",
+        "no-peers": "사용자에게 연결된 피어가 없습니다.",
+        "peers": {
+          "name": "이름",
+          "interface": "인터페이스",
+          "ip": "IP 주소"
+        }
+      },
+      "user-edit": {
+        "headline-edit": "사용자 편집:",
+        "headline-new": "새 사용자",
+        "header-general": "일반",
+        "header-personal": "사용자 정보",
+        "header-notes": "메모",
+        "header-state": "상태",
+        "identifier": {
+          "label": "식별자",
+          "placeholder": "고유한 사용자 식별자"
+        },
+        "source": {
+          "label": "소스",
+          "placeholder": "사용자 소스"
+        },
+        "password": {
+          "label": "비밀번호",
+          "placeholder": "매우 비밀스러운 비밀번호",
+          "description": "현재 비밀번호를 유지하려면 이 필드를 비워 두세요."
+        },
+        "email": {
+          "label": "이메일",
+          "placeholder": "이메일 주소"
+        },
+        "phone": {
+          "label": "전화번호",
+          "placeholder": "전화번호"
+        },
+        "department": {
+          "label": "부서",
+          "placeholder": "부서"
+        },
+        "firstname": {
+          "label": "이름",
+          "placeholder": "이름"
+        },
+        "lastname": {
+          "label": "성",
+          "placeholder": "성"
+        },
+        "notes": {
+          "label": "메모",
+          "placeholder": ""
+        },
+        "disabled": {
+          "label": "비활성화됨 (WireGuard 연결 및 로그인 불가)"
+        },
+        "locked": {
+          "label": "잠김 (로그인 불가, WireGuard 연결은 계속 작동)"
+        },
+        "admin": {
+          "label": "관리자 여부"
+        }
+      },
+      "interface-view": {
+        "headline": "인터페이스 구성:"
+      },
+      "interface-edit": {
+        "headline-edit": "인터페이스 편집:",
+        "headline-new": "새 인터페이스",
+        "tab-interface": "인터페이스",
+        "tab-peerdef": "피어 기본값",
+        "header-general": "일반",
+        "header-network": "네트워크",
+        "header-crypto": "암호화",
+        "header-hooks": "인터페이스 후크",
+        "header-peer-hooks": "후크",
+        "header-state": "상태",
+        "identifier": {
+          "label": "식별자",
+          "placeholder": "고유한 인터페이스 식별자"
+        },
+        "mode": {
+          "label": "인터페이스 모드",
+          "server": "서버 모드",
+          "client": "클라이언트 모드",
+          "any": "알 수 없는 모드"
+        },
+        "display-name": {
+          "label": "표시 이름",
+          "placeholder": "인터페이스에 대한 설명적인 이름"
+        },
+        "private-key": {
+          "label": "개인 키",
+          "placeholder": "개인 키"
+        },
+        "public-key": {
+          "label": "공개 키",
+          "placeholder": "공개 키"
+        },
+        "ip": {
+          "label": "IP 주소",
+          "placeholder": "IP 주소 (CIDR 형식)"
+        },
+        "listen-port": {
+          "label": "수신 포트",
+          "placeholder": "수신 포트"
+        },
+        "dns": {
+          "label": "DNS 서버",
+          "placeholder": "사용해야 하는 DNS 서버"
+        },
+        "dns-search": {
+          "label": "DNS 검색 도메인",
+          "placeholder": "DNS 검색 접두사"
+        },
+        "mtu": {
+          "label": "MTU",
+          "placeholder": "인터페이스 MTU (0 = 기본값 유지)"
+        },
+        "firewall-mark": {
+          "label": "방화벽 표시",
+          "placeholder": "나가는 트래픽에 적용되는 방화벽 표시. (0 = 자동)"
+        },
+        "routing-table": {
+          "label": "라우팅 테이블",
+          "placeholder": "라우팅 테이블 ID",
+          "description": "특수 사례: off = 경로 관리 안 함, 0 = 자동"
+        },
+        "pre-up": {
+          "label": "Pre-Up",
+          "placeholder": "하나 이상의 bash 명령 (;으로 구분)"
+        },
+        "post-up": {
+          "label": "Post-Up",
+          "placeholder": "하나 이상의 bash 명령 (;으로 구분)"
+        },
+        "pre-down": {
+          "label": "Pre-Down",
+          "placeholder": "하나 이상의 bash 명령 (;으로 구분)"
+        },
+        "post-down": {
+          "label": "Post-Down",
+          "placeholder": "하나 이상의 bash 명령 (;으로 구분)"
+        },
+        "disabled": {
+          "label": "인터페이스 비활성화됨"
+        },
+        "save-config": {
+          "label": "wg-quick 구성 자동 저장"
+        },
+        "defaults": {
+          "endpoint": {
+            "label": "엔드포인트 주소",
+            "placeholder": "엔드포인트 주소",
+            "description": "피어가 연결할 엔드포인트 주소. (예: wg.example.com 또는 wg.example.com:51820)"
+          },
+          "networks": {
+            "label": "IP 네트워크",
+            "placeholder": "네트워크 주소",
+            "description": "피어는 해당 서브넷에서 IP 주소를 받습니다."
+          },
+          "allowed-ip": {
+            "label": "허용된 IP 주소",
+            "placeholder": "기본 허용 IP 주소"
+          },
+          "mtu": {
+            "label": "MTU",
+            "placeholder": "클라이언트 MTU (0 = 기본값 유지)"
+          },
+          "keep-alive": {
+            "label": "Keep Alive 간격",
+            "placeholder": "영구 Keepalive (0 = 기본값)"
+          }
+        },
+        "button-apply-defaults": "피어 기본값 적용"
+      },
+      "peer-view": {
+        "headline-peer": "피어:",
+        "headline-endpoint": "엔드포인트:",
+        "section-info": "피어 정보",
+        "section-status": "현재 상태",
+        "section-config": "구성",
+        "identifier": "식별자",
+        "ip": "IP 주소",
+        "user": "연결된 사용자",
+        "notes": "메모",
+        "expiry-status": "만료 시각",
+        "disabled-status": "비활성화 시각",
+        "traffic": "트래픽",
+        "connection-status": "연결 통계",
+        "upload": "업로드된 바이트 (서버에서 피어로)",
+        "download": "다운로드된 바이트 (피어에서 서버로)",
+        "pingable": "핑 가능 여부",
+        "handshake": "마지막 핸드셰이크",
+        "connected-since": "연결 시작 시각",
+        "endpoint": "엔드포인트",
+        "button-download": "구성 다운로드",
+        "button-email": "이메일로 구성 보내기"
+      },
+      "peer-edit": {
+        "headline-edit-peer": "피어 편집:",
+        "headline-edit-endpoint": "엔드포인트 편집:",
+        "headline-new-peer": "피어 생성",
+        "headline-new-endpoint": "엔드포인트 생성",
+        "header-general": "일반",
+        "header-network": "네트워크",
+        "header-crypto": "암호화",
+        "header-hooks": "후크 (피어에서 실행됨)",
+        "header-state": "상태",
+        "display-name": {
+          "label": "표시 이름",
+          "placeholder": "피어에 대한 설명적인 이름"
+        },
+        "linked-user": {
+          "label": "연결된 사용자",
+          "placeholder": "이 피어를 소유한 사용자 계정"
+        },
+        "private-key": {
+          "label": "개인 키",
+          "placeholder": "개인 키"
+        },
+        "public-key": {
+          "label": "공개 키",
+          "placeholder": "공개 키"
+        },
+        "preshared-key": {
+          "label": "사전 공유 키",
+          "placeholder": "선택적 사전 공유 키"
+        },
+        "endpoint-public-key": {
+          "label": "엔드포인트 공개 키",
+          "placeholder": "원격 엔드포인트의 공개 키"
+        },
+        "endpoint": {
+          "label": "엔드포인트 주소",
+          "placeholder": "원격 엔드포인트의 주소"
+        },
+        "ip": {
+          "label": "IP 주소",
+          "placeholder": "IP 주소 (CIDR 형식)"
+        },
+        "allowed-ip": {
+          "label": "허용된 IP 주소",
+          "placeholder": "허용된 IP 주소 (CIDR 형식)"
+        },
+        "extra-allowed-ip": {
+          "label": "추가 허용 IP 주소",
+          "placeholder": "추가 허용 IP (서버 측)",
+          "description": "이 IP 주소는 원격 WireGuard 인터페이스에 허용된 IP로 추가됩니다."
+        },
+        "dns": {
+          "label": "DNS 서버",
+          "placeholder": "사용해야 하는 DNS 서버"
+        },
+        "dns-search": {
+          "label": "DNS 검색 도메인",
+          "placeholder": "DNS 검색 접두사"
+        },
+        "keep-alive": {
+          "label": "Keep Alive 간격",
+          "placeholder": "영구 Keepalive (0 = 기본값)"
+        },
+        "mtu": {
+          "label": "MTU",
+          "placeholder": "클라이언트 MTU (0 = 기본값 유지)"
+        },
+        "pre-up": {
+          "label": "Pre-Up",
+          "placeholder": "하나 이상의 bash 명령 (;으로 구분)"
+        },
+        "post-up": {
+          "label": "Post-Up",
+          "placeholder": "하나 이상의 bash 명령 (;으로 구분)"
+        },
+        "pre-down": {
+          "label": "Pre-Down",
+          "placeholder": "하나 이상의 bash 명령 (;으로 구분)"
+        },
+        "post-down": {
+          "label": "Post-Down",
+          "placeholder": "하나 이상의 bash 명령 (;으로 구분)"
+        },
+        "disabled": {
+          "label": "피어 비활성화됨"
+        },
+        "ignore-global": {
+          "label": "전역 설정 무시"
+        },
+        "expires-at": {
+          "label": "만료 날짜"
+        }
+      },
+      "peer-multi-create": {
+        "headline-peer": "여러 피어 생성",
+        "headline-endpoint": "여러 엔드포인트 생성",
+        "identifiers": {
+          "label": "사용자 식별자",
+          "placeholder": "사용자 식별자",
+          "description": "피어를 생성할 사용자 식별자 (사용자 이름)."
+        },
+        "prefix": {
+          "headline-peer": "피어:",
+          "headline-endpoint": "엔드포인트:",
+          "label": "표시 이름 접두사",
+          "placeholder": "접두사",
+          "description": "피어 표시 이름에 추가되는 접두사."
+        }
+      }
+    }
+  }
+  

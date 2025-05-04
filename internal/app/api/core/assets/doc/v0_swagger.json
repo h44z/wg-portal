@@ -1,0 +1,2166 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "WireGuard Portal API - UI Endpoints",
+        "title": "WireGuard Portal SPA-UI API",
+        "contact": {
+            "name": "WireGuard Portal Developers",
+            "url": "https://github.com/h44z/wg-portal"
+        },
+        "version": "0.0"
+    },
+    "basePath": "/api/v0",
+    "paths": {
+        "/audit/entries": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Get all available audit entries. Ordered by timestamp.",
+                "operationId": "audit_handleEntriesGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.AuditEntry"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get all available external login providers.",
+                "operationId": "auth_handleLoginPost",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.LoginProviderInfo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get all available external login providers.",
+                "operationId": "auth_handleLogoutPost",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/providers": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get all available external login providers.",
+                "operationId": "auth_handleExternalLoginProvidersGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.LoginProviderInfo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/session": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get information about the currently logged-in user.",
+                "operationId": "auth_handleSessionInfoGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.SessionInfo"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/{provider}/callback": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Handle the OAuth callback.",
+                "operationId": "auth_handleOauthCallbackGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.LoginProviderInfo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/{provider}/init": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Initiate the OAuth login flow.",
+                "operationId": "auth_handleOauthInitiateGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.LoginProviderInfo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/config/frontend.js": {
+            "get": {
+                "produces": [
+                    "text/javascript"
+                ],
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "Get the dynamic frontend configuration javascript.",
+                "operationId": "config_handleConfigJsGet",
+                "responses": {
+                    "200": {
+                        "description": "The JavaScript contents",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/config/settings": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "Get the frontend settings object.",
+                "operationId": "config_handleSettingsGet",
+                "responses": {
+                    "200": {
+                        "description": "The JavaScript contents",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/csrf": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Security"
+                ],
+                "summary": "Get a CSRF token for the current session.",
+                "operationId": "base_handleCsrfGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/hostname": {
+            "get": {
+                "description": "Nothing more to describe...",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Testing"
+                ],
+                "summary": "Get the current host name.",
+                "operationId": "test_handleHostnameGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/all": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Get all available interfaces.",
+                "operationId": "interfaces_handleAllGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Interface"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/config/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Get interface configuration as string.",
+                "operationId": "interfaces_handleConfigGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/get/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Get single interface.",
+                "operationId": "interfaces_handleSingleGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Interface"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/new": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Create the new interface record.",
+                "operationId": "interfaces_handleCreatePost",
+                "parameters": [
+                    {
+                        "description": "The interface data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Interface"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Interface"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/peers/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Get peers for the given interface.",
+                "operationId": "interfaces_handlePeersGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Peer"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/prepare": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Prepare a new interface.",
+                "operationId": "interfaces_handlePrepareGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Interface"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/{id}": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Update the interface record.",
+                "operationId": "interfaces_handleUpdatePut",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The interface data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Interface"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Interface"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Delete the interface record.",
+                "operationId": "interfaces_handleDelete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if deletion was successful"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/{id}/apply-peer-defaults": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Apply all peer defaults to the available peers.",
+                "operationId": "interfaces_handleApplyPeerDefaultsPost",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The interface data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Interface"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if applying peer defaults was successful"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/{id}/save-config": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interface"
+                ],
+                "summary": "Save the interface configuration in wg-quick format to a file.",
+                "operationId": "interfaces_handleSaveConfigPost",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if saving the configuration was successful"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/now": {
+            "get": {
+                "description": "Nothing more to describe...",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Testing"
+                ],
+                "summary": "Get the current local time.",
+                "operationId": "test_handleCurrentTimeGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/config-mail": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Send peer configuration via email.",
+                "operationId": "peers_handleEmailPost",
+                "parameters": [
+                    {
+                        "description": "The peer mail request data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PeerMailRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if mail sending was successful"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/config-qr/{id}": {
+            "get": {
+                "produces": [
+                    "image/png",
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Get peer configuration as qr code.",
+                "operationId": "peers_handleQrCodeGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/config/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Get peer configuration as string.",
+                "operationId": "peers_handleConfigGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/iface/{iface}/all": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Get peers for the given interface.",
+                "operationId": "peers_handleAllGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "iface",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Peer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/iface/{iface}/multiplenew": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Create multiple new peers for the given interface.",
+                "operationId": "peers_handleCreateMultiplePost",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "iface",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The peer creation request data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.MultiPeerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Peer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/iface/{iface}/new": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Prepare a new peer for the given interface.",
+                "operationId": "peers_handleCreatePost",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "iface",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The peer data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Peer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/iface/{iface}/prepare": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Prepare a new peer for the given interface.",
+                "operationId": "peers_handlePrepareGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "iface",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/iface/{iface}/stats": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Get peer stats for the given interface.",
+                "operationId": "peers_handleStatsGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier",
+                        "name": "iface",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PeerStats"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Get peer for the given identifier.",
+                "operationId": "peers_handleSingleGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Update the given peer record.",
+                "operationId": "peers_handleUpdatePut",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The peer data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Peer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peer"
+                ],
+                "summary": "Delete the peer record.",
+                "operationId": "peers_handleDelete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The peer identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if deletion was successful"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/all": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get all user records.",
+                "operationId": "users_handleAllGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.User"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/new": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create the new user record.",
+                "operationId": "users_handleCreatePost",
+                "parameters": [
+                    {
+                        "description": "The user data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get a single user record.",
+                "operationId": "users_handleSingleGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update the user record.",
+                "operationId": "users_handleUpdatePut",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The user data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete the user record.",
+                "operationId": "users_handleDelete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content if deletion was successful"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/api/disable": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Disable the REST API for the given user.",
+                "operationId": "users_handleApiDisablePost",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/api/enable": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Enable the REST API for the given user.",
+                "operationId": "users_handleApiEnablePost",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/interfaces": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get interfaces for the given user. Returns an empty list if self provisioning is disabled.",
+                "operationId": "users_handleInterfacesGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Interface"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/peers": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get peers for the given user.",
+                "operationId": "users_handlePeersGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Peer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/stats": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get peer stats for the given user.",
+                "operationId": "users_handleStatsGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The user identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PeerStats"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.AuditEntry": {
+            "type": "object",
+            "properties": {
+                "ContextUser": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer"
+                },
+                "Message": {
+                    "type": "string"
+                },
+                "Origin": {
+                    "description": "origin: for example user auth, stats, ...",
+                    "type": "string"
+                },
+                "Severity": {
+                    "type": "string"
+                },
+                "Timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ConfigOption-array_string": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.ConfigOption-int": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ConfigOption-string": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ConfigOption-uint32": {
+            "type": "object",
+            "properties": {
+                "Overridable": {
+                    "type": "boolean"
+                },
+                "Value": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Error": {
+            "type": "object",
+            "properties": {
+                "Code": {
+                    "type": "integer"
+                },
+                "Message": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ExpiryDate": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Interface": {
+            "type": "object",
+            "properties": {
+                "Addresses": {
+                    "description": "the interface ip addresses",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "Disabled": {
+                    "description": "flag that specifies if the interface is enabled (up) or not (down)",
+                    "type": "boolean"
+                },
+                "DisabledReason": {
+                    "description": "the reason why the interface has been disabled",
+                    "type": "string"
+                },
+                "DisplayName": {
+                    "description": "a nice display name/ description for the interface",
+                    "type": "string"
+                },
+                "Dns": {
+                    "description": "the dns server that should be set if the interface is up, comma separated",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "DnsSearch": {
+                    "description": "the dns search option string that should be set if the interface is up, will be appended to DnsStr",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "EnabledPeers": {
+                    "type": "integer"
+                },
+                "Filename": {
+                    "description": "the filename of the config file, for example: wg0.conf",
+                    "type": "string"
+                },
+                "FirewallMark": {
+                    "description": "a firewall mark",
+                    "type": "integer"
+                },
+                "Identifier": {
+                    "description": "device name, for example: wg0",
+                    "type": "string",
+                    "example": "wg0"
+                },
+                "ListenPort": {
+                    "description": "the listening port, for example: 51820",
+                    "type": "integer"
+                },
+                "Mode": {
+                    "description": "the interface type, either 'server', 'client' or 'any'",
+                    "type": "string",
+                    "example": "server"
+                },
+                "Mtu": {
+                    "description": "the device MTU",
+                    "type": "integer"
+                },
+                "PeerDefAllowedIPs": {
+                    "description": "the default allowed IP string for the peer",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "PeerDefDns": {
+                    "description": "the default dns server for the peer",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "PeerDefDnsSearch": {
+                    "description": "the default dns search options for the peer",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "PeerDefEndpoint": {
+                    "description": "the default endpoint for the peer",
+                    "type": "string"
+                },
+                "PeerDefFirewallMark": {
+                    "description": "default firewall mark",
+                    "type": "integer"
+                },
+                "PeerDefMtu": {
+                    "description": "the default device MTU",
+                    "type": "integer"
+                },
+                "PeerDefNetwork": {
+                    "description": "the default subnets from which peers will get their IP addresses, comma seperated",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "PeerDefPersistentKeepalive": {
+                    "description": "the default persistent keep-alive Value",
+                    "type": "integer"
+                },
+                "PeerDefPostDown": {
+                    "description": "default action that is executed after the device is down",
+                    "type": "string"
+                },
+                "PeerDefPostUp": {
+                    "description": "default action that is executed after the device is up",
+                    "type": "string"
+                },
+                "PeerDefPreDown": {
+                    "description": "default action that is executed before the device is down",
+                    "type": "string"
+                },
+                "PeerDefPreUp": {
+                    "description": "default action that is executed before the device is up",
+                    "type": "string"
+                },
+                "PeerDefRoutingTable": {
+                    "description": "the default routing table",
+                    "type": "string"
+                },
+                "PostDown": {
+                    "description": "action that is executed after the device is down",
+                    "type": "string"
+                },
+                "PostUp": {
+                    "description": "action that is executed after the device is up",
+                    "type": "string"
+                },
+                "PreDown": {
+                    "description": "action that is executed before the device is down",
+                    "type": "string"
+                },
+                "PreUp": {
+                    "description": "action that is executed before the device is up",
+                    "type": "string"
+                },
+                "PrivateKey": {
+                    "description": "private Key of the server interface",
+                    "type": "string",
+                    "example": "abcdef=="
+                },
+                "PublicKey": {
+                    "description": "public Key of the server interface",
+                    "type": "string",
+                    "example": "abcdef=="
+                },
+                "RoutingTable": {
+                    "description": "the routing table",
+                    "type": "string"
+                },
+                "SaveConfig": {
+                    "description": "automatically persist config changes to the wgX.conf file",
+                    "type": "boolean"
+                },
+                "TotalPeers": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.LoginProviderInfo": {
+            "type": "object",
+            "properties": {
+                "CallbackUrl": {
+                    "type": "string",
+                    "example": "/auth/google/callback"
+                },
+                "Identifier": {
+                    "type": "string",
+                    "example": "google"
+                },
+                "Name": {
+                    "type": "string",
+                    "example": "Login with Google"
+                },
+                "ProviderUrl": {
+                    "type": "string",
+                    "example": "/auth/google/login"
+                }
+            }
+        },
+        "model.MultiPeerRequest": {
+            "type": "object",
+            "properties": {
+                "Identifiers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "Suffix": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Peer": {
+            "type": "object",
+            "properties": {
+                "Addresses": {
+                    "description": "the interface ip addresses",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "AllowedIPs": {
+                    "description": "all allowed ip subnets, comma seperated",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-array_string"
+                        }
+                    ]
+                },
+                "CheckAliveAddress": {
+                    "description": "optional ip address or DNS name that is used for ping checks",
+                    "type": "string"
+                },
+                "Disabled": {
+                    "description": "flag that specifies if the peer is enabled (up) or not (down)",
+                    "type": "boolean"
+                },
+                "DisabledReason": {
+                    "description": "the reason why the peer has been disabled",
+                    "type": "string"
+                },
+                "DisplayName": {
+                    "description": "a nice display name/ description for the peer",
+                    "type": "string"
+                },
+                "Dns": {
+                    "description": "the dns server that should be set if the interface is up, comma separated",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-array_string"
+                        }
+                    ]
+                },
+                "DnsSearch": {
+                    "description": "the dns search option string that should be set if the interface is up, will be appended to DnsStr",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-array_string"
+                        }
+                    ]
+                },
+                "Endpoint": {
+                    "description": "the endpoint address",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-string"
+                        }
+                    ]
+                },
+                "EndpointPublicKey": {
+                    "description": "the endpoint public key",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-string"
+                        }
+                    ]
+                },
+                "ExpiresAt": {
+                    "description": "expiry dates for peers",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ExpiryDate"
+                        }
+                    ]
+                },
+                "ExtraAllowedIPs": {
+                    "description": "all allowed ip subnets on the server side, comma seperated",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "Filename": {
+                    "description": "the filename of the config file, for example: wg_peer_x.conf",
+                    "type": "string"
+                },
+                "FirewallMark": {
+                    "description": "a firewall mark",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-uint32"
+                        }
+                    ]
+                },
+                "Identifier": {
+                    "description": "peer unique identifier",
+                    "type": "string",
+                    "example": "super_nice_peer"
+                },
+                "InterfaceIdentifier": {
+                    "description": "the interface id",
+                    "type": "string"
+                },
+                "Mode": {
+                    "description": "the peer interface type (server, client, any)",
+                    "type": "string"
+                },
+                "Mtu": {
+                    "description": "the device MTU",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-int"
+                        }
+                    ]
+                },
+                "Notes": {
+                    "description": "a note field for peers",
+                    "type": "string"
+                },
+                "PersistentKeepalive": {
+                    "description": "the persistent keep-alive interval",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-int"
+                        }
+                    ]
+                },
+                "PostDown": {
+                    "description": "action that is executed after the device is down",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-string"
+                        }
+                    ]
+                },
+                "PostUp": {
+                    "description": "action that is executed after the device is up",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-string"
+                        }
+                    ]
+                },
+                "PreDown": {
+                    "description": "action that is executed before the device is down",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-string"
+                        }
+                    ]
+                },
+                "PreUp": {
+                    "description": "action that is executed before the device is up",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-string"
+                        }
+                    ]
+                },
+                "PresharedKey": {
+                    "description": "the pre-shared Key of the peer",
+                    "type": "string"
+                },
+                "PrivateKey": {
+                    "description": "private Key of the server peer",
+                    "type": "string",
+                    "example": "abcdef=="
+                },
+                "PublicKey": {
+                    "description": "public Key of the server peer",
+                    "type": "string",
+                    "example": "abcdef=="
+                },
+                "RoutingTable": {
+                    "description": "the routing table",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConfigOption-string"
+                        }
+                    ]
+                },
+                "UserIdentifier": {
+                    "description": "the owner",
+                    "type": "string"
+                }
+            }
+        },
+        "model.PeerMailRequest": {
+            "type": "object",
+            "properties": {
+                "Identifiers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "LinkOnly": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.PeerStatData": {
+            "type": "object",
+            "properties": {
+                "BytesReceived": {
+                    "type": "integer"
+                },
+                "BytesTransmitted": {
+                    "type": "integer"
+                },
+                "EndpointAddress": {
+                    "type": "string"
+                },
+                "IsConnected": {
+                    "type": "boolean"
+                },
+                "IsPingable": {
+                    "type": "boolean"
+                },
+                "LastHandshake": {
+                    "type": "string"
+                },
+                "LastPing": {
+                    "type": "string"
+                },
+                "LastSessionStart": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PeerStats": {
+            "type": "object",
+            "properties": {
+                "Enabled": {
+                    "description": "peer stats tracking enabled",
+                    "type": "boolean",
+                    "example": true
+                },
+                "Stats": {
+                    "description": "stats, map key = Peer identifier",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.PeerStatData"
+                    }
+                }
+            }
+        },
+        "model.SessionInfo": {
+            "type": "object",
+            "properties": {
+                "IsAdmin": {
+                    "type": "boolean"
+                },
+                "LoggedIn": {
+                    "type": "boolean"
+                },
+                "UserEmail": {
+                    "type": "string"
+                },
+                "UserFirstname": {
+                    "type": "string"
+                },
+                "UserIdentifier": {
+                    "type": "string"
+                },
+                "UserLastname": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Settings": {
+            "type": "object",
+            "properties": {
+                "ApiAdminOnly": {
+                    "type": "boolean"
+                },
+                "MailLinkOnly": {
+                    "type": "boolean"
+                },
+                "PersistentConfigSupported": {
+                    "type": "boolean"
+                },
+                "SelfProvisioning": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.User": {
+            "type": "object",
+            "properties": {
+                "ApiEnabled": {
+                    "type": "boolean"
+                },
+                "ApiToken": {
+                    "type": "string"
+                },
+                "ApiTokenCreated": {
+                    "type": "string"
+                },
+                "Department": {
+                    "type": "string"
+                },
+                "Disabled": {
+                    "description": "if this field is set, the user is disabled",
+                    "type": "boolean"
+                },
+                "DisabledReason": {
+                    "description": "the reason why the user has been disabled",
+                    "type": "string"
+                },
+                "Email": {
+                    "type": "string"
+                },
+                "Firstname": {
+                    "type": "string"
+                },
+                "Identifier": {
+                    "type": "string"
+                },
+                "IsAdmin": {
+                    "type": "boolean"
+                },
+                "Lastname": {
+                    "type": "string"
+                },
+                "Locked": {
+                    "description": "if this field is set, the user is locked",
+                    "type": "boolean"
+                },
+                "LockedReason": {
+                    "description": "the reason why the user has been locked",
+                    "type": "string"
+                },
+                "Notes": {
+                    "type": "string"
+                },
+                "Password": {
+                    "type": "string"
+                },
+                "PeerCount": {
+                    "type": "integer"
+                },
+                "Phone": {
+                    "type": "string"
+                },
+                "ProviderName": {
+                    "type": "string"
+                },
+                "Source": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

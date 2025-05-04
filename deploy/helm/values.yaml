@@ -1,0 +1,248 @@
+# Default values for wg-portal.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Partially override resource names (adds suffix)
+nameOverride: ""
+# -- Fully override resource names
+fullnameOverride: ""
+# -- Array of extra objects to deploy with the release
+extraDeploy: []
+
+config:
+  # -- (tpl/object) [Advanced configuration](https://wgportal.org/latest/documentation/configuration/overview/#advanced) options.
+  advanced: {}
+  # -- (tpl/object) [Auth configuration](https://wgportal.org/latest/documentation/configuration/overview/#auth) options.
+  auth: {}
+  # -- (tpl/object) [Core configuration](https://wgportal.org/latest/documentation/configuration/overview/#core) options.<br>
+  # If external admins in `auth` are defined and
+  # there are no `admin_user` and `admin_password` defined here,
+  # the default admin account will be disabled.
+  core: {}
+  # -- (tpl/object) [Database configuration](https://wgportal.org/latest/documentation/configuration/overview/#database) options
+  database: {}
+  # -- (tpl/object) [Mail configuration](https://wgportal.org/latest/documentation/configuration/overview/#mail) options
+  mail: {}
+  # -- (tpl/object) [Statistics configuration](https://wgportal.org/latest/documentation/configuration/overview/#statistics) options
+  statistics: {}
+  # -- (tpl/object) [Web configuration](https://wgportal.org/latest/documentation/configuration/overview/#web) options.<br>
+  # `listening_address` will be set automatically from `service.web.port`.
+  # `external_url` is required to enable ingress and certificate resources.
+  web: {}
+
+# -- The number of old ReplicaSets to retain to allow rollback.
+# @default -- `10`
+revisionHistoryLimit: ""
+# -- Workload type - `Deployment` or `StatefulSet`
+workloadType: Deployment
+# -- Update strategy for the workload
+# Valid values are:
+#  `RollingUpdate` or `Recreate` for Deployment,
+#  `RollingUpdate` or `OnDelete` for StatefulSet
+strategy:
+  type: RollingUpdate
+
+image:
+  # -- Image repository
+  repository: ghcr.io/h44z/wg-portal
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion
+  tag: ""
+
+# -- Image pull secrets
+imagePullSecrets: []
+# -- (tpl/object) Extra annotations to add to the pod
+podAnnotations: {}
+# -- Extra labels to add to the pod
+podLabels: {}
+# -- Pod Security Context
+podSecurityContext: {}
+# Container Security Context
+securityContext:
+  capabilities:
+    # -- Add capabilities to the container
+    add:
+      - NET_ADMIN
+
+# -- (tpl/list) Pod init containers
+initContainers: []
+# -- (tpl/list) Pod sidecar containers
+sidecarContainers: []
+# -- Set DNS policy for the pod.
+# Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`.
+# @default -- `"ClusterFirst"`
+dnsPolicy: ""
+# -- Restart policy for all containers within the pod.
+# Valid values are `Always`, `OnFailure` or `Never`.
+# @default -- `"Always"`
+restartPolicy: ""
+# -- Use the host's network namespace.
+# @default -- `false`.
+hostNetwork: ""
+# -- Resources requests and limits
+resources: {}
+# -- Overwrite pod command
+command: []
+# -- Additional pod arguments
+args: []
+# -- (tpl/list) Additional environment variables
+env: []
+# -- (tpl/list) Additional environment variables from a secret or configMap
+envFrom: []
+# -- Liveness probe configuration
+livenessProbe: {}
+# -- Readiness probe configuration
+readinessProbe: {}
+# -- Startup probe configuration
+startupProbe: {}
+# -- (tpl/list) Additional volumes
+volumes: []
+# -- (tpl/list) Additional volumeMounts
+volumeMounts: []
+# -- Node Selector configuration
+nodeSelector:
+  kubernetes.io/os: linux
+# -- Tolerations configuration
+tolerations: []
+# -- Affinity configuration
+affinity: {}
+
+service:
+  mixed:
+    # -- Whether to create a single service for the web and wireguard interfaces
+    enabled: false
+    # -- Service type
+    type: LoadBalancer
+  web:
+    # -- Annotations for the web service
+    annotations: {}
+    # -- Web service type
+    type: ClusterIP
+    # -- Web service port
+    # Used for the web interface listener
+    port: 8888
+    # -- Web service appProtocol. Will be auto set to `https` if certificate is enabled.
+    appProtocol: http
+  wireguard:
+    # -- Annotations for the WireGuard service
+    annotations: {}
+    # -- Wireguard service type
+    type: LoadBalancer
+    # -- Wireguard service ports.
+    # Exposes the WireGuard ports for created interfaces.
+    # Lowerest port is selected as start port for the first interface.
+    # Increment next port by 1 for each additional interface.
+    ports:
+      - 51820
+  metrics:
+    port: 8787
+
+ingress:
+  # -- Specifies whether an ingress resource should be created
+  enabled: false
+  # -- Ingress class name
+  className: ""
+  # -- Ingress annotations
+  annotations: {}
+  # -- Ingress TLS configuration.
+  # Enable certificate resource or add ingress annotation to create required secret
+  tls: false
+
+certificate:
+  # -- Specifies whether a certificate resource should be created.
+  # If enabled, certificate will be used for the web.
+  enabled: false
+  issuer:
+    # -- Certificate issuer name
+    name: ""
+    # -- Certificate issuer kind (ClusterIssuer or Issuer)
+    kind: ""
+    # -- Certificate issuer group
+    group: cert-manager.io
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  duration: ""
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  renewBefore: ""
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  commonName: ""
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  emailAddresses: []
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  ipAddresses: []
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  keystores: {}
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  privateKey: {}
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  secretTemplate: {}
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  subject: {}
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  uris: []
+  # -- Optional. [Documentation](https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources)
+  usages: []
+
+persistence:
+  # -- Specifies whether an persistent volume should be created
+  enabled: false
+  # -- Persistent Volume Claim annotations
+  annotations: {}
+  # -- Persistent Volume storage class.
+  # If undefined (the default) cluster's default provisioner will be used.
+  storageClass: ""
+  # -- Persistent Volume Access Mode
+  accessMode: ReadWriteOnce
+  # -- Persistent Volume size
+  size: 1Gi
+  # -- Persistent Volume Name (optional)
+  volumeName: ""
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Service account annotations
+  annotations: {}
+  # -- Automatically mount a ServiceAccount's API credentials
+  automount: false
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+monitoring:
+  # -- Enable Prometheus monitoring.
+  enabled: false
+  # -- API version of the Prometheus resource.
+  # Use `azmonitoring.coreos.com/v1` for Azure Managed Prometheus.
+  apiVersion: monitoring.coreos.com/v1
+  # -- Kind of the Prometheus resource.
+  # Could be `PodMonitor` or `ServiceMonitor`.
+  kind: PodMonitor
+  # -- Resource labels.
+  labels: {}
+  # -- Resource annotations.
+  annotations: {}
+  # -- Interval at which metrics should be scraped. If not specified `config.statistics.data_collection_interval` interval is used.
+  # @default -- `1m`
+  interval: ""
+  # -- Relabelings to samples before ingestion.
+  metricRelabelings: []
+  # -- Relabelings to samples before scraping.
+  relabelings: []
+  # -- Timeout after which the scrape is ended If not specified, the Prometheus global scrape interval is used.
+  scrapeTimeout: ""
+  # -- The label to use to retrieve the job name from.
+  jobLabel: ""
+  # -- Transfers labels on the Kubernetes Pod onto the target.
+  podTargetLabels: {}
+
+  dashboard:
+    # -- Enable Grafana dashboard.
+    enabled: false
+    # -- Annotations for the dashboard ConfigMap.
+    annotations: {}
+    # -- Additional labels for the dashboard ConfigMap.
+    labels: {}
+    # -- Dashboard ConfigMap namespace
+    # Overrides the namespace for the dashboard ConfigMap.
+    namespace: ""

@@ -1,0 +1,24 @@
+{{- $serviceName := printf "%s-web" (include "wg-portal.fullname" .) -}}
+{{- $servicePort := .Values.service.web.port }}
+
+{{- if not .Values.ingress.enabled }}
+Get the application URL by running these commands:
+{{- if eq "ClusterIP" .Values.service.web.type }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ $serviceName }} {{ $servicePort }}:{{ $servicePort }}
+
+Visit http://127.0.0.1:{{ $servicePort }} to use your application
+
+{{- else if eq "LoadBalancer" .Values.service.web.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ $serviceName }}'
+  export SERVICE_IP=$(kubectl get --namespace {{ .Release.Namespace }} svc {{ $serviceName }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ $servicePort }}
+
+{{- else if eq "NodePort" .Values.service.web.type }}
+  export NODE_IP=$(kubectl get --namespace {{ .Release.Namespace }} nodes -o jsonpath="{.items[0].status.addresses[0].address}")
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} svc {{ $serviceName }} -o jsonpath="{.spec.ports[0].nodePort}" )
+  echo http://$NODE_IP:$NODE_PORT
+{{- end }}
+{{- else }}
+Visit http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.host }}{{ .Values.ingress.path }} to use your application
+{{- end }}

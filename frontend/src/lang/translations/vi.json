@@ -1,0 +1,492 @@
+{
+  "languages": {
+    "vi": "Tiếng Việt"
+  },
+  "general": {
+    "pagination": {
+      "size": "Số mục",
+      "all": "Tất (chậm)"
+    },
+    "search": {
+      "placeholder": "Tìm...",
+      "button": "Tìm kiếm"
+    },
+    "select-all": "Chọn tất",
+    "yes": "Có",
+    "no": "Không",
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "save": "Lưu",
+    "delete": "Xóa"
+  },
+  "login": {
+    "headline": "Vui lòng đăng nhập",
+    "username": {
+      "label": "Tài khoản",
+      "placeholder": "Vui lòng nhập tài khoản"
+    },
+    "password": {
+      "label": "Mật khẩu",
+      "placeholder": "Vui lòng nhập mật khẩu"
+    },
+    "button": "Đăng nhập"
+  },
+  "menu": {
+    "home": "Trang chủ",
+    "interfaces": "Giao diện",
+    "users": "Người dùng",
+    "lang": "Chuyển ngữ",
+    "profile": "Hồ sơ của tôi",
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất"
+  },
+  "home": {
+    "headline": "Cổng VPN WireGuard®",
+    "info-headline": "Thêm thông tin",
+    "abstract": "WireGuard® là một VPN cực kỳ đơn giản nhưng nhanh chóng và hiện đại, sử dụng mật mã tiên tiến. Nó hướng đến mục tiêu nhanh hơn, đơn giản hơn, gọn nhẹ hơn và hữu ích hơn IPsec, cũng đỡ nhức đầu hơn. Nó có hiệu suất dự kiến là cao hơn đáng kể so với OpenVPN.",
+    "installation": {
+      "box-header": "Cài đặt WireGuard",
+      "headline": "Cài đặt",
+      "content": "Bạn có thể tìm thấy hướng dẫn cài đặt phần mềm máy khách trên trang web chính thức của WireGuard.",
+      "button": "Mở hướng dẫn"
+    },
+    "about-wg": {
+      "box-header": "Nói về WireGuard",
+      "headline": "Về",
+      "content": "WireGuard® là một VPN cực kỳ đơn giản nhưng nhanh chóng và hiện đại, sử dụng công nghệ mật mã tiên tiến.",
+      "button": "Thêm"
+    },
+    "about-portal": {
+      "box-header": "Giới thiệu về Cổng thông tin WireGuard",
+      "headline": "Cổng thông tin WireGuard",
+      "content": "Cổng thông tin WireGuard là một cổng cấu hình đơn giản, dựa trên web cho WireGuard.",
+      "button": "Tìm hiểu thêm"
+    },
+    "profiles": {
+      "headline": "Hồ sơ VPN",
+      "abstract": "Bạn có thể truy cập và tải xuống các cấu hình VPN cá nhân của mình qua hồ sơ người dùng của bạn.",
+      "content": "Để tìm tất cả các hồ sơ đã cấu hình của bạn, hãy nhấp vào nút dưới đây.",
+      "button": "Mở hồ sơ của tôi"
+    },
+    "admin": {
+      "headline": "Khu vực Quản trị",
+      "abstract": "Trong khu vực quản trị, bạn có thể quản lý các peer WireGuard và giao diện máy chủ cũng như người dùng được phép đăng nhập vào Cổng thông tin WireGuard.",
+      "content": "",
+      "button-admin": "Mở Quản trị Máy chủ",
+      "button-user": "Mở Quản trị Người dùng"
+    }
+  },
+  "interfaces": {
+    "headline": "Quản trị Giao diện",
+    "headline-peers": "Các Peer VPN Hiện tại",
+    "headline-endpoints": "Các Điểm cuối Hiện tại",
+    "no-interface": {
+      "default-selection": "Không có giao diện nào",
+      "headline": "Không tìm thấy giao diện...",
+      "abstract": "Nhấp vào nút cộng trên để tạo một giao diện WireGuard mới."
+    },
+    "no-peer": {
+      "headline": "Không có peer nào",
+      "abstract": "Hiện tại, không có peer nào khả dụng cho giao diện WireGuard đã chọn."
+    },
+    "table-heading": {
+      "name": "Tên",
+      "user": "Người dùng",
+      "ip": "Địa chỉ IP",
+      "endpoint": "Điểm cuối",
+      "status": "Trạng thái"
+    },
+    "interface": {
+      "headline": "Trạng thái giao diện cho",
+      "mode": "chế độ",
+      "key": "Khóa Công khai",
+      "endpoint": "Điểm cuối Công khai",
+      "port": "Cổng Nghe",
+      "peers": "Các Peer Được Kích hoạt",
+      "total-peers": "Tổng số Peer",
+      "endpoints": "Các Điểm cuối Được Kích hoạt",
+      "total-endpoints": "Tổng số Điểm cuối",
+      "ip": "Địa chỉ IP",
+      "default-allowed-ip": "IP được phép mặc định",
+      "dns": "Máy chủ DNS",
+      "mtu": "MTU",
+      "default-keep-alive": "Khoảng thời gian giữ kết nối mặc định",
+      "button-show-config": "Hiển thị cấu hình",
+      "button-download-config": "Tải xuống cấu hình",
+      "button-store-config": "Lưu cấu hình cho wg-quick",
+      "button-edit": "Chỉnh sửa giao diện"
+    },
+    "button-add-interface": "Thêm Giao diện",
+    "button-add-peer": "Thêm Peer",
+    "button-add-peers": "Thêm Nhiều Peer",
+    "button-show-peer": "Hiển thị Peer",
+    "button-edit-peer": "Chỉnh sửa Peer",
+    "peer-disabled": "Peer đã bị vô hiệu hóa, lý do:",
+    "peer-expiring": "Peer sẽ hết hạn vào",
+    "peer-connected": "Đã kết nối",
+    "peer-not-connected": "Chưa kết nối",
+    "peer-handshake": "Lần bắt tay cuối cùng:"
+  },
+  "users": {
+    "headline": "Quản trị Người dùng",
+    "table-heading": {
+      "id": "ID",
+      "email": "E-Mail",
+      "firstname": "Tên",
+      "lastname": "Họ",
+      "source": "Nguồn",
+      "peers": "Peers",
+      "admin": "Quản trị viên"
+    },
+    "no-user": {
+      "headline": "Không có người dùng nào",
+      "abstract": "Hiện tại, không có người dùng nào được đăng ký với WireGuard Portal."
+    },
+    "button-add-user": "Thêm Người dùng",
+    "button-show-user": "Hiển thị Người dùng",
+    "button-edit-user": "Chỉnh sửa Người dùng",
+    "user-disabled": "Người dùng đã bị vô hiệu hóa, lý do:",
+    "user-locked": "Tài khoản bị khóa, lý do:",
+    "admin": "Người dùng có quyền quản trị",
+    "no-admin": "Người dùng không có quyền quản trị"
+  },
+  "profile": {
+    "headline": "Các Peer VPN của Tôi",
+    "table-heading": {
+      "name": "Tên",
+      "ip": "Địa chỉ IP",
+      "stats": "Trạng thái",
+      "interface": "Giao diện Máy chủ"
+    },
+    "no-peer": {
+      "headline": "Không có peer nào",
+      "abstract": "Hiện tại, không có peer nào liên kết với hồ sơ người dùng của bạn."
+    },
+    "peer-connected": "Đã kết nối",
+    "button-add-peer": "Thêm Peer",
+    "button-show-peer": "Hiển thị Peer",
+    "button-edit-peer": "Chỉnh sửa Peer"
+  },
+  "modals": {
+    "user-view": {
+      "headline": "Tài khoản Người dùng:",
+      "tab-user": "Thông tin",
+      "tab-peers": "Peers",
+      "headline-info": "Thông tin Người dùng:",
+      "headline-notes": "Ghi chú:",
+      "email": "E-Mail",
+      "firstname": "Tên",
+      "lastname": "Họ",
+      "phone": "Số điện thoại",
+      "department": "Phòng ban",
+      "disabled": "Tài khoản bị vô hiệu hóa",
+      "locked": "Tài khoản bị khóa",
+      "no-peers": "Người dùng không có peers liên kết.",
+      "peers": {
+        "name": "Tên",
+        "interface": "Giao diện",
+        "ip": "Địa chỉ IP"
+      }
+    },
+    "user-edit": {
+      "headline-edit": "Chỉnh sửa người dùng:",
+      "headline-new": "Người dùng mới",
+      "header-general": "Chung",
+      "header-personal": "Thông tin Người dùng",
+      "header-notes": "Ghi chú",
+      "header-state": "Trạng thái",
+      "identifier": {
+        "label": "Mã định danh",
+        "placeholder": "Mã định danh người dùng duy nhất"
+      },
+      "source": {
+        "label": "Nguồn",
+        "placeholder": "Nguồn gốc của người dùng"
+      },
+      "password": {
+        "label": "Mật khẩu",
+        "placeholder": "Mật khẩu siêu bí mật",
+        "description": "Để trống trường này để giữ nguyên mật khẩu hiện tại."
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Địa chỉ email"
+      },
+      "phone": {
+        "label": "Điện thoại",
+        "placeholder": "Số điện thoại"
+      },
+      "department": {
+        "label": "Phòng ban",
+        "placeholder": "Phòng ban"
+      },
+      "firstname": {
+        "label": "Tên",
+        "placeholder": "Tên"
+      },
+      "lastname": {
+        "label": "Họ",
+        "placeholder": "Họ"
+      },
+      "notes": {
+        "label": "Ghi chú",
+        "placeholder": "Chú thích thêm"
+      },
+      "disabled": {
+        "label": "Vô hiệu hóa (không thể kết nối WireGuard và không thể đăng nhập)"
+      },
+      "locked": {
+        "label": "Khóa (không thể đăng nhập, kết nối WireGuard vẫn hoạt động)"
+      },
+      "admin": {
+        "label": "Là Quản trị viên"
+      }
+    },
+    "interface-view": {
+      "headline": "Cấu hình cho Giao diện:"
+    },
+    "interface-edit": {
+      "headline-edit": "Chỉnh sửa Giao diện:",
+      "headline-new": "Giao diện Mới",
+      "tab-interface": "Giao diện",
+      "tab-peerdef": "Cài đặt Mặc định của Peer",
+      "header-general": "Chung",
+      "header-network": "Mạng",
+      "header-crypto": "Mã hóa",
+      "header-hooks": "Kẹp Giao diện",
+      "header-peer-hooks": "Kẹp Peer",
+      "header-state": "Trạng thái",
+      "identifier": {
+        "label": "Mã định danh",
+        "placeholder": "Mã định danh giao diện duy nhất"
+      },
+      "mode": {
+        "label": "Chế độ Giao diện",
+        "server": "Chế độ Máy chủ",
+        "client": "Chế độ Khách hàng",
+        "any": "Chế độ Không xác định"
+      },
+      "display-name": {
+        "label": "Tên Hiển thị",
+        "placeholder": "Tên mô tả cho giao diện"
+      },
+      "private-key": {
+        "label": "Khóa Riêng",
+        "placeholder": "Khóa riêng"
+      },
+      "public-key": {
+        "label": "Khóa Công khai",
+        "placeholder": "Khóa công khai"
+      },
+      "ip": {
+        "label": "Địa chỉ IP",
+        "placeholder": "Địa chỉ IP (định dạng CIDR)"
+      },
+      "listen-port": {
+        "label": "Cổng Nghe",
+        "placeholder": "Cổng nghe"
+      },
+      "dns": {
+        "label": "Máy chủ DNS",
+        "placeholder": "Các máy chủ DNS sẽ được sử dụng"
+      },
+      "dns-search": {
+        "label": "Tên miền Tìm kiếm DNS",
+        "placeholder": "Tiền tố tìm kiếm DNS"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "MTU của giao diện (0 = giữ mặc định)"
+      },
+      "firewall-mark": {
+        "label": "Đánh dấu Tường lửa",
+        "placeholder": "Đánh dấu tường lửa áp dụng cho lưu lượng đi. (0 = tự động)"
+      },
+      "routing-table": {
+        "label": "Bảng Định tuyến",
+        "placeholder": "ID bảng định tuyến",
+        "description": "Các trường hợp đặc biệt: off = không quản lý các tuyến đường, 0 = tự động"
+      },
+      "pre-up": {
+        "label": "Trước khi Bật",
+        "placeholder": "Một hoặc nhiều lệnh bash ngăn cách bằng ;"
+      },
+      "post-up": {
+        "label": "Sau khi Bật",
+        "placeholder": "Một hoặc nhiều lệnh bash ngăn cách bằng ;"
+      },
+      "pre-down": {
+        "label": "Trước khi Tắt",
+        "placeholder": "Một hoặc nhiều lệnh bash ngăn cách bằng ;"
+      },
+      "post-down": {
+        "label": "Sau khi Tắt",
+        "placeholder": "Một hoặc nhiều lệnh bash ngăn cách bằng ;"
+      },
+      "disabled": {
+        "label": "Giao diện Bị vô hiệu hóa"
+      },
+      "save-config": {
+        "label": "Tự động lưu cấu hình wg-quick"
+      },
+      "defaults": {
+        "endpoint": {
+          "label": "Địa chỉ Endpoint",
+          "placeholder": "Địa chỉ Endpoint",
+          "description": "Địa chỉ endpoint mà các peer sẽ kết nối tới."
+        },
+        "networks": {
+          "label": "Mạng IP",
+          "placeholder": "Địa chỉ Mạng",
+          "description": "Các peer sẽ nhận địa chỉ IP từ những mạng con này."
+        },
+        "allowed-ip": {
+          "label": "Địa chỉ IP Được phép",
+          "placeholder": "Địa chỉ IP Được phép mặc định"
+        },
+        "mtu": {
+          "label": "MTU",
+          "placeholder": "MTU của client (0 = giữ mặc định)"
+        },
+        "keep-alive": {
+          "label": "Khoảng thời gian Giữ kết nối",
+          "placeholder": "Giữ kết nối liên tục (0 = mặc định)"
+        }
+      },
+
+      "button-apply-defaults": "Áp dụng Cài đặt Mặc định của Peer"
+    },
+    "peer-view": {
+      "headline-peer": "Peer:",
+      "headline-endpoint": "Endpoint:",
+      "section-info": "Thông tin Peer",
+      "section-status": "Trạng thái Hiện tại",
+      "section-config": "Cấu hình",
+      "identifier": "Mã định danh",
+      "ip": "Địa chỉ IP",
+      "user": "Người dùng Liên kết",
+      "notes": "Ghi chú",
+      "expiry-status": "Hết hạn vào",
+      "disabled-status": "Bị Vô hiệu hóa vào",
+      "traffic": "Lưu lượng",
+      "connection-status": "Thông tin Kết nối",
+      "upload": "Số Byte Tải lên (từ Máy chủ đến Peer)",
+      "download": "Số Byte Tải xuống (từ Peer đến Máy chủ)",
+      "pingable": "Có thể Ping",
+      "handshake": "Lần bắt tay cuối cùng",
+      "connected-since": "Kết nối từ",
+      "endpoint": "Endpoint",
+      "button-download": "Tải cấu hình",
+      "button-email": "Gửi cấu hình qua Email"
+    },
+    "peer-edit": {
+      "headline-edit-peer": "Chỉnh sửa Peer:",
+      "headline-edit-endpoint": "Chỉnh sửa Endpoint:",
+      "headline-new-peer": "Tạo Peer mới",
+      "headline-new-endpoint": "Tạo Endpoint mới",
+      "header-general": "Chung",
+      "header-network": "Mạng",
+      "header-crypto": "Mã hóa",
+      "header-hooks": "Kẹp (Thực thi trên Peer)",
+      "header-state": "Trạng thái",
+      "display-name": {
+        "label": "Tên Hiển thị",
+        "placeholder": "Tên mô tả cho peer"
+      },
+      "linked-user": {
+        "label": "Người dùng Liên kết",
+        "placeholder": "Tài khoản người dùng sở hữu peer này"
+      },
+      "private-key": {
+        "label": "Khóa Riêng",
+        "placeholder": "Khóa riêng"
+      },
+      "public-key": {
+        "label": "Khóa Công khai",
+        "placeholder": "Khóa công khai"
+      },
+      "preshared-key": {
+        "label": "Khóa Preshared",
+        "placeholder": "Khóa chia sẻ trước (tuỳ chọn)"
+      },
+      "endpoint-public-key": {
+        "label": "Khóa Công khai của Endpoint",
+        "placeholder": "Khóa công khai của endpoint từ xa"
+      },
+      "endpoint": {
+        "label": "Địa chỉ Endpoint",
+        "placeholder": "Địa chỉ của endpoint từ xa"
+      },
+      "ip": {
+        "label": "Địa chỉ IP",
+        "placeholder": "Địa chỉ IP (định dạng CIDR)"
+      },
+      "allowed-ip": {
+        "label": "Địa chỉ IP Được phép",
+        "placeholder": "Địa chỉ IP Được phép (định dạng CIDR)"
+      },
+      "extra-allowed-ip": {
+        "label": "Địa chỉ IP Được phép Thêm",
+        "placeholder": "Địa chỉ IP Thêm (Phía Máy chủ)",
+        "description": "Những địa chỉ IP này sẽ được thêm vào giao diện WireGuard từ xa dưới dạng địa chỉ IP được phép."
+      },
+      "dns": {
+        "label": "Máy chủ DNS",
+        "placeholder": "Các máy chủ DNS sẽ được sử dụng"
+      },
+      "dns-search": {
+        "label": "Tên miền Tìm kiếm DNS",
+        "placeholder": "Tiền tố tìm kiếm DNS"
+      },
+      "keep-alive": {
+        "label": "Khoảng thời gian Giữ kết nối",
+        "placeholder": "Giữ kết nối liên tục (0 = mặc định)"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "MTU của client (0 = giữ mặc định)"
+      },
+      "pre-up": {
+        "label": "Trước khi Bật",
+        "placeholder": "Một hoặc nhiều lệnh bash ngăn cách bằng ;"
+      },
+      "post-up": {
+        "label": "Sau khi Bật",
+        "placeholder": "Một hoặc nhiều lệnh bash ngăn cách bằng ;"
+      },
+      "pre-down": {
+        "label": "Trước khi Tắt",
+        "placeholder": "Một hoặc nhiều lệnh bash ngăn cách bằng ;"
+      },
+      "post-down": {
+        "label": "Sau khi Tắt",
+        "placeholder": "Một hoặc nhiều lệnh bash ngăn cách bằng ;"
+      },
+      "disabled": {
+        "label": "Peer Bị Vô hiệu hóa"
+      },
+      "ignore-global": {
+        "label": "Bỏ qua cài đặt toàn cầu"
+      },
+      "expires-at": {
+        "label": "Ngày hết hạn"
+      }
+    },
+    "peer-multi-create": {
+      "headline-peer": "Tạo nhiều peer",
+      "headline-endpoint": "Tạo nhiều endpoint",
+      "identifiers": {
+        "label": "Mã định danh Người dùng",
+        "placeholder": "Mã định danh Người dùng",
+        "description": "Một mã định danh người dùng (tên người dùng) cho mà một peer sẽ được tạo ra."
+      },
+      "prefix": {
+        "headline-peer": "Peer:",
+        "headline-endpoint": "Endpoint:",
+        "label": "Tiền tố Tên Hiển thị",
+        "placeholder": "Tiền tố",
+        "description": "Một tiền tố được thêm vào tên hiển thị của các peer."
+      }
+    }
+  }
+}

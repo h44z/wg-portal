@@ -1,0 +1,182 @@
+{
+  "languages": {
+    "pt": "Português"
+  },
+  "general": {
+    "pagination": {
+      "size": "Número de Elementos",
+      "all": "Todos (lento)"
+    },
+    "search": {
+      "placeholder": "Pesquisar...",
+      "button": "Pesquisar"
+    },
+    "select-all": "Selecionar tudo",
+    "yes": "Sim",
+    "no": "Não",
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "save": "Guardar",
+    "delete": "Eliminar"
+  },
+  "login": {
+    "headline": "Por favor, inicie sessão",
+    "username": {
+      "label": "Nome de utilizador",
+      "placeholder": "Introduza o seu nome de utilizador"
+    },
+    "password": {
+      "label": "Palavra-passe",
+      "placeholder": "Introduza a sua palavra-passe"
+    },
+    "button": "Iniciar sessão"
+  },
+  "menu": {
+    "home": "Início",
+    "interfaces": "Interfaces",
+    "users": "Utilizadores",
+    "lang": "Alterar idioma",
+    "profile": "O Meu Perfil",
+    "settings": "Definições",
+    "audit": "Registo de Auditoria",
+    "login": "Iniciar Sessão",
+    "logout": "Terminar Sessão"
+  },
+  "home": {
+    "title": "Início",
+    "card": {
+      "interfaces": "Interfaces",
+      "users": "Utilizadores"
+    }
+  },
+  "interfaces": {
+    "title": "Interfaces",
+    "create": "Criar Interface",
+    "name": "Nome",
+    "address": "Endereço",
+    "listen-port": "Porta de Escuta",
+    "public-key": "Chave Pública",
+    "private-key": "Chave Privada",
+    "actions": "Ações",
+    "delete-dialog": {
+      "title": "Eliminar Interface",
+      "text": "Tem a certeza de que deseja eliminar a interface '{{name}}'?"
+    },
+    "form": {
+      "name": {
+        "label": "Nome",
+        "placeholder": "Introduza um nome exclusivo para a interface"
+      },
+      "address": {
+        "label": "Endereço",
+        "placeholder": "Introduza um endereço válido (ex: 10.0.0.1/24)"
+      },
+      "listen-port": {
+        "label": "Porta de Escuta",
+        "placeholder": "Introduza a porta onde o WireGuard irá escutar (ex: 51820)"
+      },
+      "private-key": {
+        "label": "Chave Privada",
+        "placeholder": "Será gerada automaticamente se não for fornecida"
+      }
+    }
+  },
+  "users": {
+    "title": "Utilizadores",
+    "create": "Criar Utilizador",
+    "name": "Nome",
+    "email": "Email",
+    "enabled": "Ativo",
+    "is-admin": "Administrador",
+    "actions": "Ações",
+    "edit": "Editar",
+    "delete-dialog": {
+      "title": "Eliminar Utilizador",
+      "text": "Tem a certeza de que deseja eliminar o utilizador '{{nome}}'?"
+    },
+    "form": {
+      "name": {
+        "label": "Nome",
+        "placeholder": "Introduza o nome do utilizador"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Introduza o email do utilizador"
+      },
+      "password": {
+        "label": "Palavra-passe",
+        "placeholder": "Deixe em branco para manter a atual"
+      },
+      "is-admin": {
+        "label": "Administrador"
+      },
+      "enabled": {
+        "label": "Ativo"
+      }
+    }
+  },
+  "peers": {
+    "title": "Peers",
+    "create": "Criar Peer",
+    "public-key": "Chave Pública",
+    "preshared-key": "Chave Pré-partilhada",
+    "endpoint": "Endpoint",
+    "allowed-ips": "IPs Permitidos",
+    "latest-handshake": "Último Handshake",
+    "transfer-rx": "Recebido",
+    "transfer-tx": "Enviado",
+    "persistent-keepalive": "Keepalive Persistente",
+    "actions": "Ações",
+    "edit": "Editar",
+    "delete-dialog": {
+      "title": "Eliminar Peer",
+      "text": "Tem a certeza de que deseja eliminar este peer?"
+    },
+    "form": {
+      "public-key": {
+        "label": "Chave Pública",
+        "placeholder": "Introduza a chave pública do peer"
+      },
+      "preshared-key": {
+        "label": "Chave Pré-partilhada",
+        "placeholder": "Opcional: Chave partilhada adicional para maior segurança"
+      },
+      "endpoint": {
+        "label": "Endpoint",
+        "placeholder": "Endereço público do peer (ex: 1.2.3.4:51820)"
+      },
+      "allowed-ips": {
+        "label": "IPs Permitidos",
+        "placeholder": "Lista de IPs (ex: 10.0.0.2/32, 192.168.1.0/24)"
+      },
+      "persistent-keepalive": {
+        "label": "Keepalive Persistente",
+        "placeholder": "Ex: 25 (em segundos)"
+      }
+    }
+  },
+  "settings": {
+    "title": "Definições",
+    "password": {
+      "label": "Nova Palavra-passe",
+      "placeholder": "Deixe em branco para manter a atual"
+    },
+    "save": "Guardar Alterações"
+  },
+  "audit": {
+    "title": "Registo de Auditoria",
+    "username": "Utilizador",
+    "ip": "Endereço IP",
+    "method": "Método",
+    "path": "Caminho",
+    "status": "Estado",
+    "timestamp": "Data/Hora"
+  },
+  "errors": {
+    "required": "Este campo é obrigatório",
+    "invalid-email": "Endereço de email inválido",
+    "invalid-address": "Endereço inválido",
+    "invalid-endpoint": "Endpoint inválido",
+    "invalid-allowed-ips": "Formato de IPs Permitidos inválido"
+  }
+}

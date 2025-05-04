@@ -1,53 +1,69 @@
 # Dockerfile References: https://docs.docker.com/engine/reference/builder/
 # This dockerfile uses a multi-stage build system to reduce the image footprint.
 
-######-
-# Start from the latest golang base image as builder image (only used to compile the code)
-######-
-FROM golang:1.18 as builder
-
-ARG BUILD_IDENTIFIER
-ENV ENV_BUILD_IDENTIFIER=$BUILD_IDENTIFIER
-
-ARG BUILD_VERSION
-ENV ENV_BUILD_VERSION=$BUILD_VERSION
-
-# populated by BuildKit
-ARG TARGETPLATFORM
-ENV ENV_TARGETPLATFORM=$TARGETPLATFORM
-
-RUN mkdir /build
-
-# Copy the source from the current directory to the Working Directory inside the container
-ADD . /build/
-
-# Set the Current Working Directory inside the container
+######
+# Build frontend
+######
+FROM --platform=${BUILDPLATFORM} node:lts-alpine AS frontend
+# Set the working directory
 WORKDIR /build
+# Download dependencies
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+# Set dist output directory
+ENV DIST_OUT_DIR="dist"
+# Copy the sources to the working directory
+COPY frontend .
+# Build the frontend
+RUN npm run build
 
-# Build the Go app
-RUN echo "Building version '$ENV_BUILD_IDENTIFIER-$ENV_BUILD_VERSION' for platform $ENV_TARGETPLATFORM"; make build
+######
+# Build backend
+######
+FROM --platform=${BUILDPLATFORM} golang:1.24-alpine AS builder
+# Set the working directory
+WORKDIR /build
+# Download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+# Copy the sources to the working directory
+COPY ./cmd ./cmd
+COPY ./internal ./internal
+# Copy the frontend build result
+COPY --from=frontend /build/dist/ ./internal/app/api/core/frontend-dist/
+# Set the build version from arguments
+ARG BUILD_VERSION
+# Split to cross-platform build
+ARG TARGETARCH
+# Build the application
+RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} go build -o /build/dist/wg-portal \
+  -ldflags "-w -s -extldflags '-static' -X 'github.com/h44z/wg-portal/internal.Version=${BUILD_VERSION}'" \
+  -tags netgo \
+  cmd/wg-portal/main.go
 
-######-
-# Here starts the main image
-######-
-FROM scratch
+######
+# Export binaries
+######
+FROM scratch AS binaries
+COPY --from=builder /build/dist/wg-portal /
 
+######
+# Final image
+######
+FROM alpine:3.19
+# Install OS-level dependencies
+RUN apk add --no-cache bash curl iptables nftables openresolv wireguard-tools
 # Setup timezone
-ENV TZ=Europe/Vienna
-
-# Import linux stuff from builder.
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/group /etc/group
-
+ENV TZ=UTC
 # Copy binaries
 COPY --from=builder /build/dist/wg-portal /app/wg-portal
-COPY --from=builder /build/dist/hc /app/hc
-
 # Set the Current Working Directory inside the container
 WORKDIR /app
-
+# Expose default ports for metrics, web and wireguard
+EXPOSE 8787/tcp
+EXPOSE 8888/tcp
+EXPOSE 51820/udp
+# the database and config file can be mounted from the host
+VOLUME [ "/app/data", "/app/config" ]
 # Command to run the executable
-CMD [ "/app/wg-portal" ]
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD [ "/app/hc", "http://localhost:11223/health" ]
+ENTRYPOINT [ "/app/wg-portal" ]

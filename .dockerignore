@@ -1,0 +1,14 @@
+# Ignore everything
+*
+
+# Allow backend files
+!cmd/
+!internal/
+!go.mod
+!go.sum
+
+# Allow frontend files
+!frontend/
+
+# Ignore node_modules
+**/node_modules/

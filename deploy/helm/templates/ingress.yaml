@@ -1,0 +1,30 @@
+{{- $hostname := include "wg-portal.hostname" . -}}
+{{- if and .Values.ingress.enabled $hostname -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  {{- with .Values.ingress.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ include "wg-portal.fullname" . }}
+  labels: {{- include "wg-portal.labels" . | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ $hostname }}
+      http:
+        paths:
+          - path: {{ default "/" (urlParse (tpl .Values.config.web.external_url .)).path }}
+            pathType: {{ default "ImplementationSpecific" .pathType }}
+            backend:
+              service:
+                name: {{ include "wg-portal.fullname" . }}
+                port:
+                  name: web
+  {{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ $hostname | quote }}
+      secretName: {{ include "wg-portal.fullname" . }}-tls
+  {{- end }}
+{{- end }}

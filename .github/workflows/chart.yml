@@ -1,0 +1,75 @@
+# Publish chart to the GitHub Container Registry (GHCR) on push to master
+# Run the following tests on PRs:
+# - Check if chart's documentation is up to date
+# - Check chart linting
+# - Check chart installation in a Kind cluster
+# - Check chart packaging
+
+name: Chart
+
+on:
+  pull_request:
+    branches: [master]
+    paths: ['deploy/helm/**']
+  push:
+    branches: [master]
+    paths: ['deploy/helm/**']
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check docs
+        run: |
+          make helm-docs
+          if ! git diff --exit-code; then
+            echo "error::Documentation is not up to date. Please run helm-docs and commit changes."
+            exit 1
+          fi
+
+      # ct lint requires Python 3.x to run following packages:
+      #  - yamale (https://github.com/23andMe/Yamale)
+      #  - yamllint (https://github.com/adrienverge/yamllint)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - uses: helm/chart-testing-action@v2
+
+      - name: Run chart-testing (lint)
+        run: ct lint --config ct.yaml
+
+      - uses: nolar/setup-k3d-k3s@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run chart-testing (install)
+        run: ct install --config ct.yaml
+
+      - name: Check chart packaging
+        run: helm package deploy/helm
+
+  publish:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package helm chart
+        run: helm package deploy/helm
+
+      - name: Push chart to GHCR
+        run: helm push wg-portal-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
