@@ -10,10 +10,10 @@ The recommended method for deploying WireGuard Portal is via Docker Compose for 
 A sample docker-compose.yml (managing WireGuard interfaces directly on the host) is provided below:
 
 ```yaml
---8<-- "docker-compose.yml::17"
+--8<-- "docker-compose.yml::19"
 ```
 
-By default, the webserver is listening on port **8888**.
+By default, the webserver for the UI is listening on port **8888** on all available interfaces.
 
 Volumes for `/app/data` and `/app/config` should be used ensure data persistence across container restarts.
 
@@ -32,6 +32,8 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
        network_mode: "host"
        ...
    ```
+   > :warning: If host networking is used, the WireGuard Portal UI will be accessible on all the host's IP addresses if the listening address is set to `:8888` in the configuration file.
+   To avoid this, you can bind the listening address to a specific IP address, for example, the loopback address (`127.0.0.1:8888`). It is also possible to deploy firewall rules to restrict access to the WireGuard Portal UI.
 
  - **Within the WireGuard Portal Docker container**: 
    WireGuard interfaces can be managed directly from within the WireGuard Portal container itself.
@@ -39,7 +41,7 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
    ```yaml
    services:
      wg-portal:
-       image: wgportal/wg-portal:latest
+       image: wgportal/wg-portal:v2
        container_name: wg-portal
        ...
        cap_add:
@@ -65,7 +67,7 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
    ```yaml
    services:
      wg-portal:
-       image: wgportal/wg-portal:latest
+       image: wgportal/wg-portal:v2
        container_name: wg-portal
        ...
        cap_add:
@@ -118,11 +120,11 @@ These are official releases of WireGuard Portal. They correspond to the GitHub t
 
 Once these tags show up in this repository, they will never change.
 
-For production deployments of WireGuard Portal, we strongly recommend using one of these tags, e.g. **wgportal/wg-portal:1.0.19**, instead of the latest or canary tags.
+For production deployments of WireGuard Portal, we strongly recommend using one of these tags, e.g. `wgportal/wg-portal:2.0.0`, instead of the latest or canary tags.
 
-If you only want to stay at the same major or major+minor version, use either `v[MAJOR]` or `[MAJOR].[MINOR]` tags. For example `v1` or `1.0`.
+If you only want to stay at the same major or major+minor version, use either `v[MAJOR]` or `[MAJOR].[MINOR]` tags. For example `v2` or `2.0`.
 
-Version **1** is currently **stable**, version **2** is in **development**.
+Version **2** is the current stable release. Version **1** has moved to legacy status and is no longer recommended.
 
 #### latest
 
@@ -149,7 +151,7 @@ You should mount those directories as a volume:
 
 A detailed description of the configuration options can be found [here](../configuration/overview.md).
 
-If you want to access configuration files in wg-quick format, you can mount the `/etc/wireguard` directory to a location of your choice.
+If you want to access configuration files in wg-quick format, you can mount the `/etc/wireguard` directory inside the container to a location of your choice.
 Also enable the `config_storage_path` option in the configuration file:
 ```yaml
 advanced:

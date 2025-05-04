@@ -5,6 +5,10 @@ $web-font-path: false;
 @import "bootstrap/scss/bootstrap";
 @import "bootswatch/dist/lux/bootswatch";
 
+// fix strange border width bug in bootswatch 5.3
+:root {
+    --bs-border-width: 1px;
+}
 
 // for future use, once bootswatch supports @use
 /*

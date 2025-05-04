@@ -178,7 +178,7 @@ onMounted(async () => {
             {{ $t('general.pagination.size')}}:
           </label>
           <div class="col-sm-6">
-            <select v-model.number="profile.pageSize" class="form-select" @click="profile.afterPageSizeChange()">
+            <select id="paginationSelector" v-model.number="profile.pageSize" class="form-select" @click="profile.afterPageSizeChange()">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>

@@ -15,7 +15,7 @@ web:
   site_title: My WireGuard Server
   site_company_name: My Company
   listening_address: :8080
-  external_url: https://my.externa-domain.com
+  external_url: https://my.external-domain.com
   csrf_secret: super-s3cr3t-csrf
   session_secret: super-s3cr3t-session
   request_logging: true

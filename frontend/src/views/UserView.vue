@@ -116,7 +116,7 @@ onMounted(() => {
         <div class="form-group row">
           <label class="col-sm-6 col-form-label text-end" for="paginationSelector">{{ $t('general.pagination.size') }}:</label>
           <div class="col-sm-6">
-            <select v-model.number="users.pageSize" class="form-select" @click="users.afterPageSizeChange()">
+            <select id="paginationSelector" v-model.number="users.pageSize" class="form-select" @click="users.afterPageSizeChange()">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
