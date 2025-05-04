@@ -1,4 +1,4 @@
-# WireGuard Portal (v2 - testing)
+# WireGuard Portal v2
 
 [![Build Status](https://github.com/h44z/wg-portal/actions/workflows/docker-publish.yml/badge.svg?event=push)](https://github.com/h44z/wg-portal/actions/workflows/docker-publish.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -8,14 +8,6 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/h44z/wg-portal)
 [![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/wgportal/wg-portal/)
 
-> [!CAUTION]
-> Version 2 is currently under development and may contain bugs and breaking changes.
-> It is not advised to use this version in production. Use version [v1](https://github.com/h44z/wg-portal/tree/stable) instead.
-
-> [!IMPORTANT]
-> Since the project was accepted by the Docker-Sponsored Open Source Program, the Docker image location has moved to [wgportal/wg-portal](https://hub.docker.com/r/wgportal/wg-portal).
-> Please update the Docker image from **h44z/wg-portal** to **wgportal/wg-portal**.
-
 ## Introduction
 <!-- Text from this line # is included in docs/documentation/overview.md -->
 **WireGuard Portal** is a simple, web-based configuration portal for [WireGuard](https://wireguard.com) server management.
@@ -23,7 +15,7 @@ The portal uses the WireGuard [wgctrl](https://github.com/WireGuard/wgctrl-go) l
 interfaces. This allows for the seamless activation or deactivation of new users without disturbing existing VPN
 connections.
 
-The configuration portal supports using a database (SQLite, MySQL, MsSQL or Postgres), OAuth or LDAP
+The configuration portal supports using a database (SQLite, MySQL, MsSQL, or Postgres), OAuth or LDAP
 (Active Directory or OpenLDAP) as a user source for authentication and profile data.
 
 ## Features
@@ -44,7 +36,7 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL or Post
 * Handles route and DNS settings like wg-quick does
 * Exposes Prometheus metrics for monitoring and alerting
 * REST API for management and client deployment
-* Webhook for custom actions on peer, interface or user updates
+* Webhook for custom actions on peer, interface, or user updates
 
 <!-- Text to this line # is included in docs/documentation/overview.md -->
 ![Screenshot](docs/assets/images/screenshot.png)
@@ -68,3 +60,8 @@ For the complete documentation visit [wgportal.org](https://wgportal.org).
 ## License
 
 * MIT License. [MIT](LICENSE.txt) or <https://opensource.org/licenses/MIT>
+
+
+> [!IMPORTANT]
+> Since the project was accepted by the Docker-Sponsored Open Source Program, the Docker image location has moved to [wgportal/wg-portal](https://hub.docker.com/r/wgportal/wg-portal).
+> Please update the Docker image from **h44z/wg-portal** to **wgportal/wg-portal**.

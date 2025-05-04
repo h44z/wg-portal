@@ -13,7 +13,7 @@ By default, WG-Portal exposes Prometheus metrics on port `8787` if interface/pee
 
 ## Prometheus Config
 
-Add following scrape job to your Prometheus config file:
+Add the following scrape job to your Prometheus config file:
 
 ```yaml
 # prometheus.yaml
