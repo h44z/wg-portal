@@ -22,4 +22,5 @@ make build
 ## Install
 
 Compiled binary will be available in `./dist` directory. 
+
 For installation instructions, check the [Binaries](./binaries.md) section.

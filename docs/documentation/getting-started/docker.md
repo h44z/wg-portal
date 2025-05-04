@@ -13,7 +13,7 @@ A sample docker-compose.yml (managing WireGuard interfaces directly on the host)
 --8<-- "docker-compose.yml::18"
 ```
 
-By default, the webserver is listening on port **8888**.
+By default, the webserver is listening on port **8888** on all available interfaces.
 
 Volumes for `/app/data` and `/app/config` should be used ensure data persistence across container restarts.
 
@@ -118,7 +118,7 @@ These are official releases of WireGuard Portal. They correspond to the GitHub t
 
 Once these tags show up in this repository, they will never change.
 
-For production deployments of WireGuard Portal, we strongly recommend using one of these tags, e.g. **wgportal/wg-portal:2.0.0**, instead of the latest or canary tags.
+For production deployments of WireGuard Portal, we strongly recommend using one of these tags, e.g. `wgportal/wg-portal:2.0.0`, instead of the latest or canary tags.
 
 If you only want to stay at the same major or major+minor version, use either `v[MAJOR]` or `[MAJOR].[MINOR]` tags. For example `v2` or `2.0`.
 
@@ -149,7 +149,7 @@ You should mount those directories as a volume:
 
 A detailed description of the configuration options can be found [here](../configuration/overview.md).
 
-If you want to access configuration files in wg-quick format, you can mount the `/etc/wireguard` directory to a location of your choice.
+If you want to access configuration files in wg-quick format, you can mount the `/etc/wireguard` directory inside the container to a location of your choice.
 Also enable the `config_storage_path` option in the configuration file:
 ```yaml
 advanced:

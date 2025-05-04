@@ -1,10 +1,10 @@
 This page provides an overview of **all available configuration options** for WireGuard Portal.
 
-You can supply these configurations in a **YAML** file (e.g. `config.yaml`) when starting the Portal.
-The path of the configuration file defaults to **config/config.yaml** (or config/config.yml) in the working directory of the executable.  
-It is possible to override configuration filepath using the environment variable `WG_PORTAL_CONFIG`.
+You can supply these configurations in a **YAML** file when starting the Portal.
+The path of the configuration file defaults to `config/config.yaml` (or `config/config.yml`) in the working directory of the executable.  
+It is possible to override the configuration filepath using the environment variable `WG_PORTAL_CONFIG`.
 For example: `WG_PORTAL_CONFIG=/etc/wg-portal/config.yaml ./wg-portal`.  
-Also, environment variable substitution in the config file is supported. Refer to [syntax](https://github.com/a8m/envsubst?tab=readme-ov-file#docs).
+Also, environment variable substitution in the config file is supported. Refer to the [syntax](https://github.com/a8m/envsubst?tab=readme-ov-file#docs).
 
 Configuration examples are available on the [Examples](./examples.md) page.
 
