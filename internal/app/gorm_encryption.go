@@ -88,14 +88,13 @@ func (s GormEncryptedStringSerializer) Value(
 		return nil, nil
 	}
 
-	if !s.useEncryption {
-		return fieldValue, nil // keep the original value
-	}
-
 	switch v := fieldValue.(type) {
 	case string:
 		if v == "" {
 			return "", nil // empty string, no need to encrypt
+		}
+		if !s.useEncryption {
+			return v, nil // keep the original value
 		}
 		encryptedString, err := EncryptAES256(v, s.keyPhrase)
 		if err != nil {
@@ -105,6 +104,9 @@ func (s GormEncryptedStringSerializer) Value(
 	case domain.PreSharedKey:
 		if v == "" {
 			return "", nil // empty string, no need to encrypt
+		}
+		if !s.useEncryption {
+			return string(v), nil // keep the original value
 		}
 		encryptedString, err := EncryptAES256(string(v), s.keyPhrase)
 		if err != nil {
