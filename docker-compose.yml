@@ -10,6 +10,7 @@ services:
         max-file: "3"
     cap_add:
       - NET_ADMIN
+    # Use host network mode for WireGuard and the UI. Ensure that access to the UI is properly secured.
     network_mode: "host"
     volumes:
       # left side is the host path, right side is the container path

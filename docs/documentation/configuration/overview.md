@@ -286,7 +286,7 @@ Controls how WireGuard Portal collects and reports usage statistics, including p
 
 ### `listening_address`
 - **Default:** `:8787`
-- **Description:** Address and port for the integrated Prometheus metric server (e.g., `:8787` or `127.0.0.1:8888`).
+- **Description:** Address and port for the integrated Prometheus metric server (e.g., `:8787` or `127.0.0.1:8787`).
 
 ---
 
@@ -580,7 +580,8 @@ Without a valid `external_url`, the login process may fail due to CSRF protectio
 
 ### `listening_address`
 - **Default:** `:8888`
-- **Description:** The listening port of the web server.
+- **Description:** The listening address and port for the web server (e.g., `:8888` to bind on all interfaces or `127.0.0.1:8888` to bind only on the loopback interface).
+  Ensure that access to WireGuard Portal is protected against unauthorized access, especially if binding to all interfaces.
 
 ### `external_url`
 - **Default:** `http://localhost:8888`

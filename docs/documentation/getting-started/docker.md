@@ -10,10 +10,10 @@ The recommended method for deploying WireGuard Portal is via Docker Compose for 
 A sample docker-compose.yml (managing WireGuard interfaces directly on the host) is provided below:
 
 ```yaml
---8<-- "docker-compose.yml::18"
+--8<-- "docker-compose.yml::19"
 ```
 
-By default, the webserver is listening on port **8888** on all available interfaces.
+By default, the webserver for the UI is listening on port **8888** on all available interfaces.
 
 Volumes for `/app/data` and `/app/config` should be used ensure data persistence across container restarts.
 
@@ -32,6 +32,8 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
        network_mode: "host"
        ...
    ```
+   > :warning: If host networking is used, the WireGuard Portal UI will be accessible on all the host's IP addresses if the listening address is set to `:8888` in the configuration file.
+   To avoid this, you can bind the listening address to a specific IP address, for example, the loopback address (`127.0.0.1:8888`). It is also possible to deploy firewall rules to restrict access to the WireGuard Portal UI.
 
  - **Within the WireGuard Portal Docker container**: 
    WireGuard interfaces can be managed directly from within the WireGuard Portal container itself.
