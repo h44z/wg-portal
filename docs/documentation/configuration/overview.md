@@ -282,7 +282,7 @@ Controls how WireGuard Portal collects and reports usage statistics, including p
 
 ### `listening_address`
 - **Default:** `:8787`
-- **Description:** Address and port for the integrated Prometheus metric server (e.g., `:8787`).
+- **Description:** Address and port for the integrated Prometheus metric server (e.g., `:8787` or `127.0.0.1:8888`).
 
 ---
 
