@@ -396,7 +396,7 @@ func (a *Authenticator) randString(nByte int) (string, error) {
 
 
 func isDomainAllowed(email string, allowedDomains []string) bool {
-	if len(allowedDomains) < 1 {
+	if len(allowedDomains) == 0 {
 		return true
 	}
     parts := strings.Split(email, "@")
@@ -405,7 +405,7 @@ func isDomainAllowed(email string, allowedDomains []string) bool {
     }
     domain := strings.ToLower(parts[1])
     for _, allowed := range allowedDomains {
-        if strings.ToLower(domain) == strings.ToLower(allowed) {
+        if domain == strings.ToLower(allowed) {
             return true
         }
     }
