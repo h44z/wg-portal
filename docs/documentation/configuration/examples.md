@@ -72,7 +72,8 @@ auth:
 
 auth:
   oidc:
-    # a sample Entra ID provider with environment variable substitution
+    # A sample Entra ID provider with environment variable substitution.
+    # Only users with an @outlook.com email address are allowed to register or login.
     - id: azure
       provider_name: azure
       display_name: Login with</br>Entra ID
@@ -80,6 +81,8 @@ auth:
       base_url: "https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0"
       client_id: "${AZURE_CLIENT_ID}"
       client_secret: "${AZURE_CLIENT_SECRET}"
+      allowed_domains:
+        - "outlook.com"
       extra_scopes:
         - profile
         - email

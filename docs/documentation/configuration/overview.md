@@ -368,6 +368,10 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Default:** *(empty)*
 - **Description:** A list of additional OIDC scopes (e.g., `profile`, `email`).
 
+#### `allowed_domains`
+- **Default:** *(empty)*
+- **Description:** A list of allowlisted domains. Only users with email addresses in these domains can log in or register. This is useful for restricting access to specific organizations or groups.
+
 #### `field_map`
 - **Default:** *(empty)*
 - **Description:** Maps OIDC claims to WireGuard Portal user fields. 
@@ -436,6 +440,10 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 #### `scopes`
 - **Default:** *(empty)*
 - **Description:** A list of OAuth scopes.
+
+#### `allowed_domains`
+- **Default:** *(empty)*
+- **Description:** A list of allowlisted domains. Only users with email addresses in these domains can log in or register. This is useful for restricting access to specific organizations or groups.
 
 #### `field_map`
 - **Default:** *(empty)*
