@@ -64,6 +64,8 @@ jobs:
             # major and major.minor tags are not available for alpha or beta releases
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
             # add v{{major}} tag, even for beta or release-canidate releases
             type=match,pattern=(v\d),group=1,enable=${{ contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
             # add {{major}} tag, even for beta releases or release-canidate releases
