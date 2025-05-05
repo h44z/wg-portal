@@ -24,6 +24,7 @@ type OidcAuthenticator struct {
 	userAdminMapping    *config.OauthAdminMapping
 	registrationEnabled bool
 	userInfoLogging     bool
+	allowedDomains      []string
 }
 
 func newOidcAuthenticator(
@@ -57,6 +58,7 @@ func newOidcAuthenticator(
 	provider.userAdminMapping = &cfg.AdminMapping
 	provider.registrationEnabled = cfg.RegistrationEnabled
 	provider.userInfoLogging = cfg.LogUserInfo
+	provider.allowedDomains = cfg.AllowedDomains
 
 	return provider, nil
 }
@@ -64,6 +66,10 @@ func newOidcAuthenticator(
 // GetName returns the name of the authenticator.
 func (o OidcAuthenticator) GetName() string {
 	return o.name
+}
+
+func (o OidcAuthenticator) GetAllowedDomains() []string {
+	return o.allowedDomains
 }
 
 // RegistrationEnabled returns whether registration is enabled for this authenticator.
