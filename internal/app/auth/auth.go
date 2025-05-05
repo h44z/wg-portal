@@ -394,22 +394,21 @@ func (a *Authenticator) randString(nByte int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-
 func isDomainAllowed(email string, allowedDomains []string) bool {
 	if len(allowedDomains) == 0 {
 		return true
 	}
-    parts := strings.Split(email, "@")
-    if len(parts) != 2 {
-        return false
-    }
-    domain := strings.ToLower(parts[1])
-    for _, allowed := range allowedDomains {
-        if domain == strings.ToLower(allowed) {
-            return true
-        }
-    }
-    return false
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return false
+	}
+	domain := strings.ToLower(parts[1])
+	for _, allowed := range allowedDomains {
+		if domain == strings.ToLower(allowed) {
+			return true
+		}
+	}
+	return false
 }
 
 // OauthLoginStep2 finishes the oauth authentication flow by exchanging the code for an access token and
