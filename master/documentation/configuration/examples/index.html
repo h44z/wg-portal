@@ -57,7 +57,8 @@
 
 <span class=nt>auth</span><span class=p>:</span>
 <span class=w>  </span><span class=nt>oidc</span><span class=p>:</span>
-<span class=w>    </span><span class=c1># a sample Entra ID provider with environment variable substitution</span>
+<span class=w>    </span><span class=c1># A sample Entra ID provider with environment variable substitution.</span>
+<span class=w>    </span><span class=c1># Only users with an @outlook.com email address are allowed to register or login.</span>
 <span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">azure</span>
 <span class=w>      </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">azure</span>
 <span class=w>      </span><span class=nt>display_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">Login with&lt;/br&gt;Entra ID</span>
@@ -65,6 +66,8 @@
 <span class=w>      </span><span class=nt>base_url</span><span class=p>:</span><span class=w> </span><span class=s>&quot;https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0&quot;</span>
 <span class=w>      </span><span class=nt>client_id</span><span class=p>:</span><span class=w> </span><span class=s>&quot;${AZURE_CLIENT_ID}&quot;</span>
 <span class=w>      </span><span class=nt>client_secret</span><span class=p>:</span><span class=w> </span><span class=s>&quot;${AZURE_CLIENT_SECRET}&quot;</span>
+<span class=w>      </span><span class=nt>allowed_domains</span><span class=p>:</span>
+<span class=w>        </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&quot;outlook.com&quot;</span>
 <span class=w>      </span><span class=nt>extra_scopes</span><span class=p>:</span>
 <span class=w>        </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">profile</span>
 <span class=w>        </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">email</span>
