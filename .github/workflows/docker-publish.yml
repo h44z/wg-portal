@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [master]
   push:
-    branches: [master, stable, legacy]
+    branches: [master]
     # Publish vX.X.X tags as releases.
     tags: ["v*.*.*"]
 
@@ -70,8 +70,6 @@ jobs:
             type=match,pattern=(v\d),group=1,enable=${{ contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
             # add {{major}} tag, even for beta releases or release-canidate releases
             type=match,pattern=v(\d),group=1,enable=${{ contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
-            # set latest tag for default branch
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
