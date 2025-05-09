@@ -11,6 +11,7 @@ import (
 type InterfaceServiceInterfaceManagerRepo interface {
 	GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interface, [][]domain.Peer, error)
 	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
+	PrepareInterface(ctx context.Context) (*domain.Interface, error)
 	CreateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, error)
 	UpdateInterface(ctx context.Context, in *domain.Interface) (*domain.Interface, []domain.Peer, error)
 	DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error
@@ -58,6 +59,19 @@ func (s InterfaceService) GetById(ctx context.Context, id domain.InterfaceIdenti
 	}
 
 	return interfaceData, interfacePeers, nil
+}
+
+func (s InterfaceService) Prepare(ctx context.Context) (*domain.Interface, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
+	interfaceData, err := s.interfaces.PrepareInterface(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return interfaceData, nil
 }
 
 func (s InterfaceService) Create(ctx context.Context, iface *domain.Interface) (*domain.Interface, error) {

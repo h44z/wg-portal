@@ -748,6 +748,8 @@ paths:
       tags:
       - Interfaces
     put:
+      description: This endpoint updates an existing interface with the provided data.
+        All required fields must be filled (e.g. name, private key, public key, ...).
       operationId: interfaces_handleUpdatePut
       parameters:
       - description: The interface identifier.
@@ -795,6 +797,8 @@ paths:
       - Interfaces
   /interface/new:
     post:
+      description: This endpoint creates a new interface with the provided data. All
+        required fields must be filled (e.g. name, private key, public key, ...).
       operationId: interfaces_handleCreatePost
       parameters:
       - description: The interface data.
@@ -833,6 +837,35 @@ paths:
       security:
       - BasicAuth: []
       summary: Create a new interface record.
+      tags:
+      - Interfaces
+  /interface/prepare:
+    get:
+      description: This endpoint returns a new interface with default values (fresh
+        key pair, valid name, new IP address pool, ...).
+      operationId: interfaces_handlePrepareGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Interface'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Prepare a new interface record.
       tags:
       - Interfaces
   /metrics/by-interface/{id}:
@@ -1024,7 +1057,8 @@ paths:
       tags:
       - Peers
     put:
-      description: Only admins can update existing records.
+      description: Only admins can update existing records. The peer record must contain
+        all required fields (e.g., public key, allowed IPs).
       operationId: peers_handleUpdatePut
       parameters:
       - description: The peer identifier.
@@ -1136,7 +1170,8 @@ paths:
       - Peers
   /peer/new:
     post:
-      description: Only admins can create new records.
+      description: Only admins can create new records. The peer record must contain
+        all required fields (e.g., public key, allowed IPs).
       operationId: peers_handleCreatePost
       parameters:
       - description: The peer data.
@@ -1175,6 +1210,49 @@ paths:
       security:
       - BasicAuth: []
       summary: Create a new peer record.
+      tags:
+      - Peers
+  /peer/prepare/{id}:
+    get:
+      description: This endpoint is used to prepare a new peer record. The returned
+        data contains a fresh key pair and valid ip address.
+      operationId: peers_handlePrepareGet
+      parameters:
+      - description: The interface identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Peer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      security:
+      - BasicAuth: []
+      summary: Prepare a new peer record for the given WireGuard interface.
       tags:
       - Peers
   /provisioning/data/peer-config:
