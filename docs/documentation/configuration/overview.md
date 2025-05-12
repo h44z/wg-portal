@@ -72,6 +72,8 @@ auth:
   oidc: []
   oauth: []
   ldap: []
+  webauthn:
+    enabled: true
 
 web:
   listening_address: :8888
@@ -120,6 +122,7 @@ More advanced options are found in the subsequent `Advanced` section.
 ### `admin_password`
 - **Default:** `wgportal`
 - **Description:** The administrator password. The default password of `wgportal` should be changed immediately.
+- **Important:** The password should be strong and secure. It is recommended to use a password with at least 16 characters, including uppercase and lowercase letters, numbers, and special characters.
 
 ### `admin_api_token`
 - **Default:** *(empty)*
@@ -334,7 +337,7 @@ Options for configuring email notifications or sending peer configurations via e
 
 ## Auth
 
-WireGuard Portal supports multiple authentication strategies, including **OpenID Connect** (`oidc`), **OAuth** (`oauth`), and **LDAP** (`ldap`).
+WireGuard Portal supports multiple authentication strategies, including **OpenID Connect** (`oidc`), **OAuth** (`oauth`), **Passkeys** (`webauthn`) and **LDAP** (`ldap`).
 Each can have multiple providers configured. Below are the relevant keys.
 
 ---
@@ -579,6 +582,16 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 - **Description:** If `true`, logs LDAP user data at the trace level upon login.
 
 ---
+
+### WebAuthn (Passkeys)
+
+The `webauthn` section contains configuration options for WebAuthn authentication (passkeys).
+
+#### `enabled`
+- **Default:** `true`
+- **Description:** If `true`, Passkey authentication is enabled. If `false`, WebAuthn is disabled.
+  Users are encouraged to use Passkeys for secure authentication instead of passwords. 
+  If a passkey is registered, the password login is still available as a fallback. Ensure that the password is strong and secure.
 
 ## Web
 

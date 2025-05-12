@@ -28,12 +28,54 @@ type AuthenticationService interface {
 	OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, error)
 }
 
+type WebAuthnService interface {
+	Enabled() bool
+	StartWebAuthnRegistration(ctx context.Context, userId domain.UserIdentifier) (
+		responseOptions []byte,
+		sessionData []byte,
+		err error,
+	)
+	FinishWebAuthnRegistration(
+		ctx context.Context,
+		userId domain.UserIdentifier,
+		name string,
+		sessionDataAsJSON []byte,
+		r *http.Request,
+	) ([]domain.UserWebauthnCredential, error)
+	GetCredentials(
+		ctx context.Context,
+		userId domain.UserIdentifier,
+	) ([]domain.UserWebauthnCredential, error)
+	RemoveCredential(
+		ctx context.Context,
+		userId domain.UserIdentifier,
+		credentialIdBase64 string,
+	) ([]domain.UserWebauthnCredential, error)
+	UpdateCredential(
+		ctx context.Context,
+		userId domain.UserIdentifier,
+		credentialIdBase64 string,
+		name string,
+	) ([]domain.UserWebauthnCredential, error)
+	StartWebAuthnLogin(_ context.Context) (
+		optionsAsJSON []byte,
+		sessionDataAsJSON []byte,
+		err error,
+	)
+	FinishWebAuthnLogin(
+		ctx context.Context,
+		sessionDataAsJSON []byte,
+		r *http.Request,
+	) (*domain.User, error)
+}
+
 type AuthEndpoint struct {
 	cfg           *config.Config
 	authService   AuthenticationService
 	authenticator Authenticator
 	session       Session
 	validate      Validator
+	webAuthn      WebAuthnService
 }
 
 func NewAuthEndpoint(
@@ -42,6 +84,7 @@ func NewAuthEndpoint(
 	session Session,
 	validator Validator,
 	authService AuthenticationService,
+	webAuthn WebAuthnService,
 ) AuthEndpoint {
 	return AuthEndpoint{
 		cfg:           cfg,
@@ -49,6 +92,7 @@ func NewAuthEndpoint(
 		authenticator: authenticator,
 		session:       session,
 		validate:      validator,
+		webAuthn:      webAuthn,
 	}
 }
 
@@ -64,6 +108,19 @@ func (e AuthEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 
 	apiGroup.HandleFunc("GET /login/{provider}/init", e.handleOauthInitiateGet())
 	apiGroup.HandleFunc("GET /login/{provider}/callback", e.handleOauthCallbackGet())
+
+	apiGroup.HandleFunc("POST /webauthn/login/start", e.handleWebAuthnLoginStart())
+	apiGroup.HandleFunc("POST /webauthn/login/finish", e.handleWebAuthnLoginFinish())
+	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("GET /webauthn/credentials",
+		e.handleWebAuthnCredentialsGet())
+	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("POST /webauthn/register/start",
+		e.handleWebAuthnRegisterStart())
+	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("POST /webauthn/register/finish",
+		e.handleWebAuthnRegisterFinish())
+	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("DELETE /webauthn/credential/{id}",
+		e.handleWebAuthnCredentialsDelete())
+	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("PUT /webauthn/credential/{id}",
+		e.handleWebAuthnCredentialsPut())
 
 	apiGroup.HandleFunc("POST /login", e.handleLoginPost())
 	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("POST /logout", e.handleLogoutPost())
@@ -388,4 +445,238 @@ func (e AuthEndpoint) isValidReturnUrl(returnUrl string) bool {
 	}
 
 	return true
+}
+
+// handleWebAuthnCredentialsGet returns a gorm Handler function.
+//
+// @ID auth_handleWebAuthnCredentialsGet
+// @Tags Authentication
+// @Summary Get all available external login providers.
+// @Produce json
+// @Success 200 {object} []model.WebAuthnCredentialResponse
+// @Router /auth/webauthn/credentials [get]
+func (e AuthEndpoint) handleWebAuthnCredentialsGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !e.webAuthn.Enabled() {
+			respond.JSON(w, http.StatusOK, []model.WebAuthnCredentialResponse{})
+			return
+		}
+
+		currentSession := e.session.GetData(r.Context())
+
+		userIdentifier := domain.UserIdentifier(currentSession.UserIdentifier)
+
+		credentials, err := e.webAuthn.GetCredentials(r.Context(), userIdentifier)
+		if err != nil {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		respond.JSON(w, http.StatusOK, model.NewWebAuthnCredentialResponses(credentials))
+	}
+}
+
+// handleWebAuthnCredentialsDelete returns a gorm Handler function.
+//
+// @ID auth_handleWebAuthnCredentialsDelete
+// @Tags Authentication
+// @Summary Delete a WebAuthn credential.
+// @Param id path string true "Base64 encoded Credential ID"
+// @Produce json
+// @Success 200 {object} []model.WebAuthnCredentialResponse
+// @Router /auth/webauthn/credential/{id} [delete]
+func (e AuthEndpoint) handleWebAuthnCredentialsDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !e.webAuthn.Enabled() {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "WebAuthn is not enabled"})
+			return
+		}
+
+		currentSession := e.session.GetData(r.Context())
+
+		userIdentifier := domain.UserIdentifier(currentSession.UserIdentifier)
+
+		credentialId := Base64UrlDecode(request.Path(r, "id"))
+
+		credentials, err := e.webAuthn.RemoveCredential(r.Context(), userIdentifier, credentialId)
+		if err != nil {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		respond.JSON(w, http.StatusOK, model.NewWebAuthnCredentialResponses(credentials))
+	}
+}
+
+// handleWebAuthnCredentialsPut returns a gorm Handler function.
+//
+// @ID auth_handleWebAuthnCredentialsPut
+// @Tags Authentication
+// @Summary Update a WebAuthn credential.
+// @Param id path string true "Base64 encoded Credential ID"
+// @Param request body model.WebAuthnCredentialRequest true "Credential name"
+// @Produce json
+// @Success 200 {object} []model.WebAuthnCredentialResponse
+// @Router /auth/webauthn/credential/{id} [put]
+func (e AuthEndpoint) handleWebAuthnCredentialsPut() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !e.webAuthn.Enabled() {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "WebAuthn is not enabled"})
+			return
+		}
+
+		currentSession := e.session.GetData(r.Context())
+
+		userIdentifier := domain.UserIdentifier(currentSession.UserIdentifier)
+
+		credentialId := Base64UrlDecode(request.Path(r, "id"))
+		var req model.WebAuthnCredentialRequest
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		credentials, err := e.webAuthn.UpdateCredential(r.Context(), userIdentifier, credentialId, req.Name)
+		if err != nil {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		respond.JSON(w, http.StatusOK, model.NewWebAuthnCredentialResponses(credentials))
+	}
+}
+
+func (e AuthEndpoint) handleWebAuthnRegisterStart() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !e.webAuthn.Enabled() {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "WebAuthn is not enabled"})
+			return
+		}
+
+		currentSession := e.session.GetData(r.Context())
+
+		userIdentifier := domain.UserIdentifier(currentSession.UserIdentifier)
+
+		options, sessionData, err := e.webAuthn.StartWebAuthnRegistration(r.Context(), userIdentifier)
+		if err != nil {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		currentSession.WebAuthnData = string(sessionData)
+		e.session.SetData(r.Context(), currentSession)
+
+		respond.Data(w, http.StatusOK, "application/json", options)
+	}
+}
+
+// handleWebAuthnRegisterFinish returns a gorm Handler function.
+//
+// @ID auth_handleWebAuthnRegisterFinish
+// @Tags Authentication
+// @Summary Finish the WebAuthn registration process.
+// @Param credential_name query string false "Credential name" default("")
+// @Produce json
+// @Success 200 {object} []model.WebAuthnCredentialResponse
+// @Router /auth/webauthn/register/finish [post]
+func (e AuthEndpoint) handleWebAuthnRegisterFinish() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !e.webAuthn.Enabled() {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "WebAuthn is not enabled"})
+			return
+		}
+
+		name := request.QueryDefault(r, "credential_name", "")
+
+		currentSession := e.session.GetData(r.Context())
+
+		webAuthnSessionData := []byte(currentSession.WebAuthnData)
+		currentSession.WebAuthnData = "" // clear the session data
+		e.session.SetData(r.Context(), currentSession)
+
+		credentials, err := e.webAuthn.FinishWebAuthnRegistration(
+			r.Context(),
+			domain.UserIdentifier(currentSession.UserIdentifier),
+			name,
+			webAuthnSessionData,
+			r)
+		if err != nil {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		respond.JSON(w, http.StatusOK, model.NewWebAuthnCredentialResponses(credentials))
+	}
+}
+
+func (e AuthEndpoint) handleWebAuthnLoginStart() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !e.webAuthn.Enabled() {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "WebAuthn is not enabled"})
+			return
+		}
+
+		currentSession := e.session.GetData(r.Context())
+
+		options, sessionData, err := e.webAuthn.StartWebAuthnLogin(r.Context())
+		if err != nil {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		currentSession.WebAuthnData = string(sessionData)
+		e.session.SetData(r.Context(), currentSession)
+
+		respond.Data(w, http.StatusOK, "application/json", options)
+	}
+}
+
+// handleWebAuthnLoginFinish returns a gorm Handler function.
+//
+// @ID auth_handleWebAuthnLoginFinish
+// @Tags Authentication
+// @Summary Finish the WebAuthn login process.
+// @Produce json
+// @Success 200 {object} model.User
+// @Router /auth/webauthn/login/finish [post]
+func (e AuthEndpoint) handleWebAuthnLoginFinish() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !e.webAuthn.Enabled() {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "WebAuthn is not enabled"})
+			return
+		}
+
+		currentSession := e.session.GetData(r.Context())
+
+		webAuthnSessionData := []byte(currentSession.WebAuthnData)
+		currentSession.WebAuthnData = "" // clear the session data
+		e.session.SetData(r.Context(), currentSession)
+
+		user, err := e.webAuthn.FinishWebAuthnLogin(
+			r.Context(),
+			webAuthnSessionData,
+			r)
+		if err != nil {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		e.setAuthenticatedUser(r, user)
+
+		respond.JSON(w, http.StatusOK, model.NewUser(user, false))
+	}
 }

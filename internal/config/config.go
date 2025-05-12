@@ -164,6 +164,8 @@ func defaultConfig() *Config {
 	cfg.Webhook.Authentication = ""
 	cfg.Webhook.Timeout = 10 * time.Second
 
+	cfg.Auth.WebAuthn.Enabled = true
+
 	return cfg
 }
 

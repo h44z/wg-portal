@@ -16,6 +16,8 @@ type Auth struct {
 	OAuth []OAuthProvider `yaml:"oauth"`
 	// Ldap contains a list of LDAP providers.
 	Ldap []LdapProvider `yaml:"ldap"`
+	// Webauthn contains the configuration for the WebAuthn authenticator.
+	WebAuthn WebauthnConfig `yaml:"webauthn"`
 }
 
 // BaseFields contains the basic fields that are used to map user information from the authentication providers.
@@ -244,4 +246,10 @@ type OAuthProvider struct {
 
 	// If LogUserInfo is set to true, the user info retrieved from the OAuth provider will be logged in trace level.
 	LogUserInfo bool `yaml:"log_user_info"`
+}
+
+// WebauthnConfig contains the configuration for the WebAuthn authenticator.
+type WebauthnConfig struct {
+	// Enabled specifies whether WebAuthn is enabled.
+	Enabled bool `yaml:"enabled"`
 }

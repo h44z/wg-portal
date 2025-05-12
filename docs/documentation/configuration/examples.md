@@ -32,6 +32,10 @@ database:
   type: sqlite
   dsn: data/sqlite.db
   encryption_passphrase: change-this-s3cr3t-encryption-passphrase
+
+auth:
+  webauthn:
+    enabled: true
 ```
 
 ## LDAP Authentication and Synchronization

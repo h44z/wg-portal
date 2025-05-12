@@ -129,7 +129,7 @@ export const profileStore = defineStore('profile', {
       return apiWrapper.post(`${baseUrl}/${base64_url_encode(currentUser)}/api/enable`)
           .then(this.setUser)
           .catch(error => {
-            this.setPeers([])
+            this.fetching = false
             console.log("Failed to activate API for ", currentUser, ": ", error)
             notify({
               title: "Backend Connection Failure",
@@ -143,7 +143,7 @@ export const profileStore = defineStore('profile', {
       return apiWrapper.post(`${baseUrl}/${base64_url_encode(currentUser)}/api/disable`)
           .then(this.setUser)
           .catch(error => {
-            this.setPeers([])
+            this.fetching = false
             console.log("Failed to deactivate API for ", currentUser, ": ", error)
             notify({
               title: "Backend Connection Failure",
