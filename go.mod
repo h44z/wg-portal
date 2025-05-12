@@ -16,7 +16,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/swag v1.16.4
 	github.com/vardius/message-bus v1.1.5
-	github.com/vishvananda/netlink v1.3.0
+	github.com/vishvananda/netlink v1.3.1
 	github.com/xhit/go-simple-mail/v2 v2.16.0
 	github.com/yeqown/go-qrcode/v2 v2.2.5
 	github.com/yeqown/go-qrcode/writer/compressed v1.0.1
