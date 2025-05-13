@@ -27,6 +27,13 @@ jobs:
         run: pip install mike mkdocs-material[imaging] mkdocs-minify-plugin mkdocs-swagger-ui-tag
 
       - name: Publish documentation
+        if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+        run: mike deploy --push
+        env:
+          GIT_COMMITTER_NAME: "github-actions[bot]"
+          GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Publish latest documentation
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
         run: mike deploy --push --update-aliases ${{ github.ref_name }} latest
         env:
           GIT_COMMITTER_NAME: "github-actions[bot]"
