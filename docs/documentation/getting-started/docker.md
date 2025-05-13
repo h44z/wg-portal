@@ -110,31 +110,33 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
 ## Image Versioning
 
 All images are hosted on Docker Hub at [https://hub.docker.com/r/wgportal/wg-portal](https://hub.docker.com/r/wgportal/wg-portal) or in the [GitHub Container Registry](https://github.com/h44z/wg-portal/pkgs/container/wg-portal).
+
+Version **2** is the current stable release. Version **1** has moved to legacy status and is no longer recommended.
+
 There are three types of tags in the repository:
 
 #### Semantic versioned tags
 
 For example, `2.0.0-rc.1` or `v2.0.0-rc.1`.
 
-These are official releases of WireGuard Portal. They correspond to the GitHub tags that we make, and you can see the release notes for them here: [https://github.com/h44z/wg-portal/releases](https://github.com/h44z/wg-portal/releases).
+These are official releases of WireGuard Portal. For production deployments of WireGuard Portal, we strongly recommend using one of these versioned tags instead of the latest or canary tags.
 
-Once these tags show up in this repository, they will never change.
+There are different types of these tags:
 
-For production deployments of WireGuard Portal, we strongly recommend using one of these tags, e.g. `wgportal/wg-portal:2.0.0`, instead of the latest or canary tags.
+ - Major version tags: `v2` or `2`. These tags always refer to the latest image for WireGuard Portal version **2**.
+ - Minor version tags: `v2.x` or `2.0`. These tags always refer to the latest image for WireGuard Portal version **2.x**.
+ - Specific version tags (patch version): `v2.0.0` or `2.0.0`. These tags denote a very specific release. They correspond to the GitHub tags that we make, and you can see the release notes for them here: [https://github.com/h44z/wg-portal/releases](https://github.com/h44z/wg-portal/releases). Once these tags for a specific version show up in the Docker repository, they will never change. 
 
-If you only want to stay at the same major or major+minor version, use either `v[MAJOR]` or `[MAJOR].[MINOR]` tags. For example `v2` or `2.0`.
+#### The `latest` tag
 
-Version **2** is the current stable release. Version **1** has moved to legacy status and is no longer recommended.
+The lastest tag is the latest stable release of WireGuard Portal. For version **2**, this is the same as the `v2` tag.
 
-#### latest
+#### The `master` tag
 
-This is the most recent build to master! It changes a lot and is very unstable.
+This is the most recent build to the main branch! It changes a lot and is very unstable.
 
-We recommend that you don't use it except for development purposes.
+We recommend that you don't use it except for development purposes or to test the latest features.
 
-#### Branch tags
-
-For each commit in the master and the stable branch, a corresponding Docker image is build. These images use the `master` or `stable` tags.
 
 ## Configuration
 

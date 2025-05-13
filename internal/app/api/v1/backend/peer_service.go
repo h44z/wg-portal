@@ -13,6 +13,7 @@ type PeerServicePeerManagerRepo interface {
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 	GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error)
 	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
+	PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error)
 	CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error)
 	UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Peer, error)
 	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
@@ -89,6 +90,19 @@ func (s PeerService) GetById(ctx context.Context, id domain.PeerIdentifier) (*do
 	// Check if the user has access rights to the requested peer.
 	// If the peer is not linked to any user, access is granted only for admins.
 	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+		return nil, err
+	}
+
+	return peer, nil
+}
+
+func (s PeerService) Prepare(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return nil, err
+	}
+
+	peer, err := s.peers.PreparePeer(ctx, id)
+	if err != nil {
 		return nil, err
 	}
 

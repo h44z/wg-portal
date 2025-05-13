@@ -118,6 +118,7 @@
                         "BasicAuth": []
                     }
                 ],
+                "description": "This endpoint updates an existing interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).",
                 "produces": [
                     "application/json"
                 ],
@@ -250,6 +251,7 @@
                         "BasicAuth": []
                     }
                 ],
+                "description": "This endpoint creates a new interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).",
                 "produces": [
                     "application/json"
                 ],
@@ -296,6 +298,50 @@
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/interface/prepare": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "This endpoint returns a new interface with default values (fresh key pair, valid name, new IP address pool, ...).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interfaces"
+                ],
+                "summary": "Prepare a new interface record.",
+                "operationId": "interfaces_handlePrepareGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Interface"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/models.Error"
                         }
@@ -547,7 +593,7 @@
                         "BasicAuth": []
                     }
                 ],
-                "description": "Only admins can update existing records.",
+                "description": "Only admins can update existing records. The peer record must contain all required fields (e.g., public key, allowed IPs).",
                 "produces": [
                     "application/json"
                 ],
@@ -779,7 +825,7 @@
                         "BasicAuth": []
                     }
                 ],
-                "description": "Only admins can create new records.",
+                "description": "Only admins can create new records. The peer record must contain all required fields (e.g., public key, allowed IPs).",
                 "produces": [
                     "application/json"
                 ],
@@ -826,6 +872,71 @@
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/peer/prepare/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "This endpoint is used to prepare a new peer record. The returned data contains a fresh key pair and valid ip address.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Peers"
+                ],
+                "summary": "Prepare a new peer record for the given WireGuard interface.",
+                "operationId": "peers_handlePrepareGet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The interface identifier.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Peer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/models.Error"
                         }

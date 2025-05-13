@@ -188,6 +188,9 @@ type OpenIDConnectProvider struct {
 	// ExtraScopes specifies optional requested permissions.
 	ExtraScopes []string `yaml:"extra_scopes"`
 
+	// AllowedDomains defines the list of allowed domains
+	AllowedDomains []string `yaml:"allowed_domains"`
+
 	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`
 
@@ -225,6 +228,9 @@ type OAuthProvider struct {
 
 	// Scope specifies optional requested permissions.
 	Scopes []string `yaml:"scopes"`
+
+	// AllowedDomains defines the list of allowed domains
+	AllowedDomains []string `yaml:"allowed_domains"`
 
 	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`

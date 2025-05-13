@@ -63,6 +63,8 @@ type AuthenticatorOauth interface {
 	ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error)
 	// RegistrationEnabled returns whether registration is enabled for the OAuth authenticator.
 	RegistrationEnabled() bool
+	// GetAllowedDomains returns the list of whitelisted domains
+	GetAllowedDomains() []string
 }
 
 // AuthenticatorLdap is the interface for all LDAP authenticators.
@@ -392,6 +394,23 @@ func (a *Authenticator) randString(nByte int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
+func isDomainAllowed(email string, allowedDomains []string) bool {
+	if len(allowedDomains) == 0 {
+		return true
+	}
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return false
+	}
+	domain := strings.ToLower(parts[1])
+	for _, allowed := range allowedDomains {
+		if domain == strings.ToLower(allowed) {
+			return true
+		}
+	}
+	return false
+}
+
 // OauthLoginStep2 finishes the oauth authentication flow by exchanging the code for an access token and
 // fetching the user information.
 func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, error) {
@@ -429,6 +448,10 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 			},
 		})
 		return nil, fmt.Errorf("unable to process user information: %w", err)
+	}
+
+	if !isDomainAllowed(userInfo.Email, oauthProvider.GetAllowedDomains()) {
+		return nil, fmt.Errorf("user is not in allowed domains: %w", err)
 	}
 
 	if user.IsLocked() || user.IsDisabled() {

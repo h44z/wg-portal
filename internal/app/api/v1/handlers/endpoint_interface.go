@@ -15,6 +15,7 @@ import (
 type InterfaceEndpointInterfaceService interface {
 	GetAll(context.Context) ([]domain.Interface, [][]domain.Peer, error)
 	GetById(context.Context, domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
+	Prepare(context.Context) (*domain.Interface, error)
 	Create(context.Context, *domain.Interface) (*domain.Interface, error)
 	Update(context.Context, domain.InterfaceIdentifier, *domain.Interface) (*domain.Interface, []domain.Peer, error)
 	Delete(context.Context, domain.InterfaceIdentifier) error
@@ -49,6 +50,7 @@ func (e InterfaceEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup.HandleFunc("GET /all", e.handleAllGet())
 	apiGroup.HandleFunc("GET /by-id/{id}", e.handleByIdGet())
 
+	apiGroup.HandleFunc("GET /prepare", e.handlePrepareGet())
 	apiGroup.HandleFunc("POST /new", e.handleCreatePost())
 	apiGroup.HandleFunc("PUT /by-id/{id}", e.handleUpdatePut())
 	apiGroup.HandleFunc("DELETE /by-id/{id}", e.handleDelete())
@@ -112,11 +114,38 @@ func (e InterfaceEndpoint) handleByIdGet() http.HandlerFunc {
 	}
 }
 
+// handlePrepareGet returns a gorm handler function.
+//
+// @ID interfaces_handlePrepareGet
+// @Tags Interfaces
+// @Summary Prepare a new interface record.
+// @Description This endpoint returns a new interface with default values (fresh key pair, valid name, new IP address pool, ...).
+// @Produce json
+// @Success 200 {object} models.Interface
+// @Failure 401 {object} models.Error
+// @Failure 403 {object} models.Error
+// @Failure 500 {object} models.Error
+// @Router /interface/prepare [get]
+// @Security BasicAuth
+func (e InterfaceEndpoint) handlePrepareGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		iface, err := e.interfaces.Prepare(r.Context())
+		if err != nil {
+			status, model := ParseServiceError(err)
+			respond.JSON(w, status, model)
+			return
+		}
+
+		respond.JSON(w, http.StatusOK, models.NewInterface(iface, nil))
+	}
+}
+
 // handleCreatePost returns a gorm handler function.
 //
 // @ID interfaces_handleCreatePost
 // @Tags Interfaces
 // @Summary Create a new interface record.
+// @Description This endpoint creates a new interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
 // @Param request body models.Interface true "The interface data."
 // @Produce json
 // @Success 200 {object} models.Interface
@@ -155,6 +184,7 @@ func (e InterfaceEndpoint) handleCreatePost() http.HandlerFunc {
 // @ID interfaces_handleUpdatePut
 // @Tags Interfaces
 // @Summary Update an interface record.
+// @Description This endpoint updates an existing interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
 // @Param id path string true "The interface identifier."
 // @Param request body models.Interface true "The interface data."
 // @Produce json
