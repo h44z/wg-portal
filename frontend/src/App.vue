@@ -140,6 +140,7 @@ const currentYear = ref(new Date().getFullYear())
         </div>
       </div>
     </div>
-  </footer></template>
+  </footer>
+</template>
 
 <style></style>
