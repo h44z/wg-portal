@@ -1,5 +1,7 @@
 package config
 
+import "strings"
+
 // WebConfig contains the configuration for the web server.
 type WebConfig struct {
 	// RequestLogging enables logging of all HTTP requests.
@@ -25,4 +27,8 @@ type WebConfig struct {
 	CertFile string `yaml:"cert_file"`
 	// KeyFile is the path to the TLS certificate key file.
 	KeyFile string `yaml:"key_file"`
+}
+
+func (c *WebConfig) Sanitize() {
+	c.ExternalUrl = strings.TrimRight(c.ExternalUrl, "/")
 }

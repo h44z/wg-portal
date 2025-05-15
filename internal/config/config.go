@@ -190,6 +190,8 @@ func GetConfig() (*Config, error) {
 		return nil, fmt.Errorf("failed to load config from yaml: %w", err)
 	}
 
+	cfg.Web.Sanitize()
+
 	return cfg, nil
 }
 
