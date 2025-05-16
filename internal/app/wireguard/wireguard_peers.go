@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/h44z/wg-portal/internal/app"
@@ -23,10 +24,22 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdenti
 		return fmt.Errorf("failed to fetch all interfaces: %w", err)
 	}
 
+	userPeers, err := m.db.GetUserPeers(context.Background(), userId)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve existing peers prior to default peer creation: %w", err)
+	}
+
 	var newPeers []domain.Peer
 	for _, iface := range existingInterfaces {
 		if iface.Type != domain.InterfaceTypeServer {
 			continue // only create default peers for server interfaces
+		}
+
+		peerAlreadyCreated := slices.ContainsFunc(userPeers, func(peer domain.Peer) bool {
+			return peer.InterfaceIdentifier == iface.Identifier
+		})
+		if peerAlreadyCreated {
+			continue // skip creation if a peer already exists for this interface
 		}
 
 		peer, err := m.PreparePeer(ctx, iface.Identifier)

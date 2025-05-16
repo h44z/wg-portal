@@ -3,6 +3,7 @@ package wireguard
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/h44z/wg-portal/internal/app"
@@ -76,6 +77,8 @@ type Manager struct {
 	db    InterfaceAndPeerDatabaseRepo
 	wg    InterfaceController
 	quick WgQuickController
+
+	userLockMap *sync.Map
 }
 
 func NewWireGuardManager(
@@ -86,11 +89,12 @@ func NewWireGuardManager(
 	db InterfaceAndPeerDatabaseRepo,
 ) (*Manager, error) {
 	m := &Manager{
-		cfg:   cfg,
-		bus:   bus,
-		wg:    wg,
-		db:    db,
-		quick: quick,
+		cfg:         cfg,
+		bus:         bus,
+		wg:          wg,
+		db:          db,
+		quick:       quick,
+		userLockMap: &sync.Map{},
 	}
 
 	m.connectToMessageBus()
@@ -117,6 +121,12 @@ func (m Manager) handleUserCreationEvent(user domain.User) {
 		return
 	}
 
+	_, loaded := m.userLockMap.LoadOrStore(user.Identifier, "create")
+	if loaded {
+		return // another goroutine is already handling this user
+	}
+	defer m.userLockMap.Delete(user.Identifier)
+
 	slog.Debug("handling new user event", "user", user.Identifier)
 
 	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
@@ -131,6 +141,12 @@ func (m Manager) handleUserLoginEvent(userId domain.UserIdentifier) {
 	if !m.cfg.Core.CreateDefaultPeer {
 		return
 	}
+
+	_, loaded := m.userLockMap.LoadOrStore(userId, "login")
+	if loaded {
+		return // another goroutine is already handling this user
+	}
+	defer m.userLockMap.Delete(userId)
 
 	userPeers, err := m.db.GetUserPeers(context.Background(), userId)
 	if err != nil {
