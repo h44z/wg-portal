@@ -296,7 +296,8 @@
       "password": {
         "label": "Passwort",
         "placeholder": "Ein super geheimes Passwort",
-        "description": "Lassen Sie dieses Feld leer, um das aktuelle Passwort beizubehalten."
+        "description": "Lassen Sie dieses Feld leer, um das aktuelle Passwort beizubehalten.",
+        "too-weak": "Das Passwort entspricht nicht den Sicherheitsanforderungen."
       },
       "email": {
         "label": "E-Mail",

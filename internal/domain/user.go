@@ -88,6 +88,22 @@ func (u *User) CanChangePassword() error {
 	return errors.New("password change only allowed for database source")
 }
 
+func (u *User) HasWeakPassword(minLength int) error {
+	if u.Source != UserSourceDatabase {
+		return nil // password is not required for non-database users, so no check needed
+	}
+
+	if u.Password == "" {
+		return nil // password is not set, so no check needed
+	}
+
+	if len(u.Password) < minLength {
+		return fmt.Errorf("password is too short, minimum length is %d", minLength)
+	}
+
+	return nil // password is strong enough
+}
+
 func (u *User) EditAllowed(new *User) error {
 	if u.Source == UserSourceDatabase {
 		return nil

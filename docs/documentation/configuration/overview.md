@@ -14,7 +14,7 @@ Configuration examples are available on the [Examples](./examples.md) page.
 ```yaml
 core:
   admin_user: admin@wgportal.local
-  admin_password: wgportal
+  admin_password: wgportal-default
   admin_api_token: ""
   editable_keys: true
   create_default_peer: false
@@ -74,6 +74,7 @@ auth:
   ldap: []
   webauthn:
     enabled: true
+  min_password_length: 16
 
 web:
   listening_address: :8888
@@ -120,9 +121,9 @@ More advanced options are found in the subsequent `Advanced` section.
 - **Description:** The administrator user. This user will be created as a default admin if it does not yet exist.
 
 ### `admin_password`
-- **Default:** `wgportal`
-- **Description:** The administrator password. The default password of `wgportal` should be changed immediately.
-- **Important:** The password should be strong and secure. It is recommended to use a password with at least 16 characters, including uppercase and lowercase letters, numbers, and special characters.
+- **Default:** `wgportal-default`
+- **Description:** The administrator password. The default password should be changed immediately!
+- **Important:** The password should be strong and secure. The minimum password length is specified in [auth.min_password_length](#min_password_length). By default, it is 16 characters.
 
 ### `admin_api_token`
 - **Default:** *(empty)*
@@ -339,6 +340,14 @@ Options for configuring email notifications or sending peer configurations via e
 
 WireGuard Portal supports multiple authentication strategies, including **OpenID Connect** (`oidc`), **OAuth** (`oauth`), **Passkeys** (`webauthn`) and **LDAP** (`ldap`).
 Each can have multiple providers configured. Below are the relevant keys.
+
+Some core authentication options are shared across all providers, while others are specific to each provider type.
+
+### `min_password_length`
+- **Default:** `16`
+- **Description:** Minimum password length for local authentication. This is not enforced for LDAP authentication.
+  The default admin password strength is also enforced by this setting.
+- **Important:** The password should be strong and secure. It is recommended to use a password with at least 16 characters, including uppercase and lowercase letters, numbers, and special characters.
 
 ---
 

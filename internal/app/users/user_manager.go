@@ -364,6 +364,10 @@ func (m Manager) validateModifications(ctx context.Context, old, new *domain.Use
 		return errors.Join(fmt.Errorf("no access: %w", err), domain.ErrInvalidData)
 	}
 
+	if err := new.HasWeakPassword(m.cfg.Auth.MinPasswordLength); err != nil {
+		return errors.Join(fmt.Errorf("password too weak: %w", err), domain.ErrInvalidData)
+	}
+
 	if currentUser.Id == old.Identifier && old.IsAdmin && !new.IsAdmin {
 		return fmt.Errorf("cannot remove own admin rights: %w", domain.ErrInvalidData)
 	}
@@ -418,7 +422,11 @@ func (m Manager) validateCreation(ctx context.Context, new *domain.User) error {
 
 	// database users must have a password
 	if new.Source == domain.UserSourceDatabase && string(new.Password) == "" {
-		return fmt.Errorf("invalid password: %w", domain.ErrInvalidData)
+		return fmt.Errorf("missing password: %w", domain.ErrInvalidData)
+	}
+
+	if err := new.HasWeakPassword(m.cfg.Auth.MinPasswordLength); err != nil {
+		return errors.Join(fmt.Errorf("password too weak: %w", err), domain.ErrInvalidData)
 	}
 
 	return nil

@@ -5,10 +5,12 @@ import {computed, ref, watch} from "vue";
 import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
 import {freshUser} from "@/helpers/models";
+import {settingsStore} from "@/stores/settings";
 
 const { t } = useI18n()
 
 const users = userStore()
+const settings = settingsStore()
 
 const props = defineProps({
   userId: String,
@@ -32,6 +34,30 @@ const title = computed(() => {
 })
 
 const formData = ref(freshUser())
+
+const passwordWeak = computed(() => {
+  return formData.value.Password && formData.value.Password.length > 0 && formData.value.Password.length < settings.Setting('MinPasswordLength')
+})
+
+const formValid = computed(() => {
+  if (formData.value.Source !== 'db') {
+    return true // nothing to validate
+  }
+  if (props.userId !== '#NEW#' && passwordWeak.value) {
+    return false
+  }
+  if (props.userId === '#NEW#' && (!formData.value.Password || formData.value.Password.length < 1)) {
+    return false
+  }
+  if (props.userId === '#NEW#' && passwordWeak.value) {
+    return false
+  }
+  if (!formData.value.Identifier || formData.value.Identifier.length < 1) {
+    return false
+  }
+  return true
+})
+
 
 // functions
 
@@ -109,7 +135,8 @@ async function del() {
         </div>
         <div v-if="formData.Source==='db'" class="form-group">
           <label class="form-label mt-4">{{ $t('modals.user-edit.password.label') }}</label>
-          <input v-model="formData.Password" aria-describedby="passwordHelp" class="form-control" :placeholder="$t('modals.user-edit.password.placeholder')" type="text">
+          <input v-model="formData.Password" aria-describedby="passwordHelp" class="form-control" :class="{ 'is-invalid': passwordWeak,  'is-valid': formData.Password !== '' && !passwordWeak }" :placeholder="$t('modals.user-edit.password.placeholder')" type="password">
+          <div class="invalid-feedback">{{ $t('modals.user-edit.password.too-weak') }}</div>
           <small v-if="props.userId!=='#NEW#'" id="passwordHelp" class="form-text text-muted">{{ $t('modals.user-edit.password.description') }}</small>
         </div>
       </fieldset>
@@ -168,7 +195,7 @@ async function del() {
       <div class="flex-fill text-start">
         <button v-if="props.userId!=='#NEW#'" class="btn btn-danger me-1" type="button" @click.prevent="del">{{ $t('general.delete') }}</button>
       </div>
-      <button class="btn btn-primary me-1" type="button" @click.prevent="save">{{ $t('general.save') }}</button>
+      <button class="btn btn-primary me-1" type="button" @click.prevent="save" :disabled="!formValid">{{ $t('general.save') }}</button>
       <button class="btn btn-secondary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
     </template>
   </Modal>

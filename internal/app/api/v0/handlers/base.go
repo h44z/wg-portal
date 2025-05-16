@@ -99,6 +99,8 @@ type Authenticator interface {
 	LoggedIn(scopes ...Scope) func(next http.Handler) http.Handler
 	// UserIdMatch checks if the user id in the session matches the user id in the request. If not, the request is aborted.
 	UserIdMatch(idParameter string) func(next http.Handler) http.Handler
+	// InfoOnly only add user info to the request context. No login check is performed.
+	InfoOnly() func(next http.Handler) http.Handler
 }
 
 type Session interface {

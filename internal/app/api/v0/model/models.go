@@ -11,4 +11,5 @@ type Settings struct {
 	SelfProvisioning          bool `json:"SelfProvisioning"`
 	ApiAdminOnly              bool `json:"ApiAdminOnly"`
 	WebAuthnEnabled           bool `json:"WebAuthnEnabled"`
+	MinPasswordLength         int  `json:"MinPasswordLength"`
 }

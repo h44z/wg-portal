@@ -47,7 +47,7 @@ func (e ConfigEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/config")
 
 	apiGroup.HandleFunc("GET /frontend.js", e.handleConfigJsGet())
-	apiGroup.HandleFunc("GET /settings", e.handleSettingsGet())
+	apiGroup.With(e.authenticator.InfoOnly()).HandleFunc("GET /settings", e.handleSettingsGet())
 }
 
 // handleConfigJsGet returns a gorm Handler function.
@@ -108,6 +108,7 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 				SelfProvisioning:          e.cfg.Core.SelfProvisioningAllowed,
 				ApiAdminOnly:              e.cfg.Advanced.ApiAdminOnly,
 				WebAuthnEnabled:           e.cfg.Auth.WebAuthn.Enabled,
+				MinPasswordLength:         e.cfg.Auth.MinPasswordLength,
 			})
 		}
 	}

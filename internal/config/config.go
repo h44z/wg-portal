@@ -101,7 +101,7 @@ func defaultConfig() *Config {
 	cfg := &Config{}
 
 	cfg.Core.AdminUser = "admin@wgportal.local"
-	cfg.Core.AdminPassword = "wgportal"
+	cfg.Core.AdminPassword = "wgportal-default"
 	cfg.Core.AdminApiToken = "" // by default, the API access is disabled
 	cfg.Core.ImportExisting = true
 	cfg.Core.RestoreState = true
@@ -165,6 +165,7 @@ func defaultConfig() *Config {
 	cfg.Webhook.Timeout = 10 * time.Second
 
 	cfg.Auth.WebAuthn.Enabled = true
+	cfg.Auth.MinPasswordLength = 16
 
 	return cfg
 }

@@ -18,6 +18,9 @@ type Auth struct {
 	Ldap []LdapProvider `yaml:"ldap"`
 	// Webauthn contains the configuration for the WebAuthn authenticator.
 	WebAuthn WebauthnConfig `yaml:"webauthn"`
+	// MinPasswordLength is the minimum password length for user accounts. This also applies to the admin user.
+	// It is encouraged to set this value to at least 16 characters.
+	MinPasswordLength int `yaml:"min_password_length"`
 }
 
 // BaseFields contains the basic fields that are used to map user information from the authentication providers.
