@@ -27,7 +27,7 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL, or Pos
 * Sends email to the client with QR-code and client config
 * Enable / Disable clients seamlessly
 * Generation of wg-quick configuration file (`wgX.conf`) if required
-* User authentication (database, OAuth, or LDAP)
+* User authentication (database, OAuth, or LDAP), Passkey support
 * IPv6 ready
 * Docker ready
 * Can be used with existing WireGuard setups

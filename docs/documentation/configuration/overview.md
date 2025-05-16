@@ -552,6 +552,8 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
   ```text
   (&(objectClass=organizationalPerson)(mail={{login_identifier}})(!userAccountControl:1.2.840.113556.1.4.803:=2))
   ```
+- **Important**: The `login_filter` must always be a valid LDAP filter. It should at most return one user. 
+  If the filter returns multiple or no users, the login will fail.
 
 #### `admin_group`
 - **Default:** *(empty)*
