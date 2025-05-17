@@ -10,4 +10,6 @@ type Settings struct {
 	PersistentConfigSupported bool `json:"PersistentConfigSupported"`
 	SelfProvisioning          bool `json:"SelfProvisioning"`
 	ApiAdminOnly              bool `json:"ApiAdminOnly"`
+	WebAuthnEnabled           bool `json:"WebAuthnEnabled"`
+	MinPasswordLength         int  `json:"MinPasswordLength"`
 }

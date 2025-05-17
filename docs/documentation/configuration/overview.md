@@ -14,7 +14,7 @@ Configuration examples are available on the [Examples](./examples.md) page.
 ```yaml
 core:
   admin_user: admin@wgportal.local
-  admin_password: wgportal
+  admin_password: wgportal-default
   admin_api_token: ""
   editable_keys: true
   create_default_peer: false
@@ -72,6 +72,9 @@ auth:
   oidc: []
   oauth: []
   ldap: []
+  webauthn:
+    enabled: true
+  min_password_length: 16
 
 web:
   listening_address: :8888
@@ -118,8 +121,9 @@ More advanced options are found in the subsequent `Advanced` section.
 - **Description:** The administrator user. This user will be created as a default admin if it does not yet exist.
 
 ### `admin_password`
-- **Default:** `wgportal`
-- **Description:** The administrator password. The default password of `wgportal` should be changed immediately.
+- **Default:** `wgportal-default`
+- **Description:** The administrator password. The default password should be changed immediately!
+- **Important:** The password should be strong and secure. The minimum password length is specified in [auth.min_password_length](#min_password_length). By default, it is 16 characters.
 
 ### `admin_api_token`
 - **Default:** *(empty)*
@@ -334,8 +338,16 @@ Options for configuring email notifications or sending peer configurations via e
 
 ## Auth
 
-WireGuard Portal supports multiple authentication strategies, including **OpenID Connect** (`oidc`), **OAuth** (`oauth`), and **LDAP** (`ldap`).
+WireGuard Portal supports multiple authentication strategies, including **OpenID Connect** (`oidc`), **OAuth** (`oauth`), **Passkeys** (`webauthn`) and **LDAP** (`ldap`).
 Each can have multiple providers configured. Below are the relevant keys.
+
+Some core authentication options are shared across all providers, while others are specific to each provider type.
+
+### `min_password_length`
+- **Default:** `16`
+- **Description:** Minimum password length for local authentication. This is not enforced for LDAP authentication.
+  The default admin password strength is also enforced by this setting.
+- **Important:** The password should be strong and secure. It is recommended to use a password with at least 16 characters, including uppercase and lowercase letters, numbers, and special characters.
 
 ---
 
@@ -540,6 +552,8 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
   ```text
   (&(objectClass=organizationalPerson)(mail={{login_identifier}})(!userAccountControl:1.2.840.113556.1.4.803:=2))
   ```
+- **Important**: The `login_filter` must always be a valid LDAP filter. It should at most return one user. 
+  If the filter returns multiple or no users, the login will fail.
 
 #### `admin_group`
 - **Default:** *(empty)*
@@ -579,6 +593,16 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 - **Description:** If `true`, logs LDAP user data at the trace level upon login.
 
 ---
+
+### WebAuthn (Passkeys)
+
+The `webauthn` section contains configuration options for WebAuthn authentication (passkeys).
+
+#### `enabled`
+- **Default:** `true`
+- **Description:** If `true`, Passkey authentication is enabled. If `false`, WebAuthn is disabled.
+  Users are encouraged to use Passkeys for secure authentication instead of passwords. 
+  If a passkey is registered, the password login is still available as a fallback. Ensure that the password is strong and secure.
 
 ## Web
 

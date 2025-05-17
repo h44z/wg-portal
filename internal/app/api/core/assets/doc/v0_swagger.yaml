@@ -387,6 +387,8 @@ definitions:
         type: boolean
       SelfProvisioning:
         type: boolean
+      WebAuthnEnabled:
+        type: boolean
     type: object
   model.User:
     properties:
@@ -431,6 +433,20 @@ definitions:
       ProviderName:
         type: string
       Source:
+        type: string
+    type: object
+  model.WebAuthnCredentialRequest:
+    properties:
+      Name:
+        type: string
+    type: object
+  model.WebAuthnCredentialResponse:
+    properties:
+      CreatedAt:
+        type: string
+      ID:
+        type: string
+      Name:
         type: string
     type: object
 info:
@@ -546,6 +562,102 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Get information about the currently logged-in user.
+      tags:
+      - Authentication
+  /auth/webauthn/credential/{id}:
+    delete:
+      operationId: auth_handleWebAuthnCredentialsDelete
+      parameters:
+      - description: Base64 encoded Credential ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.WebAuthnCredentialResponse'
+            type: array
+      summary: Delete a WebAuthn credential.
+      tags:
+      - Authentication
+    put:
+      operationId: auth_handleWebAuthnCredentialsPut
+      parameters:
+      - description: Base64 encoded Credential ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Credential name
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.WebAuthnCredentialRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.WebAuthnCredentialResponse'
+            type: array
+      summary: Update a WebAuthn credential.
+      tags:
+      - Authentication
+  /auth/webauthn/credentials:
+    get:
+      operationId: auth_handleWebAuthnCredentialsGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.WebAuthnCredentialResponse'
+            type: array
+      summary: Get all available external login providers.
+      tags:
+      - Authentication
+  /auth/webauthn/login/finish:
+    post:
+      operationId: auth_handleWebAuthnLoginFinish
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+      summary: Finish the WebAuthn login process.
+      tags:
+      - Authentication
+  /auth/webauthn/register/finish:
+    post:
+      operationId: auth_handleWebAuthnRegisterFinish
+      parameters:
+      - default: '""'
+        description: Credential name
+        in: query
+        name: credential_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.WebAuthnCredentialResponse'
+            type: array
+      summary: Finish the WebAuthn registration process.
       tags:
       - Authentication
   /config/frontend.js:

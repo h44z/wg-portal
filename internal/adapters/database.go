@@ -220,6 +220,8 @@ func (r *SqlRepo) preCheck() error {
 func (r *SqlRepo) migrate() error {
 	slog.Debug("running migration: sys-stat", "result", r.db.AutoMigrate(&SysStat{}))
 	slog.Debug("running migration: user", "result", r.db.AutoMigrate(&domain.User{}))
+	slog.Debug("running migration: user webauthn credentials", "result",
+		r.db.AutoMigrate(&domain.UserWebauthnCredential{}))
 	slog.Debug("running migration: interface", "result", r.db.AutoMigrate(&domain.Interface{}))
 	slog.Debug("running migration: peer", "result", r.db.AutoMigrate(&domain.Peer{}))
 	slog.Debug("running migration: peer status", "result", r.db.AutoMigrate(&domain.PeerStatus{}))
@@ -746,7 +748,7 @@ func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr
 func (r *SqlRepo) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
 	var user domain.User
 
-	err := r.db.WithContext(ctx).First(&user, id).Error
+	err := r.db.WithContext(ctx).Preload("WebAuthnCredentialList").First(&user, id).Error
 
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, domain.ErrNotFound
@@ -764,7 +766,7 @@ func (r *SqlRepo) GetUser(ctx context.Context, id domain.UserIdentifier) (*domai
 func (r *SqlRepo) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var users []domain.User
 
-	err := r.db.WithContext(ctx).Where("email = ?", email).Find(&users).Error
+	err := r.db.WithContext(ctx).Where("email = ?", email).Preload("WebAuthnCredentialList").Find(&users).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, domain.ErrNotFound
 	}
@@ -785,11 +787,26 @@ func (r *SqlRepo) GetUserByEmail(ctx context.Context, email string) (*domain.Use
 	return &user, nil
 }
 
+// GetUserByWebAuthnCredential returns the user with the given webauthn credential id.
+func (r *SqlRepo) GetUserByWebAuthnCredential(ctx context.Context, credentialIdBase64 string) (*domain.User, error) {
+	var credential domain.UserWebauthnCredential
+
+	err := r.db.WithContext(ctx).Where("credential_identifier = ?", credentialIdBase64).First(&credential).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetUser(ctx, domain.UserIdentifier(credential.UserIdentifier))
+}
+
 // GetAllUsers returns all users.
 func (r *SqlRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	var users []domain.User
 
-	err := r.db.WithContext(ctx).Find(&users).Error
+	err := r.db.WithContext(ctx).Preload("WebAuthnCredentialList").Find(&users).Error
 	if err != nil {
 		return nil, err
 	}
@@ -808,6 +825,7 @@ func (r *SqlRepo) FindUsers(ctx context.Context, search string) ([]domain.User, 
 		Or("firstname LIKE ?", searchValue).
 		Or("lastname LIKE ?", searchValue).
 		Or("email LIKE ?", searchValue).
+		Preload("WebAuthnCredentialList").
 		Find(&users).Error
 	if err != nil {
 		return nil, err
@@ -853,7 +871,7 @@ func (r *SqlRepo) SaveUser(
 
 // DeleteUser deletes the user with the given id.
 func (r *SqlRepo) DeleteUser(ctx context.Context, id domain.UserIdentifier) error {
-	err := r.db.WithContext(ctx).Delete(&domain.User{}, id).Error
+	err := r.db.WithContext(ctx).Unscoped().Select(clause.Associations).Delete(&domain.User{Identifier: id}).Error
 	if err != nil {
 		return err
 	}
@@ -895,6 +913,11 @@ func (r *SqlRepo) upsertUser(ui *domain.ContextUserInfo, tx *gorm.DB, user *doma
 	err := tx.Save(user).Error
 	if err != nil {
 		return err
+	}
+
+	err = tx.Session(&gorm.Session{FullSaveAssociations: true}).Unscoped().Model(user).Association("WebAuthnCredentialList").Unscoped().Replace(user.WebAuthnCredentialList)
+	if err != nil {
+		return fmt.Errorf("failed to update users webauthn credentials: %w", err)
 	}
 
 	return nil

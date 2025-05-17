@@ -72,6 +72,32 @@ func (h AuthenticationHandler) LoggedIn(scopes ...Scope) func(next http.Handler)
 	}
 }
 
+// InfoOnly only checks if the user is logged in and adds the user id to the context.
+// If the user is not logged in, the context user id is set to domain.CtxUnknownUserId.
+func (h AuthenticationHandler) InfoOnly() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			session := h.session.GetData(r.Context())
+
+			var newContext context.Context
+
+			if !session.LoggedIn {
+				newContext = domain.SetUserInfo(r.Context(), domain.DefaultContextUserInfo())
+			} else {
+				newContext = domain.SetUserInfo(r.Context(), &domain.ContextUserInfo{
+					Id:      domain.UserIdentifier(session.UserIdentifier),
+					IsAdmin: session.IsAdmin,
+				})
+			}
+
+			r = r.WithContext(newContext)
+
+			// Continue down the chain to Handler etc
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // UserIdMatch checks if the user id in the session matches the user id in the request. If not, the request is aborted.
 func (h AuthenticationHandler) UserIdMatch(idParameter string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

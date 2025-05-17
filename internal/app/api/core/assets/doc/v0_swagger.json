@@ -129,6 +129,152 @@
                 }
             }
         },
+        "/auth/webauthn/credential/{id}": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Update a WebAuthn credential.",
+                "operationId": "auth_handleWebAuthnCredentialsPut",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Base64 encoded Credential ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Credential name",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WebAuthnCredentialRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.WebAuthnCredentialResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Delete a WebAuthn credential.",
+                "operationId": "auth_handleWebAuthnCredentialsDelete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Base64 encoded Credential ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.WebAuthnCredentialResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/webauthn/credentials": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get all available external login providers.",
+                "operationId": "auth_handleWebAuthnCredentialsGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.WebAuthnCredentialResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/webauthn/login/finish": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Finish the WebAuthn login process.",
+                "operationId": "auth_handleWebAuthnLoginFinish",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/webauthn/register/finish": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Finish the WebAuthn registration process.",
+                "operationId": "auth_handleWebAuthnRegisterFinish",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "\"\"",
+                        "description": "Credential name",
+                        "name": "credential_name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.WebAuthnCredentialResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/{provider}/callback": {
             "get": {
                 "produces": [
@@ -2093,6 +2239,9 @@
                 },
                 "SelfProvisioning": {
                     "type": "boolean"
+                },
+                "WebAuthnEnabled": {
+                    "type": "boolean"
                 }
             }
         },
@@ -2158,6 +2307,28 @@
                     "type": "string"
                 },
                 "Source": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.WebAuthnCredentialRequest": {
+            "type": "object",
+            "properties": {
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.WebAuthnCredentialResponse": {
+            "type": "object",
+            "properties": {
+                "CreatedAt": {
+                    "type": "string"
+                },
+                "ID": {
+                    "type": "string"
+                },
+                "Name": {
                     "type": "string"
                 }
             }

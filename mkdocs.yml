@@ -78,6 +78,10 @@ nav:
       - Configuration:
           - Overview: documentation/configuration/overview.md
           - Examples: documentation/configuration/examples.md
+      - Usage:
+          - General: documentation/usage/general.md
+          - LDAP: documentation/usage/ldap.md
+          - Security: documentation/usage/security.md
+          - REST API: documentation/rest-api/api-doc.md
       - Upgrade: documentation/upgrade/v1.md
       - Monitoring: documentation/monitoring/prometheus.md
-      - REST API: documentation/rest-api/api-doc.md

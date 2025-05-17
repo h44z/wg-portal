@@ -15,6 +15,7 @@ import (
 	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
 	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 //go:embed frontend_config.js.gotpl
@@ -46,7 +47,7 @@ func (e ConfigEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/config")
 
 	apiGroup.HandleFunc("GET /frontend.js", e.handleConfigJsGet())
-	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("GET /settings", e.handleSettingsGet())
+	apiGroup.With(e.authenticator.InfoOnly()).HandleFunc("GET /settings", e.handleSettingsGet())
 }
 
 // handleConfigJsGet returns a gorm Handler function.
@@ -93,11 +94,22 @@ func (e ConfigEndpoint) handleConfigJsGet() http.HandlerFunc {
 // @Router /config/settings [get]
 func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		respond.JSON(w, http.StatusOK, model.Settings{
-			MailLinkOnly:              e.cfg.Mail.LinkOnly,
-			PersistentConfigSupported: e.cfg.Advanced.ConfigStoragePath != "",
-			SelfProvisioning:          e.cfg.Core.SelfProvisioningAllowed,
-			ApiAdminOnly:              e.cfg.Advanced.ApiAdminOnly,
-		})
+		sessionUser := domain.GetUserInfo(r.Context())
+
+		// For anonymous users, we return the settings object with minimal information
+		if sessionUser.Id == domain.CtxUnknownUserId || sessionUser.Id == "" {
+			respond.JSON(w, http.StatusOK, model.Settings{
+				WebAuthnEnabled: e.cfg.Auth.WebAuthn.Enabled,
+			})
+		} else {
+			respond.JSON(w, http.StatusOK, model.Settings{
+				MailLinkOnly:              e.cfg.Mail.LinkOnly,
+				PersistentConfigSupported: e.cfg.Advanced.ConfigStoragePath != "",
+				SelfProvisioning:          e.cfg.Core.SelfProvisioningAllowed,
+				ApiAdminOnly:              e.cfg.Advanced.ApiAdminOnly,
+				WebAuthnEnabled:           e.cfg.Auth.WebAuthn.Enabled,
+				MinPasswordLength:         e.cfg.Auth.MinPasswordLength,
+			})
+		}
 	}
 }

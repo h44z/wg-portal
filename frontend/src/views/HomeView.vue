@@ -65,7 +65,7 @@ const auth = authStore()
         <div class="card-body d-flex flex-column">
           <h4 class="card-title">{{ $t('home.about-portal.headline') }}</h4>
           <p class="card-text">{{ $t('home.about-portal.content') }}</p>
-          <a href="https://github.com/h44z/wg-portal/" title="WireGuard Portal" target="_blank"
+          <a href="https://wgportal.org/" title="WireGuard Portal" target="_blank"
             rel="noopener noreferrer" class="mt-auto btn btn-primary btn-sm">{{ $t('home.about-portal.button') }}</a>
         </div>
       </div>

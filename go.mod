@@ -10,6 +10,7 @@ require (
 	github.com/go-ldap/ldap/v3 v3.4.11
 	github.com/go-pkgz/routegroup v1.4.1
 	github.com/go-playground/validator/v10 v10.26.0
+	github.com/go-webauthn/webauthn v0.12.3
 	github.com/google/uuid v1.6.0
 	github.com/prometheus-community/pro-bing v0.7.0
 	github.com/prometheus/client_golang v1.22.0
@@ -39,6 +40,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/fxamacker/cbor/v2 v2.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.8-0.20250403174932-29230038a667 // indirect
@@ -51,9 +53,12 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.9.2 // indirect
 	github.com/go-test/deep v1.1.1 // indirect
+	github.com/go-webauthn/x v0.1.20 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/google/go-tpm v0.9.3 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.7.4 // indirect
@@ -69,6 +74,7 @@ require (
 	github.com/mdlayher/netlink v1.7.2 // indirect
 	github.com/mdlayher/socket v0.5.1 // indirect
 	github.com/microsoft/go-mssqldb v1.8.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -78,6 +84,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/toorop/go-dkim v0.0.0-20250226130143-9025cce95817 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yeqown/reedsolomon v1.0.0 // indirect
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/net v0.39.0 // indirect

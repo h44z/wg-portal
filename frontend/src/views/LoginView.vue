@@ -1,6 +1,6 @@
 <script setup>
 
-import {computed, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import {authStore} from "@/stores/auth";
 import router from '../router/index.js'
 import {notify} from "@kyvg/vue3-notification";
@@ -17,6 +17,11 @@ const usernameInvalid = computed(() => username.value === "")
 const passwordInvalid = computed(() => password.value === "")
 const disableLoginBtn = computed(() => username.value === "" || password.value === "" || loggingIn.value)
 
+
+onMounted(async () => {
+  await settings.LoadSettings()
+})
+
 const login = async function () {
   console.log("Performing login for user:", username.value);
   loggingIn.value = true;
@@ -28,7 +33,34 @@ const login = async function () {
           type: 'success',
         });
         loggingIn.value = false;
-        settings.LoadSettings(); // only logs errors, does not throw
+        settings.LoadSettings(); // reload full settings
+        router.push(auth.ReturnUrl);
+      })
+      .catch(error => {
+        notify({
+          title: "Login failed!",
+          text: "Authentication failed!",
+          type: 'error',
+        });
+
+        //loggingIn.value = false;
+        // delay the user from logging in for a short amount of time
+        setTimeout(() => loggingIn.value = false, 1000);
+      });
+}
+
+const loginWebAuthn = async function () {
+  console.log("Performing webauthn login");
+  loggingIn.value = true;
+  auth.LoginWebAuthn()
+      .then(uid => {
+        notify({
+          title: "Logged in",
+          text: "Authentication succeeded!",
+          type: 'success',
+        });
+        loggingIn.value = false;
+        settings.LoadSettings(); // reload full settings
         router.push(auth.ReturnUrl);
       })
       .catch(error => {
@@ -85,17 +117,25 @@ const externalLogin = function (provider) {
                 </div>
               </div>
 
-              <div class="row mt-5 d-flex">
-                <div :class="{'col-lg-4':auth.LoginProviders.length < 3, 'col-lg-12':auth.LoginProviders.length >= 3}" class="d-flex mb-2">
-                  <button :disabled="disableLoginBtn" class="btn btn-primary flex-fill" type="submit" @click.prevent="login">
+              <div class="row mt-5 mb-2">
+                <div class="col-lg-4">
+                  <button :disabled="disableLoginBtn" class="btn btn-primary" type="submit" @click.prevent="login">
                     {{ $t('login.button') }} <div v-if="loggingIn" class="d-inline"><i class="ms-2 fa-solid fa-circle-notch fa-spin"></i></div>
                   </button>
                 </div>
-                <div :class="{'col-lg-8':auth.LoginProviders.length < 3, 'col-lg-12':auth.LoginProviders.length >= 3}" class="d-flex mb-2">
+                <div class="col-lg-8 mb-2 text-end">
+                  <button v-if="settings.Setting('WebAuthnEnabled')" class="btn btn-primary" type="submit" @click.prevent="loginWebAuthn">
+                    {{ $t('login.button-webauthn') }} <div v-if="loggingIn" class="d-inline"><i class="ms-2 fa-solid fa-circle-notch fa-spin"></i></div>
+                  </button>
+                </div>
+              </div>
+
+              <div class="row mt-5 d-flex">
+                <div class="col-lg-12 d-flex mb-2">
                   <!-- OpenIdConnect / OAUTH providers -->
-                    <button v-for="(provider, idx) in auth.LoginProviders" :key="provider.Identifier" :class="{'ms-1':idx > 0}"
-                       :disabled="loggingIn" :title="provider.Name" class="btn btn-outline-primary flex-fill"
-                            v-html="provider.Name" @click.prevent="externalLogin(provider)"></button>
+                  <button v-for="(provider, idx) in auth.LoginProviders" :key="provider.Identifier" :class="{'ms-1':idx > 0}"
+                          :disabled="loggingIn" :title="provider.Name" class="btn btn-outline-primary flex-fill"
+                          v-html="provider.Name" @click.prevent="externalLogin(provider)"></button>
                 </div>
               </div>
 
