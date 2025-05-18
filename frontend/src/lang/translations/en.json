@@ -102,7 +102,7 @@
     },
     "interface": {
       "headline": "Interface status for",
-      "mode": "mode",
+      "backend": "Backend",
       "key": "Public Key",
       "endpoint": "Public Endpoint",
       "port": "Listening Port",
@@ -356,6 +356,10 @@
         "server": "Server Mode",
         "client": "Client Mode",
         "any": "Unknown Mode"
+      },
+      "backend": {
+        "label": "Interface Backend",
+        "local": "Local WireGuard Backend"
       },
       "display-name": {
         "label": "Display Name",

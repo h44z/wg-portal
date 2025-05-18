@@ -96,10 +96,29 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sessionUser := domain.GetUserInfo(r.Context())
 
+		nameFn := func(backend config.Backend) []model.SettingsBackendNames {
+			names := make([]model.SettingsBackendNames, 0, len(backend.Mikrotik)+1)
+
+			names = append(names, model.SettingsBackendNames{
+				Id:   backend.Default,
+				Name: "modals.interface-edit.backend.local",
+			})
+			for _, b := range backend.Mikrotik {
+				names = append(names, model.SettingsBackendNames{
+					Id:   b.Id,
+					Name: b.DisplayName,
+				})
+			}
+
+			return names
+
+		}
+
 		// For anonymous users, we return the settings object with minimal information
 		if sessionUser.Id == domain.CtxUnknownUserId || sessionUser.Id == "" {
 			respond.JSON(w, http.StatusOK, model.Settings{
-				WebAuthnEnabled: e.cfg.Auth.WebAuthn.Enabled,
+				WebAuthnEnabled:   e.cfg.Auth.WebAuthn.Enabled,
+				AvailableBackends: []model.SettingsBackendNames{}, // return an empty list instead of null
 			})
 		} else {
 			respond.JSON(w, http.StatusOK, model.Settings{
@@ -109,6 +128,7 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 				ApiAdminOnly:              e.cfg.Advanced.ApiAdminOnly,
 				WebAuthnEnabled:           e.cfg.Auth.WebAuthn.Enabled,
 				MinPasswordLength:         e.cfg.Auth.MinPasswordLength,
+				AvailableBackends:         nameFn(e.cfg.Backend),
 			})
 		}
 	}

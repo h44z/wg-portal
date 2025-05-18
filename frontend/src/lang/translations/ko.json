@@ -100,7 +100,7 @@
       },
       "interface": {
         "headline": "인터페이스 상태:",
-        "mode": "모드",
+        "backend": "백엔드",
         "key": "공개 키",
         "endpoint": "공개 엔드포인트",
         "port": "수신 포트",

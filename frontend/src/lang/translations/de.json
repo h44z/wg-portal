@@ -102,7 +102,7 @@
     },
     "interface": {
       "headline": "Schnittstellenstatus für",
-      "mode": "Modus",
+      "backend": "Backend",
       "key": "Öffentlicher Schlüssel",
       "endpoint": "Öffentlicher Endpunkt",
       "port": "Port",

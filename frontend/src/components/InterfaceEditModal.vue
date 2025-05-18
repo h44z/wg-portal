@@ -10,11 +10,13 @@ import isCidr from "is-cidr";
 import {isIP} from 'is-ip';
 import { freshInterface } from '@/helpers/models';
 import {peerStore} from "@/stores/peers";
+import {settingsStore} from "@/stores/settings";
 
 const { t } = useI18n()
 
 const interfaces = interfaceStore()
 const peers = peerStore()
+const settings = settingsStore()
 
 const props = defineProps({
   interfaceId: String,
@@ -314,13 +316,21 @@ async function del() {
               <label class="form-label mt-4">{{ $t('modals.interface-edit.identifier.label') }}</label>
               <input v-model="formData.Identifier" class="form-control" :placeholder="$t('modals.interface-edit.identifier.placeholder')" type="text">
             </div>
-            <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.mode.label') }}</label>
-              <select v-model="formData.Mode" class="form-select">
-                <option value="server">{{ $t('modals.interface-edit.mode.server') }}</option>
-                <option value="client">{{ $t('modals.interface-edit.mode.client') }}</option>
-                <option value="any">{{ $t('modals.interface-edit.mode.any') }}</option>
-              </select>
+            <div class="row">
+              <div class="form-group col-md-6">
+                <label class="form-label mt-4">{{ $t('modals.interface-edit.mode.label') }}</label>
+                <select v-model="formData.Mode" class="form-select">
+                  <option value="server">{{ $t('modals.interface-edit.mode.server') }}</option>
+                  <option value="client">{{ $t('modals.interface-edit.mode.client') }}</option>
+                  <option value="any">{{ $t('modals.interface-edit.mode.any') }}</option>
+                </select>
+              </div>
+              <div class="form-group col-md-6">
+                <label class="form-label mt-4">{{ $t('modals.interface-edit.backend.label') }}</label>
+                <select v-model="formData.Backend" class="form-select">
+                  <option v-for="backend in settings.Setting('AvailableBackends')" :value="backend.Id">{{ backend.Id === 'local' ? $t(backend.Name) : backend.Name }}</option>
+                </select>
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.display-name.label') }}</label>
@@ -385,12 +395,14 @@ async function del() {
                 <label class="form-label mt-4">{{ $t('modals.interface-edit.mtu.label') }}</label>
                 <input v-model="formData.Mtu" class="form-control" :placeholder="$t('modals.interface-edit.mtu.placeholder')" type="number">
               </div>
-              <div class="form-group col-md-6">
+              <div class="form-group col-md-6" v-if="formData.Backend==='local'">
                 <label class="form-label mt-4">{{ $t('modals.interface-edit.firewall-mark.label') }}</label>
                 <input v-model="formData.FirewallMark" class="form-control" :placeholder="$t('modals.interface-edit.firewall-mark.placeholder')" type="number">
               </div>
+              <div class="form-group col-md-6" v-else>
+              </div>
             </div>
-            <div class="row">
+            <div class="row" v-if="formData.Backend==='local'">
               <div class="form-group col-md-6">
                 <label class="form-label mt-4">{{ $t('modals.interface-edit.routing-table.label') }}</label>
                 <input v-model="formData.RoutingTable" aria-describedby="routingTableHelp" class="form-control" :placeholder="$t('modals.interface-edit.routing-table.placeholder')" type="text">
