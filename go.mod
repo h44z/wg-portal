@@ -28,8 +28,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.11
-	gorm.io/driver/sqlserver v1.5.4
-	gorm.io/gorm v1.26.1
+	gorm.io/driver/sqlserver v1.6.0
+	gorm.io/gorm v1.30.0
 )
 
 require (
