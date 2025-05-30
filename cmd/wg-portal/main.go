@@ -50,7 +50,8 @@ func main() {
 	database, err := adapters.NewSqlRepository(rawDb)
 	internal.AssertNoError(err)
 
-	wireGuard := adapters.NewWireGuardRepository()
+	wireGuard, err := wireguard.NewControllerManager(cfg)
+	internal.AssertNoError(err)
 
 	wgQuick := adapters.NewWgQuickRepo()
 
@@ -133,7 +134,7 @@ func main() {
 	apiV0EndpointUsers := handlersV0.NewUserEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendUsers)
 	apiV0EndpointInterfaces := handlersV0.NewInterfaceEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendInterfaces)
 	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendPeers)
-	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth)
+	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth, wireGuard)
 	apiV0EndpointTest := handlersV0.NewTestEndpoint(apiV0Auth)
 
 	apiFrontend := handlersV0.NewRestApi(apiV0Session,

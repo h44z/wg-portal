@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sys/unix"
+
 	"github.com/h44z/wg-portal/internal"
 )
 
@@ -23,6 +25,7 @@ var allowedFileNameRegex = regexp.MustCompile("[^a-zA-Z0-9-_]+")
 
 type InterfaceIdentifier string
 type InterfaceType string
+type InterfaceBackend string
 
 type Interface struct {
 	BaseModel
@@ -49,11 +52,12 @@ type Interface struct {
 	SaveConfig bool // automatically persist config changes to the wgX.conf file
 
 	// WG Portal specific
-	DisplayName    string        // a nice display name/ description for the interface
-	Type           InterfaceType // the interface type, either InterfaceTypeServer or InterfaceTypeClient
-	DriverType     string        // the interface driver type (linux, software, ...)
-	Disabled       *time.Time    `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
-	DisabledReason string        // the reason why the interface has been disabled
+	DisplayName    string           // a nice display name/ description for the interface
+	Type           InterfaceType    // the interface type, either InterfaceTypeServer or InterfaceTypeClient
+	Backend        InterfaceBackend // the backend that is used to manage the interface (wgctrl, mikrotik, ...)
+	DriverType     string           // the interface driver type (linux, software, ...)
+	Disabled       *time.Time       `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
+	DisabledReason string           // the reason why the interface has been disabled
 
 	// Default settings for the peer, used for new peers, those settings will be published to ConfigOption options of
 	// the peer config
@@ -278,4 +282,31 @@ func (r RoutingTableInfo) GetRoutingTable() int {
 	}
 
 	return r.Table
+}
+
+type IpFamily int
+
+const (
+	IpFamilyIPv4 IpFamily = unix.AF_INET
+	IpFamilyIPv6 IpFamily = unix.AF_INET6
+)
+
+func (f IpFamily) String() string {
+	switch f {
+	case IpFamilyIPv4:
+		return "IPv4"
+	case IpFamilyIPv6:
+		return "IPv6"
+	default:
+		return "unknown"
+	}
+}
+
+// RouteRule represents a routing table rule.
+type RouteRule struct {
+	InterfaceId InterfaceIdentifier
+	IpFamily    IpFamily
+	FwMark      uint32
+	Table       int
+	HasDefault  bool
 }

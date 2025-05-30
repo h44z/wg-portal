@@ -59,7 +59,7 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 		Identifier:                 string(src.Identifier),
 		DisplayName:                src.DisplayName,
 		Mode:                       string(src.Type),
-		Backend:                    config.LocalBackendName, // TODO: add backend support
+		Backend:                    string(src.Backend),
 		PrivateKey:                 src.PrivateKey,
 		PublicKey:                  src.PublicKey,
 		Disabled:                   src.IsDisabled(),
@@ -93,6 +93,10 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 		EnabledPeers: 0,
 		TotalPeers:   0,
 		Filename:     src.GetConfigFileName(),
+	}
+
+	if iface.Backend == "" {
+		iface.Backend = config.LocalBackendName // default to local backend
 	}
 
 	if len(peers) > 0 {
@@ -149,6 +153,7 @@ func NewDomainInterface(src *Interface) *domain.Interface {
 		SaveConfig:                 src.SaveConfig,
 		DisplayName:                src.DisplayName,
 		Type:                       domain.InterfaceType(src.Mode),
+		Backend:                    domain.InterfaceBackend(src.Backend),
 		DriverType:                 "",  // currently unused
 		Disabled:                   nil, // set below
 		DisabledReason:             src.DisabledReason,

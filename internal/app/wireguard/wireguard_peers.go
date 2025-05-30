@@ -352,7 +352,12 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 		return fmt.Errorf("delete not allowed: %w", err)
 	}
 
-	err = m.wg.DeletePeer(ctx, peer.InterfaceIdentifier, id)
+	iface, err := m.db.GetInterface(ctx, peer.InterfaceIdentifier)
+	if err != nil {
+		return fmt.Errorf("unable to find interface %s: %w", peer.InterfaceIdentifier, err)
+	}
+
+	err = m.wg.GetController(*iface).DeletePeer(ctx, peer.InterfaceIdentifier, id)
 	if err != nil {
 		return fmt.Errorf("wireguard failed to delete peer %s: %w", id, err)
 	}
@@ -414,14 +419,18 @@ func (m Manager) GetUserPeerStats(ctx context.Context, id domain.UserIdentifier)
 func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 	interfaces := make(map[domain.InterfaceIdentifier]struct{})
 
-	for i := range peers {
-		peer := peers[i]
-		var err error
+	for _, peer := range peers {
+		iface, err := m.db.GetInterface(ctx, peer.InterfaceIdentifier)
+		if err != nil {
+			return fmt.Errorf("unable to find interface %s: %w", peer.InterfaceIdentifier, err)
+		}
+
 		if peer.IsDisabled() || peer.IsExpired() {
 			err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
 				peer.CopyCalculatedAttributes(p)
 
-				if err := m.wg.DeletePeer(ctx, peer.InterfaceIdentifier, peer.Identifier); err != nil {
+				if err := m.wg.GetController(*iface).DeletePeer(ctx, peer.InterfaceIdentifier,
+					peer.Identifier); err != nil {
 					return nil, fmt.Errorf("failed to delete wireguard peer %s: %w", peer.Identifier, err)
 				}
 
@@ -431,7 +440,7 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 			err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
 				peer.CopyCalculatedAttributes(p)
 
-				err := m.wg.SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
+				err := m.wg.GetController(*iface).SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
 					func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
 						domain.MergeToPhysicalPeer(pp, peer)
 						return pp, nil

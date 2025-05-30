@@ -38,9 +38,13 @@ func (b *Backend) Validate() error {
 	return nil
 }
 
+type BackendBase struct {
+	Id          string `yaml:"id"`           // A unique id for the backend
+	DisplayName string `yaml:"display_name"` // A display name for the backend
+}
+
 type BackendMikrotik struct {
-	Id          string `yaml:"id"`           // A unique id for the Mikrotik backend
-	DisplayName string `yaml:"display_name"` // A display name for the Mikrotik backend
+	BackendBase `yaml:",inline"` // Embed the base fields
 
 	ApiUrl      string `yaml:"api_url"` // The base URL of the Mikrotik API (e.g., "https://10.10.10.10:8729/rest")
 	ApiUser     string `yaml:"api_user"`

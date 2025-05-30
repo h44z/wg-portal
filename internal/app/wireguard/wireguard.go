@@ -37,25 +37,6 @@ type InterfaceAndPeerDatabaseRepo interface {
 	GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (map[domain.Cidr][]domain.Cidr, error)
 }
 
-type InterfaceController interface {
-	GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, error)
-	GetInterface(_ context.Context, id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error)
-	GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier) ([]domain.PhysicalPeer, error)
-	SaveInterface(
-		_ context.Context,
-		id domain.InterfaceIdentifier,
-		updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error),
-	) error
-	DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error
-	SavePeer(
-		_ context.Context,
-		deviceId domain.InterfaceIdentifier,
-		id domain.PeerIdentifier,
-		updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error),
-	) error
-	DeletePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error
-}
-
 type WgQuickController interface {
 	ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCmd string) error
 	SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error
@@ -75,7 +56,7 @@ type Manager struct {
 	cfg   *config.Config
 	bus   EventBus
 	db    InterfaceAndPeerDatabaseRepo
-	wg    InterfaceController
+	wg    *ControllerManager
 	quick WgQuickController
 
 	userLockMap *sync.Map
@@ -84,7 +65,7 @@ type Manager struct {
 func NewWireGuardManager(
 	cfg *config.Config,
 	bus EventBus,
-	wg InterfaceController,
+	wg *ControllerManager,
 	quick WgQuickController,
 	db InterfaceAndPeerDatabaseRepo,
 ) (*Manager, error) {

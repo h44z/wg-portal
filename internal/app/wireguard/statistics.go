@@ -53,7 +53,7 @@ type StatisticsCollector struct {
 	pingJobs      chan domain.Peer
 
 	db StatisticsDatabaseRepo
-	wg StatisticsInterfaceController
+	wg *ControllerManager
 	ms StatisticsMetricsServer
 }
 
@@ -62,7 +62,7 @@ func NewStatisticsCollector(
 	cfg *config.Config,
 	bus StatisticsEventBus,
 	db StatisticsDatabaseRepo,
-	wg StatisticsInterfaceController,
+	wg *ControllerManager,
 	ms StatisticsMetricsServer,
 ) (*StatisticsCollector, error) {
 	c := &StatisticsCollector{
@@ -113,7 +113,7 @@ func (c *StatisticsCollector) collectInterfaceData(ctx context.Context) {
 			}
 
 			for _, in := range interfaces {
-				physicalInterface, err := c.wg.GetInterface(ctx, in.Identifier)
+				physicalInterface, err := c.wg.GetController(in).GetInterface(ctx, in.Identifier)
 				if err != nil {
 					slog.Warn("failed to load physical interface for data collection", "interface", in.Identifier,
 						"error", err)
@@ -165,7 +165,7 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 			}
 
 			for _, in := range interfaces {
-				peers, err := c.wg.GetPeers(ctx, in.Identifier)
+				peers, err := c.wg.GetController(in).GetPeers(ctx, in.Identifier)
 				if err != nil {
 					slog.Warn("failed to fetch peers for data collection", "interface", in.Identifier, "error", err)
 					continue

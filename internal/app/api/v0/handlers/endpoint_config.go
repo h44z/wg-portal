@@ -21,17 +21,23 @@ import (
 //go:embed frontend_config.js.gotpl
 var frontendJs embed.FS
 
+type ControllerManager interface {
+	GetControllerNames() []config.BackendBase
+}
+
 type ConfigEndpoint struct {
 	cfg           *config.Config
 	authenticator Authenticator
+	controllerMgr ControllerManager
 
 	tpl *respond.TemplateRenderer
 }
 
-func NewConfigEndpoint(cfg *config.Config, authenticator Authenticator) ConfigEndpoint {
+func NewConfigEndpoint(cfg *config.Config, authenticator Authenticator, ctrlMgr ControllerManager) ConfigEndpoint {
 	ep := ConfigEndpoint{
 		cfg:           cfg,
 		authenticator: authenticator,
+		controllerMgr: ctrlMgr,
 		tpl: respond.NewTemplateRenderer(template.Must(template.ParseFS(frontendJs,
 			"frontend_config.js.gotpl"))),
 	}
@@ -96,17 +102,21 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sessionUser := domain.GetUserInfo(r.Context())
 
-		nameFn := func(backend config.Backend) []model.SettingsBackendNames {
-			names := make([]model.SettingsBackendNames, 0, len(backend.Mikrotik)+1)
+		controllerFn := func() []model.SettingsBackendNames {
+			controllers := e.controllerMgr.GetControllerNames()
+			names := make([]model.SettingsBackendNames, 0, len(controllers))
 
-			names = append(names, model.SettingsBackendNames{
-				Id:   backend.Default,
-				Name: "modals.interface-edit.backend.local",
-			})
-			for _, b := range backend.Mikrotik {
+			for _, controller := range controllers {
+				displayName := controller.DisplayName
+				if displayName == "" {
+					displayName = controller.Id // fallback to ID if no display name is set
+				}
+				if controller.Id == config.LocalBackendName {
+					displayName = "modals.interface-edit.backend.local" // use a localized string for the local backend
+				}
 				names = append(names, model.SettingsBackendNames{
-					Id:   b.Id,
-					Name: b.DisplayName,
+					Id:   controller.Id,
+					Name: displayName,
 				})
 			}
 
@@ -128,7 +138,7 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 				ApiAdminOnly:              e.cfg.Advanced.ApiAdminOnly,
 				WebAuthnEnabled:           e.cfg.Auth.WebAuthn.Enabled,
 				MinPasswordLength:         e.cfg.Auth.MinPasswordLength,
-				AvailableBackends:         nameFn(e.cfg.Backend),
+				AvailableBackends:         controllerFn(),
 			})
 		}
 	}
