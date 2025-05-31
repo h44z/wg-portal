@@ -51,6 +51,23 @@ const currentTags = ref({
 })
 const formData = ref(freshInterface())
 
+const isBackendValid = computed(() => {
+  if (!props.visible || !selectedInterface.value) {
+    return true // if modal is not visible or no interface is selected, we don't care about backend validity
+  }
+
+  let backendId = selectedInterface.value.Backend
+
+  let valid = false
+  let availableBackends = settings.Setting('AvailableBackends') || []
+  availableBackends.forEach(backend => {
+    if (backend.Id === backendId) {
+      valid = true
+    }
+  })
+  return valid
+})
+
 // functions
 
 watch(() => props.visible, async (newValue, oldValue) => {
@@ -326,10 +343,11 @@ async function del() {
                 </select>
               </div>
               <div class="form-group col-md-6">
-                <label class="form-label mt-4">{{ $t('modals.interface-edit.backend.label') }}</label>
-                <select v-model="formData.Backend" class="form-select">
+                <label class="form-label mt-4" for="ifaceBackendSelector">{{ $t('modals.interface-edit.backend.label') }}</label>
+                <select id="ifaceBackendSelector" v-model="formData.Backend" class="form-select" aria-describedby="backendHelp">
                   <option v-for="backend in settings.Setting('AvailableBackends')" :value="backend.Id">{{ backend.Id === 'local' ? $t(backend.Name) : backend.Name }}</option>
                 </select>
+                <small v-if="!isBackendValid" id="backendHelp" class="form-text text-warning">{{ $t('modals.interface-edit.backend.invalid-label') }}</small>
               </div>
             </div>
             <div class="form-group">

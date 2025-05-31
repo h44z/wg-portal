@@ -51,7 +51,7 @@ function calculateInterfaceName(id, name) {
 const calculateBackendName = computed(() => {
   let backendId = interfaces.GetSelected.Backend
 
-  let backendName = "Unknown"
+  let backendName = t('interfaces.interface.unknown-backend')
   let availableBackends = settings.Setting('AvailableBackends') || []
   availableBackends.forEach(backend => {
     if (backend.Id === backendId) {
@@ -59,6 +59,19 @@ const calculateBackendName = computed(() => {
     }
   })
   return backendName
+})
+
+const isBackendValid = computed(() => {
+  let backendId = interfaces.GetSelected.Backend
+
+  let valid = false
+  let availableBackends = settings.Setting('AvailableBackends') || []
+  availableBackends.forEach(backend => {
+    if (backend.Id === backendId) {
+      valid = true
+    }
+  })
+  return valid
 })
 
 
@@ -158,7 +171,7 @@ onMounted(async () => {
         <div class="card-header">
           <div class="row">
             <div class="col-12 col-lg-8">
-              {{ $t('interfaces.interface.headline') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{ $t('modals.interface-edit.mode.' + interfaces.GetSelected.Mode )}} | {{ $t('interfaces.interface.backend') + ": " + calculateBackendName }})
+              {{ $t('interfaces.interface.headline') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{ $t('modals.interface-edit.mode.' + interfaces.GetSelected.Mode )}} | {{ $t('interfaces.interface.backend') + ": " + calculateBackendName }}<span v-if="!isBackendValid" :title="t('interfaces.interface.wrong-backend')" class="ms-1 me-1"><i class="fa-solid fa-triangle-exclamation"></i></span>)
               <span v-if="interfaces.GetSelected.Disabled" class="text-danger"><i class="fa fa-circle-xmark" :title="interfaces.GetSelected.DisabledReason"></i></span>
             </div>
             <div class="col-12 col-lg-4 text-lg-end">

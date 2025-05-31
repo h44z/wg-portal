@@ -103,6 +103,8 @@
     "interface": {
       "headline": "Interface status for",
       "backend": "Backend",
+      "unknown-backend": "Unknown",
+      "wrong-backend": "Invalid backend, using local WireGuard backend instead!",
       "key": "Public Key",
       "endpoint": "Public Endpoint",
       "port": "Listening Port",
@@ -359,6 +361,7 @@
       },
       "backend": {
         "label": "Interface Backend",
+        "invalid-label": "Original backend is no longer available, using local WireGuard backend instead!",
         "local": "Local WireGuard Backend"
       },
       "display-name": {

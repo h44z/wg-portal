@@ -103,6 +103,8 @@
     "interface": {
       "headline": "Schnittstellenstatus für",
       "backend": "Backend",
+      "unknown-backend": "Unbekannt",
+      "wrong-backend": "Ungültiges Backend, das lokale WireGuard Backend wird stattdessen verwendet!",
       "key": "Öffentlicher Schlüssel",
       "endpoint": "Öffentlicher Endpunkt",
       "port": "Port",
@@ -356,6 +358,11 @@
         "server": "Server-Modus",
         "client": "Client-Modus",
         "any": "Unbekannter Modus"
+      },
+      "backend": {
+        "label": "Schnittstellenbackend",
+        "invalid-label": "Ursprüngliches Backend ist ungültig, das lokale WireGuard Backend wird stattdessen verwendet!",
+        "local": "Lokales WireGuard Backend"
       },
       "display-name": {
         "label": "Anzeigename",
