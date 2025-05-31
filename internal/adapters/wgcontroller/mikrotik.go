@@ -40,7 +40,7 @@ func (c MikrotikController) GetId() domain.InterfaceBackend {
 func (c MikrotikController) GetInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
 	wgReply := c.client.Query(ctx, "/interface/wireguard", &lowlevel.MikrotikRequestOptions{
 		PropList: []string{
-			".id", "name", "public-key", "private-key", "listen-port", "mtu", "disabled", "running",
+			".id", "name", "public-key", "private-key", "listen-port", "mtu", "disabled", "running", "comment",
 		},
 	})
 	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
@@ -167,11 +167,16 @@ func (c MikrotikController) convertWireGuardInterface(
 		Mtu:           wg.GetInt("mtu"),
 		FirewallMark:  0,
 		DeviceUp:      wg.GetBool("running"),
-		ImportSource:  "mikrotik",
-		DeviceType:    "Mikrotik",
+		ImportSource:  domain.ControllerTypeMikrotik,
+		DeviceType:    domain.ControllerTypeMikrotik,
 		BytesUpload:   uint64(iface.GetInt("tx-byte")),
 		BytesDownload: uint64(iface.GetInt("rx-byte")),
 	}
+
+	pi.SetExtras(domain.MikrotikInterfaceExtras{
+		Comment:  wg.GetString("comment"),
+		Disabled: wg.GetBool("disabled"),
+	})
 
 	return pi, nil
 }
@@ -210,7 +215,10 @@ func (c MikrotikController) GetPeers(ctx context.Context, deviceId domain.Interf
 	return peers, nil
 }
 
-func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject) (domain.PhysicalPeer, error) {
+func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject) (
+	domain.PhysicalPeer,
+	error,
+) {
 	keepAliveSeconds := 0
 	duration, err := time.ParseDuration(peer.GetString("client-keepalive"))
 	if err == nil {
@@ -246,15 +254,17 @@ func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 		ProtocolVersion:     0, // Mikrotik does not support protocol versioning, so we set it to 0
 		BytesUpload:         uint64(peer.GetInt("rx")),
 		BytesDownload:       uint64(peer.GetInt("tx")),
-
-		BackendExtras: make(map[string]interface{}),
+		ImportSource:        domain.ControllerTypeMikrotik,
 	}
 
-	peerModel.BackendExtras["MT-NAME"] = peer.GetString("name")
-	peerModel.BackendExtras["MT-COMMENT"] = peer.GetString("comment")
-	peerModel.BackendExtras["MT-RESPONDER"] = peer.GetString("responder")
-	peerModel.BackendExtras["MT-ENDPOINT"] = peer.GetString("client-endpoint")
-	peerModel.BackendExtras["MT-IP"] = peer.GetString("client-address")
+	peerModel.SetExtras(domain.MikrotikPeerExtras{
+		Name:           peer.GetString("name"),
+		Comment:        peer.GetString("comment"),
+		IsResponder:    peer.GetBool("responder"),
+		ClientEndpoint: peer.GetString("client-endpoint"),
+		ClientAddress:  peer.GetString("client-address"),
+		Disabled:       peer.GetBool("disabled"),
+	})
 
 	return peerModel, nil
 }

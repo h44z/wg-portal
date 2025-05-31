@@ -837,28 +837,20 @@ func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain
 	peer.Interface.PreDown = domain.NewConfigOption(in.PeerDefPreDown, true)
 	peer.Interface.PostDown = domain.NewConfigOption(in.PeerDefPostDown, true)
 
+	var displayName string
 	switch in.Type {
 	case domain.InterfaceTypeAny:
 		peer.Interface.Type = domain.InterfaceTypeAny
-		peer.DisplayName = "Autodetected Peer (" + peer.Interface.PublicKey[0:8] + ")"
+		displayName = "Autodetected Peer (" + peer.Interface.PublicKey[0:8] + ")"
 	case domain.InterfaceTypeClient:
 		peer.Interface.Type = domain.InterfaceTypeServer
-		peer.DisplayName = "Autodetected Endpoint (" + peer.Interface.PublicKey[0:8] + ")"
+		displayName = "Autodetected Endpoint (" + peer.Interface.PublicKey[0:8] + ")"
 	case domain.InterfaceTypeServer:
 		peer.Interface.Type = domain.InterfaceTypeClient
-		peer.DisplayName = "Autodetected Client (" + peer.Interface.PublicKey[0:8] + ")"
+		displayName = "Autodetected Client (" + peer.Interface.PublicKey[0:8] + ")"
 	}
-
-	if p.BackendExtras != nil {
-		if val, ok := p.BackendExtras["MT-NAME"]; ok {
-			peer.DisplayName = val.(string)
-		}
-		if val, ok := p.BackendExtras["MT-COMMENT"]; ok {
-			peer.Notes = val.(string)
-		}
-		if val, ok := p.BackendExtras["MT-ENDPOINT"]; ok {
-			peer.Endpoint = domain.NewConfigOption(val.(string), true)
-		}
+	if peer.DisplayName == "" {
+		peer.DisplayName = displayName // use auto-generated display name if not set
 	}
 
 	err := m.db.SavePeer(ctx, peer.Identifier, func(_ *domain.Peer) (*domain.Peer, error) {

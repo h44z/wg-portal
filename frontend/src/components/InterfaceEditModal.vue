@@ -80,6 +80,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.Identifier = interfaces.Prepared.Identifier
           formData.value.DisplayName = interfaces.Prepared.DisplayName
           formData.value.Mode = interfaces.Prepared.Mode
+          formData.value.Backend = interfaces.Prepared.Backend
 
           formData.value.PublicKey = interfaces.Prepared.PublicKey
           formData.value.PrivateKey = interfaces.Prepared.PrivateKey
@@ -118,6 +119,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.Identifier = selectedInterface.value.Identifier
           formData.value.DisplayName = selectedInterface.value.DisplayName
           formData.value.Mode = selectedInterface.value.Mode
+          formData.value.Backend = selectedInterface.value.Backend
 
           formData.value.PublicKey = selectedInterface.value.PublicKey
           formData.value.PrivateKey = selectedInterface.value.PrivateKey

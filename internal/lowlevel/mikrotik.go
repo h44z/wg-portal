@@ -17,6 +17,20 @@ import (
 	"github.com/h44z/wg-portal/internal/config"
 )
 
+// region models
+
+const (
+	MikrotikApiStatusOk    = "success"
+	MikrotikApiStatusError = "error"
+)
+
+const (
+	MikrotikApiErrorCodeUnknown = iota + 600
+	MikrotikApiErrorCodeRequestPreparationFailed
+	MikrotikApiErrorCodeRequestFailed
+	MikrotikApiErrorCodeResponseDecodeFailed
+)
+
 type MikrotikApiResponse[T any] struct {
 	Status string
 	Code   int
@@ -113,6 +127,10 @@ func (o *MikrotikRequestOptions) GetPath(base string) string {
 	return path.String()
 }
 
+// region models
+
+// region API-client
+
 type MikrotikApiClient struct {
 	coreCfg *config.Config
 	cfg     *config.BackendMikrotik
@@ -191,18 +209,6 @@ func (m *MikrotikApiClient) prepareGetRequest(ctx context.Context, fullUrl strin
 
 	return req, nil
 }
-
-const (
-	MikrotikApiStatusOk    = "success"
-	MikrotikApiStatusError = "error"
-)
-
-const (
-	MikrotikApiErrorCodeUnknown = iota + 600
-	MikrotikApiErrorCodeRequestPreparationFailed
-	MikrotikApiErrorCodeRequestFailed
-	MikrotikApiErrorCodeResponseDecodeFailed
-)
 
 func errToApiResponse[T any](code int, message string, err error) MikrotikApiResponse[T] {
 	return MikrotikApiResponse[T]{
@@ -289,3 +295,5 @@ func (m *MikrotikApiClient) Get(
 	m.debugLog("retrieved API get result", "url", fullUrl, "duration", time.Since(start).String())
 	return response
 }
+
+// endregion API-client

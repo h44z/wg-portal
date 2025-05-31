@@ -208,9 +208,26 @@ type PhysicalInterface struct {
 
 	BytesUpload   uint64
 	BytesDownload uint64
+
+	backendExtras any // additional backend-specific extras, e.g., domain.MikrotikInterfaceExtras
+}
+
+func (p *PhysicalInterface) GetExtras() any {
+	return p.backendExtras
+}
+
+func (p *PhysicalInterface) SetExtras(extras any) {
+	switch extras.(type) {
+	case MikrotikInterfaceExtras: // OK
+	default: // we only support MikrotikInterfaceExtras for now
+		panic(fmt.Sprintf("unsupported interface backend extras type %T", extras))
+	}
+
+	p.backendExtras = extras
 }
 
 func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
+	// create a new basic interface with the data from the physical interface
 	iface := &Interface{
 		Identifier:                 pi.Identifier,
 		KeyPair:                    pi.KeyPair,
@@ -243,6 +260,23 @@ func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
 		PeerDefPostUp:              "",
 		PeerDefPreDown:             "",
 		PeerDefPostDown:            "",
+	}
+
+	if pi.GetExtras() == nil {
+		return iface
+	}
+
+	// enrich the data with controller-specific extras
+	now := time.Now()
+	switch pi.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := pi.GetExtras().(MikrotikInterfaceExtras)
+		iface.DisplayName = extras.Comment
+		if extras.Disabled {
+			iface.Disabled = &now
+		} else {
+			iface.Disabled = nil
+		}
 	}
 
 	return iface

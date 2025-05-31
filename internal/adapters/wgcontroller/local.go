@@ -134,7 +134,7 @@ func (c LocalController) convertWireGuardInterface(device *wgtypes.Device) (doma
 		Mtu:           0,
 		FirewallMark:  uint32(device.FirewallMark),
 		DeviceUp:      false,
-		ImportSource:  "wgctrl",
+		ImportSource:  domain.ControllerTypeLocal,
 		DeviceType:    device.Type.String(),
 		BytesUpload:   0,
 		BytesDownload: 0,
@@ -199,6 +199,7 @@ func (c LocalController) convertWireGuardPeer(peer *wgtypes.Peer) (domain.Physic
 		ProtocolVersion:     peer.ProtocolVersion,
 		BytesUpload:         uint64(peer.ReceiveBytes),
 		BytesDownload:       uint64(peer.TransmitBytes),
+		ImportSource:        domain.ControllerTypeLocal,
 	}
 
 	for _, addr := range peer.AllowedIPs {

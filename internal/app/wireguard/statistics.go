@@ -335,6 +335,8 @@ func (c *StatisticsCollector) isPeerPingable(ctx context.Context, peer domain.Pe
 		return false
 	}
 
+	// TODO: implement ping check on Mikrotik (or any other controller)
+
 	pinger, err := probing.NewPinger(checkAddr)
 	if err != nil {
 		slog.Debug("failed to instantiate pinger", "peer", peer.Identifier, "address", checkAddr, "error", err)

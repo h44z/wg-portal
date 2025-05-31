@@ -129,7 +129,7 @@ func (p *Peer) GenerateDisplayName(prefix string) {
 	p.DisplayName = fmt.Sprintf("%sPeer %s", prefix, internal.TruncateString(string(p.Identifier), 8))
 }
 
-// OverwriteUserEditableFields overwrites the user editable fields of the peer with the values from the userPeer
+// OverwriteUserEditableFields overwrites the user-editable fields of the peer with the values from the userPeer
 func (p *Peer) OverwriteUserEditableFields(userPeer *Peer, cfg *config.Config) {
 	p.DisplayName = userPeer.DisplayName
 	if cfg.Core.EditableKeys {
@@ -182,10 +182,11 @@ type PhysicalPeer struct {
 	BytesUpload   uint64 // upload bytes are the number of bytes that the remote peer has sent to the server
 	BytesDownload uint64 // upload bytes are the number of bytes that the remote peer has received from the server
 
-	BackendExtras map[string]any // additional backend specific extras, e.g. for the mikrotik backend this contains the name of the peer
+	ImportSource  string // import source (wgctrl, file, ...)
+	backendExtras any    // additional backend-specific extras, e.g., domain.MikrotikPeerExtras
 }
 
-func (p PhysicalPeer) GetPresharedKey() *wgtypes.Key {
+func (p *PhysicalPeer) GetPresharedKey() *wgtypes.Key {
 	if p.PresharedKey == "" {
 		return nil
 	}
@@ -197,7 +198,7 @@ func (p PhysicalPeer) GetPresharedKey() *wgtypes.Key {
 	return &key
 }
 
-func (p PhysicalPeer) GetEndpointAddress() *net.UDPAddr {
+func (p *PhysicalPeer) GetEndpointAddress() *net.UDPAddr {
 	if p.Endpoint == "" {
 		return nil
 	}
@@ -209,7 +210,7 @@ func (p PhysicalPeer) GetEndpointAddress() *net.UDPAddr {
 	return addr
 }
 
-func (p PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
+func (p *PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
 	if p.PersistentKeepalive == 0 {
 		return nil
 	}
@@ -218,13 +219,27 @@ func (p PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
 	return &keepAliveDuration
 }
 
-func (p PhysicalPeer) GetAllowedIPs() []net.IPNet {
+func (p *PhysicalPeer) GetAllowedIPs() []net.IPNet {
 	allowedIPs := make([]net.IPNet, len(p.AllowedIPs))
 	for i, ip := range p.AllowedIPs {
 		allowedIPs[i] = *ip.IpNet()
 	}
 
 	return allowedIPs
+}
+
+func (p *PhysicalPeer) GetExtras() any {
+	return p.backendExtras
+}
+
+func (p *PhysicalPeer) SetExtras(extras any) {
+	switch extras.(type) {
+	case MikrotikPeerExtras: // OK
+	default: // we only support MikrotikPeerExtras for now
+		panic(fmt.Sprintf("unsupported peer backend extras type %T", extras))
+	}
+
+	p.backendExtras = extras
 }
 
 func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
@@ -243,6 +258,27 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 		Interface: PeerInterfaceConfig{
 			KeyPair: pp.KeyPair,
 		},
+	}
+
+	if pp.GetExtras() == nil {
+		return peer
+	}
+
+	// enrich the data with controller-specific extras
+	now := time.Now()
+	switch pp.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := pp.GetExtras().(MikrotikPeerExtras)
+		peer.Notes = extras.Comment
+		peer.DisplayName = extras.Name
+		peer.Endpoint = NewConfigOption(extras.ClientEndpoint, true)
+		if extras.Disabled {
+			peer.Disabled = &now
+			peer.DisabledReason = "Disabled by Mikrotik controller"
+		} else {
+			peer.Disabled = nil
+			peer.DisabledReason = ""
+		}
 	}
 
 	return peer
