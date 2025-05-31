@@ -13,6 +13,7 @@ import (
 )
 
 type InterfaceController interface {
+	GetId() domain.InterfaceBackend
 	GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, error)
 	GetInterface(_ context.Context, id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error)
 	GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier) ([]domain.PhysicalPeer, error)
@@ -92,7 +93,7 @@ func (c *ControllerManager) registerMikrotikControllers() error {
 			continue
 		}
 
-		controller, err := wgcontroller.NewMikrotikController() // TODO: Pass backendConfig to the controller constructor
+		controller, err := wgcontroller.NewMikrotikController(c.cfg, &backendConfig)
 		if err != nil {
 			return fmt.Errorf("failed to create Mikrotik controller for backend %s: %w", backendConfig.Id, err)
 		}

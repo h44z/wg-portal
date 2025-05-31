@@ -149,7 +149,7 @@ func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.Inter
 				return 0, err
 			}
 
-			err = m.importInterface(ctx, &physicalInterface, physicalPeers)
+			err = m.importInterface(ctx, wgBackend, &physicalInterface, physicalPeers)
 			if err != nil {
 				return 0, fmt.Errorf("import of %s failed: %w", physicalInterface.Identifier, err)
 			}
@@ -770,7 +770,12 @@ func (m Manager) getFreshListenPort(ctx context.Context) (port int, err error) {
 	return
 }
 
-func (m Manager) importInterface(ctx context.Context, in *domain.PhysicalInterface, peers []domain.PhysicalPeer) error {
+func (m Manager) importInterface(
+	ctx context.Context,
+	backend InterfaceController,
+	in *domain.PhysicalInterface,
+	peers []domain.PhysicalPeer,
+) error {
 	now := time.Now()
 	iface := domain.ConvertPhysicalInterface(in)
 	iface.BaseModel = domain.BaseModel{
@@ -779,6 +784,7 @@ func (m Manager) importInterface(ctx context.Context, in *domain.PhysicalInterfa
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
+	iface.Backend = backend.GetId()
 	iface.PeerDefAllowedIPsStr = iface.AddressStr()
 
 	existingInterface, err := m.db.GetInterface(ctx, iface.Identifier)
@@ -841,6 +847,18 @@ func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain
 	case domain.InterfaceTypeServer:
 		peer.Interface.Type = domain.InterfaceTypeClient
 		peer.DisplayName = "Autodetected Client (" + peer.Interface.PublicKey[0:8] + ")"
+	}
+
+	if p.BackendExtras != nil {
+		if val, ok := p.BackendExtras["MT-NAME"]; ok {
+			peer.DisplayName = val.(string)
+		}
+		if val, ok := p.BackendExtras["MT-COMMENT"]; ok {
+			peer.Notes = val.(string)
+		}
+		if val, ok := p.BackendExtras["MT-ENDPOINT"]; ok {
+			peer.Endpoint = domain.NewConfigOption(val.(string), true)
+		}
 	}
 
 	err := m.db.SavePeer(ctx, peer.Identifier, func(_ *domain.Peer) (*domain.Peer, error) {

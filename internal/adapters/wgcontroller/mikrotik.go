@@ -2,38 +2,261 @@ package wgcontroller
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/h44z/wg-portal/internal/lowlevel"
 )
 
 type MikrotikController struct {
+	coreCfg *config.Config
+	cfg     *config.BackendMikrotik
+
+	client *lowlevel.MikrotikApiClient
 }
 
-func NewMikrotikController() (*MikrotikController, error) {
-	return &MikrotikController{}, nil
+func NewMikrotikController(coreCfg *config.Config, cfg *config.BackendMikrotik) (*MikrotikController, error) {
+	client, err := lowlevel.NewMikrotikApiClient(coreCfg, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Mikrotik API client: %w", err)
+	}
+
+	return &MikrotikController{
+		coreCfg: coreCfg,
+		cfg:     cfg,
+
+		client: client,
+	}, nil
+}
+
+func (c MikrotikController) GetId() domain.InterfaceBackend {
+	return domain.InterfaceBackend(c.cfg.Id)
 }
 
 // region wireguard-related
 
-func (c MikrotikController) GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, error) {
-	// TODO implement me
-	panic("implement me")
+func (c MikrotikController) GetInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
+	wgReply := c.client.Query(ctx, "/interface/wireguard", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			".id", "name", "public-key", "private-key", "listen-port", "mtu", "disabled", "running",
+		},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return nil, fmt.Errorf("failed to query interfaces: %v", wgReply.Error)
+	}
+
+	interfaces := make([]domain.PhysicalInterface, 0, len(wgReply.Data))
+	for _, wg := range wgReply.Data {
+		physicalInterface, err := c.loadInterfaceData(ctx, wg)
+		if err != nil {
+			return nil, err
+		}
+		interfaces = append(interfaces, *physicalInterface)
+	}
+
+	return interfaces, nil
 }
 
-func (c MikrotikController) GetInterface(_ context.Context, id domain.InterfaceIdentifier) (
+func (c MikrotikController) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (
 	*domain.PhysicalInterface,
 	error,
 ) {
-	// TODO implement me
-	panic("implement me")
+	wgReply := c.client.Query(ctx, "/interface/wireguard", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			".id", "name", "public-key", "private-key", "listen-port", "mtu", "disabled", "running",
+		},
+		Filters: map[string]string{
+			"name": string(id),
+		},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return nil, fmt.Errorf("failed to query interface %s: %v", id, wgReply.Error)
+	}
+
+	if len(wgReply.Data) == 0 {
+		return nil, fmt.Errorf("interface %s not found", id)
+	}
+
+	return c.loadInterfaceData(ctx, wgReply.Data[0])
 }
 
-func (c MikrotikController) GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier) (
+func (c MikrotikController) loadInterfaceData(
+	ctx context.Context,
+	wireGuardObj lowlevel.GenericJsonObject,
+) (*domain.PhysicalInterface, error) {
+	deviceId := wireGuardObj.GetString(".id")
+	deviceName := wireGuardObj.GetString("name")
+	ifaceReply := c.client.Get(ctx, "/interface/"+deviceId, &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			"name", "rx-byte", "tx-byte",
+		},
+	})
+	if ifaceReply.Status != lowlevel.MikrotikApiStatusOk {
+		return nil, fmt.Errorf("failed to query interface %s: %v", deviceId, ifaceReply.Error)
+	}
+
+	addrV4Reply := c.client.Query(ctx, "/ip/address", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			"address", "network",
+		},
+		Filters: map[string]string{
+			"interface": deviceName,
+			"dynamic":   "false", // we only want static addresses
+			"disabled":  "false", // we only want addresses that are not disabled
+		},
+	})
+	if addrV4Reply.Status != lowlevel.MikrotikApiStatusOk {
+		return nil, fmt.Errorf("failed to query IPv4 addresses for interface %s: %v", deviceId, addrV4Reply.Error)
+	}
+
+	addrV6Reply := c.client.Query(ctx, "/ipv6/address", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			"address", "network",
+		},
+		Filters: map[string]string{
+			"interface": deviceName,
+			"dynamic":   "false", // we only want static addresses
+			"disabled":  "false", // we only want addresses that are not disabled
+		},
+	})
+	if addrV6Reply.Status != lowlevel.MikrotikApiStatusOk {
+		return nil, fmt.Errorf("failed to query IPv6 addresses for interface %s: %v", deviceId, addrV6Reply.Error)
+	}
+
+	interfaceModel, err := c.convertWireGuardInterface(wireGuardObj, ifaceReply.Data, addrV4Reply.Data,
+		addrV6Reply.Data)
+	if err != nil {
+		return nil, fmt.Errorf("interface convert failed for %s: %w", deviceName, err)
+	}
+	return &interfaceModel, nil
+}
+
+func (c MikrotikController) convertWireGuardInterface(
+	wg, iface lowlevel.GenericJsonObject,
+	ipv4, ipv6 []lowlevel.GenericJsonObject,
+) (
+	domain.PhysicalInterface,
+	error,
+) {
+	// read data from wgctrl interface
+
+	addresses := make([]domain.Cidr, 0, len(ipv4)+len(ipv6))
+	for _, addr := range append(ipv4, ipv6...) {
+		addrStr := addr.GetString("address")
+		if addrStr == "" {
+			continue
+		}
+		cidr, err := domain.CidrFromString(addrStr)
+		if err != nil {
+			continue
+		}
+
+		addresses = append(addresses, cidr)
+	}
+
+	pi := domain.PhysicalInterface{
+		Identifier: domain.InterfaceIdentifier(wg.GetString("name")),
+		KeyPair: domain.KeyPair{
+			PrivateKey: wg.GetString("private-key"),
+			PublicKey:  wg.GetString("public-key"),
+		},
+		ListenPort:    wg.GetInt("listen-port"),
+		Addresses:     addresses,
+		Mtu:           wg.GetInt("mtu"),
+		FirewallMark:  0,
+		DeviceUp:      wg.GetBool("running"),
+		ImportSource:  "mikrotik",
+		DeviceType:    "Mikrotik",
+		BytesUpload:   uint64(iface.GetInt("tx-byte")),
+		BytesDownload: uint64(iface.GetInt("rx-byte")),
+	}
+
+	return pi, nil
+}
+
+func (c MikrotikController) GetPeers(ctx context.Context, deviceId domain.InterfaceIdentifier) (
 	[]domain.PhysicalPeer,
 	error,
 ) {
-	// TODO implement me
-	panic("implement me")
+	wgReply := c.client.Query(ctx, "/interface/wireguard/peers", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			".id", "name", "allowed-address", "client-address", "client-endpoint", "client-keepalive", "comment",
+			"current-endpoint-address", "current-endpoint-port", "last-handshake", "persistent-keepalive",
+			"public-key", "private-key", "preshared-key", "mtu", "disabled", "rx", "tx", "responder",
+		},
+		Filters: map[string]string{
+			"interface": string(deviceId),
+		},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return nil, fmt.Errorf("failed to query peers for %s: %v", deviceId, wgReply.Error)
+	}
+
+	if len(wgReply.Data) == 0 {
+		return nil, nil
+	}
+
+	peers := make([]domain.PhysicalPeer, 0, len(wgReply.Data))
+	for _, peer := range wgReply.Data {
+		peerModel, err := c.convertWireGuardPeer(peer)
+		if err != nil {
+			return nil, fmt.Errorf("peer convert failed for %v: %w", peer.GetString("name"), err)
+		}
+		peers = append(peers, peerModel)
+	}
+
+	return peers, nil
+}
+
+func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject) (domain.PhysicalPeer, error) {
+	keepAliveSeconds := 0
+	duration, err := time.ParseDuration(peer.GetString("client-keepalive"))
+	if err == nil {
+		keepAliveSeconds = int(duration.Seconds())
+	}
+
+	currentEndpoint := ""
+	if peer.GetString("current-endpoint-address") != "" && peer.GetString("current-endpoint-port") != "" {
+		currentEndpoint = peer.GetString("current-endpoint-address") + ":" + peer.GetString("current-endpoint-port")
+	}
+
+	lastHandshakeTime := time.Time{}
+	if peer.GetString("last-handshake") != "" {
+		relDuration, err := time.ParseDuration(peer.GetString("last-handshake"))
+		if err == nil {
+			lastHandshakeTime = time.Now().Add(-relDuration)
+		}
+	}
+
+	allowedAddresses, _ := domain.CidrsFromString(peer.GetString("allowed-address"))
+
+	peerModel := domain.PhysicalPeer{
+		Identifier: domain.PeerIdentifier(peer.GetString("public-key")),
+		Endpoint:   currentEndpoint,
+		AllowedIPs: allowedAddresses,
+		KeyPair: domain.KeyPair{
+			PublicKey:  peer.GetString("public-key"),
+			PrivateKey: peer.GetString("private-key"),
+		},
+		PresharedKey:        domain.PreSharedKey(peer.GetString("preshared-key")),
+		PersistentKeepalive: keepAliveSeconds,
+		LastHandshake:       lastHandshakeTime,
+		ProtocolVersion:     0, // Mikrotik does not support protocol versioning, so we set it to 0
+		BytesUpload:         uint64(peer.GetInt("rx")),
+		BytesDownload:       uint64(peer.GetInt("tx")),
+
+		BackendExtras: make(map[string]interface{}),
+	}
+
+	peerModel.BackendExtras["MT-NAME"] = peer.GetString("name")
+	peerModel.BackendExtras["MT-COMMENT"] = peer.GetString("comment")
+	peerModel.BackendExtras["MT-RESPONDER"] = peer.GetString("responder")
+	peerModel.BackendExtras["MT-ENDPOINT"] = peer.GetString("client-endpoint")
+	peerModel.BackendExtras["MT-IP"] = peer.GetString("client-address")
+
+	return peerModel, nil
 }
 
 func (c MikrotikController) SaveInterface(
@@ -42,12 +265,12 @@ func (c MikrotikController) SaveInterface(
 	updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error),
 ) error {
 	// TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (c MikrotikController) DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error {
 	// TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (c MikrotikController) SavePeer(
@@ -57,7 +280,7 @@ func (c MikrotikController) SavePeer(
 	updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error),
 ) error {
 	// TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (c MikrotikController) DeletePeer(
@@ -66,7 +289,7 @@ func (c MikrotikController) DeletePeer(
 	id domain.PeerIdentifier,
 ) error {
 	// TODO implement me
-	panic("implement me")
+	return nil
 }
 
 // endregion wireguard-related

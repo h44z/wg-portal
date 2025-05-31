@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 )
 
 const LocalBackendName = "local"
@@ -46,7 +47,11 @@ type BackendBase struct {
 type BackendMikrotik struct {
 	BackendBase `yaml:",inline"` // Embed the base fields
 
-	ApiUrl      string `yaml:"api_url"` // The base URL of the Mikrotik API (e.g., "https://10.10.10.10:8729/rest")
-	ApiUser     string `yaml:"api_user"`
-	ApiPassword string `yaml:"api_password"`
+	ApiUrl       string        `yaml:"api_url"` // The base URL of the Mikrotik API (e.g., "https://10.10.10.10:8729/rest")
+	ApiUser      string        `yaml:"api_user"`
+	ApiPassword  string        `yaml:"api_password"`
+	ApiVerifyTls bool          `yaml:"api_verify_tls"` // Whether to verify the TLS certificate of the Mikrotik API
+	ApiTimeout   time.Duration `yaml:"api_timeout"`    // Timeout for API requests (default: 30 seconds)
+
+	Debug bool `yaml:"debug"` // Enable debug logging for the Mikrotik backend
 }

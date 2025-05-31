@@ -89,6 +89,10 @@ func NewLocalController(cfg *config.Config) (*LocalController, error) {
 	return repo, nil
 }
 
+func (c LocalController) GetId() domain.InterfaceBackend {
+	return config.LocalBackendName
+}
+
 // region wireguard-related
 
 func (c LocalController) GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, error) {

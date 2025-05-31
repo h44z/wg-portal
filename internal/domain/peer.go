@@ -181,6 +181,8 @@ type PhysicalPeer struct {
 
 	BytesUpload   uint64 // upload bytes are the number of bytes that the remote peer has sent to the server
 	BytesDownload uint64 // upload bytes are the number of bytes that the remote peer has received from the server
+
+	BackendExtras map[string]any // additional backend specific extras, e.g. for the mikrotik backend this contains the name of the peer
 }
 
 func (p PhysicalPeer) GetPresharedKey() *wgtypes.Key {
