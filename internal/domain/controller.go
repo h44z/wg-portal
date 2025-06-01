@@ -10,6 +10,7 @@ const (
 // Controller extras can be used to store additional information available for specific controllers only.
 
 type MikrotikInterfaceExtras struct {
+	Id       string // internal mikrotik ID
 	Comment  string
 	Disabled bool
 }

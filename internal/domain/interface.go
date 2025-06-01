@@ -227,6 +227,11 @@ func (p *PhysicalInterface) SetExtras(extras any) {
 }
 
 func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
+	networks := make([]Cidr, 0, len(pi.Addresses))
+	for _, addr := range pi.Addresses {
+		networks = append(networks, addr.NetworkAddr())
+	}
+
 	// create a new basic interface with the data from the physical interface
 	iface := &Interface{
 		Identifier:                 pi.Identifier,
@@ -247,11 +252,11 @@ func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
 		Type:                       InterfaceTypeAny,
 		DriverType:                 pi.DeviceType,
 		Disabled:                   nil,
-		PeerDefNetworkStr:          "",
+		PeerDefNetworkStr:          CidrsToString(networks),
 		PeerDefDnsStr:              "",
 		PeerDefDnsSearchStr:        "",
 		PeerDefEndpoint:            "",
-		PeerDefAllowedIPsStr:       "",
+		PeerDefAllowedIPsStr:       CidrsToString(networks),
 		PeerDefMtu:                 pi.Mtu,
 		PeerDefPersistentKeepalive: 0,
 		PeerDefFirewallMark:        0,
@@ -291,6 +296,15 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 	pi.FirewallMark = i.FirewallMark
 	pi.DeviceUp = !i.IsDisabled()
 	pi.Addresses = i.Addresses
+
+	switch pi.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := MikrotikInterfaceExtras{
+			Comment:  i.DisplayName,
+			Disabled: i.IsDisabled(),
+		}
+		pi.SetExtras(extras)
+	}
 }
 
 type RoutingTableInfo struct {

@@ -3,6 +3,8 @@ package wgcontroller
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strconv"
 	"time"
 
 	"github.com/h44z/wg-portal/internal/config"
@@ -97,9 +99,26 @@ func (c MikrotikController) loadInterfaceData(
 		return nil, fmt.Errorf("failed to query interface %s: %v", deviceId, ifaceReply.Error)
 	}
 
+	ipv4, ipv6, err := c.loadIpAddresses(ctx, deviceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query IP addresses for interface %s: %v", deviceId, err)
+	}
+	addresses := c.convertIpAddresses(ipv4, ipv6)
+
+	interfaceModel, err := c.convertWireGuardInterface(wireGuardObj, ifaceReply.Data, addresses)
+	if err != nil {
+		return nil, fmt.Errorf("interface convert failed for %s: %w", deviceName, err)
+	}
+	return &interfaceModel, nil
+}
+
+func (c MikrotikController) loadIpAddresses(
+	ctx context.Context,
+	deviceName string,
+) (ipv4 []lowlevel.GenericJsonObject, ipv6 []lowlevel.GenericJsonObject, err error) {
 	addrV4Reply := c.client.Query(ctx, "/ip/address", &lowlevel.MikrotikRequestOptions{
 		PropList: []string{
-			"address", "network",
+			".id", "address", "network",
 		},
 		Filters: map[string]string{
 			"interface": deviceName,
@@ -108,12 +127,13 @@ func (c MikrotikController) loadInterfaceData(
 		},
 	})
 	if addrV4Reply.Status != lowlevel.MikrotikApiStatusOk {
-		return nil, fmt.Errorf("failed to query IPv4 addresses for interface %s: %v", deviceId, addrV4Reply.Error)
+		return nil, nil, fmt.Errorf("failed to query IPv4 addresses for interface %s: %v", deviceName,
+			addrV4Reply.Error)
 	}
 
 	addrV6Reply := c.client.Query(ctx, "/ipv6/address", &lowlevel.MikrotikRequestOptions{
 		PropList: []string{
-			"address", "network",
+			".id", "address", "network",
 		},
 		Filters: map[string]string{
 			"interface": deviceName,
@@ -122,26 +142,16 @@ func (c MikrotikController) loadInterfaceData(
 		},
 	})
 	if addrV6Reply.Status != lowlevel.MikrotikApiStatusOk {
-		return nil, fmt.Errorf("failed to query IPv6 addresses for interface %s: %v", deviceId, addrV6Reply.Error)
+		return nil, nil, fmt.Errorf("failed to query IPv6 addresses for interface %s: %v", deviceName,
+			addrV6Reply.Error)
 	}
 
-	interfaceModel, err := c.convertWireGuardInterface(wireGuardObj, ifaceReply.Data, addrV4Reply.Data,
-		addrV6Reply.Data)
-	if err != nil {
-		return nil, fmt.Errorf("interface convert failed for %s: %w", deviceName, err)
-	}
-	return &interfaceModel, nil
+	return addrV4Reply.Data, addrV6Reply.Data, nil
 }
 
-func (c MikrotikController) convertWireGuardInterface(
-	wg, iface lowlevel.GenericJsonObject,
+func (c MikrotikController) convertIpAddresses(
 	ipv4, ipv6 []lowlevel.GenericJsonObject,
-) (
-	domain.PhysicalInterface,
-	error,
-) {
-	// read data from wgctrl interface
-
+) []domain.Cidr {
 	addresses := make([]domain.Cidr, 0, len(ipv4)+len(ipv6))
 	for _, addr := range append(ipv4, ipv6...) {
 		addrStr := addr.GetString("address")
@@ -156,6 +166,16 @@ func (c MikrotikController) convertWireGuardInterface(
 		addresses = append(addresses, cidr)
 	}
 
+	return addresses
+}
+
+func (c MikrotikController) convertWireGuardInterface(
+	wg, iface lowlevel.GenericJsonObject,
+	addresses []domain.Cidr,
+) (
+	domain.PhysicalInterface,
+	error,
+) {
 	pi := domain.PhysicalInterface{
 		Identifier: domain.InterfaceIdentifier(wg.GetString("name")),
 		KeyPair: domain.KeyPair{
@@ -174,6 +194,7 @@ func (c MikrotikController) convertWireGuardInterface(
 	}
 
 	pi.SetExtras(domain.MikrotikInterfaceExtras{
+		Id:       wg.GetString(".id"),
 		Comment:  wg.GetString("comment"),
 		Disabled: wg.GetBool("disabled"),
 	})
@@ -270,16 +291,202 @@ func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 }
 
 func (c MikrotikController) SaveInterface(
-	_ context.Context,
+	ctx context.Context,
 	id domain.InterfaceIdentifier,
 	updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error),
 ) error {
-	// TODO implement me
+	physicalInterface, err := c.getOrCreateInterface(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	deviceId := physicalInterface.GetExtras().(domain.MikrotikInterfaceExtras).Id
+	if updateFunc != nil {
+		physicalInterface, err = updateFunc(physicalInterface)
+		if err != nil {
+			return err
+		}
+		newExtras := physicalInterface.GetExtras().(domain.MikrotikInterfaceExtras)
+		newExtras.Id = deviceId // ensure the ID is not changed
+		physicalInterface.SetExtras(newExtras)
+	}
+
+	if err := c.updateInterface(ctx, physicalInterface); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (c MikrotikController) DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error {
-	// TODO implement me
+func (c MikrotikController) getOrCreateInterface(
+	ctx context.Context,
+	id domain.InterfaceIdentifier,
+) (*domain.PhysicalInterface, error) {
+	wgReply := c.client.Query(ctx, "/interface/wireguard", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			".id", "name", "public-key", "private-key", "listen-port", "mtu", "disabled", "running",
+		},
+		Filters: map[string]string{
+			"name": string(id),
+		},
+	})
+	if wgReply.Status == lowlevel.MikrotikApiStatusOk && len(wgReply.Data) > 0 {
+		return c.loadInterfaceData(ctx, wgReply.Data[0])
+	}
+
+	// create a new interface if it does not exist
+	createReply := c.client.Create(ctx, "/interface/wireguard", lowlevel.GenericJsonObject{
+		"name": string(id),
+	})
+	if wgReply.Status == lowlevel.MikrotikApiStatusOk {
+		return c.loadInterfaceData(ctx, createReply.Data)
+	}
+
+	return nil, fmt.Errorf("failed to create interface %s: %v", id, createReply.Error)
+}
+
+func (c MikrotikController) updateInterface(ctx context.Context, pi *domain.PhysicalInterface) error {
+	extras := pi.GetExtras().(domain.MikrotikInterfaceExtras)
+	interfaceId := extras.Id
+	wgReply := c.client.Update(ctx, "/interface/wireguard/"+interfaceId, lowlevel.GenericJsonObject{
+		"name":        pi.Identifier,
+		"comment":     extras.Comment,
+		"mtu":         strconv.Itoa(pi.Mtu),
+		"listen-port": strconv.Itoa(pi.ListenPort),
+		"private-key": pi.KeyPair.PrivateKey,
+		"disabled":    strconv.FormatBool(!pi.DeviceUp),
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("failed to update interface %s: %v", pi.Identifier, wgReply.Error)
+	}
+
+	// update the interface's addresses
+	currentV4, currentV6, err := c.loadIpAddresses(ctx, string(pi.Identifier))
+	if err != nil {
+		return fmt.Errorf("failed to load current addresses for interface %s: %v", pi.Identifier, err)
+	}
+	currentAddresses := c.convertIpAddresses(currentV4, currentV6)
+
+	// get all addresses that are currently not in the interface, only in pi
+	newAddresses := make([]domain.Cidr, 0, len(pi.Addresses))
+	for _, addr := range pi.Addresses {
+		if slices.Contains(currentAddresses, addr) {
+			continue
+		}
+		newAddresses = append(newAddresses, addr)
+	}
+	// get obsolete addresses that are in the interface, but not in pi
+	obsoleteAddresses := make([]domain.Cidr, 0, len(currentAddresses))
+	for _, addr := range currentAddresses {
+		if slices.Contains(pi.Addresses, addr) {
+			continue
+		}
+		obsoleteAddresses = append(obsoleteAddresses, addr)
+	}
+
+	// update the IP addresses for the interface
+	if err := c.updateIpAddresses(ctx, string(pi.Identifier), currentV4, currentV6,
+		newAddresses, obsoleteAddresses); err != nil {
+		return fmt.Errorf("failed to update IP addresses for interface %s: %v", pi.Identifier, err)
+	}
+
+	return nil
+}
+
+func (c MikrotikController) updateIpAddresses(
+	ctx context.Context,
+	deviceName string,
+	currentV4, currentV6 []lowlevel.GenericJsonObject,
+	new, obsolete []domain.Cidr,
+) error {
+	// first, delete all obsolete addresses
+	for _, addr := range obsolete {
+		// find ID of the address to delete
+		if addr.IsV4() {
+			for _, a := range currentV4 {
+				if a.GetString("address") == addr.String() {
+					// delete the address
+					reply := c.client.Delete(ctx, "/ip/address/"+a.GetString(".id"))
+					if reply.Status != lowlevel.MikrotikApiStatusOk {
+						return fmt.Errorf("failed to delete obsolete IPv4 address %s: %v", addr, reply.Error)
+					}
+					break
+				}
+			}
+		} else {
+			for _, a := range currentV6 {
+				if a.GetString("address") == addr.String() {
+					// delete the address
+					reply := c.client.Delete(ctx, "/ipv6/address/"+a.GetString(".id"))
+					if reply.Status != lowlevel.MikrotikApiStatusOk {
+						return fmt.Errorf("failed to delete obsolete IPv6 address %s: %v", addr, reply.Error)
+					}
+					break
+				}
+			}
+		}
+	}
+
+	// then, add all new addresses
+	for _, addr := range new {
+		var createPath string
+		if addr.IsV4() {
+			createPath = "/ip/address"
+		} else {
+			createPath = "/ipv6/address"
+		}
+
+		// create the address
+		reply := c.client.Create(ctx, createPath, lowlevel.GenericJsonObject{
+			"address":   addr.String(),
+			"interface": deviceName,
+		})
+		if reply.Status != lowlevel.MikrotikApiStatusOk {
+			return fmt.Errorf("failed to create new address %s: %v", addr, reply.Error)
+		}
+	}
+
+	return nil
+}
+
+func (c MikrotikController) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {
+	// delete the interface's addresses
+	currentV4, currentV6, err := c.loadIpAddresses(ctx, string(id))
+	if err != nil {
+		return fmt.Errorf("failed to load current addresses for interface %s: %v", id, err)
+	}
+	for _, a := range currentV4 {
+		// delete the address
+		reply := c.client.Delete(ctx, "/ip/address/"+a.GetString(".id"))
+		if reply.Status != lowlevel.MikrotikApiStatusOk {
+			return fmt.Errorf("failed to delete IPv4 address %s: %v", a.GetString("address"), reply.Error)
+		}
+	}
+	for _, a := range currentV6 {
+		// delete the address
+		reply := c.client.Delete(ctx, "/ipv6/address/"+a.GetString(".id"))
+		if reply.Status != lowlevel.MikrotikApiStatusOk {
+			return fmt.Errorf("failed to delete IPv6 address %s: %v", a.GetString("address"), reply.Error)
+		}
+	}
+
+	// delete the WireGuard interface
+	wgReply := c.client.Query(ctx, "/interface/wireguard", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{".id"},
+		Filters: map[string]string{
+			"name": string(id),
+		},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk || len(wgReply.Data) == 0 {
+		return fmt.Errorf("unable to find WireGuard interface %s: %v", id, wgReply.Error)
+	}
+
+	deviceId := wgReply.Data[0].GetString(".id")
+	deleteReply := c.client.Delete(ctx, "/interface/wireguard/"+deviceId)
+	if deleteReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("failed to delete WireGuard interface %s: %v", id, deleteReply.Error)
+	}
+
 	return nil
 }
 

@@ -45,11 +45,15 @@ type MikrotikApiError struct {
 	Details string `json:"details,omitempty"`
 }
 
-func (e MikrotikApiError) String() string {
+func (e *MikrotikApiError) String() string {
+	if e == nil {
+		return "no error"
+	}
 	return fmt.Sprintf("API error %d: %s - %s", e.Code, e.Message, e.Details)
 }
 
 type GenericJsonObject map[string]any
+type EmptyResponse struct{}
 
 func (JsonObject GenericJsonObject) GetString(key string) string {
 	if value, ok := JsonObject[key]; ok {
@@ -211,8 +215,22 @@ func (m *MikrotikApiClient) prepareGetRequest(ctx context.Context, fullUrl strin
 	return req, nil
 }
 
-func (m *MikrotikApiClient) preparePostRequest(
+func (m *MikrotikApiClient) prepareDeleteRequest(ctx context.Context, fullUrl string) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, fullUrl, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+	if m.cfg.ApiUser != "" && m.cfg.ApiPassword != "" {
+		req.SetBasicAuth(m.cfg.ApiUser, m.cfg.ApiPassword)
+	}
+
+	return req, nil
+}
+
+func (m *MikrotikApiClient) preparePayloadRequest(
 	ctx context.Context,
+	method string,
 	fullUrl string,
 	payload GenericJsonObject,
 ) (*http.Request, error) {
@@ -222,7 +240,7 @@ func (m *MikrotikApiClient) preparePostRequest(
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fullUrl, bytes.NewReader(payloadBytes))
+	req, err := http.NewRequestWithContext(ctx, method, fullUrl, bytes.NewReader(payloadBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -261,6 +279,12 @@ func parseHttpResponse[T any](resp *http.Response, err error) MikrotikApiRespons
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		var data T
+
+		// if the type of T is EmptyResponse, we can return an empty response with just the status
+		if _, ok := any(data).(EmptyResponse); ok {
+			return MikrotikApiResponse[T]{Status: MikrotikApiStatusOk, Code: resp.StatusCode}
+		}
+
 		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			return errToApiResponse[T](MikrotikApiErrorCodeResponseDecodeFailed, "failed to decode response", err)
 		}
@@ -321,6 +345,74 @@ func (m *MikrotikApiClient) Get(
 	return response
 }
 
+func (m *MikrotikApiClient) Create(
+	ctx context.Context,
+	command string,
+	payload GenericJsonObject,
+) MikrotikApiResponse[GenericJsonObject] {
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	defer cancel()
+
+	fullUrl := m.getFullPath(command)
+
+	req, err := m.preparePayloadRequest(apiCtx, http.MethodPut, fullUrl, payload)
+	if err != nil {
+		return errToApiResponse[GenericJsonObject](MikrotikApiErrorCodeRequestPreparationFailed,
+			"failed to create request", err)
+	}
+
+	start := time.Now()
+	m.debugLog("executing API put", "url", fullUrl)
+	response := parseHttpResponse[GenericJsonObject](m.client.Do(req))
+	m.debugLog("retrieved API put result", "url", fullUrl, "duration", time.Since(start).String())
+	return response
+}
+
+func (m *MikrotikApiClient) Update(
+	ctx context.Context,
+	command string,
+	payload GenericJsonObject,
+) MikrotikApiResponse[GenericJsonObject] {
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	defer cancel()
+
+	fullUrl := m.getFullPath(command)
+
+	req, err := m.preparePayloadRequest(apiCtx, http.MethodPatch, fullUrl, payload)
+	if err != nil {
+		return errToApiResponse[GenericJsonObject](MikrotikApiErrorCodeRequestPreparationFailed,
+			"failed to create request", err)
+	}
+
+	start := time.Now()
+	m.debugLog("executing API patch", "url", fullUrl)
+	response := parseHttpResponse[GenericJsonObject](m.client.Do(req))
+	m.debugLog("retrieved API patch result", "url", fullUrl, "duration", time.Since(start).String())
+	return response
+}
+
+func (m *MikrotikApiClient) Delete(
+	ctx context.Context,
+	command string,
+) MikrotikApiResponse[EmptyResponse] {
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	defer cancel()
+
+	fullUrl := m.getFullPath(command)
+
+	req, err := m.prepareDeleteRequest(apiCtx, fullUrl)
+	if err != nil {
+		return errToApiResponse[EmptyResponse](MikrotikApiErrorCodeRequestPreparationFailed,
+			"failed to create request", err)
+	}
+
+	start := time.Now()
+	m.debugLog("executing API delete", "url", fullUrl)
+	response := parseHttpResponse[EmptyResponse](m.client.Do(req))
+	m.debugLog("retrieved API delete result", "url", fullUrl, "duration", time.Since(start).String())
+	return response
+}
+
 func (m *MikrotikApiClient) ExecList(
 	ctx context.Context,
 	command string,
@@ -331,16 +423,16 @@ func (m *MikrotikApiClient) ExecList(
 
 	fullUrl := m.getFullPath(command)
 
-	req, err := m.preparePostRequest(apiCtx, fullUrl, payload)
+	req, err := m.preparePayloadRequest(apiCtx, http.MethodPost, fullUrl, payload)
 	if err != nil {
 		return errToApiResponse[[]GenericJsonObject](MikrotikApiErrorCodeRequestPreparationFailed,
 			"failed to create request", err)
 	}
 
 	start := time.Now()
-	m.debugLog("executing API get", "url", fullUrl)
+	m.debugLog("executing API post", "url", fullUrl)
 	response := parseHttpResponse[[]GenericJsonObject](m.client.Do(req))
-	m.debugLog("retrieved API get result", "url", fullUrl, "duration", time.Since(start).String())
+	m.debugLog("retrieved API post result", "url", fullUrl, "duration", time.Since(start).String())
 	return response
 }
 
