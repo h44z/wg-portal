@@ -1,6 +1,7 @@
 package lowlevel
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -198,11 +199,35 @@ func (m *MikrotikApiClient) getFullPath(command string) string {
 }
 
 func (m *MikrotikApiClient) prepareGetRequest(ctx context.Context, fullUrl string) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", fullUrl, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fullUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
+	if m.cfg.ApiUser != "" && m.cfg.ApiPassword != "" {
+		req.SetBasicAuth(m.cfg.ApiUser, m.cfg.ApiPassword)
+	}
+
+	return req, nil
+}
+
+func (m *MikrotikApiClient) preparePostRequest(
+	ctx context.Context,
+	fullUrl string,
+	payload GenericJsonObject,
+) (*http.Request, error) {
+	// marshal the payload to JSON
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fullUrl, bytes.NewReader(payloadBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	if m.cfg.ApiUser != "" && m.cfg.ApiPassword != "" {
 		req.SetBasicAuth(m.cfg.ApiUser, m.cfg.ApiPassword)
 	}
@@ -292,6 +317,29 @@ func (m *MikrotikApiClient) Get(
 	start := time.Now()
 	m.debugLog("executing API get", "url", fullUrl)
 	response := parseHttpResponse[GenericJsonObject](m.client.Do(req))
+	m.debugLog("retrieved API get result", "url", fullUrl, "duration", time.Since(start).String())
+	return response
+}
+
+func (m *MikrotikApiClient) ExecList(
+	ctx context.Context,
+	command string,
+	payload GenericJsonObject,
+) MikrotikApiResponse[[]GenericJsonObject] {
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	defer cancel()
+
+	fullUrl := m.getFullPath(command)
+
+	req, err := m.preparePostRequest(apiCtx, fullUrl, payload)
+	if err != nil {
+		return errToApiResponse[[]GenericJsonObject](MikrotikApiErrorCodeRequestPreparationFailed,
+			"failed to create request", err)
+	}
+
+	start := time.Now()
+	m.debugLog("executing API get", "url", fullUrl)
+	response := parseHttpResponse[[]GenericJsonObject](m.client.Do(req))
 	m.debugLog("retrieved API get result", "url", fullUrl, "duration", time.Since(start).String())
 	return response
 }

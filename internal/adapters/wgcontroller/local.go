@@ -10,7 +10,9 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
+	probing "github.com/prometheus-community/pro-bing"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 	"golang.zx2c4.com/wireguard/wgctrl"
@@ -812,3 +814,34 @@ func (c LocalController) DeleteRouteRules(_ context.Context, rules []domain.Rout
 }
 
 // endregion routing-related
+
+// region statistics-related
+
+func (c LocalController) PingAddresses(
+	ctx context.Context,
+	addr string,
+) (*domain.PingerResult, error) {
+	pinger, err := probing.NewPinger(addr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to instantiate pinger for %s: %w", addr, err)
+	}
+
+	checkCount := 1
+	pinger.SetPrivileged(!c.cfg.Statistics.PingUnprivileged)
+	pinger.Count = checkCount
+	pinger.Timeout = 2 * time.Second
+	err = pinger.RunWithContext(ctx) // Blocks until finished.
+	if err != nil {
+		return nil, fmt.Errorf("failed to ping %s: %w", addr, err)
+	}
+
+	stats := pinger.Statistics()
+
+	return &domain.PingerResult{
+		PacketsRecv: stats.PacketsRecv,
+		PacketsSent: stats.PacketsSent,
+		Rtts:        stats.Rtts,
+	}, nil
+}
+
+// endregion statistics-related

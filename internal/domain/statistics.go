@@ -1,6 +1,8 @@
 package domain
 
-import "time"
+import (
+	"time"
+)
 
 type PeerStatus struct {
 	PeerId    PeerIdentifier `gorm:"primaryKey;column:identifier"`
@@ -34,4 +36,26 @@ type InterfaceStatus struct {
 
 	BytesReceived    uint64 `gorm:"column:received"`
 	BytesTransmitted uint64 `gorm:"column:transmitted"`
+}
+
+type PingerResult struct {
+	PacketsRecv int
+	PacketsSent int
+	Rtts        []time.Duration
+}
+
+func (r PingerResult) IsPingable() bool {
+	return r.PacketsRecv > 0 && r.PacketsSent > 0 && len(r.Rtts) > 0
+}
+
+func (r PingerResult) AverageRtt() time.Duration {
+	if len(r.Rtts) == 0 {
+		return 0
+	}
+
+	var total time.Duration
+	for _, rtt := range r.Rtts {
+		total += rtt
+	}
+	return total / time.Duration(len(r.Rtts))
 }

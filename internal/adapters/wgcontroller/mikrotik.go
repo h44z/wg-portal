@@ -336,3 +336,40 @@ func (c MikrotikController) DeleteRouteRules(_ context.Context, rules []domain.R
 }
 
 // endregion routing-related
+
+// region statistics-related
+
+func (c MikrotikController) PingAddresses(
+	ctx context.Context,
+	addr string,
+) (*domain.PingerResult, error) {
+	wgReply := c.client.ExecList(ctx, "/tool/ping",
+		// limit to 1 packet with a max running time of 2 seconds
+		lowlevel.GenericJsonObject{"address": addr, "count": 1, "interval": "00:00:02"},
+	)
+
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return nil, fmt.Errorf("failed to ping %s: %v", addr, wgReply.Error)
+	}
+
+	var result domain.PingerResult
+	for _, item := range wgReply.Data {
+		result.PacketsRecv += item.GetInt("received")
+		result.PacketsSent += item.GetInt("sent")
+
+		rttStr := item.GetString("avg-rtt")
+		if rttStr != "" {
+			rtt, err := time.ParseDuration(rttStr)
+			if err == nil {
+				result.Rtts = append(result.Rtts, rtt)
+			} else {
+				// use a high value to indicate failure or timeout
+				result.Rtts = append(result.Rtts, 999999*time.Millisecond)
+			}
+		}
+	}
+
+	return &result, nil
+}
+
+// endregion statistics-related
