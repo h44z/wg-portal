@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/h44z/wg-portal/internal/config"
@@ -210,7 +211,7 @@ func (c MikrotikController) GetPeers(ctx context.Context, deviceId domain.Interf
 		PropList: []string{
 			".id", "name", "allowed-address", "client-address", "client-endpoint", "client-keepalive", "comment",
 			"current-endpoint-address", "current-endpoint-port", "last-handshake", "persistent-keepalive",
-			"public-key", "private-key", "preshared-key", "mtu", "disabled", "rx", "tx", "responder",
+			"public-key", "private-key", "preshared-key", "mtu", "disabled", "rx", "tx", "responder", "client-dns",
 		},
 		Filters: map[string]string{
 			"interface": string(deviceId),
@@ -241,7 +242,7 @@ func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 	error,
 ) {
 	keepAliveSeconds := 0
-	duration, err := time.ParseDuration(peer.GetString("client-keepalive"))
+	duration, err := time.ParseDuration(peer.GetString("persistent-keepalive"))
 	if err == nil {
 		keepAliveSeconds = int(duration.Seconds())
 	}
@@ -261,6 +262,12 @@ func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 
 	allowedAddresses, _ := domain.CidrsFromString(peer.GetString("allowed-address"))
 
+	clientKeepAliveSeconds := 0
+	duration, err = time.ParseDuration(peer.GetString("client-keepalive"))
+	if err == nil {
+		clientKeepAliveSeconds = int(duration.Seconds())
+	}
+
 	peerModel := domain.PhysicalPeer{
 		Identifier: domain.PeerIdentifier(peer.GetString("public-key")),
 		Endpoint:   currentEndpoint,
@@ -279,12 +286,15 @@ func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 	}
 
 	peerModel.SetExtras(domain.MikrotikPeerExtras{
-		Name:           peer.GetString("name"),
-		Comment:        peer.GetString("comment"),
-		IsResponder:    peer.GetBool("responder"),
-		ClientEndpoint: peer.GetString("client-endpoint"),
-		ClientAddress:  peer.GetString("client-address"),
-		Disabled:       peer.GetBool("disabled"),
+		Id:              peer.GetString(".id"),
+		Name:            peer.GetString("name"),
+		Comment:         peer.GetString("comment"),
+		IsResponder:     peer.GetBool("responder"),
+		Disabled:        peer.GetBool("disabled"),
+		ClientEndpoint:  peer.GetString("client-endpoint"),
+		ClientAddress:   peer.GetString("client-address"),
+		ClientDns:       peer.GetString("client-dns"),
+		ClientKeepalive: clientKeepAliveSeconds,
 	})
 
 	return peerModel, nil
@@ -477,8 +487,11 @@ func (c MikrotikController) DeleteInterface(ctx context.Context, id domain.Inter
 			"name": string(id),
 		},
 	})
-	if wgReply.Status != lowlevel.MikrotikApiStatusOk || len(wgReply.Data) == 0 {
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
 		return fmt.Errorf("unable to find WireGuard interface %s: %v", id, wgReply.Error)
+	}
+	if len(wgReply.Data) == 0 {
+		return nil // interface does not exist, nothing to delete
 	}
 
 	deviceId := wgReply.Data[0].GetString(".id")
@@ -491,21 +504,136 @@ func (c MikrotikController) DeleteInterface(ctx context.Context, id domain.Inter
 }
 
 func (c MikrotikController) SavePeer(
-	_ context.Context,
+	ctx context.Context,
 	deviceId domain.InterfaceIdentifier,
 	id domain.PeerIdentifier,
 	updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error),
 ) error {
-	// TODO implement me
+	physicalPeer, err := c.getOrCreatePeer(ctx, deviceId, id)
+	if err != nil {
+		return err
+	}
+
+	peerId := physicalPeer.GetExtras().(domain.MikrotikPeerExtras).Id
+	physicalPeer, err = updateFunc(physicalPeer)
+	if err != nil {
+		return err
+	}
+	newExtras := physicalPeer.GetExtras().(domain.MikrotikPeerExtras)
+	newExtras.Id = peerId // ensure the ID is not changed
+	physicalPeer.SetExtras(newExtras)
+
+	if err := c.updatePeer(ctx, deviceId, physicalPeer); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c MikrotikController) getOrCreatePeer(
+	ctx context.Context,
+	deviceId domain.InterfaceIdentifier,
+	id domain.PeerIdentifier,
+) (*domain.PhysicalPeer, error) {
+	wgReply := c.client.Query(ctx, "/interface/wireguard/peers", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			".id", "name", "public-key", "private-key", "preshared-key", "persistent-keepalive", "client-address",
+			"client-endpoint", "client-keepalive", "allowed-address", "client-dns", "comment", "disabled", "responder",
+		},
+		Filters: map[string]string{
+			"public-key": string(id),
+			"interface":  string(deviceId),
+		},
+	})
+	if wgReply.Status == lowlevel.MikrotikApiStatusOk && len(wgReply.Data) > 0 {
+		existingPeer, err := c.convertWireGuardPeer(wgReply.Data[0])
+		if err != nil {
+			return nil, err
+		}
+		return &existingPeer, nil
+	}
+
+	// create a new peer if it does not exist
+	createReply := c.client.Create(ctx, "/interface/wireguard/peers", lowlevel.GenericJsonObject{
+		"name":            fmt.Sprintf("tmp-wg-%s", id[0:8]),
+		"interface":       string(deviceId),
+		"public-key":      string(id),           // public key will be set later
+		"allowed-address": "169.254.254.254/32", // allowed addresses will be set later
+	})
+	if createReply.Status == lowlevel.MikrotikApiStatusOk {
+		newPeer, err := c.convertWireGuardPeer(createReply.Data)
+		if err != nil {
+			return nil, err
+		}
+		return &newPeer, nil
+	}
+
+	return nil, fmt.Errorf("failed to create peer %s for interface %s: %v", id, deviceId, createReply.Error)
+}
+
+func (c MikrotikController) updatePeer(
+	ctx context.Context,
+	deviceId domain.InterfaceIdentifier,
+	pp *domain.PhysicalPeer,
+) error {
+	extras := pp.GetExtras().(domain.MikrotikPeerExtras)
+	peerId := extras.Id
+
+	endpoint := pp.Endpoint
+	endpointPort := "51820" // default port if not set
+	if s := strings.Split(endpoint, ":"); len(s) == 2 {
+		endpoint = s[0]
+		endpointPort = s[1]
+	}
+
+	wgReply := c.client.Update(ctx, "/interface/wireguard/peers/"+peerId, lowlevel.GenericJsonObject{
+		"name":                 extras.Name,
+		"comment":              extras.Comment,
+		"preshared-key":        pp.PresharedKey,
+		"public-key":           pp.KeyPair.PublicKey,
+		"private-key":          pp.KeyPair.PrivateKey,
+		"persistent-keepalive": (time.Duration(pp.PersistentKeepalive) * time.Second).String(),
+		"disabled":             strconv.FormatBool(extras.Disabled),
+		"responder":            strconv.FormatBool(extras.IsResponder),
+		"client-endpoint":      extras.ClientEndpoint,
+		"client-address":       extras.ClientAddress,
+		"client-keepalive":     (time.Duration(extras.ClientKeepalive) * time.Second).String(),
+		"client-dns":           extras.ClientDns,
+		"endpoint-address":     endpoint,
+		"endpoint-port":        endpointPort,
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("failed to update peer %s on interface %s: %v", pp.Identifier, deviceId, wgReply.Error)
+	}
+
 	return nil
 }
 
 func (c MikrotikController) DeletePeer(
-	_ context.Context,
+	ctx context.Context,
 	deviceId domain.InterfaceIdentifier,
 	id domain.PeerIdentifier,
 ) error {
-	// TODO implement me
+	wgReply := c.client.Query(ctx, "/interface/wireguard/peers", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{".id"},
+		Filters: map[string]string{
+			"public-key": string(id),
+			"interface":  string(deviceId),
+		},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("unable to find WireGuard peer %s for interface %s: %v", id, deviceId, wgReply.Error)
+	}
+	if len(wgReply.Data) == 0 {
+		return nil // peer does not exist, nothing to delete
+	}
+
+	peerId := wgReply.Data[0].GetString(".id")
+	deleteReply := c.client.Delete(ctx, "/interface/wireguard/peers/"+peerId)
+	if deleteReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("failed to delete WireGuard peer %s for interface %s: %v", id, deviceId, deleteReply.Error)
+	}
+
 	return nil
 }
 

@@ -42,7 +42,7 @@ type MikrotikApiResponse[T any] struct {
 type MikrotikApiError struct {
 	Code    int    `json:"error,omitempty"`
 	Message string `json:"message,omitempty"`
-	Details string `json:"details,omitempty"`
+	Details string `json:"detail,omitempty"`
 }
 
 func (e *MikrotikApiError) String() string {

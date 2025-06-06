@@ -271,7 +271,15 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 		extras := pp.GetExtras().(MikrotikPeerExtras)
 		peer.Notes = extras.Comment
 		peer.DisplayName = extras.Name
-		peer.Endpoint = NewConfigOption(extras.ClientEndpoint, true)
+		if extras.ClientEndpoint != "" { // if the client endpoint is set, we assume that this is a client peer
+			peer.Endpoint = NewConfigOption(extras.ClientEndpoint, true)
+			peer.Interface.Type = InterfaceTypeClient
+			peer.Interface.Addresses, _ = CidrsFromString(extras.ClientAddress)
+			peer.Interface.DnsStr = NewConfigOption(extras.ClientDns, true)
+			peer.PersistentKeepalive = NewConfigOption(extras.ClientKeepalive, true)
+		} else {
+			peer.Interface.Type = InterfaceTypeServer
+		}
 		if extras.Disabled {
 			peer.Disabled = &now
 			peer.DisabledReason = "Disabled by Mikrotik controller"
@@ -302,6 +310,22 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 	pp.PresharedKey = p.PresharedKey
 	pp.PublicKey = p.Interface.PublicKey
 	pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()
+
+	switch pp.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := MikrotikPeerExtras{
+			Id:              "",
+			Name:            p.DisplayName,
+			Comment:         p.Notes,
+			IsResponder:     false,
+			Disabled:        p.IsDisabled(),
+			ClientEndpoint:  p.Endpoint.GetValue(),
+			ClientAddress:   CidrsToString(p.Interface.Addresses),
+			ClientDns:       p.Interface.DnsStr.GetValue(),
+			ClientKeepalive: p.PersistentKeepalive.GetValue(),
+		}
+		pp.SetExtras(extras)
+	}
 }
 
 type PeerCreationRequest struct {

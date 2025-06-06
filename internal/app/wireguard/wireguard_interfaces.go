@@ -787,6 +787,17 @@ func (m Manager) importInterface(
 	iface.Backend = backend.GetId()
 	iface.PeerDefAllowedIPsStr = iface.AddressStr()
 
+	// try to predict the interface type based on the number of peers
+	switch len(peers) {
+	case 0:
+		iface.Type = domain.InterfaceTypeAny // no peers means this is an unknown interface
+	case 1:
+		iface.Type = domain.InterfaceTypeClient // one peer means this is a client interface
+	default: // multiple peers means this is a server interface
+
+		iface.Type = domain.InterfaceTypeServer
+	}
+
 	existingInterface, err := m.db.GetInterface(ctx, iface.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return err

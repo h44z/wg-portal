@@ -16,10 +16,13 @@ type MikrotikInterfaceExtras struct {
 }
 
 type MikrotikPeerExtras struct {
-	Name           string
-	Comment        string
-	IsResponder    bool
-	ClientEndpoint string
-	ClientAddress  string
-	Disabled       bool
+	Id              string // internal mikrotik ID
+	Name            string
+	Comment         string
+	IsResponder     bool
+	Disabled        bool
+	ClientEndpoint  string
+	ClientAddress   string
+	ClientDns       string
+	ClientKeepalive int
 }
