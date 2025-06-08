@@ -136,6 +136,7 @@ func (p *Peer) OverwriteUserEditableFields(userPeer *Peer, cfg *config.Config) {
 		p.Interface.PublicKey = userPeer.Interface.PublicKey
 		p.Interface.PrivateKey = userPeer.Interface.PrivateKey
 		p.PresharedKey = userPeer.PresharedKey
+		p.Identifier = userPeer.Identifier
 	}
 	p.Interface.Mtu = userPeer.Interface.Mtu
 	p.PersistentKeepalive = userPeer.PersistentKeepalive
