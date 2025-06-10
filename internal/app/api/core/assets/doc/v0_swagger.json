@@ -57,6 +57,52 @@
                 }
             }
         },
+        "/auth/login/{provider}/callback": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Handle the OAuth callback.",
+                "operationId": "auth_handleOauthCallbackGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.LoginProviderInfo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login/{provider}/init": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Initiate the OAuth login flow.",
+                "operationId": "auth_handleOauthInitiateGet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.LoginProviderInfo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/logout": {
             "post": {
                 "produces": [

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -132,7 +133,7 @@ func (e AuthEndpoint) handleSessionInfoGet() http.HandlerFunc {
 // @Summary Initiate the OAuth login flow.
 // @Produce json
 // @Success 200 {object} []model.LoginProviderInfo
-// @Router /auth/{provider}/init [get]
+// @Router /auth/login/{provider}/init [get]
 func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentSession := e.session.GetData(r.Context())
@@ -177,6 +178,8 @@ func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 
 		authCodeUrl, state, nonce, err := e.authService.OauthLoginStep1(context.Background(), provider)
 		if err != nil {
+			slog.Debug("failed to create oauth auth code URL",
+				"provider", provider, "error", err)
 			if autoRedirect && e.isValidReturnUrl(returnTo) {
 				redirectToReturn()
 			} else {
@@ -211,7 +214,7 @@ func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 // @Summary Handle the OAuth callback.
 // @Produce json
 // @Success 200 {object} []model.LoginProviderInfo
-// @Router /auth/{provider}/callback [get]
+// @Router /auth/login/{provider}/callback [get]
 func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentSession := e.session.GetData(r.Context())
@@ -249,6 +252,8 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 		oauthState := request.Query(r, "state")
 
 		if provider != currentSession.OauthProvider {
+			slog.Debug("invalid oauth provider in callback",
+				"expected", currentSession.OauthProvider, "got", provider, "state", oauthState)
 			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				redirectToReturn()
 			} else {
@@ -258,6 +263,8 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 			return
 		}
 		if oauthState != currentSession.OauthState {
+			slog.Debug("invalid oauth state in callback",
+				"expected", currentSession.OauthState, "got", oauthState, "provider", provider)
 			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				redirectToReturn()
 			} else {
@@ -267,11 +274,13 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 			return
 		}
 
-		loginCtx, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
+		loginCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // avoid long waits
 		user, err := e.authService.OauthLoginStep2(loginCtx, provider, currentSession.OauthNonce,
 			oauthCode)
 		cancel()
 		if err != nil {
+			slog.Debug("failed to process oauth code",
+				"provider", provider, "state", oauthState, "error", err)
 			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 				redirectToReturn()
 			} else {
