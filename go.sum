@@ -81,10 +81,10 @@ github.com/go-sql-driver/mysql v1.9.2 h1:4cNKDYQ1I84SXslGddlsrMhc8k4LeDVj6Ad6WRj
 github.com/go-sql-driver/mysql v1.9.2/go.mod h1:qn46aNg1333BRMNU69Lq93t8du/dwxI64Gl8i5p1WMU=
 github.com/go-test/deep v1.1.1 h1:0r/53hagsehfO4bzD2Pgr/+RgHqhmf+k1Bpse2cTu1U=
 github.com/go-test/deep v1.1.1/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncVwcsE=
-github.com/go-webauthn/webauthn v0.12.3 h1:hHQl1xkUuabUU9uS+ISNCMLs9z50p9mDUZI/FmkayNE=
-github.com/go-webauthn/webauthn v0.12.3/go.mod h1:4JRe8Z3W7HIw8NGEWn2fnUwecoDzkkeach/NnvhkqGY=
-github.com/go-webauthn/x v0.1.20 h1:brEBDqfiPtNNCdS/peu8gARtq8fIPsHz0VzpPjGvgiw=
-github.com/go-webauthn/x v0.1.20/go.mod h1:n/gAc8ssZJGATM0qThE+W+vfgXiMedsWi3wf/C4lld0=
+github.com/go-webauthn/webauthn v0.13.0 h1:cJIL1/1l+22UekVhipziAaSgESJxokYkowUqAIsWs0Y=
+github.com/go-webauthn/webauthn v0.13.0/go.mod h1:Oy9o2o79dbLKRPZWWgRIOdtBGAhKnDIaBp2PFkICRHs=
+github.com/go-webauthn/x v0.1.21 h1:nFbckQxudvHEJn2uy1VEi713MeSpApoAv9eRqsb9AdQ=
+github.com/go-webauthn/x v0.1.21/go.mod h1:sEYohtg1zL4An1TXIUIQ5csdmoO+WO0R4R2pGKaHYKA=
 github.com/golang-jwt/jwt/v5 v5.0.0/go.mod h1:pqrtFR0X4osieyHYxtmOUWsAWrfe1Q5UVIyoH402zdk=
 github.com/golang-jwt/jwt/v5 v5.2.0/go.mod h1:pqrtFR0X4osieyHYxtmOUWsAWrfe1Q5UVIyoH402zdk=
 github.com/golang-jwt/jwt/v5 v5.2.2 h1:Rl4B7itRWVtYIHFrSNd7vhTiz9UpLdi6gZhZ3wEeDy8=
@@ -96,8 +96,8 @@ github.com/golang-sql/sqlexp v0.1.0/go.mod h1:J4ad9Vo8ZCWQ2GMrC4UCQy1JpCbwU9m3EO
 github.com/google/go-cmp v0.5.9/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
-github.com/google/go-tpm v0.9.3 h1:+yx0/anQuGzi+ssRqeD6WpXjW2L/V0dItUayO0i9sRc=
-github.com/google/go-tpm v0.9.3/go.mod h1:h9jEsEECg7gtLis0upRBQU+GhYVH6jMjrFxI8u6bVUY=
+github.com/google/go-tpm v0.9.5 h1:ocUmnDebX54dnW+MQWGQRbdaAcJELsa6PqZhJ48KwVU=
+github.com/google/go-tpm v0.9.5/go.mod h1:h9jEsEECg7gtLis0upRBQU+GhYVH6jMjrFxI8u6bVUY=
 github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e h1:ijClszYn+mADRFY17kjQEVQ1XRhq2/JR1M3sGqeJoxs=
 github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e/go.mod h1:boTsfXsheKC2y+lKOCMpSfarhxDeIzfZG1jqGcPl3cA=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=

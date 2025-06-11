@@ -10,7 +10,7 @@ require (
 	github.com/go-ldap/ldap/v3 v3.4.11
 	github.com/go-pkgz/routegroup v1.4.1
 	github.com/go-playground/validator/v10 v10.26.0
-	github.com/go-webauthn/webauthn v0.12.3
+	github.com/go-webauthn/webauthn v0.13.0
 	github.com/google/uuid v1.6.0
 	github.com/prometheus-community/pro-bing v0.7.0
 	github.com/prometheus/client_golang v1.22.0
@@ -53,12 +53,12 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.9.2 // indirect
 	github.com/go-test/deep v1.1.1 // indirect
-	github.com/go-webauthn/x v0.1.20 // indirect
+	github.com/go-webauthn/x v0.1.21 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/go-tpm v0.9.3 // indirect
+	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.7.4 // indirect
