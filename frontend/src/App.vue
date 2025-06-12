@@ -61,6 +61,26 @@ const companyName = ref(WGPORTAL_SITE_COMPANY_NAME);
 const wgVersion = ref(WGPORTAL_VERSION);
 const currentYear = ref(new Date().getFullYear())
 
+const userDisplayName = computed(() => {
+  let displayName = "Unknown";
+  if (auth.IsAuthenticated) {
+    if (auth.User.Firstname === "" && auth.User.Lastname === "") {
+      displayName = auth.User.Identifier;
+    } else if (auth.User.Firstname === "" && auth.User.Lastname !== "") {
+      displayName = auth.User.Lastname;
+    } else if (auth.User.Firstname !== "" && auth.User.Lastname === "") {
+      displayName = auth.User.Firstname;
+    } else if (auth.User.Firstname !== "" && auth.User.Lastname !== "") {
+      displayName = auth.User.Firstname + " " + auth.User.Lastname;
+    }
+  }
+
+  // pad string to 20 characters so that the menu is always the same size on desktop
+  if (displayName.length < 20 && window.innerWidth > 992) {
+    displayName = displayName.padStart(20, "\u00A0");
+  }
+  return displayName;
+})
 </script>
 
 <template>
@@ -93,7 +113,7 @@ const currentYear = ref(new Date().getFullYear())
         <div class="navbar-nav d-flex justify-content-end">
           <div v-if="auth.IsAuthenticated" class="nav-item dropdown">
             <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
-              href="#" role="button">{{ auth.User.Firstname }} {{ auth.User.Lastname }}</a>
+              href="#" role="button">{{ userDisplayName }}</a>
             <div class="dropdown-menu">
               <RouterLink :to="{ name: 'profile' }" class="dropdown-item"><i class="fas fa-user"></i> {{ $t('menu.profile') }}</RouterLink>
               <RouterLink :to="{ name: 'settings' }" class="dropdown-item" v-if="auth.IsAdmin || !settings.Setting('ApiAdminOnly')"><i class="fas fa-gears"></i> {{ $t('menu.settings') }}</RouterLink>
