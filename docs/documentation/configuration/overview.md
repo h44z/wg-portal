@@ -38,6 +38,7 @@ advanced:
   rule_prio_offset: 20000
   route_table_offset: 20000
   api_admin_only: true
+  limit_additional_user_peers: 0
 
 database:
   debug: false
@@ -214,6 +215,10 @@ Additional or more specialized configuration options for logging and interface c
 ### `api_admin_only`
 - **Default:** `true`
 - **Description:** If `true`, the public REST API is accessible only to admin users. The API docs live at [`/api/v1/doc.html`](../rest-api/api-doc.md).
+
+### `limit_additional_user_peers`
+- **Default:** `0`
+- **Description:** Limit additional peers a normal user can create. `0` means unlimited.
 
 ---
 
