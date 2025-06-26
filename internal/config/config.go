@@ -29,18 +29,19 @@ type Config struct {
 	} `yaml:"core"`
 
 	Advanced struct {
-		LogLevel            string        `yaml:"log_level"`
-		LogPretty           bool          `yaml:"log_pretty"`
-		LogJson             bool          `yaml:"log_json"`
-		StartListenPort     int           `yaml:"start_listen_port"`
-		StartCidrV4         string        `yaml:"start_cidr_v4"`
-		StartCidrV6         string        `yaml:"start_cidr_v6"`
-		UseIpV6             bool          `yaml:"use_ip_v6"`
-		ConfigStoragePath   string        `yaml:"config_storage_path"` // keep empty to disable config export to file
-		ExpiryCheckInterval time.Duration `yaml:"expiry_check_interval"`
-		RulePrioOffset      int           `yaml:"rule_prio_offset"`
-		RouteTableOffset    int           `yaml:"route_table_offset"`
-		ApiAdminOnly        bool          `yaml:"api_admin_only"` // if true, only admin users can access the API
+		LogLevel                 string        `yaml:"log_level"`
+		LogPretty                bool          `yaml:"log_pretty"`
+		LogJson                  bool          `yaml:"log_json"`
+		StartListenPort          int           `yaml:"start_listen_port"`
+		StartCidrV4              string        `yaml:"start_cidr_v4"`
+		StartCidrV6              string        `yaml:"start_cidr_v6"`
+		UseIpV6                  bool          `yaml:"use_ip_v6"`
+		ConfigStoragePath        string        `yaml:"config_storage_path"` // keep empty to disable config export to file
+		ExpiryCheckInterval      time.Duration `yaml:"expiry_check_interval"`
+		RulePrioOffset           int           `yaml:"rule_prio_offset"`
+		RouteTableOffset         int           `yaml:"route_table_offset"`
+		ApiAdminOnly             bool          `yaml:"api_admin_only"` // if true, only admin users can access the API
+		LimitAdditionalUserPeers int           `yaml:"limit_additional_user_peers"`
 	} `yaml:"advanced"`
 
 	Statistics struct {
@@ -76,6 +77,7 @@ func (c *Config) LogStartupValues() {
 		"reEnablePeerAfterUserEnable", c.Core.ReEnablePeerAfterUserEnable,
 		"deletePeerAfterUserDeleted", c.Core.DeletePeerAfterUserDeleted,
 		"selfProvisioningAllowed", c.Core.SelfProvisioningAllowed,
+		"limitAdditionalUserPeers", c.Advanced.LimitAdditionalUserPeers,
 		"importExisting", c.Core.ImportExisting,
 		"restoreState", c.Core.RestoreState,
 		"useIpV6", c.Advanced.UseIpV6,
@@ -137,6 +139,7 @@ func defaultConfig() *Config {
 	cfg.Advanced.RulePrioOffset = 20000
 	cfg.Advanced.RouteTableOffset = 20000
 	cfg.Advanced.ApiAdminOnly = true
+	cfg.Advanced.LimitAdditionalUserPeers = 0
 
 	cfg.Statistics.UsePingChecks = true
 	cfg.Statistics.PingCheckWorkers = 10
