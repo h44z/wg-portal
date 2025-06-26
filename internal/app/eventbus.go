@@ -36,6 +36,7 @@ const TopicPeerDeleted = "peer:deleted"
 const TopicPeerUpdated = "peer:updated"
 const TopicPeerInterfaceUpdated = "peer:interface:updated"
 const TopicPeerIdentifierUpdated = "peer:identifier:updated"
+const TopicPeerStateChanged = "peer:state:changed"
 
 // endregion peer-events
 
