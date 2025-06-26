@@ -6,10 +6,16 @@ type Error struct {
 }
 
 type Settings struct {
-	MailLinkOnly              bool `json:"MailLinkOnly"`
-	PersistentConfigSupported bool `json:"PersistentConfigSupported"`
-	SelfProvisioning          bool `json:"SelfProvisioning"`
-	ApiAdminOnly              bool `json:"ApiAdminOnly"`
-	WebAuthnEnabled           bool `json:"WebAuthnEnabled"`
-	MinPasswordLength         int  `json:"MinPasswordLength"`
+	MailLinkOnly              bool                   `json:"MailLinkOnly"`
+	PersistentConfigSupported bool                   `json:"PersistentConfigSupported"`
+	SelfProvisioning          bool                   `json:"SelfProvisioning"`
+	ApiAdminOnly              bool                   `json:"ApiAdminOnly"`
+	WebAuthnEnabled           bool                   `json:"WebAuthnEnabled"`
+	MinPasswordLength         int                    `json:"MinPasswordLength"`
+	AvailableBackends         []SettingsBackendNames `json:"AvailableBackends"`
+}
+
+type SettingsBackendNames struct {
+	Id   string `json:"Id"`
+	Name string `json:"Name"`
 }

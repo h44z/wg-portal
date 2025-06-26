@@ -1,0 +1,57 @@
+package config
+
+import (
+	"fmt"
+	"time"
+)
+
+const LocalBackendName = "local"
+
+type Backend struct {
+	Default string `yaml:"default"` // The default backend to use (defaults to the internal backend)
+
+	Mikrotik []BackendMikrotik `yaml:"mikrotik"`
+}
+
+// Validate checks the backend configuration for errors.
+func (b *Backend) Validate() error {
+	if b.Default == "" {
+		b.Default = LocalBackendName
+	}
+
+	uniqueMap := make(map[string]struct{})
+	for _, backend := range b.Mikrotik {
+		if backend.Id == LocalBackendName {
+			return fmt.Errorf("backend ID %q is a reserved keyword", LocalBackendName)
+		}
+		if _, exists := uniqueMap[backend.Id]; exists {
+			return fmt.Errorf("backend ID %q is not unique", backend.Id)
+		}
+		uniqueMap[backend.Id] = struct{}{}
+	}
+
+	if b.Default != LocalBackendName {
+		if _, ok := uniqueMap[b.Default]; !ok {
+			return fmt.Errorf("default backend %q is not defined in the configuration", b.Default)
+		}
+	}
+
+	return nil
+}
+
+type BackendBase struct {
+	Id          string `yaml:"id"`           // A unique id for the backend
+	DisplayName string `yaml:"display_name"` // A display name for the backend
+}
+
+type BackendMikrotik struct {
+	BackendBase `yaml:",inline"` // Embed the base fields
+
+	ApiUrl       string        `yaml:"api_url"` // The base URL of the Mikrotik API (e.g., "https://10.10.10.10:8729/rest")
+	ApiUser      string        `yaml:"api_user"`
+	ApiPassword  string        `yaml:"api_password"`
+	ApiVerifyTls bool          `yaml:"api_verify_tls"` // Whether to verify the TLS certificate of the Mikrotik API
+	ApiTimeout   time.Duration `yaml:"api_timeout"`    // Timeout for API requests (default: 30 seconds)
+
+	Debug bool `yaml:"debug"` // Enable debug logging for the Mikrotik backend
+}

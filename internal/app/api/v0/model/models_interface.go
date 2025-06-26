@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -11,6 +12,7 @@ type Interface struct {
 	Identifier     string `json:"Identifier" example:"wg0"`      // device name, for example: wg0
 	DisplayName    string `json:"DisplayName"`                   // a nice display name/ description for the interface
 	Mode           string `json:"Mode" example:"server"`         // the interface type, either 'server', 'client' or 'any'
+	Backend        string `json:"Backend" example:"local"`       // the backend used for this interface e.g., local, mikrotik, ...
 	PrivateKey     string `json:"PrivateKey" example:"abcdef=="` // private Key of the server interface
 	PublicKey      string `json:"PublicKey" example:"abcdef=="`  // public Key of the server interface
 	Disabled       bool   `json:"Disabled"`                      // flag that specifies if the interface is enabled (up) or not (down)
@@ -57,6 +59,7 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 		Identifier:                 string(src.Identifier),
 		DisplayName:                src.DisplayName,
 		Mode:                       string(src.Type),
+		Backend:                    string(src.Backend),
 		PrivateKey:                 src.PrivateKey,
 		PublicKey:                  src.PublicKey,
 		Disabled:                   src.IsDisabled(),
@@ -90,6 +93,10 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 		EnabledPeers: 0,
 		TotalPeers:   0,
 		Filename:     src.GetConfigFileName(),
+	}
+
+	if iface.Backend == "" {
+		iface.Backend = config.LocalBackendName // default to local backend
 	}
 
 	if len(peers) > 0 {
@@ -146,6 +153,7 @@ func NewDomainInterface(src *Interface) *domain.Interface {
 		SaveConfig:                 src.SaveConfig,
 		DisplayName:                src.DisplayName,
 		Type:                       domain.InterfaceType(src.Mode),
+		Backend:                    domain.InterfaceBackend(src.Backend),
 		DriverType:                 "",  // currently unused
 		Disabled:                   nil, // set below
 		DisabledReason:             src.DisabledReason,

@@ -10,11 +10,13 @@ import isCidr from "is-cidr";
 import {isIP} from 'is-ip';
 import { freshInterface } from '@/helpers/models';
 import {peerStore} from "@/stores/peers";
+import {settingsStore} from "@/stores/settings";
 
 const { t } = useI18n()
 
 const interfaces = interfaceStore()
 const peers = peerStore()
+const settings = settingsStore()
 
 const props = defineProps({
   interfaceId: String,
@@ -49,6 +51,23 @@ const currentTags = ref({
 })
 const formData = ref(freshInterface())
 
+const isBackendValid = computed(() => {
+  if (!props.visible || !selectedInterface.value) {
+    return true // if modal is not visible or no interface is selected, we don't care about backend validity
+  }
+
+  let backendId = selectedInterface.value.Backend
+
+  let valid = false
+  let availableBackends = settings.Setting('AvailableBackends') || []
+  availableBackends.forEach(backend => {
+    if (backend.Id === backendId) {
+      valid = true
+    }
+  })
+  return valid
+})
+
 // functions
 
 watch(() => props.visible, async (newValue, oldValue) => {
@@ -61,6 +80,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.Identifier = interfaces.Prepared.Identifier
           formData.value.DisplayName = interfaces.Prepared.DisplayName
           formData.value.Mode = interfaces.Prepared.Mode
+          formData.value.Backend = interfaces.Prepared.Backend
 
           formData.value.PublicKey = interfaces.Prepared.PublicKey
           formData.value.PrivateKey = interfaces.Prepared.PrivateKey
@@ -99,6 +119,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.Identifier = selectedInterface.value.Identifier
           formData.value.DisplayName = selectedInterface.value.DisplayName
           formData.value.Mode = selectedInterface.value.Mode
+          formData.value.Backend = selectedInterface.value.Backend
 
           formData.value.PublicKey = selectedInterface.value.PublicKey
           formData.value.PrivateKey = selectedInterface.value.PrivateKey
@@ -314,13 +335,22 @@ async function del() {
               <label class="form-label mt-4">{{ $t('modals.interface-edit.identifier.label') }}</label>
               <input v-model="formData.Identifier" class="form-control" :placeholder="$t('modals.interface-edit.identifier.placeholder')" type="text">
             </div>
-            <div class="form-group">
-              <label class="form-label mt-4">{{ $t('modals.interface-edit.mode.label') }}</label>
-              <select v-model="formData.Mode" class="form-select">
-                <option value="server">{{ $t('modals.interface-edit.mode.server') }}</option>
-                <option value="client">{{ $t('modals.interface-edit.mode.client') }}</option>
-                <option value="any">{{ $t('modals.interface-edit.mode.any') }}</option>
-              </select>
+            <div class="row">
+              <div class="form-group col-md-6">
+                <label class="form-label mt-4">{{ $t('modals.interface-edit.mode.label') }}</label>
+                <select v-model="formData.Mode" class="form-select">
+                  <option value="server">{{ $t('modals.interface-edit.mode.server') }}</option>
+                  <option value="client">{{ $t('modals.interface-edit.mode.client') }}</option>
+                  <option value="any">{{ $t('modals.interface-edit.mode.any') }}</option>
+                </select>
+              </div>
+              <div class="form-group col-md-6">
+                <label class="form-label mt-4" for="ifaceBackendSelector">{{ $t('modals.interface-edit.backend.label') }}</label>
+                <select id="ifaceBackendSelector" v-model="formData.Backend" class="form-select" aria-describedby="backendHelp">
+                  <option v-for="backend in settings.Setting('AvailableBackends')" :value="backend.Id">{{ backend.Id === 'local' ? $t(backend.Name) : backend.Name }}</option>
+                </select>
+                <small v-if="!isBackendValid" id="backendHelp" class="form-text text-warning">{{ $t('modals.interface-edit.backend.invalid-label') }}</small>
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.display-name.label') }}</label>
@@ -385,12 +415,14 @@ async function del() {
                 <label class="form-label mt-4">{{ $t('modals.interface-edit.mtu.label') }}</label>
                 <input v-model="formData.Mtu" class="form-control" :placeholder="$t('modals.interface-edit.mtu.placeholder')" type="number">
               </div>
-              <div class="form-group col-md-6">
+              <div class="form-group col-md-6" v-if="formData.Backend==='local'">
                 <label class="form-label mt-4">{{ $t('modals.interface-edit.firewall-mark.label') }}</label>
                 <input v-model="formData.FirewallMark" class="form-control" :placeholder="$t('modals.interface-edit.firewall-mark.placeholder')" type="number">
               </div>
+              <div class="form-group col-md-6" v-else>
+              </div>
             </div>
-            <div class="row">
+            <div class="row" v-if="formData.Backend==='local'">
               <div class="form-group col-md-6">
                 <label class="form-label mt-4">{{ $t('modals.interface-edit.routing-table.label') }}</label>
                 <input v-model="formData.RoutingTable" aria-describedby="routingTableHelp" class="form-control" :placeholder="$t('modals.interface-edit.routing-table.placeholder')" type="text">

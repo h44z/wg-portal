@@ -44,6 +44,8 @@ type Config struct {
 		LimitAdditionalUserPeers int           `yaml:"limit_additional_user_peers"`
 	} `yaml:"advanced"`
 
+	Backend Backend `yaml:"backend"`
+
 	Statistics struct {
 		UsePingChecks          bool          `yaml:"use_ping_checks"`
 		PingCheckWorkers       int           `yaml:"ping_check_workers"`
@@ -96,6 +98,12 @@ func (c *Config) LogStartupValues() {
 		"oauthProviders", len(c.Auth.OAuth),
 		"ldapProviders", len(c.Auth.Ldap),
 	)
+
+	slog.Debug("Config Backend",
+		"defaultBackend", c.Backend.Default,
+		"extraBackends", len(c.Backend.Mikrotik),
+	)
+
 }
 
 // defaultConfig returns the default configuration
@@ -117,6 +125,10 @@ func defaultConfig() *Config {
 	cfg.Database = DatabaseConfig{
 		Type: "sqlite",
 		DSN:  "data/sqlite.db",
+	}
+
+	cfg.Backend = Backend{
+		Default: LocalBackendName, // local backend is the default (using wgcrtl)
 	}
 
 	cfg.Web = WebConfig{
@@ -197,6 +209,10 @@ func GetConfig() (*Config, error) {
 	}
 
 	cfg.Web.Sanitize()
+	err := cfg.Backend.Validate()
+	if err != nil {
+		return nil, err
+	}
 
 	return cfg, nil
 }
