@@ -819,6 +819,12 @@
                         "schema": {
                             "$ref": "#/definitions/model.PeerMailRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "The configuration style",
+                        "name": "style",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -858,6 +864,12 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The configuration style",
+                        "name": "style",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -899,6 +911,12 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The configuration style",
+                        "name": "style",
+                        "in": "query"
                     }
                 ],
                 "responses": {
