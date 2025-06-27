@@ -50,7 +50,7 @@ COPY --from=builder /build/dist/wg-portal /
 ######
 # Final image
 ######
-FROM alpine:3.19
+FROM alpine:3.22
 # Install OS-level dependencies
 RUN apk add --no-cache bash curl iptables nftables openresolv wireguard-tools
 # Setup timezone
