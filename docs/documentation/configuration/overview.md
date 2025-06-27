@@ -669,7 +669,7 @@ The webhook section allows you to configure a webhook that is called on certain 
 A JSON object is sent in a POST request to the webhook URL with the following structure:
 ```json
 {
-  "event": "peer_created",
+  "event": "update",
   "entity": "peer",
   "identifier": "the-peer-identifier",
   "payload": {
@@ -678,6 +678,8 @@ A JSON object is sent in a POST request to the webhook URL with the following st
   }
 }
 ```
+
+Further details can be found in the [usage documentation](../usage/webhooks.md).
 
 ### `url`
 - **Default:** *(empty)*
