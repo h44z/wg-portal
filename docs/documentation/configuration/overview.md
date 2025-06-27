@@ -76,6 +76,7 @@ auth:
   webauthn:
     enabled: true
   min_password_length: 16
+  hide_login_form: false
 
 web:
   listening_address: :8888
@@ -353,6 +354,12 @@ Some core authentication options are shared across all providers, while others a
 - **Description:** Minimum password length for local authentication. This is not enforced for LDAP authentication.
   The default admin password strength is also enforced by this setting.
 - **Important:** The password should be strong and secure. It is recommended to use a password with at least 16 characters, including uppercase and lowercase letters, numbers, and special characters.
+
+### `hide_login_form`
+- **Default:** `false`
+- **Description:** If `true`, the login form is hidden and only the OIDC, OAuth, LDAP, or WebAuthn providers are shown. This is useful if you want to enforce a specific authentication method.
+  If no social login providers are configured, the login form is always shown, regardless of this setting.
+- **Important:** You can still access the login form by adding the `?all` query parameter to the login URL (e.g. https://wg.portal/#/login?all). 
 
 ---
 
