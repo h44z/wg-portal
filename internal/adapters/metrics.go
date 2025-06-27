@@ -133,5 +133,5 @@ func (m *MetricsServer) UpdatePeerMetrics(peer *domain.Peer, status domain.PeerS
 	}
 	m.peerReceivedBytesTotal.WithLabelValues(labels...).Set(float64(status.BytesReceived))
 	m.peerSendBytesTotal.WithLabelValues(labels...).Set(float64(status.BytesTransmitted))
-	m.peerIsConnected.WithLabelValues(labels...).Set(internal.BoolToFloat64(status.IsConnected()))
+	m.peerIsConnected.WithLabelValues(labels...).Set(internal.BoolToFloat64(status.IsConnected))
 }

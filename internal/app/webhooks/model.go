@@ -42,7 +42,9 @@ const (
 type WebhookEvent = string
 
 const (
-	WebhookEventCreate WebhookEvent = "create"
-	WebhookEventUpdate WebhookEvent = "update"
-	WebhookEventDelete WebhookEvent = "delete"
+	WebhookEventCreate     WebhookEvent = "create"
+	WebhookEventUpdate     WebhookEvent = "update"
+	WebhookEventDelete     WebhookEvent = "delete"
+	WebhookEventConnect    WebhookEvent = "connect"
+	WebhookEventDisconnect WebhookEvent = "disconnect"
 )

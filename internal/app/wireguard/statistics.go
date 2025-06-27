@@ -43,6 +43,8 @@ type StatisticsMetricsServer interface {
 type StatisticsEventBus interface {
 	// Subscribe subscribes to a topic
 	Subscribe(topic string, fn interface{}) error
+	// Publish sends a message to the message bus.
+	Publish(topic string, args ...any)
 }
 
 type StatisticsCollector struct {
@@ -55,6 +57,8 @@ type StatisticsCollector struct {
 	db StatisticsDatabaseRepo
 	wg StatisticsInterfaceController
 	ms StatisticsMetricsServer
+
+	peerChangeEvent chan domain.PeerIdentifier
 }
 
 // NewStatisticsCollector creates a new statistics collector.
@@ -171,8 +175,12 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 					continue
 				}
 				for _, peer := range peers {
+					var connectionStateChanged bool
+					var newPeerStatus domain.PeerStatus
 					err = c.db.UpdatePeerStatus(ctx, peer.Identifier,
 						func(p *domain.PeerStatus) (*domain.PeerStatus, error) {
+							wasConnected := p.IsConnected
+
 							var lastHandshake *time.Time
 							if !peer.LastHandshake.IsZero() {
 								lastHandshake = &peer.LastHandshake
@@ -186,6 +194,12 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 							p.BytesTransmitted = peer.BytesDownload // store bytes that where received from the peer and sent by the server
 							p.Endpoint = peer.Endpoint
 							p.LastHandshake = lastHandshake
+							p.CalcConnected()
+
+							if wasConnected != p.IsConnected {
+								connectionStateChanged = true
+								newPeerStatus = *p // store new status for event publishing
+							}
 
 							// Update prometheus metrics
 							go c.updatePeerMetrics(ctx, *p)
@@ -196,6 +210,11 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 						slog.Warn("failed to update peer status", "peer", peer.Identifier, "error", err)
 					} else {
 						slog.Debug("updated peer status", "peer", peer.Identifier)
+					}
+
+					if connectionStateChanged {
+						// publish event if connection state changed
+						c.bus.Publish(app.TopicPeerStateChanged, newPeerStatus)
 					}
 				}
 			}
@@ -298,18 +317,30 @@ func (c *StatisticsCollector) enqueuePingChecks(ctx context.Context) {
 func (c *StatisticsCollector) pingWorker(ctx context.Context) {
 	defer c.pingWaitGroup.Done()
 	for peer := range c.pingJobs {
+		var connectionStateChanged bool
+		var newPeerStatus domain.PeerStatus
+
 		peerPingable := c.isPeerPingable(ctx, peer)
 		slog.Debug("peer ping check completed", "peer", peer.Identifier, "pingable", peerPingable)
 
 		now := time.Now()
 		err := c.db.UpdatePeerStatus(ctx, peer.Identifier,
 			func(p *domain.PeerStatus) (*domain.PeerStatus, error) {
+				wasConnected := p.IsConnected
+
 				if peerPingable {
 					p.IsPingable = true
 					p.LastPing = &now
 				} else {
 					p.IsPingable = false
 					p.LastPing = nil
+				}
+				p.UpdatedAt = time.Now()
+				p.CalcConnected()
+
+				if wasConnected != p.IsConnected {
+					connectionStateChanged = true
+					newPeerStatus = *p // store new status for event publishing
 				}
 
 				// Update prometheus metrics
@@ -321,6 +352,11 @@ func (c *StatisticsCollector) pingWorker(ctx context.Context) {
 			slog.Warn("failed to update peer ping status", "peer", peer.Identifier, "error", err)
 		} else {
 			slog.Debug("updated peer ping status", "peer", peer.Identifier)
+		}
+
+		if connectionStateChanged {
+			// publish event if connection state changed
+			c.bus.Publish(app.TopicPeerStateChanged, newPeerStatus)
 		}
 	}
 }

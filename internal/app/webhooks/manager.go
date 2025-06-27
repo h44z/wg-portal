@@ -64,6 +64,7 @@ func (m Manager) connectToMessageBus() {
 	_ = m.bus.Subscribe(app.TopicPeerCreated, m.handlePeerCreateEvent)
 	_ = m.bus.Subscribe(app.TopicPeerUpdated, m.handlePeerUpdateEvent)
 	_ = m.bus.Subscribe(app.TopicPeerDeleted, m.handlePeerDeleteEvent)
+	_ = m.bus.Subscribe(app.TopicPeerStateChanged, m.handlePeerStateChangeEvent)
 
 	_ = m.bus.Subscribe(app.TopicInterfaceCreated, m.handleInterfaceCreateEvent)
 	_ = m.bus.Subscribe(app.TopicInterfaceUpdated, m.handleInterfaceUpdateEvent)
@@ -135,6 +136,14 @@ func (m Manager) handleInterfaceDeleteEvent(iface domain.Interface) {
 	m.handleGenericEvent(WebhookEventDelete, iface)
 }
 
+func (m Manager) handlePeerStateChangeEvent(peerStatus domain.PeerStatus) {
+	if peerStatus.IsConnected {
+		m.handleGenericEvent(WebhookEventConnect, peerStatus)
+	} else {
+		m.handleGenericEvent(WebhookEventDisconnect, peerStatus)
+	}
+}
+
 func (m Manager) handleGenericEvent(action WebhookEvent, payload any) {
 	eventData, err := m.createWebhookData(action, payload)
 	if err != nil {
@@ -177,6 +186,9 @@ func (m Manager) createWebhookData(action WebhookEvent, payload any) (*WebhookDa
 	case domain.Interface:
 		d.Entity = WebhookEntityInterface
 		d.Identifier = string(v.Identifier)
+	case domain.PeerStatus:
+		d.Entity = WebhookEntityPeer
+		d.Identifier = string(v.PeerId)
 	default:
 		return nil, fmt.Errorf("unsupported payload type: %T", v)
 	}
