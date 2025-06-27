@@ -34,9 +34,10 @@ func (d *WebhookData) Serialize() (io.Reader, error) {
 type WebhookEntity = string
 
 const (
-	WebhookEntityUser      WebhookEntity = "user"
-	WebhookEntityPeer      WebhookEntity = "peer"
-	WebhookEntityInterface WebhookEntity = "interface"
+	WebhookEntityUser       WebhookEntity = "user"
+	WebhookEntityPeer       WebhookEntity = "peer"
+	WebhookEntityPeerMetric WebhookEntity = "peer_metric"
+	WebhookEntityInterface  WebhookEntity = "interface"
 )
 
 type WebhookEvent = string

@@ -213,8 +213,14 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 					}
 
 					if connectionStateChanged {
+						peerModel, err := c.db.GetPeer(ctx, peer.Identifier)
+						if err != nil {
+							slog.Error("failed to fetch peer for data collection", "peer", peer.Identifier, "error",
+								err)
+							continue
+						}
 						// publish event if connection state changed
-						c.bus.Publish(app.TopicPeerStateChanged, newPeerStatus)
+						c.bus.Publish(app.TopicPeerStateChanged, newPeerStatus, *peerModel)
 					}
 				}
 			}
@@ -356,7 +362,7 @@ func (c *StatisticsCollector) pingWorker(ctx context.Context) {
 
 		if connectionStateChanged {
 			// publish event if connection state changed
-			c.bus.Publish(app.TopicPeerStateChanged, newPeerStatus)
+			c.bus.Publish(app.TopicPeerStateChanged, newPeerStatus, peer)
 		}
 	}
 }

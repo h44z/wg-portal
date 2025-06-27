@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/h44z/wg-portal/internal/app"
+	"github.com/h44z/wg-portal/internal/app/webhooks/models"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -101,46 +102,46 @@ func (m Manager) sendWebhook(ctx context.Context, data io.Reader) error {
 }
 
 func (m Manager) handleUserCreateEvent(user domain.User) {
-	m.handleGenericEvent(WebhookEventCreate, user)
+	m.handleGenericEvent(WebhookEventCreate, models.NewUser(user))
 }
 
 func (m Manager) handleUserUpdateEvent(user domain.User) {
-	m.handleGenericEvent(WebhookEventUpdate, user)
+	m.handleGenericEvent(WebhookEventUpdate, models.NewUser(user))
 }
 
 func (m Manager) handleUserDeleteEvent(user domain.User) {
-	m.handleGenericEvent(WebhookEventDelete, user)
+	m.handleGenericEvent(WebhookEventDelete, models.NewUser(user))
 }
 
 func (m Manager) handlePeerCreateEvent(peer domain.Peer) {
-	m.handleGenericEvent(WebhookEventCreate, peer)
+	m.handleGenericEvent(WebhookEventCreate, models.NewPeer(peer))
 }
 
 func (m Manager) handlePeerUpdateEvent(peer domain.Peer) {
-	m.handleGenericEvent(WebhookEventUpdate, peer)
+	m.handleGenericEvent(WebhookEventUpdate, models.NewPeer(peer))
 }
 
 func (m Manager) handlePeerDeleteEvent(peer domain.Peer) {
-	m.handleGenericEvent(WebhookEventDelete, peer)
+	m.handleGenericEvent(WebhookEventDelete, models.NewPeer(peer))
 }
 
 func (m Manager) handleInterfaceCreateEvent(iface domain.Interface) {
-	m.handleGenericEvent(WebhookEventCreate, iface)
+	m.handleGenericEvent(WebhookEventCreate, models.NewInterface(iface))
 }
 
 func (m Manager) handleInterfaceUpdateEvent(iface domain.Interface) {
-	m.handleGenericEvent(WebhookEventUpdate, iface)
+	m.handleGenericEvent(WebhookEventUpdate, models.NewInterface(iface))
 }
 
 func (m Manager) handleInterfaceDeleteEvent(iface domain.Interface) {
-	m.handleGenericEvent(WebhookEventDelete, iface)
+	m.handleGenericEvent(WebhookEventDelete, models.NewInterface(iface))
 }
 
-func (m Manager) handlePeerStateChangeEvent(peerStatus domain.PeerStatus) {
+func (m Manager) handlePeerStateChangeEvent(peerStatus domain.PeerStatus, peer domain.Peer) {
 	if peerStatus.IsConnected {
-		m.handleGenericEvent(WebhookEventConnect, peerStatus)
+		m.handleGenericEvent(WebhookEventConnect, models.NewPeerMetrics(peerStatus, peer))
 	} else {
-		m.handleGenericEvent(WebhookEventDisconnect, peerStatus)
+		m.handleGenericEvent(WebhookEventDisconnect, models.NewPeerMetrics(peerStatus, peer))
 	}
 }
 
@@ -177,18 +178,18 @@ func (m Manager) createWebhookData(action WebhookEvent, payload any) (*WebhookDa
 	}
 
 	switch v := payload.(type) {
-	case domain.User:
+	case models.User:
 		d.Entity = WebhookEntityUser
-		d.Identifier = string(v.Identifier)
-	case domain.Peer:
+		d.Identifier = v.Identifier
+	case models.Peer:
 		d.Entity = WebhookEntityPeer
-		d.Identifier = string(v.Identifier)
-	case domain.Interface:
+		d.Identifier = v.Identifier
+	case models.Interface:
 		d.Entity = WebhookEntityInterface
-		d.Identifier = string(v.Identifier)
-	case domain.PeerStatus:
-		d.Entity = WebhookEntityPeer
-		d.Identifier = string(v.PeerId)
+		d.Identifier = v.Identifier
+	case models.PeerMetrics:
+		d.Entity = WebhookEntityPeerMetric
+		d.Identifier = v.Peer.Identifier
 	default:
 		return nil, fmt.Errorf("unsupported payload type: %T", v)
 	}
