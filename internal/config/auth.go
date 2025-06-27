@@ -21,6 +21,9 @@ type Auth struct {
 	// MinPasswordLength is the minimum password length for user accounts. This also applies to the admin user.
 	// It is encouraged to set this value to at least 16 characters.
 	MinPasswordLength int `yaml:"min_password_length"`
+	// HideLoginForm specifies whether the login form should be hidden. If no social login providers are configured,
+	// the login form will be shown regardless of this setting.
+	HideLoginForm bool `yaml:"hide_login_form"`
 }
 
 // BaseFields contains the basic fields that are used to map user information from the authentication providers.

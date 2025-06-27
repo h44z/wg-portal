@@ -16,7 +16,10 @@ const password = ref("")
 const usernameInvalid = computed(() => username.value === "")
 const passwordInvalid = computed(() => password.value === "")
 const disableLoginBtn = computed(() => username.value === "" || password.value === "" || loggingIn.value)
-
+const showLoginForm = computed(() => {
+  console.log(router.currentRoute.value.query)
+  return settings.Setting('LoginFormVisible') || router.currentRoute.value.query.hasOwnProperty('all');
+});
 
 onMounted(async () => {
   await settings.LoadSettings()
@@ -98,7 +101,7 @@ const externalLogin = function (provider) {
         </div></div>
         <div class="card-body">
           <form method="post">
-            <fieldset>
+            <fieldset v-if="showLoginForm">
               <div class="form-group">
                 <label class="form-label" for="inputUsername">{{ $t('login.username.label') }}</label>
                 <div class="input-group mb-3">
@@ -118,19 +121,40 @@ const externalLogin = function (provider) {
               </div>
 
               <div class="row mt-5 mb-2">
-                <div class="col-lg-4">
-                  <button :disabled="disableLoginBtn" class="btn btn-primary" type="submit" @click.prevent="login">
+                <div class="col-sm-4 col-xs-12">
+                  <button :disabled="disableLoginBtn" class="btn btn-primary mb-2" type="submit" @click.prevent="login">
                     {{ $t('login.button') }} <div v-if="loggingIn" class="d-inline"><i class="ms-2 fa-solid fa-circle-notch fa-spin"></i></div>
                   </button>
                 </div>
-                <div class="col-lg-8 mb-2 text-end">
+                <div class="col-sm-8 col-xs-12 text-sm-end">
                   <button v-if="settings.Setting('WebAuthnEnabled')" class="btn btn-primary" type="submit" @click.prevent="loginWebAuthn">
                     {{ $t('login.button-webauthn') }} <div v-if="loggingIn" class="d-inline"><i class="ms-2 fa-solid fa-circle-notch fa-spin"></i></div>
                   </button>
                 </div>
               </div>
 
-              <div class="row mt-5 d-flex">
+              <div class="row mt-4 d-flex">
+                <div class="col-lg-12 d-flex mb-2">
+                  <!-- OpenIdConnect / OAUTH providers -->
+                  <button v-for="(provider, idx) in auth.LoginProviders" :key="provider.Identifier" :class="{'ms-1':idx > 0}"
+                          :disabled="loggingIn" :title="provider.Name" class="btn btn-outline-primary flex-fill"
+                          v-html="provider.Name" @click.prevent="externalLogin(provider)"></button>
+                </div>
+              </div>
+
+              <div class="mt-3">
+              </div>
+            </fieldset>
+            <fieldset v-else>
+              <div class="row mt-1 mb-2" v-if="settings.Setting('WebAuthnEnabled')">
+                <div class="col-lg-12 d-flex mb-2">
+                  <button class="btn btn-outline-primary flex-fill" type="submit" @click.prevent="loginWebAuthn">
+                    {{ $t('login.button-webauthn') }} <div v-if="loggingIn" class="d-inline"><i class="ms-2 fa-solid fa-circle-notch fa-spin"></i></div>
+                  </button>
+                </div>
+              </div>
+
+              <div class="row mt-1 d-flex">
                 <div class="col-lg-12 d-flex mb-2">
                   <!-- OpenIdConnect / OAUTH providers -->
                   <button v-for="(provider, idx) in auth.LoginProviders" :key="provider.Identifier" :class="{'ms-1':idx > 0}"
@@ -143,7 +167,6 @@ const externalLogin = function (provider) {
               </div>
             </fieldset>
           </form>
-
 
         </div>
       </div>

@@ -95,6 +95,9 @@ func (c *Config) LogStartupValues() {
 		"oidcProviders", len(c.Auth.OpenIDConnect),
 		"oauthProviders", len(c.Auth.OAuth),
 		"ldapProviders", len(c.Auth.Ldap),
+		"webauthnEnabled", c.Auth.WebAuthn.Enabled,
+		"minPasswordLength", c.Auth.MinPasswordLength,
+		"hideLoginForm", c.Auth.HideLoginForm,
 	)
 }
 
@@ -169,6 +172,7 @@ func defaultConfig() *Config {
 
 	cfg.Auth.WebAuthn.Enabled = true
 	cfg.Auth.MinPasswordLength = 16
+	cfg.Auth.HideLoginForm = false
 
 	return cfg
 }

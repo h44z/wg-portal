@@ -2231,6 +2231,9 @@
                 "ApiAdminOnly": {
                     "type": "boolean"
                 },
+                "LoginFormVisible": {
+                    "type": "boolean"
+                },
                 "MailLinkOnly": {
                     "type": "boolean"
                 },

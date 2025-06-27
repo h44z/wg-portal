@@ -12,4 +12,5 @@ type Settings struct {
 	ApiAdminOnly              bool `json:"ApiAdminOnly"`
 	WebAuthnEnabled           bool `json:"WebAuthnEnabled"`
 	MinPasswordLength         int  `json:"MinPasswordLength"`
+	LoginFormVisible          bool `json:"LoginFormVisible"`
 }
