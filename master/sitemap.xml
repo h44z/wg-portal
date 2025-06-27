@@ -60,4 +60,8 @@
          <loc>https://wgportal.org/master/documentation/usage/security/</loc>
          <lastmod>2025-06-27</lastmod>
     </url>
+    <url>
+         <loc>https://wgportal.org/master/documentation/usage/webhooks/</loc>
+         <lastmod>2025-06-27</lastmod>
+    </url>
 </urlset>
