@@ -673,19 +673,6 @@ Without a valid `external_url`, the login process may fail due to CSRF protectio
 ## Webhook
 
 The webhook section allows you to configure a webhook that is called on certain events in WireGuard Portal.
-A JSON object is sent in a POST request to the webhook URL with the following structure:
-```json
-{
-  "event": "update",
-  "entity": "peer",
-  "identifier": "the-peer-identifier",
-  "payload": {
-    // The payload of the event, e.g. peer data.
-    // Check the API documentation for the exact structure.
-  }
-}
-```
-
 Further details can be found in the [usage documentation](../usage/webhooks.md).
 
 ### `url`
