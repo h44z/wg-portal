@@ -434,6 +434,10 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 		return nil, fmt.Errorf("unable to parse user information: %w", err)
 	}
 
+	if !isDomainAllowed(userInfo.Email, oauthProvider.GetAllowedDomains()) {
+		return nil, fmt.Errorf("user %s is not in allowed domains", userInfo.Email)
+	}
+
 	ctx = domain.SetUserInfo(ctx,
 		domain.SystemAdminContextUserInfo()) // switch to admin user context to check if user exists
 	user, err := a.processUserInfo(ctx, userInfo, domain.UserSourceOauth, oauthProvider.GetName(),
@@ -448,10 +452,6 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 			},
 		})
 		return nil, fmt.Errorf("unable to process user information: %w", err)
-	}
-
-	if !isDomainAllowed(userInfo.Email, oauthProvider.GetAllowedDomains()) {
-		return nil, fmt.Errorf("user is not in allowed domains: %w", err)
 	}
 
 	if user.IsLocked() || user.IsDisabled() {
