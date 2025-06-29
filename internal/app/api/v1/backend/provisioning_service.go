@@ -23,8 +23,8 @@ type ProvisioningServicePeerManagerRepo interface {
 }
 
 type ProvisioningServiceConfigFileManagerRepo interface {
-	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
-	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
+	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
 }
 
 type ProvisioningService struct {
@@ -96,7 +96,7 @@ func (p ProvisioningService) GetPeerConfig(ctx context.Context, peerId domain.Pe
 		return nil, err
 	}
 
-	peerCfgReader, err := p.configFiles.GetPeerConfig(ctx, peer.Identifier)
+	peerCfgReader, err := p.configFiles.GetPeerConfig(ctx, peer.Identifier, domain.ConfigStyleWgQuick)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (p ProvisioningService) GetPeerQrPng(ctx context.Context, peerId domain.Pee
 		return nil, err
 	}
 
-	peerCfgQrReader, err := p.configFiles.GetPeerConfigQrCode(ctx, peer.Identifier)
+	peerCfgQrReader, err := p.configFiles.GetPeerConfigQrCode(ctx, peer.Identifier, domain.ConfigStyleWgQuick)
 	if err != nil {
 		return nil, err
 	}

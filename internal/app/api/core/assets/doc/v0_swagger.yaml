@@ -1072,6 +1072,10 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/model.PeerMailRequest'
+      - description: The configuration style
+        in: query
+        name: style
+        type: string
       produces:
       - application/json
       responses:
@@ -1096,6 +1100,10 @@ paths:
         in: path
         name: id
         required: true
+        type: string
+      - description: The configuration style
+        in: query
+        name: style
         type: string
       produces:
       - image/png
@@ -1124,6 +1132,10 @@ paths:
         in: path
         name: id
         required: true
+        type: string
+      - description: The configuration style
+        in: query
+        name: style
         type: string
       produces:
       - application/json

@@ -62,4 +62,7 @@ const (
 
 	LockedReasonAdmin = "locked by admin"
 	LockedReasonApi   = "locked by admin"
+
+	ConfigStyleRaw     = "raw"
+	ConfigStyleWgQuick = "wgquick"
 )

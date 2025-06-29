@@ -34,11 +34,11 @@ type PeerService interface {
 	// DeletePeer deletes the peer with the given id.
 	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	// GetPeerConfig returns the peer configuration for the given id.
-	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
 	// GetPeerConfigQrCode returns the peer configuration as qr code for the given id.
-	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
 	// SendPeerEmail sends the peer configuration via email.
-	SendPeerEmail(ctx context.Context, linkOnly bool, peers ...domain.PeerIdentifier) error
+	SendPeerEmail(ctx context.Context, linkOnly bool, style string, peers ...domain.PeerIdentifier) error
 	// GetPeerStats returns the peer stats for the given interface.
 	GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error)
 }
@@ -355,6 +355,7 @@ func (e PeerEndpoint) handleDelete() http.HandlerFunc {
 // @Summary Get peer configuration as string.
 // @Produce json
 // @Param id path string true "The peer identifier"
+// @Param style query string false "The configuration style"
 // @Success 200 {object} string
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
@@ -369,7 +370,9 @@ func (e PeerEndpoint) handleConfigGet() http.HandlerFunc {
 			return
 		}
 
-		configTxt, err := e.peerService.GetPeerConfig(r.Context(), domain.PeerIdentifier(id))
+		configStyle := e.getConfigStyle(r)
+
+		configTxt, err := e.peerService.GetPeerConfig(r.Context(), domain.PeerIdentifier(id), configStyle)
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -397,6 +400,7 @@ func (e PeerEndpoint) handleConfigGet() http.HandlerFunc {
 // @Produce png
 // @Produce json
 // @Param id path string true "The peer identifier"
+// @Param style query string false "The configuration style"
 // @Success 200 {file} binary
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
@@ -411,7 +415,9 @@ func (e PeerEndpoint) handleQrCodeGet() http.HandlerFunc {
 			return
 		}
 
-		configQr, err := e.peerService.GetPeerConfigQrCode(r.Context(), domain.PeerIdentifier(id))
+		configStyle := e.getConfigStyle(r)
+
+		configQr, err := e.peerService.GetPeerConfigQrCode(r.Context(), domain.PeerIdentifier(id), configStyle)
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
@@ -438,6 +444,7 @@ func (e PeerEndpoint) handleQrCodeGet() http.HandlerFunc {
 // @Summary Send peer configuration via email.
 // @Produce json
 // @Param request body model.PeerMailRequest true "The peer mail request data"
+// @Param style query string false "The configuration style"
 // @Success 204 "No content if mail sending was successful"
 // @Failure 400 {object} model.Error
 // @Failure 500 {object} model.Error
@@ -460,11 +467,13 @@ func (e PeerEndpoint) handleEmailPost() http.HandlerFunc {
 			return
 		}
 
+		configStyle := e.getConfigStyle(r)
+
 		peerIds := make([]domain.PeerIdentifier, len(req.Identifiers))
 		for i := range req.Identifiers {
 			peerIds[i] = domain.PeerIdentifier(req.Identifiers[i])
 		}
-		if err := e.peerService.SendPeerEmail(r.Context(), req.LinkOnly, peerIds...); err != nil {
+		if err := e.peerService.SendPeerEmail(r.Context(), req.LinkOnly, configStyle, peerIds...); err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 			return
@@ -503,4 +512,12 @@ func (e PeerEndpoint) handleStatsGet() http.HandlerFunc {
 
 		respond.JSON(w, http.StatusOK, model.NewPeerStats(e.cfg.Statistics.CollectPeerData, stats))
 	}
+}
+
+func (e PeerEndpoint) getConfigStyle(r *http.Request) string {
+	configStyle := request.QueryDefault(r, "style", domain.ConfigStyleWgQuick)
+	if configStyle != domain.ConfigStyleWgQuick && configStyle != domain.ConfigStyleRaw {
+		configStyle = domain.ConfigStyleWgQuick // default to wg-quick style
+	}
+	return configStyle
 }

@@ -142,8 +142,8 @@ export const peerStore = defineStore('peers', {
           })
         })
     },
-    async MailPeerConfig(linkOnly, ids) {
-      return apiWrapper.post(`${baseUrl}/config-mail`, {
+    async MailPeerConfig(linkOnly, style, ids) {
+      return apiWrapper.post(`${baseUrl}/config-mail?style=${style}`, {
           Identifiers: ids,
           LinkOnly: linkOnly
         })
@@ -158,8 +158,8 @@ export const peerStore = defineStore('peers', {
           throw new Error(error)
         })
     },
-    async LoadPeerConfig(id) {
-      return apiWrapper.get(`${baseUrl}/config/${base64_url_encode(id)}`)
+    async LoadPeerConfig(id, style) {
+      return apiWrapper.get(`${baseUrl}/config/${base64_url_encode(id)}?style=${style}`)
         .then(this.setPeerConfig)
         .catch(error => {
           this.configuration = ""
