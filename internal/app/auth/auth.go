@@ -93,6 +93,8 @@ type Authenticator struct {
 	// URL prefix for the callback endpoints, this is a combination of the external URL and the API prefix
 	callbackUrlPrefix string
 
+	callbackUrl *url.URL
+
 	users UserManager
 }
 
@@ -102,82 +104,136 @@ func NewAuthenticator(cfg *config.Auth, extUrl string, bus EventBus, users UserM
 	error,
 ) {
 	a := &Authenticator{
-		cfg:               cfg,
-		bus:               bus,
-		users:             users,
-		callbackUrlPrefix: fmt.Sprintf("%s/api/v0", extUrl),
+		cfg:                 cfg,
+		bus:                 bus,
+		users:               users,
+		callbackUrlPrefix:   fmt.Sprintf("%s/api/v0", extUrl),
+		oauthAuthenticators: make(map[string]AuthenticatorOauth, len(cfg.OpenIDConnect)+len(cfg.OAuth)),
+		ldapAuthenticators:  make(map[string]AuthenticatorLdap, len(cfg.Ldap)),
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	err := a.setupExternalAuthProviders(ctx)
+	parsedExtUrl, err := url.Parse(a.callbackUrlPrefix)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse external URL: %w", err)
 	}
+	a.callbackUrl = parsedExtUrl
 
 	return a, nil
 }
 
-func (a *Authenticator) setupExternalAuthProviders(ctx context.Context) error {
-	extUrl, err := url.Parse(a.callbackUrlPrefix)
-	if err != nil {
-		return fmt.Errorf("failed to parse external url: %w", err)
-	}
+// StartBackgroundJobs starts the background jobs for the authenticator.
+// It sets up the external authentication providers (OIDC, OAuth, LDAP) and retries in case of errors.
+func (a *Authenticator) StartBackgroundJobs(ctx context.Context) {
+	go func() {
+		// Initialize local copies of authentication providers to allow retry in case of errors
+		oidcQueue := a.cfg.OpenIDConnect
+		oauthQueue := a.cfg.OAuth
+		ldapQueue := a.cfg.Ldap
 
-	a.oauthAuthenticators = make(map[string]AuthenticatorOauth, len(a.cfg.OpenIDConnect)+len(a.cfg.OAuth))
-	a.ldapAuthenticators = make(map[string]AuthenticatorLdap, len(a.cfg.Ldap))
+		ticker := time.NewTicker(30 * time.Second) // Ticker for delay between retries
+		defer ticker.Stop()
 
-	for i := range a.cfg.OpenIDConnect { // OIDC
-		providerCfg := &a.cfg.OpenIDConnect[i]
+		for {
+			select {
+			case <-ticker.C:
+				failedOidc, failedOauth, failedLdap := a.setupExternalAuthProviders(oidcQueue, oauthQueue, ldapQueue)
+				if len(failedOidc) > 0 || len(failedOauth) > 0 || len(failedLdap) > 0 {
+					slog.Warn("failed to setup some external auth providers, retrying in 30 seconds",
+						"failedOidc", len(failedOidc), "failedOauth", len(failedOauth), "failedLdap", len(failedLdap))
+					// Retry failed providers
+					oidcQueue = failedOidc
+					oauthQueue = failedOauth
+					ldapQueue = failedLdap
+				} else {
+					slog.Info("successfully setup all external auth providers")
+					return // Exit goroutine if all providers are set up successfully
+				}
+			case <-ctx.Done():
+				slog.Info("context cancelled, stopping setup of external auth providers")
+				return // Exit goroutine if context is cancelled
+			}
+		}
+	}()
+}
+
+func (a *Authenticator) setupExternalAuthProviders(
+	oidc []config.OpenIDConnectProvider,
+	oauth []config.OAuthProvider,
+	ldap []config.LdapProvider,
+) (
+	[]config.OpenIDConnectProvider,
+	[]config.OAuthProvider,
+	[]config.LdapProvider,
+) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var failedOidc []config.OpenIDConnectProvider
+	var failedOauth []config.OAuthProvider
+	var failedLdap []config.LdapProvider
+
+	for i := range oidc { // OIDC
+		providerCfg := &oidc[i]
 		providerId := strings.ToLower(providerCfg.ProviderName)
 
 		if _, exists := a.oauthAuthenticators[providerId]; exists {
-			return fmt.Errorf("auth provider with name %s is already registerd", providerId)
+			// this is an unrecoverable error, we cannot register the same provider twice
+			slog.Error("OIDC auth provider is already registered", "name", providerId)
+			continue // skip this provider
 		}
 
-		redirectUrl := *extUrl
+		redirectUrl := *a.callbackUrl
 		redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", providerId, "/callback")
 
 		provider, err := newOidcAuthenticator(ctx, redirectUrl.String(), providerCfg)
 		if err != nil {
-			return fmt.Errorf("failed to setup oidc authentication provider %s: %w", providerCfg.ProviderName, err)
+			failedOidc = append(failedOidc, oidc[i])
+			slog.Error("failed to setup oidc authentication provider", "name", providerId, "error", err)
+			continue
 		}
 		a.oauthAuthenticators[providerId] = provider
 	}
-	for i := range a.cfg.OAuth { // PLAIN OAUTH
-		providerCfg := &a.cfg.OAuth[i]
+	for i := range oauth { // PLAIN OAUTH
+		providerCfg := &oauth[i]
 		providerId := strings.ToLower(providerCfg.ProviderName)
 
 		if _, exists := a.oauthAuthenticators[providerId]; exists {
-			return fmt.Errorf("auth provider with name %s is already registerd", providerId)
+			// this is an unrecoverable error, we cannot register the same provider twice
+			slog.Error("OAUTH auth provider is already registered", "name", providerId)
+			continue // skip this provider
 		}
 
-		redirectUrl := *extUrl
+		redirectUrl := *a.callbackUrl
 		redirectUrl.Path = path.Join(redirectUrl.Path, "/auth/login/", providerId, "/callback")
 
 		provider, err := newPlainOauthAuthenticator(ctx, redirectUrl.String(), providerCfg)
 		if err != nil {
-			return fmt.Errorf("failed to setup oauth authentication provider %s: %w", providerId, err)
+			failedOauth = append(failedOauth, oauth[i])
+			slog.Error("failed to setup oauth authentication provider", "name", providerId, "error", err)
+			continue
 		}
 		a.oauthAuthenticators[providerId] = provider
 	}
-	for i := range a.cfg.Ldap { // LDAP
-		providerCfg := &a.cfg.Ldap[i]
+	for i := range ldap { // LDAP
+		providerCfg := &ldap[i]
 		providerId := strings.ToLower(providerCfg.URL)
 
 		if _, exists := a.ldapAuthenticators[providerId]; exists {
-			return fmt.Errorf("auth provider with name %s is already registerd", providerId)
+			// this is an unrecoverable error, we cannot register the same provider twice
+			slog.Error("LDAP auth provider is already registered", "name", providerId)
+			continue // skip this provider
 		}
 
 		provider, err := newLdapAuthenticator(ctx, providerCfg)
 		if err != nil {
-			return fmt.Errorf("failed to setup ldap authentication provider %s: %w", providerId, err)
+			failedLdap = append(failedLdap, ldap[i])
+			slog.Error("failed to setup ldap authentication provider", "name", providerId, "error", err)
+			continue
 		}
 		a.ldapAuthenticators[providerId] = provider
 	}
 
-	return nil
+	return failedOidc, failedOauth, failedLdap
 }
 
 // GetExternalLoginProviders returns a list of all available external login providers.

@@ -87,6 +87,7 @@ func main() {
 
 	authenticator, err := auth.NewAuthenticator(&cfg.Auth, cfg.Web.ExternalUrl, eventBus, userManager)
 	internal.AssertNoError(err)
+	authenticator.StartBackgroundJobs(ctx)
 
 	webAuthn, err := auth.NewWebAuthnAuthenticator(cfg, eventBus, userManager)
 	internal.AssertNoError(err)
