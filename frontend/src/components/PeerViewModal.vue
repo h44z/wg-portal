@@ -134,9 +134,9 @@ function ConfigQrUrl() {
         <span class="me-2">{{ $t('modals.peer-view.style-label') }}: </span>
         <div class="btn-group btn-switch-group" role="group" aria-label="Configuration Style">
           <input type="radio" class="btn-check" name="configstyle" id="raw" value="raw" autocomplete="off" checked="" v-model="configStyle">
-          <label class="btn btn-outline-primary btn-sm" for="raw">Raw</label>
+          <label class="btn btn-outline-dark btn-sm" for="raw">Raw</label>
           <input type="radio" class="btn-check" name="configstyle" id="wgquick" value="wgquick" autocomplete="off" checked="" v-model="configStyle">
-          <label class="btn btn-outline-primary btn-sm" for="wgquick">WG-Quick</label>
+          <label class="btn btn-outline-dark btn-sm" for="wgquick">WG-Quick</label>
         </div>
       </div>
       <div class="accordion" id="peerInformation">
