@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/a8m/envsubst v1.4.3
-	github.com/alexedwards/scs/v2 v2.8.0
+	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/coreos/go-oidc/v3 v3.14.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.11
