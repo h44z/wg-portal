@@ -112,7 +112,7 @@ onMounted(async () => {
       </div>
       <div class="form-group">
         <div class="input-group mb-3">
-          <button class="input-group-text btn btn-primary" :title="$t('interfaces.button-add-interface')" @click.prevent="editInterfaceId='#NEW#'">
+          <button class="btn btn-primary" :title="$t('interfaces.button-add-interface')" @click.prevent="editInterfaceId='#NEW#'">
             <i class="fa-solid fa-plus-circle"></i>
           </button>
           <select v-model="interfaces.selected" :disabled="interfaces.Count===0" class="form-select" @change="() => { peers.LoadPeers(); peers.LoadStats() }">
@@ -314,7 +314,7 @@ onMounted(async () => {
       <div class="form-group d-inline">
         <div class="input-group mb-3">
           <input v-model="peers.filter" class="form-control" :placeholder="$t('general.search.placeholder')" type="text" @keyup="peers.afterPageSizeChange">
-          <button class="input-group-text btn btn-primary" :title="$t('general.search.button')"><i class="fa-solid fa-search"></i></button>
+          <button class="btn btn-primary" :title="$t('general.search.button')"><i class="fa-solid fa-search"></i></button>
         </div>
       </div>
     </div>
@@ -429,3 +429,5 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+<style>
+</style>

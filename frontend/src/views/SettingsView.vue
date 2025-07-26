@@ -44,7 +44,7 @@ async function saveRename(credential) {
   <p class="lead">{{ $t('settings.abstract') }}</p>
 
   <div v-if="auth.IsAdmin || !settings.Setting('ApiAdminOnly')">
-    <div class="bg-light p-5" v-if="profile.user.ApiToken">
+    <div class="card border-secondary p-5" v-if="profile.user.ApiToken">
       <h2 class="display-7">{{ $t('settings.api.headline') }}</h2>
       <p class="lead">{{ $t('settings.api.abstract') }}</p>
       <hr class="my-4">
@@ -72,7 +72,7 @@ async function saveRename(credential) {
       </div>
       <div class="row mt-5">
         <div class="col-6">
-          <button class="input-group-text btn btn-primary" :title="$t('settings.api.button-disable-title')" @click.prevent="profile.disableApi()" :disabled="profile.isFetching">
+          <button class="btn btn-primary" :title="$t('settings.api.button-disable-title')" @click.prevent="profile.disableApi()" :disabled="profile.isFetching">
             <i class="fa-solid fa-minus-circle"></i> {{ $t('settings.api.button-disable-text') }}
           </button>
         </div>
@@ -81,18 +81,18 @@ async function saveRename(credential) {
         </div>
       </div>
     </div>
-    <div class="bg-light p-5" v-else>
+    <div class="card border-secondary p-5" v-else>
       <h2 class="display-7">{{ $t('settings.api.headline') }}</h2>
       <p class="lead">{{ $t('settings.api.abstract') }}</p>
       <hr class="my-4">
       <p>{{ $t('settings.api.inactive-description') }}</p>
-      <button class="input-group-text btn btn-primary" :title="$t('settings.api.button-enable-title')" @click.prevent="profile.enableApi()" :disabled="profile.isFetching">
+      <button class="btn btn-primary" :title="$t('settings.api.button-enable-title')" @click.prevent="profile.enableApi()" :disabled="profile.isFetching">
         <i class="fa-solid fa-plus-circle"></i> {{ $t('settings.api.button-enable-text') }}
       </button>
     </div>
   </div>
 
-  <div class="bg-light p-5 mt-5" v-if="settings.Setting('WebAuthnEnabled')">
+  <div class="card border-secondary p-5 mt-5" v-if="settings.Setting('WebAuthnEnabled')">
     <h2 class="display-7">{{ $t('settings.webauthn.headline') }}</h2>
     <p class="lead">{{ $t('settings.webauthn.abstract') }}</p>
     <hr class="my-4">
@@ -101,7 +101,7 @@ async function saveRename(credential) {
 
     <div class="row">
       <div class="col-6">
-        <button class="input-group-text btn btn-primary" :title="$t('settings.webauthn.button-register-text')" @click.prevent="auth.RegisterWebAuthn" :disabled="auth.isFetching">
+        <button class="btn btn-primary" :title="$t('settings.webauthn.button-register-text')" @click.prevent="auth.RegisterWebAuthn" :disabled="auth.isFetching">
           <i class="fa-solid fa-plus-circle"></i> {{ $t('settings.webauthn.button-register-title') }}
         </button>
       </div>
