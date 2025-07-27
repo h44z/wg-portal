@@ -100,6 +100,7 @@ func (s *Server) Run(ctx context.Context, listenAddress string) {
 	srvContext, cancelFn := context.WithCancel(ctx)
 	go func() {
 		var err error
+		slog.Debug("starting server", "certFile", s.cfg.Web.CertFile, "keyFile", s.cfg.Web.KeyFile)
 		if s.cfg.Web.CertFile != "" && s.cfg.Web.KeyFile != "" {
 			err = srv.ListenAndServeTLS(s.cfg.Web.CertFile, s.cfg.Web.KeyFile)
 		} else {
