@@ -197,6 +197,7 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 							p.CalcConnected()
 
 							if wasConnected != p.IsConnected {
+								slog.Debug("peer connection state changed", "peer", peer.Identifier, "connected", p.IsConnected)
 								connectionStateChanged = true
 								newPeerStatus = *p // store new status for event publishing
 							}
