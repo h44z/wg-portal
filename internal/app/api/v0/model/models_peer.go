@@ -198,7 +198,7 @@ func NewPeerStats(enabled bool, src []domain.PeerStatus) *PeerStats {
 
 	for _, srcStat := range src {
 		stats[string(srcStat.PeerId)] = PeerStatData{
-			IsConnected:      srcStat.IsConnected(),
+			IsConnected:      srcStat.IsConnected,
 			IsPingable:       srcStat.IsPingable,
 			LastPing:         srcStat.LastPing,
 			BytesReceived:    srcStat.BytesReceived,

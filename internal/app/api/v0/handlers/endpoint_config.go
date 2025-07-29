@@ -124,11 +124,14 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 
 		}
 
+		hasSocialLogin := len(e.cfg.Auth.OAuth) > 0 || len(e.cfg.Auth.OpenIDConnect) > 0 || e.cfg.Auth.WebAuthn.Enabled
+
 		// For anonymous users, we return the settings object with minimal information
 		if sessionUser.Id == domain.CtxUnknownUserId || sessionUser.Id == "" {
 			respond.JSON(w, http.StatusOK, model.Settings{
 				WebAuthnEnabled:   e.cfg.Auth.WebAuthn.Enabled,
 				AvailableBackends: []model.SettingsBackendNames{}, // return an empty list instead of null
+				LoginFormVisible:  !e.cfg.Auth.HideLoginForm || !hasSocialLogin,
 			})
 		} else {
 			respond.JSON(w, http.StatusOK, model.Settings{
@@ -139,6 +142,7 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 				WebAuthnEnabled:           e.cfg.Auth.WebAuthn.Enabled,
 				MinPasswordLength:         e.cfg.Auth.MinPasswordLength,
 				AvailableBackends:         controllerFn(),
+				LoginFormVisible:          !e.cfg.Auth.HideLoginForm || !hasSocialLogin,
 			})
 		}
 	}

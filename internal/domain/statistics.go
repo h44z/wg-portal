@@ -5,21 +5,23 @@ import (
 )
 
 type PeerStatus struct {
-	PeerId    PeerIdentifier `gorm:"primaryKey;column:identifier"`
-	UpdatedAt time.Time      `gorm:"column:updated_at"`
+	PeerId    PeerIdentifier `gorm:"primaryKey;column:identifier" json:"PeerId"`
+	UpdatedAt time.Time      `gorm:"column:updated_at" json:"-"`
 
-	IsPingable bool       `gorm:"column:pingable"`
-	LastPing   *time.Time `gorm:"column:last_ping"`
+	IsConnected bool `gorm:"column:connected" json:"IsConnected"` // indicates if the peer is connected based on the last handshake or ping
 
-	BytesReceived    uint64 `gorm:"column:received"`
-	BytesTransmitted uint64 `gorm:"column:transmitted"`
+	IsPingable bool       `gorm:"column:pingable" json:"IsPingable"`
+	LastPing   *time.Time `gorm:"column:last_ping" json:"LastPing"`
 
-	LastHandshake    *time.Time `gorm:"column:last_handshake"`
-	Endpoint         string     `gorm:"column:endpoint"`
-	LastSessionStart *time.Time `gorm:"column:last_session_start"`
+	BytesReceived    uint64 `gorm:"column:received" json:"BytesReceived"`
+	BytesTransmitted uint64 `gorm:"column:transmitted" json:"BytesTransmitted"`
+
+	LastHandshake    *time.Time `gorm:"column:last_handshake" json:"LastHandshake"`
+	Endpoint         string     `gorm:"column:endpoint" json:"Endpoint"`
+	LastSessionStart *time.Time `gorm:"column:last_session_start" json:"LastSessionStart"`
 }
 
-func (s PeerStatus) IsConnected() bool {
+func (s *PeerStatus) CalcConnected() {
 	oldestHandshakeTime := time.Now().Add(-2 * time.Minute) // if a handshake is older than 2 minutes, the peer is no longer connected
 
 	handshakeValid := false
@@ -27,7 +29,7 @@ func (s PeerStatus) IsConnected() bool {
 		handshakeValid = !s.LastHandshake.Before(oldestHandshakeTime)
 	}
 
-	return s.IsPingable || handshakeValid
+	s.IsConnected = s.IsPingable || handshakeValid
 }
 
 type InterfaceStatus struct {

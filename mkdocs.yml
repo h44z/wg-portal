@@ -82,6 +82,7 @@ nav:
           - General: documentation/usage/general.md
           - LDAP: documentation/usage/ldap.md
           - Security: documentation/usage/security.md
+          - Webhooks: documentation/usage/webhooks.md
           - REST API: documentation/rest-api/api-doc.md
       - Upgrade: documentation/upgrade/v1.md
       - Monitoring: documentation/monitoring/prometheus.md

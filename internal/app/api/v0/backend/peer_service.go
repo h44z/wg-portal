@@ -27,12 +27,12 @@ type PeerServicePeerManager interface {
 }
 
 type PeerServiceConfigFileManager interface {
-	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
-	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
+	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
 }
 
 type PeerServiceMailManager interface {
-	SendPeerEmail(ctx context.Context, linkOnly bool, peers ...domain.PeerIdentifier) error
+	SendPeerEmail(ctx context.Context, linkOnly bool, style string, peers ...domain.PeerIdentifier) error
 }
 
 // endregion dependencies
@@ -95,16 +95,24 @@ func (p PeerService) DeletePeer(ctx context.Context, id domain.PeerIdentifier) e
 	return p.peers.DeletePeer(ctx, id)
 }
 
-func (p PeerService) GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error) {
-	return p.configFile.GetPeerConfig(ctx, id)
+func (p PeerService) GetPeerConfig(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error) {
+	return p.configFile.GetPeerConfig(ctx, id, style)
 }
 
-func (p PeerService) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error) {
-	return p.configFile.GetPeerConfigQrCode(ctx, id)
+func (p PeerService) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier, style string) (
+	io.Reader,
+	error,
+) {
+	return p.configFile.GetPeerConfigQrCode(ctx, id, style)
 }
 
-func (p PeerService) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...domain.PeerIdentifier) error {
-	return p.mailer.SendPeerEmail(ctx, linkOnly, peers...)
+func (p PeerService) SendPeerEmail(
+	ctx context.Context,
+	linkOnly bool,
+	style string,
+	peers ...domain.PeerIdentifier,
+) error {
+	return p.mailer.SendPeerEmail(ctx, linkOnly, style, peers...)
 }
 
 func (p PeerService) GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error) {

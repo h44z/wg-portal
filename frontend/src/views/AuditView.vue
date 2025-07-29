@@ -26,7 +26,7 @@ onMounted(async () => {
       <div class="form-group d-inline">
         <div class="input-group mb-3">
           <input v-model="audit.filter" class="form-control" :placeholder="$t('general.search.placeholder')" type="text" @keyup="audit.afterPageSizeChange">
-          <button class="input-group-text btn btn-primary" :title="$t('general.search.button')"><i class="fa-solid fa-search"></i></button>
+          <button class="btn btn-primary" :title="$t('general.search.button')"><i class="fa-solid fa-search"></i></button>
         </div>
       </div>
     </div>

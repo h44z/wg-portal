@@ -13,6 +13,7 @@ type Settings struct {
 	WebAuthnEnabled           bool                   `json:"WebAuthnEnabled"`
 	MinPasswordLength         int                    `json:"MinPasswordLength"`
 	AvailableBackends         []SettingsBackendNames `json:"AvailableBackends"`
+	LoginFormVisible          bool                   `json:"LoginFormVisible"`
 }
 
 type SettingsBackendNames struct {

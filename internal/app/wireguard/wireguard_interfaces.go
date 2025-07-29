@@ -471,7 +471,7 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 
 	physicalInterface, _ := m.wg.GetController(*existingInterface).GetInterface(ctx, id)
 
-	if err := m.handleInterfacePreSaveHooks(true, existingInterface); err != nil {
+	if err := m.handleInterfacePreSaveHooks(existingInterface, !existingInterface.IsDisabled(), false); err != nil {
 		return fmt.Errorf("pre-delete hooks failed: %w", err)
 	}
 
@@ -500,7 +500,7 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		Table:  existingInterface.GetRoutingTable(),
 	})
 
-	if err := m.handleInterfacePostSaveHooks(true, existingInterface); err != nil {
+	if err := m.handleInterfacePostSaveHooks(existingInterface, !existingInterface.IsDisabled(), false); err != nil {
 		return fmt.Errorf("post-delete hooks failed: %w", err)
 	}
 
@@ -519,9 +519,9 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 		return nil, fmt.Errorf("interface validation failed: %w", err)
 	}
 
-	stateChanged := m.hasInterfaceStateChanged(ctx, iface)
+	oldEnabled, newEnabled := m.getInterfaceStateHistory(ctx, iface)
 
-	if err := m.handleInterfacePreSaveHooks(stateChanged, iface); err != nil {
+	if err := m.handleInterfacePreSaveHooks(iface, oldEnabled, newEnabled); err != nil {
 		return nil, fmt.Errorf("pre-save hooks failed: %w", err)
 	}
 
@@ -561,7 +561,7 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 		m.bus.Publish(app.TopicRouteUpdate, "interface updated: "+string(iface.Identifier))
 	}
 
-	if err := m.handleInterfacePostSaveHooks(stateChanged, iface); err != nil {
+	if err := m.handleInterfacePostSaveHooks(iface, oldEnabled, newEnabled); err != nil {
 		return nil, fmt.Errorf("post-save hooks failed: %w", err)
 	}
 
@@ -576,32 +576,13 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 	return iface, nil
 }
 
-func (m Manager) hasInterfaceStateChanged(ctx context.Context, iface *domain.Interface) bool {
+func (m Manager) getInterfaceStateHistory(ctx context.Context, iface *domain.Interface) (oldEnabled, newEnabled bool) {
 	oldInterface, err := m.db.GetInterface(ctx, iface.Identifier)
 	if err != nil {
-		return false
+		return false, !iface.IsDisabled() // if the interface did not exist, we assume it was not enabled
 	}
 
-	if oldInterface.IsDisabled() != iface.IsDisabled() {
-		return true // interface in db has changed
-	}
-
-	wgInterface, err := m.wg.GetController(*iface).GetInterface(ctx, iface.Identifier)
-	if err != nil {
-		return true // interface might not exist - so we assume that there must be a change
-	}
-
-	// compare physical interface settings
-	if len(wgInterface.Addresses) != len(iface.Addresses) ||
-		wgInterface.Mtu != iface.Mtu ||
-		wgInterface.FirewallMark != iface.FirewallMark ||
-		wgInterface.ListenPort != iface.ListenPort ||
-		wgInterface.PrivateKey != iface.PrivateKey ||
-		wgInterface.PublicKey != iface.PublicKey {
-		return true
-	}
-
-	return false
+	return !oldInterface.IsDisabled(), !iface.IsDisabled()
 }
 
 func (m Manager) handleInterfacePreSaveActions(iface *domain.Interface) error {
@@ -617,12 +598,14 @@ func (m Manager) handleInterfacePreSaveActions(iface *domain.Interface) error {
 	return nil
 }
 
-func (m Manager) handleInterfacePreSaveHooks(stateChanged bool, iface *domain.Interface) error {
-	if !stateChanged {
+func (m Manager) handleInterfacePreSaveHooks(iface *domain.Interface, oldEnabled, newEnabled bool) error {
+	if oldEnabled == newEnabled {
 		return nil // do nothing if state did not change
 	}
 
-	if !iface.IsDisabled() {
+	slog.Debug("executing pre-save hooks", "interface", iface.Identifier, "up", newEnabled)
+
+	if newEnabled {
 		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PreUp); err != nil {
 			return fmt.Errorf("failed to execute pre-up hook: %w", err)
 		}
@@ -634,12 +617,14 @@ func (m Manager) handleInterfacePreSaveHooks(stateChanged bool, iface *domain.In
 	return nil
 }
 
-func (m Manager) handleInterfacePostSaveHooks(stateChanged bool, iface *domain.Interface) error {
-	if !stateChanged {
+func (m Manager) handleInterfacePostSaveHooks(iface *domain.Interface, oldEnabled, newEnabled bool) error {
+	if oldEnabled == newEnabled {
 		return nil // do nothing if state did not change
 	}
 
-	if !iface.IsDisabled() {
+	slog.Debug("executing post-save hooks", "interface", iface.Identifier, "up", newEnabled)
+
+	if newEnabled {
 		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PostUp); err != nil {
 			return fmt.Errorf("failed to execute post-up hook: %w", err)
 		}

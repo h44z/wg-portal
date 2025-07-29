@@ -475,7 +475,8 @@
       "connected-since": "Connected since",
       "endpoint": "Endpoint",
       "button-download": "Download configuration",
-      "button-email": "Send configuration via E-Mail"
+      "button-email": "Send configuration via E-Mail",
+      "style-label": "Configuration Style"
     },
     "peer-edit": {
       "headline-edit-peer": "Edit peer:",

@@ -65,6 +65,14 @@ a.disabled {
   color: var(--bs-body-color);
 }
 
+[data-bs-theme=dark] .vue-tags-input .ti-tag {
+  position: relative;
+  background: #3c3c3c;
+  border: 2px solid var(--bs-body-color);
+  margin: 6px;
+  color: var(--bs-body-color);
+}
+
 /* the styles if a tag is invalid */
 .vue-tags-input .ti-tag.ti-invalid {
   background-color: #e88a74;

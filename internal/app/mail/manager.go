@@ -21,9 +21,9 @@ type ConfigFileManager interface {
 	// GetInterfaceConfig returns the configuration for the given interface.
 	GetInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) (io.Reader, error)
 	// GetPeerConfig returns the configuration for the given peer.
-	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
 	// GetPeerConfigQrCode returns the QR code for the given peer.
-	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
 }
 
 type UserDatabaseRepo interface {
@@ -71,7 +71,7 @@ func NewMailManager(
 	users UserDatabaseRepo,
 	wg WireguardDatabaseRepo,
 ) (*Manager, error) {
-	tplHandler, err := newTemplateHandler(cfg.Web.ExternalUrl)
+	tplHandler, err := newTemplateHandler(cfg.Web.ExternalUrl, cfg.Web.SiteTitle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template handler: %w", err)
 	}
@@ -89,7 +89,7 @@ func NewMailManager(
 }
 
 // SendPeerEmail sends an email to the user linked to the given peers.
-func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...domain.PeerIdentifier) error {
+func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, style string, peers ...domain.PeerIdentifier) error {
 	for _, peerId := range peers {
 		peer, err := m.wg.GetPeer(ctx, peerId)
 		if err != nil {
@@ -123,7 +123,7 @@ func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...doma
 			continue
 		}
 
-		err = m.sendPeerEmail(ctx, linkOnly, user, peer)
+		err = m.sendPeerEmail(ctx, linkOnly, style, user, peer)
 		if err != nil {
 			return fmt.Errorf("failed to send peer email for %s: %w", peerId, err)
 		}
@@ -132,7 +132,13 @@ func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...doma
 	return nil
 }
 
-func (m Manager) sendPeerEmail(ctx context.Context, linkOnly bool, user *domain.User, peer *domain.Peer) error {
+func (m Manager) sendPeerEmail(
+	ctx context.Context,
+	linkOnly bool,
+	style string,
+	user *domain.User,
+	peer *domain.Peer,
+) error {
 	qrName := "WireGuardQRCode.png"
 	configName := peer.GetConfigFileName()
 
@@ -148,12 +154,12 @@ func (m Manager) sendPeerEmail(ctx context.Context, linkOnly bool, user *domain.
 		}
 
 	} else {
-		peerConfig, err := m.configFiles.GetPeerConfig(ctx, peer.Identifier)
+		peerConfig, err := m.configFiles.GetPeerConfig(ctx, peer.Identifier, style)
 		if err != nil {
 			return fmt.Errorf("failed to fetch peer config for %s: %w", peer.Identifier, err)
 		}
 
-		peerConfigQr, err := m.configFiles.GetPeerConfigQrCode(ctx, peer.Identifier)
+		peerConfigQr, err := m.configFiles.GetPeerConfigQrCode(ctx, peer.Identifier, style)
 		if err != nil {
 			return fmt.Errorf("failed to fetch peer config QR code for %s: %w", peer.Identifier, err)
 		}

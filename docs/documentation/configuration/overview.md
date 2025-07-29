@@ -38,6 +38,7 @@ advanced:
   rule_prio_offset: 20000
   route_table_offset: 20000
   api_admin_only: true
+  limit_additional_user_peers: 0
 
 database:
   debug: false
@@ -75,6 +76,7 @@ auth:
   webauthn:
     enabled: true
   min_password_length: 16
+  hide_login_form: false
 
 web:
   listening_address: :8888
@@ -215,6 +217,10 @@ Additional or more specialized configuration options for logging and interface c
 - **Default:** `true`
 - **Description:** If `true`, the public REST API is accessible only to admin users. The API docs live at [`/api/v1/doc.html`](../rest-api/api-doc.md).
 
+### `limit_additional_user_peers`
+- **Default:** `0`
+- **Description:** Limit additional peers a normal user can create. `0` means unlimited.
+
 ---
 
 ## Database
@@ -348,6 +354,12 @@ Some core authentication options are shared across all providers, while others a
 - **Description:** Minimum password length for local authentication. This is not enforced for LDAP authentication.
   The default admin password strength is also enforced by this setting.
 - **Important:** The password should be strong and secure. It is recommended to use a password with at least 16 characters, including uppercase and lowercase letters, numbers, and special characters.
+
+### `hide_login_form`
+- **Default:** `false`
+- **Description:** If `true`, the login form is hidden and only the OIDC, OAuth, LDAP, or WebAuthn providers are shown. This is useful if you want to enforce a specific authentication method.
+  If no social login providers are configured, the login form is always shown, regardless of this setting.
+- **Important:** You can still access the login form by adding the `?all` query parameter to the login URL (e.g. https://wg.portal/#/login?all). 
 
 ---
 
@@ -661,18 +673,7 @@ Without a valid `external_url`, the login process may fail due to CSRF protectio
 ## Webhook
 
 The webhook section allows you to configure a webhook that is called on certain events in WireGuard Portal.
-A JSON object is sent in a POST request to the webhook URL with the following structure:
-```json
-{
-  "event": "peer_created",
-  "entity": "peer",
-  "identifier": "the-peer-identifier",
-  "payload": {
-    // The payload of the event, e.g. peer data.
-    // Check the API documentation for the exact structure.
-  }
-}
-```
+Further details can be found in the [usage documentation](../usage/webhooks.md).
 
 ### `url`
 - **Default:** *(empty)*

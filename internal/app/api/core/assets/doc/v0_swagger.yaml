@@ -381,8 +381,12 @@ definitions:
     properties:
       ApiAdminOnly:
         type: boolean
+      LoginFormVisible:
+        type: boolean
       MailLinkOnly:
         type: boolean
+      MinPasswordLength:
+        type: integer
       PersistentConfigSupported:
         type: boolean
       SelfProvisioning:
@@ -472,7 +476,22 @@ paths:
       summary: Get all available audit entries. Ordered by timestamp.
       tags:
       - Audit
-  /auth/{provider}/callback:
+  /auth/login:
+    post:
+      operationId: auth_handleLoginPost
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.LoginProviderInfo'
+            type: array
+      summary: Get all available external login providers.
+      tags:
+      - Authentication
+  /auth/login/{provider}/callback:
     get:
       operationId: auth_handleOauthCallbackGet
       produces:
@@ -487,7 +506,7 @@ paths:
       summary: Handle the OAuth callback.
       tags:
       - Authentication
-  /auth/{provider}/init:
+  /auth/login/{provider}/init:
     get:
       operationId: auth_handleOauthInitiateGet
       produces:
@@ -500,21 +519,6 @@ paths:
               $ref: '#/definitions/model.LoginProviderInfo'
             type: array
       summary: Initiate the OAuth login flow.
-      tags:
-      - Authentication
-  /auth/login:
-    post:
-      operationId: auth_handleLoginPost
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.LoginProviderInfo'
-            type: array
-      summary: Get all available external login providers.
       tags:
       - Authentication
   /auth/logout:
@@ -1068,6 +1072,10 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/model.PeerMailRequest'
+      - description: The configuration style
+        in: query
+        name: style
+        type: string
       produces:
       - application/json
       responses:
@@ -1092,6 +1100,10 @@ paths:
         in: path
         name: id
         required: true
+        type: string
+      - description: The configuration style
+        in: query
+        name: style
         type: string
       produces:
       - image/png
@@ -1120,6 +1132,10 @@ paths:
         in: path
         name: id
         required: true
+        type: string
+      - description: The configuration style
+        in: query
+        name: style
         type: string
       produces:
       - application/json

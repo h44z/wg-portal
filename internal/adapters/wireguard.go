@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/vishvananda/netlink"
@@ -16,8 +17,9 @@ import (
 
 // WgRepo implements all low-level WireGuard interactions.
 type WgRepo struct {
-	wg lowlevel.WireGuardClient
-	nl lowlevel.NetlinkClient
+	wg  lowlevel.WireGuardClient
+	nl  lowlevel.NetlinkClient
+	log *slog.Logger
 }
 
 // NewWireGuardRepository creates a new WgRepo instance.
@@ -31,8 +33,9 @@ func NewWireGuardRepository() *WgRepo {
 	nl := &lowlevel.NetlinkManager{}
 
 	repo := &WgRepo{
-		wg: wg,
-		nl: nl,
+		wg:  wg,
+		nl:  nl,
+		log: slog.Default().With(slog.String("adapter", "wireguard")),
 	}
 
 	return repo
@@ -40,8 +43,10 @@ func NewWireGuardRepository() *WgRepo {
 
 // GetInterfaces returns all existing WireGuard interfaces.
 func (r *WgRepo) GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, error) {
+	r.log.Debug("getting all interfaces")
 	devices, err := r.wg.Devices()
 	if err != nil {
+		r.log.Error("failed to get devices", "error", err)
 		return nil, fmt.Errorf("device list error: %w", err)
 	}
 
@@ -60,14 +65,17 @@ func (r *WgRepo) GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, e
 // GetInterface returns the interface with the given id.
 // If no interface is found, an error os.ErrNotExist is returned.
 func (r *WgRepo) GetInterface(_ context.Context, id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error) {
+	r.log.Debug("getting interface", "id", id)
 	return r.getInterface(id)
 }
 
 // GetPeers returns all peers associated with the given interface id.
 // If the requested interface is found, an error os.ErrNotExist is returned.
 func (r *WgRepo) GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier) ([]domain.PhysicalPeer, error) {
+	r.log.Debug("getting peers for interface", "deviceId", deviceId)
 	device, err := r.wg.Device(string(deviceId))
 	if err != nil {
+		r.log.Error("failed to get device", "deviceId", deviceId, "error", err)
 		return nil, fmt.Errorf("device error: %w", err)
 	}
 
@@ -90,6 +98,7 @@ func (r *WgRepo) GetPeer(
 	deviceId domain.InterfaceIdentifier,
 	id domain.PeerIdentifier,
 ) (*domain.PhysicalPeer, error) {
+	r.log.Debug("getting peer", "deviceId", deviceId, "peerId", id)
 	return r.getPeer(deviceId, id)
 }
 
@@ -174,25 +183,31 @@ func (r *WgRepo) SaveInterface(
 	id domain.InterfaceIdentifier,
 	updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error),
 ) error {
+	r.log.Debug("saving interface", "id", id)
 	physicalInterface, err := r.getOrCreateInterface(id)
 	if err != nil {
+		r.log.Error("failed to get or create interface", "id", id, "error", err)
 		return err
 	}
 
 	if updateFunc != nil {
 		physicalInterface, err = updateFunc(physicalInterface)
 		if err != nil {
+			r.log.Error("interface update function failed", "id", id, "error", err)
 			return err
 		}
 	}
 
 	if err := r.updateLowLevelInterface(physicalInterface); err != nil {
+		r.log.Error("failed to update low level interface", "id", id, "error", err)
 		return err
 	}
 	if err := r.updateWireGuardInterface(physicalInterface); err != nil {
+		r.log.Error("failed to update wireguard interface", "id", id, "error", err)
 		return err
 	}
 
+	r.log.Debug("successfully saved interface", "id", id)
 	return nil
 }
 
@@ -323,10 +338,13 @@ func (r *WgRepo) updateWireGuardInterface(pi *domain.PhysicalInterface) error {
 // DeleteInterface deletes the interface with the given id.
 // If the requested interface is found, no error is returned.
 func (r *WgRepo) DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error {
+	r.log.Debug("deleting interface", "id", id)
 	if err := r.deleteLowLevelInterface(id); err != nil {
+		r.log.Error("failed to delete low level interface", "id", id, "error", err)
 		return err
 	}
 
+	r.log.Debug("successfully deleted interface", "id", id)
 	return nil
 }
 
@@ -356,20 +374,25 @@ func (r *WgRepo) SavePeer(
 	id domain.PeerIdentifier,
 	updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error),
 ) error {
+	r.log.Debug("saving peer", "deviceId", deviceId, "peerId", id)
 	physicalPeer, err := r.getOrCreatePeer(deviceId, id)
 	if err != nil {
+		r.log.Error("failed to get or create peer", "deviceId", deviceId, "peerId", id, "error", err)
 		return err
 	}
 
 	physicalPeer, err = updateFunc(physicalPeer)
 	if err != nil {
+		r.log.Error("peer update function failed", "deviceId", deviceId, "peerId", id, "error", err)
 		return err
 	}
 
 	if err := r.updatePeer(deviceId, physicalPeer); err != nil {
+		r.log.Error("failed to update peer", "deviceId", deviceId, "peerId", id, "error", err)
 		return err
 	}
 
+	r.log.Debug("successfully saved peer", "deviceId", deviceId, "peerId", id)
 	return nil
 }
 
@@ -441,6 +464,7 @@ func (r *WgRepo) updatePeer(deviceId domain.InterfaceIdentifier, pp *domain.Phys
 
 	err := r.wg.ConfigureDevice(string(deviceId), wgtypes.Config{ReplacePeers: false, Peers: []wgtypes.PeerConfig{cfg}})
 	if err != nil {
+		r.log.Error("failed to configure device for peer update", "deviceId", deviceId, "peerId", pp.Identifier, "error", err)
 		return err
 	}
 
@@ -450,15 +474,20 @@ func (r *WgRepo) updatePeer(deviceId domain.InterfaceIdentifier, pp *domain.Phys
 // DeletePeer deletes the peer with the given id.
 // If the requested interface or peer is found, no error is returned.
 func (r *WgRepo) DeletePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error {
+	r.log.Debug("deleting peer", "deviceId", deviceId, "peerId", id)
 	if !id.IsPublicKey() {
-		return errors.New("invalid public key")
+		err := errors.New("invalid public key")
+		r.log.Error("invalid peer id", "peerId", id, "error", err)
+		return err
 	}
 
 	err := r.deletePeer(deviceId, id)
 	if err != nil {
+		r.log.Error("failed to delete peer", "deviceId", deviceId, "peerId", id, "error", err)
 		return err
 	}
 
+	r.log.Debug("successfully deleted peer", "deviceId", deviceId, "peerId", id)
 	return nil
 }
 
@@ -470,6 +499,7 @@ func (r *WgRepo) deletePeer(deviceId domain.InterfaceIdentifier, id domain.PeerI
 
 	err := r.wg.ConfigureDevice(string(deviceId), wgtypes.Config{ReplacePeers: false, Peers: []wgtypes.PeerConfig{cfg}})
 	if err != nil {
+		r.log.Error("failed to configure device for peer deletion", "deviceId", deviceId, "peerId", id, "error", err)
 		return err
 	}
 

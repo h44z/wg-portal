@@ -65,7 +65,7 @@ onMounted(async () => {
         <div class="input-group mb-3">
           <input v-model="profile.filter" class="form-control" :placeholder="$t('general.search.placeholder')" type="text"
             @keyup="profile.afterPageSizeChange">
-          <button class="input-group-text btn btn-primary" :title="$t('general.search.button')"><i
+          <button class="btn btn-primary" :title="$t('general.search.button')"><i
               class="fa-solid fa-search"></i></button>
         </div>
       </div>
@@ -73,7 +73,7 @@ onMounted(async () => {
     <div class="col-12 col-lg-3 text-lg-end">
       <div class="form-group" v-if="settings.Setting('SelfProvisioning')">
         <div class="input-group mb-3">
-          <button class="input-group-text btn btn-primary" :title="$t('interfaces.button-add-peer')" @click.prevent="editPeerId = '#NEW#'">
+          <button class="btn btn-primary" :title="$t('interfaces.button-add-peer')" @click.prevent="editPeerId = '#NEW#'">
             <i class="fa fa-plus me-1"></i><i class="fa fa-user"></i>
           </button>
           <select v-model="profile.selectedInterfaceId" :disabled="profile.CountInterfaces===0" class="form-select">

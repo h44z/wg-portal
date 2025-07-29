@@ -46,7 +46,7 @@ type TemplateRenderer interface {
 	// GetInterfaceConfig returns the configuration file for the given interface.
 	GetInterfaceConfig(iface *domain.Interface, peers []domain.Peer) (io.Reader, error)
 	// GetPeerConfig returns the configuration file for the given peer.
-	GetPeerConfig(peer *domain.Peer) (io.Reader, error)
+	GetPeerConfig(peer *domain.Peer, style string) (io.Reader, error)
 }
 
 type EventBus interface {
@@ -186,7 +186,7 @@ func (m Manager) GetInterfaceConfig(ctx context.Context, id domain.InterfaceIden
 
 // GetPeerConfig returns the configuration file for the given peer.
 // The file is structured in wg-quick format.
-func (m Manager) GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error) {
+func (m Manager) GetPeerConfig(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error) {
 	peer, err := m.wg.GetPeer(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch peer %s: %w", id, err)
@@ -196,11 +196,11 @@ func (m Manager) GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (i
 		return nil, err
 	}
 
-	return m.tplHandler.GetPeerConfig(peer)
+	return m.tplHandler.GetPeerConfig(peer, style)
 }
 
 // GetPeerConfigQrCode returns a QR code image containing the configuration for the given peer.
-func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error) {
+func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error) {
 	peer, err := m.wg.GetPeer(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch peer %s: %w", id, err)
@@ -210,7 +210,7 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 		return nil, err
 	}
 
-	cfgData, err := m.tplHandler.GetPeerConfig(peer)
+	cfgData, err := m.tplHandler.GetPeerConfig(peer, style)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get peer config for %s: %w", id, err)
 	}

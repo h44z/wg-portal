@@ -14,6 +14,10 @@ const settings = settingsStore()
 onMounted(async () => {
   console.log("Starting WireGuard Portal frontend...");
 
+  // restore theme from localStorage
+  const theme = localStorage.getItem('wgTheme') || 'light';
+  document.documentElement.setAttribute('data-bs-theme', theme);
+
   await sec.LoadSecurityProperties();
   await auth.LoadProviders();
 
@@ -37,6 +41,13 @@ const switchLanguage = function (lang) {
   if (appGlobal.$i18n.locale !== lang) {
     localStorage.setItem('wgLang', lang);
     appGlobal.$i18n.locale = lang;
+  }
+}
+
+const switchTheme = function (theme) {
+  if (document.documentElement.getAttribute('data-bs-theme') !== theme) {
+    localStorage.setItem('wgTheme', theme);
+    document.documentElement.setAttribute('data-bs-theme', theme);
   }
 }
 
@@ -125,6 +136,24 @@ const userDisplayName = computed(() => {
           <div v-if="!auth.IsAuthenticated" class="nav-item">
             <RouterLink :to="{ name: 'login' }" class="nav-link"><i class="fas fa-sign-in-alt fa-sm fa-fw me-2"></i>{{ $t('menu.login') }}</RouterLink>
           </div>
+          <div class="nav-item dropdown" data-bs-theme="light">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="theme-menu" aria-expanded="false" data-bs-toggle="dropdown" data-bs-display="static" aria-label="Toggle theme">
+              <i class="fa-solid fa-circle-half-stroke"></i>
+              <span class="d-lg-none ms-2">Toggle theme</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" @click.prevent="switchTheme('light')" aria-pressed="false">
+                  <i class="fa-solid fa-sun"></i><span class="ms-2">Light</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" @click.prevent="switchTheme('dark')" aria-pressed="true">
+                  <i class="fa-solid fa-moon"></i><span class="ms-2">Dark</span>
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -141,7 +170,7 @@ const userDisplayName = computed(() => {
         <div class="col-6 text-end">
           <div :aria-label="$t('menu.lang')" class="btn-group" role="group">
             <div class="btn-group" role="group">
-              <button aria-expanded="false" aria-haspopup="true" class="btn btn btn-secondary pe-0"
+              <button aria-expanded="false" aria-haspopup="true" class="btn flag-button pe-0"
                 data-bs-toggle="dropdown" type="button"><span :class="languageFlag" class="fi"></span></button>
               <div aria-labelledby="btnGroupDrop3" class="dropdown-menu" style="">
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('de')"><span class="fi fi-de"></span> Deutsch</a>
@@ -163,4 +192,31 @@ const userDisplayName = computed(() => {
   </footer>
 </template>
 
-<style></style>
+<style>
+.flag-button:active,.flag-button:hover,.flag-button:focus,.flag-button:checked,.flag-button:disabled,.flag-button:not(:disabled) {
+  border: 1px solid transparent!important;
+}
+[data-bs-theme=dark] .form-select {
+  color: #0c0c0c!important;
+  background-color: #c1c1c1!important;
+  --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e")!important;
+}
+[data-bs-theme=dark] .form-control {
+  color: #0c0c0c!important;
+  background-color: #c1c1c1!important;
+}
+[data-bs-theme=dark] .form-control:focus {
+  color: #0c0c0c!important;
+  background-color: #c1c1c1!important;
+}
+[data-bs-theme=dark] .badge.bg-light {
+  --bs-bg-opacity: 1;
+  background-color: rgba(var(--bs-dark-rgb), var(--bs-bg-opacity)) !important;
+  color: var(--bs-badge-color)!important;
+}
+[data-bs-theme=dark] span.input-group-text {
+  --bs-bg-opacity: 1;
+  background-color: rgba(var(--bs-dark-rgb), var(--bs-bg-opacity)) !important;
+  color: var(--bs-badge-color)!important;
+}
+</style>

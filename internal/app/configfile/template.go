@@ -55,11 +55,12 @@ func (c TemplateHandler) GetInterfaceConfig(cfg *domain.Interface, peers []domai
 }
 
 // GetPeerConfig returns the rendered configuration file for a WireGuard peer.
-func (c TemplateHandler) GetPeerConfig(peer *domain.Peer) (io.Reader, error) {
+func (c TemplateHandler) GetPeerConfig(peer *domain.Peer, style string) (io.Reader, error) {
 	var tplBuff bytes.Buffer
 
 	err := c.templates.ExecuteTemplate(&tplBuff, "wg_peer.tpl", map[string]any{
-		"Peer": peer,
+		"Style": style,
+		"Peer":  peer,
 		"Portal": map[string]any{
 			"Version": "unknown",
 		},

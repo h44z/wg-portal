@@ -474,7 +474,8 @@
       "connected-since": "Verbunden seit",
       "endpoint": "Endpunkt",
       "button-download": "Konfiguration herunterladen",
-      "button-email": "Konfiguration per E-Mail senden"
+      "button-email": "Konfiguration per E-Mail senden",
+      "style-label": "Konfigurationsformat"
     },
     "peer-edit": {
       "headline-edit-peer": "Peer bearbeiten:",

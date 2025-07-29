@@ -50,7 +50,7 @@ const selectedStats = computed(() => {
 
   if (!s) {
     if (!!props.peerId || props.peerId.length) {
-      p = profile.Statistics(props.peerId)
+      s = profile.Statistics(props.peerId)
     } else {
       s = freshStats() // dummy stats to avoid 'undefined' exceptions
     }
@@ -79,13 +79,19 @@ const title = computed(() => {
   }
 })
 
+const configStyle = ref("wgquick")
+
 watch(() => props.visible, async (newValue, oldValue) => {
   if (oldValue === false && newValue === true) { // if modal is shown
-    await peers.LoadPeerConfig(selectedPeer.value.Identifier)
+    await peers.LoadPeerConfig(selectedPeer.value.Identifier, configStyle.value)
     configString.value = peers.configuration
   }
-}
-)
+})
+
+watch(() => configStyle.value, async () => {
+  await peers.LoadPeerConfig(selectedPeer.value.Identifier, configStyle.value)
+  configString.value = peers.configuration
+})
 
 function download() {
   // credit: https://www.bitdegree.org/learn/javascript-download
@@ -103,7 +109,7 @@ function download() {
 }
 
 function email() {
-  peers.MailPeerConfig(settings.Setting("MailLinkOnly"), [selectedPeer.value.Identifier]).catch(e => {
+  peers.MailPeerConfig(settings.Setting("MailLinkOnly"), configStyle.value, [selectedPeer.value.Identifier]).catch(e => {
     notify({
       title: "Failed to send mail with peer configuration!",
       text: e.toString(),
@@ -114,7 +120,7 @@ function email() {
 
 function ConfigQrUrl() {
   if (props.peerId.length) {
-    return apiWrapper.url(`/peer/config-qr/${base64_url_encode(props.peerId)}`)
+    return apiWrapper.url(`/peer/config-qr/${base64_url_encode(props.peerId)}?style=${configStyle.value}`)
   }
   return ''
 }
@@ -124,6 +130,15 @@ function ConfigQrUrl() {
 <template>
   <Modal :title="title" :visible="visible" @close="close">
     <template #default>
+      <div class="d-flex justify-content-end align-items-center mb-1">
+        <span class="me-2">{{ $t('modals.peer-view.style-label') }}: </span>
+        <div class="btn-group btn-switch-group" role="group" aria-label="Configuration Style">
+          <input type="radio" class="btn-check" name="configstyle" id="raw" value="raw" autocomplete="off" checked="" v-model="configStyle">
+          <label class="btn btn-outline-dark btn-sm" for="raw">Raw</label>
+          <input type="radio" class="btn-check" name="configstyle" id="wgquick" value="wgquick" autocomplete="off" checked="" v-model="configStyle">
+          <label class="btn btn-outline-dark btn-sm" for="wgquick">WG-Quick</label>
+        </div>
+      </div>
       <div class="accordion" id="peerInformation">
         <div class="accordion-item">
           <h2 class="accordion-header">
@@ -213,6 +228,14 @@ function ConfigQrUrl() {
   </template>
 </Modal></template>
 
-<style>.config-qr-img {
+<style>
+.config-qr-img {
   max-width: 100%;
-}</style>
+}
+
+.btn-switch-group .btn {
+  border-width: 1px;
+  padding: 5px;
+  line-height: 1;
+}
+</style>
