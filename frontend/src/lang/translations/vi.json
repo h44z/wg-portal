@@ -98,7 +98,7 @@
     },
     "interface": {
       "headline": "Trạng thái giao diện cho",
-      "mode": "chế độ",
+      "backend": "phần sau",
       "key": "Khóa Công khai",
       "endpoint": "Điểm cuối Công khai",
       "port": "Cổng Nghe",

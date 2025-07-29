@@ -5,16 +5,19 @@ import PeerMultiCreateModal from "../components/PeerMultiCreateModal.vue";
 import InterfaceEditModal from "../components/InterfaceEditModal.vue";
 import InterfaceViewModal from "../components/InterfaceViewModal.vue";
 
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import {peerStore} from "@/stores/peers";
 import {interfaceStore} from "@/stores/interfaces";
 import {notify} from "@kyvg/vue3-notification";
 import {settingsStore} from "@/stores/settings";
 import {humanFileSize} from '@/helpers/utils';
+import {useI18n} from "vue-i18n";
 
 const settings = settingsStore()
 const interfaces = interfaceStore()
 const peers = peerStore()
+
+const { t } = useI18n()
 
 const viewedPeerId = ref("")
 const editPeerId = ref("")
@@ -44,6 +47,33 @@ function calculateInterfaceName(id, name) {
   }
   return result
 }
+
+const calculateBackendName = computed(() => {
+  let backendId = interfaces.GetSelected.Backend
+
+  let backendName = t('interfaces.interface.unknown-backend')
+  let availableBackends = settings.Setting('AvailableBackends') || []
+  availableBackends.forEach(backend => {
+    if (backend.Id === backendId) {
+      backendName = backend.Id === 'local' ? t(backend.Name) : backend.Name
+    }
+  })
+  return backendName
+})
+
+const isBackendValid = computed(() => {
+  let backendId = interfaces.GetSelected.Backend
+
+  let valid = false
+  let availableBackends = settings.Setting('AvailableBackends') || []
+  availableBackends.forEach(backend => {
+    if (backend.Id === backendId) {
+      valid = true
+    }
+  })
+  return valid
+})
+
 
 async function download() {
   await interfaces.LoadInterfaceConfig(interfaces.GetSelected.Identifier)
@@ -141,7 +171,7 @@ onMounted(async () => {
         <div class="card-header">
           <div class="row">
             <div class="col-12 col-lg-8">
-              {{ $t('interfaces.interface.headline') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{interfaces.GetSelected.Mode}} {{ $t('interfaces.interface.mode') }})
+              {{ $t('interfaces.interface.headline') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{ $t('modals.interface-edit.mode.' + interfaces.GetSelected.Mode )}} | {{ $t('interfaces.interface.backend') + ": " + calculateBackendName }}<span v-if="!isBackendValid" :title="t('interfaces.interface.wrong-backend')" class="ms-1 me-1"><i class="fa-solid fa-triangle-exclamation"></i></span>)
               <span v-if="interfaces.GetSelected.Disabled" class="text-danger"><i class="fa fa-circle-xmark" :title="interfaces.GetSelected.DisabledReason"></i></span>
             </div>
             <div class="col-12 col-lg-4 text-lg-end">

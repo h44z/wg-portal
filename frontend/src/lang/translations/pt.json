@@ -101,7 +101,7 @@
     },
     "interface": {
       "headline": "Status da interface para",
-      "mode": "modo",
+      "mode": "backend",
       "key": "Chave Pública",
       "endpoint": "Endpoint Público",
       "port": "Porta de Escuta",
