@@ -204,6 +204,11 @@ func (c LocalController) convertWireGuardPeer(peer *wgtypes.Peer) (domain.Physic
 		ImportSource:        domain.ControllerTypeLocal,
 	}
 
+	// Set local extras - local peers are never disabled in the kernel
+	peerModel.SetExtras(domain.LocalPeerExtras{
+		Disabled: false,
+	})
+
 	for _, addr := range peer.AllowedIPs {
 		peerModel.AllowedIPs = append(peerModel.AllowedIPs, domain.CidrFromIpNet(addr))
 	}
@@ -408,6 +413,18 @@ func (c LocalController) SavePeer(
 	physicalPeer, err = updateFunc(physicalPeer)
 	if err != nil {
 		return err
+	}
+
+	// Check if the peer is disabled by looking at the backend extras
+	// For local controller, disabled peers should be deleted
+	if physicalPeer.GetExtras() != nil {
+		switch extras := physicalPeer.GetExtras().(type) {
+		case domain.LocalPeerExtras:
+			if extras.Disabled {
+				// Delete the peer instead of updating it
+				return c.deletePeer(deviceId, id)
+			}
+		}
 	}
 
 	if err := c.updatePeer(deviceId, physicalPeer); err != nil {

@@ -50,6 +50,9 @@ const currentTags = ref({
   PeerDefDnsSearch: ""
 })
 const formData = ref(freshInterface())
+const isSaving = ref(false)
+const isDeleting = ref(false)
+const isApplyingDefaults = ref(false)
 
 const isBackendValid = computed(() => {
   if (!props.visible || !selectedInterface.value) {
@@ -258,6 +261,8 @@ function handleChangePeerDefDnsSearch(tags) {
 }
 
 async function save() {
+  if (isSaving.value) return
+  isSaving.value = true
   try {
     if (props.interfaceId!=='#NEW#') {
       await interfaces.UpdateInterface(selectedInterface.value.Identifier, formData.value)
@@ -272,6 +277,8 @@ async function save() {
       text: e.toString(),
       type: 'error',
     })
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -280,6 +287,8 @@ async function applyPeerDefaults() {
     return; // do nothing for new interfaces
   }
 
+  if (isApplyingDefaults.value) return
+  isApplyingDefaults.value = true
   try {
     await interfaces.ApplyPeerDefaults(selectedInterface.value.Identifier, formData.value)
 
@@ -297,10 +306,14 @@ async function applyPeerDefaults() {
       text: e.toString(),
       type: 'error',
     })
+  } finally {
+    isApplyingDefaults.value = false
   }
 }
 
 async function del() {
+  if (isDeleting.value) return
+  isDeleting.value = true
   try {
     await interfaces.DeleteInterface(selectedInterface.value.Identifier)
     close()
@@ -311,6 +324,8 @@ async function del() {
       text: e.toString(),
       type: 'error',
     })
+  } finally {
+    isDeleting.value = false
   }
 }
 
@@ -562,16 +577,25 @@ async function del() {
           </fieldset>
           <fieldset v-if="props.interfaceId!=='#NEW#'" class="text-end">
             <hr class="mt-4">
-            <button class="btn btn-primary me-1" type="button" @click.prevent="applyPeerDefaults">{{ $t('modals.interface-edit.button-apply-defaults') }}</button>
+            <button class="btn btn-primary me-1" type="button" @click.prevent="applyPeerDefaults" :disabled="isApplyingDefaults">
+              <span v-if="isApplyingDefaults" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              {{ $t('modals.interface-edit.button-apply-defaults') }}
+            </button>
           </fieldset>
         </div>
       </div>
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button v-if="props.interfaceId!=='#NEW#'" class="btn btn-danger me-1" type="button" @click.prevent="del">{{ $t('general.delete') }}</button>
+        <button v-if="props.interfaceId!=='#NEW#'" class="btn btn-danger me-1" type="button" @click.prevent="del" :disabled="isDeleting">
+          <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          {{ $t('general.delete') }}
+        </button>
       </div>
-      <button class="btn btn-primary me-1" type="button" @click.prevent="save">{{ $t('general.save') }}</button>
+      <button class="btn btn-primary me-1" type="button" @click.prevent="save" :disabled="isSaving">
+        <span v-if="isSaving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        {{ $t('general.save') }}
+      </button>
       <button class="btn btn-secondary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
     </template>
   </Modal>

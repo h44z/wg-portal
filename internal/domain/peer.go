@@ -236,7 +236,8 @@ func (p *PhysicalPeer) GetExtras() any {
 func (p *PhysicalPeer) SetExtras(extras any) {
 	switch extras.(type) {
 	case MikrotikPeerExtras: // OK
-	default: // we only support MikrotikPeerExtras for now
+	case LocalPeerExtras: // OK
+	default: // we only support MikrotikPeerExtras and LocalPeerExtras for now
 		panic(fmt.Sprintf("unsupported peer backend extras type %T", extras))
 	}
 
@@ -288,6 +289,15 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 			peer.Disabled = nil
 			peer.DisabledReason = ""
 		}
+	case ControllerTypeLocal:
+		extras := pp.GetExtras().(LocalPeerExtras)
+		if extras.Disabled {
+			peer.Disabled = &now
+			peer.DisabledReason = "Disabled by Local controller"
+		} else {
+			peer.Disabled = nil
+			peer.DisabledReason = ""
+		}
 	}
 
 	return peer
@@ -324,6 +334,11 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 			ClientAddress:   CidrsToString(p.Interface.Addresses),
 			ClientDns:       p.Interface.DnsStr.GetValue(),
 			ClientKeepalive: p.PersistentKeepalive.GetValue(),
+		}
+		pp.SetExtras(extras)
+	case ControllerTypeLocal:
+		extras := LocalPeerExtras{
+			Disabled: p.IsDisabled(),
 		}
 		pp.SetExtras(extras)
 	}

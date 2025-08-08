@@ -188,29 +188,28 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 
 	sessionUser := domain.GetUserInfo(ctx)
 
-    // Enforce peer limit for non-admin users if LimitAdditionalUserPeers is set
-    if m.cfg.Core.SelfProvisioningAllowed && !sessionUser.IsAdmin && m.cfg.Advanced.LimitAdditionalUserPeers > 0 {
-        peers, err := m.db.GetUserPeers(ctx, peer.UserIdentifier)
-        if err != nil {
-            return nil, fmt.Errorf("failed to fetch peers for user %s: %w", peer.UserIdentifier, err)
-        }
-        // Count enabled peers (disabled IS NULL)
-        peerCount := 0
-        for _, p := range peers {
-            if !p.IsDisabled() {
-                peerCount++
-            }
-        }
-        totalAllowedPeers := 1 + m.cfg.Advanced.LimitAdditionalUserPeers // 1 default peer + x additional peers
-        if peerCount >= totalAllowedPeers {
-            slog.WarnContext(ctx, "peer creation blocked due to limit",
-                "user", peer.UserIdentifier,
-                "current_count", peerCount,
-                "allowed_count", totalAllowedPeers)
-            return nil, fmt.Errorf("peer limit reached (%d peers allowed): %w", totalAllowedPeers, domain.ErrNoPermission)
-        }
-    }
-
+	// Enforce peer limit for non-admin users if LimitAdditionalUserPeers is set
+	if m.cfg.Core.SelfProvisioningAllowed && !sessionUser.IsAdmin && m.cfg.Advanced.LimitAdditionalUserPeers > 0 {
+		peers, err := m.db.GetUserPeers(ctx, peer.UserIdentifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch peers for user %s: %w", peer.UserIdentifier, err)
+		}
+		// Count enabled peers (disabled IS NULL)
+		peerCount := 0
+		for _, p := range peers {
+			if !p.IsDisabled() {
+				peerCount++
+			}
+		}
+		totalAllowedPeers := 1 + m.cfg.Advanced.LimitAdditionalUserPeers // 1 default peer + x additional peers
+		if peerCount >= totalAllowedPeers {
+			slog.WarnContext(ctx, "peer creation blocked due to limit",
+				"user", peer.UserIdentifier,
+				"current_count", peerCount,
+				"allowed_count", totalAllowedPeers)
+			return nil, fmt.Errorf("peer limit reached (%d peers allowed): %w", totalAllowedPeers, domain.ErrNoPermission)
+		}
+	}
 
 	existingPeer, err := m.db.GetPeer(ctx, peer.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
@@ -449,33 +448,22 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 			return fmt.Errorf("unable to find interface %s: %w", peer.InterfaceIdentifier, err)
 		}
 
-		if peer.IsDisabled() || peer.IsExpired() {
-			err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
-				peer.CopyCalculatedAttributes(p)
+		// Always save the peer to the backend, regardless of disabled/expired state
+		// The backend will handle the disabled state appropriately
+		err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+			peer.CopyCalculatedAttributes(p)
 
-				if err := m.wg.GetController(*iface).DeletePeer(ctx, peer.InterfaceIdentifier,
-					peer.Identifier); err != nil {
-					return nil, fmt.Errorf("failed to delete wireguard peer %s: %w", peer.Identifier, err)
-				}
+			err := m.wg.GetController(*iface).SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
+				func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
+					domain.MergeToPhysicalPeer(pp, peer)
+					return pp, nil
+				})
+			if err != nil {
+				return nil, fmt.Errorf("failed to save wireguard peer %s: %w", peer.Identifier, err)
+			}
 
-				return peer, nil
-			})
-		} else {
-			err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
-				peer.CopyCalculatedAttributes(p)
-
-				err := m.wg.GetController(*iface).SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
-					func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
-						domain.MergeToPhysicalPeer(pp, peer)
-						return pp, nil
-					})
-				if err != nil {
-					return nil, fmt.Errorf("failed to save wireguard peer %s: %w", peer.Identifier, err)
-				}
-
-				return peer, nil
-			})
-		}
+			return peer, nil
+		})
 		if err != nil {
 			return fmt.Errorf("save failure for peer %s: %w", peer.Identifier, err)
 		}

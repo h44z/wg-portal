@@ -26,3 +26,7 @@ type MikrotikPeerExtras struct {
 	ClientDns       string
 	ClientKeepalive int
 }
+
+type LocalPeerExtras struct {
+	Disabled bool
+}

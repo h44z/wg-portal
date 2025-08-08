@@ -6,7 +6,10 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"log/slog"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -18,6 +21,10 @@ type MikrotikController struct {
 	cfg     *config.BackendMikrotik
 
 	client *lowlevel.MikrotikApiClient
+
+	// Add mutexes to prevent race conditions
+	interfaceMutexes sync.Map // map[domain.InterfaceIdentifier]*sync.Mutex
+	peerMutexes      sync.Map // map[domain.PeerIdentifier]*sync.Mutex
 }
 
 func NewMikrotikController(coreCfg *config.Config, cfg *config.BackendMikrotik) (*MikrotikController, error) {
@@ -31,16 +38,31 @@ func NewMikrotikController(coreCfg *config.Config, cfg *config.BackendMikrotik) 
 		cfg:     cfg,
 
 		client: client,
+
+		interfaceMutexes: sync.Map{},
+		peerMutexes:      sync.Map{},
 	}, nil
 }
 
-func (c MikrotikController) GetId() domain.InterfaceBackend {
+func (c *MikrotikController) GetId() domain.InterfaceBackend {
 	return domain.InterfaceBackend(c.cfg.Id)
+}
+
+// getInterfaceMutex returns a mutex for the given interface to prevent concurrent modifications
+func (c *MikrotikController) getInterfaceMutex(id domain.InterfaceIdentifier) *sync.Mutex {
+	mutex, _ := c.interfaceMutexes.LoadOrStore(id, &sync.Mutex{})
+	return mutex.(*sync.Mutex)
+}
+
+// getPeerMutex returns a mutex for the given peer to prevent concurrent modifications
+func (c *MikrotikController) getPeerMutex(id domain.PeerIdentifier) *sync.Mutex {
+	mutex, _ := c.peerMutexes.LoadOrStore(id, &sync.Mutex{})
+	return mutex.(*sync.Mutex)
 }
 
 // region wireguard-related
 
-func (c MikrotikController) GetInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
+func (c *MikrotikController) GetInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
 	wgReply := c.client.Query(ctx, "/interface/wireguard", &lowlevel.MikrotikRequestOptions{
 		PropList: []string{
 			".id", "name", "public-key", "private-key", "listen-port", "mtu", "disabled", "running", "comment",
@@ -62,7 +84,7 @@ func (c MikrotikController) GetInterfaces(ctx context.Context) ([]domain.Physica
 	return interfaces, nil
 }
 
-func (c MikrotikController) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (
+func (c *MikrotikController) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (
 	*domain.PhysicalInterface,
 	error,
 ) {
@@ -85,7 +107,7 @@ func (c MikrotikController) GetInterface(ctx context.Context, id domain.Interfac
 	return c.loadInterfaceData(ctx, wgReply.Data[0])
 }
 
-func (c MikrotikController) loadInterfaceData(
+func (c *MikrotikController) loadInterfaceData(
 	ctx context.Context,
 	wireGuardObj lowlevel.GenericJsonObject,
 ) (*domain.PhysicalInterface, error) {
@@ -113,7 +135,7 @@ func (c MikrotikController) loadInterfaceData(
 	return &interfaceModel, nil
 }
 
-func (c MikrotikController) loadIpAddresses(
+func (c *MikrotikController) loadIpAddresses(
 	ctx context.Context,
 	deviceName string,
 ) (ipv4 []lowlevel.GenericJsonObject, ipv6 []lowlevel.GenericJsonObject, err error) {
@@ -150,7 +172,7 @@ func (c MikrotikController) loadIpAddresses(
 	return addrV4Reply.Data, addrV6Reply.Data, nil
 }
 
-func (c MikrotikController) convertIpAddresses(
+func (c *MikrotikController) convertIpAddresses(
 	ipv4, ipv6 []lowlevel.GenericJsonObject,
 ) []domain.Cidr {
 	addresses := make([]domain.Cidr, 0, len(ipv4)+len(ipv6))
@@ -170,7 +192,7 @@ func (c MikrotikController) convertIpAddresses(
 	return addresses
 }
 
-func (c MikrotikController) convertWireGuardInterface(
+func (c *MikrotikController) convertWireGuardInterface(
 	wg, iface lowlevel.GenericJsonObject,
 	addresses []domain.Cidr,
 ) (
@@ -203,7 +225,7 @@ func (c MikrotikController) convertWireGuardInterface(
 	return pi, nil
 }
 
-func (c MikrotikController) GetPeers(ctx context.Context, deviceId domain.InterfaceIdentifier) (
+func (c *MikrotikController) GetPeers(ctx context.Context, deviceId domain.InterfaceIdentifier) (
 	[]domain.PhysicalPeer,
 	error,
 ) {
@@ -237,7 +259,7 @@ func (c MikrotikController) GetPeers(ctx context.Context, deviceId domain.Interf
 	return peers, nil
 }
 
-func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject) (
+func (c *MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject) (
 	domain.PhysicalPeer,
 	error,
 ) {
@@ -300,11 +322,16 @@ func (c MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 	return peerModel, nil
 }
 
-func (c MikrotikController) SaveInterface(
+func (c *MikrotikController) SaveInterface(
 	ctx context.Context,
 	id domain.InterfaceIdentifier,
 	updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error),
 ) error {
+	// Lock the interface to prevent concurrent modifications
+	mutex := c.getInterfaceMutex(id)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	physicalInterface, err := c.getOrCreateInterface(ctx, id)
 	if err != nil {
 		return err
@@ -328,7 +355,7 @@ func (c MikrotikController) SaveInterface(
 	return nil
 }
 
-func (c MikrotikController) getOrCreateInterface(
+func (c *MikrotikController) getOrCreateInterface(
 	ctx context.Context,
 	id domain.InterfaceIdentifier,
 ) (*domain.PhysicalInterface, error) {
@@ -355,7 +382,7 @@ func (c MikrotikController) getOrCreateInterface(
 	return nil, fmt.Errorf("failed to create interface %s: %v", id, createReply.Error)
 }
 
-func (c MikrotikController) updateInterface(ctx context.Context, pi *domain.PhysicalInterface) error {
+func (c *MikrotikController) updateInterface(ctx context.Context, pi *domain.PhysicalInterface) error {
 	extras := pi.GetExtras().(domain.MikrotikInterfaceExtras)
 	interfaceId := extras.Id
 	wgReply := c.client.Update(ctx, "/interface/wireguard/"+interfaceId, lowlevel.GenericJsonObject{
@@ -403,7 +430,7 @@ func (c MikrotikController) updateInterface(ctx context.Context, pi *domain.Phys
 	return nil
 }
 
-func (c MikrotikController) updateIpAddresses(
+func (c *MikrotikController) updateIpAddresses(
 	ctx context.Context,
 	deviceName string,
 	currentV4, currentV6 []lowlevel.GenericJsonObject,
@@ -459,7 +486,12 @@ func (c MikrotikController) updateIpAddresses(
 	return nil
 }
 
-func (c MikrotikController) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {
+func (c *MikrotikController) DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error {
+	// Lock the interface to prevent concurrent modifications
+	mutex := c.getInterfaceMutex(id)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	// delete the interface's addresses
 	currentV4, currentV6, err := c.loadIpAddresses(ctx, string(id))
 	if err != nil {
@@ -494,8 +526,8 @@ func (c MikrotikController) DeleteInterface(ctx context.Context, id domain.Inter
 		return nil // interface does not exist, nothing to delete
 	}
 
-	deviceId := wgReply.Data[0].GetString(".id")
-	deleteReply := c.client.Delete(ctx, "/interface/wireguard/"+deviceId)
+	interfaceId := wgReply.Data[0].GetString(".id")
+	deleteReply := c.client.Delete(ctx, "/interface/wireguard/"+interfaceId)
 	if deleteReply.Status != lowlevel.MikrotikApiStatusOk {
 		return fmt.Errorf("failed to delete WireGuard interface %s: %v", id, deleteReply.Error)
 	}
@@ -503,12 +535,17 @@ func (c MikrotikController) DeleteInterface(ctx context.Context, id domain.Inter
 	return nil
 }
 
-func (c MikrotikController) SavePeer(
+func (c *MikrotikController) SavePeer(
 	ctx context.Context,
 	deviceId domain.InterfaceIdentifier,
 	id domain.PeerIdentifier,
 	updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error),
 ) error {
+	// Lock the peer to prevent concurrent modifications
+	mutex := c.getPeerMutex(id)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	physicalPeer, err := c.getOrCreatePeer(ctx, deviceId, id)
 	if err != nil {
 		return err
@@ -530,7 +567,7 @@ func (c MikrotikController) SavePeer(
 	return nil
 }
 
-func (c MikrotikController) getOrCreatePeer(
+func (c *MikrotikController) getOrCreatePeer(
 	ctx context.Context,
 	deviceId domain.InterfaceIdentifier,
 	id domain.PeerIdentifier,
@@ -546,6 +583,7 @@ func (c MikrotikController) getOrCreatePeer(
 		},
 	})
 	if wgReply.Status == lowlevel.MikrotikApiStatusOk && len(wgReply.Data) > 0 {
+		slog.Debug("found existing Mikrotik peer", "peer", id, "interface", deviceId)
 		existingPeer, err := c.convertWireGuardPeer(wgReply.Data[0])
 		if err != nil {
 			return nil, err
@@ -554,24 +592,26 @@ func (c MikrotikController) getOrCreatePeer(
 	}
 
 	// create a new peer if it does not exist
+	slog.Debug("creating new Mikrotik peer", "peer", id, "interface", deviceId)
 	createReply := c.client.Create(ctx, "/interface/wireguard/peers", lowlevel.GenericJsonObject{
 		"name":            fmt.Sprintf("tmp-wg-%s", id[0:8]),
 		"interface":       string(deviceId),
-		"public-key":      string(id),           // public key will be set later
-		"allowed-address": "169.254.254.254/32", // allowed addresses will be set later
+		"public-key":      string(id),
+		"allowed-address": "0.0.0.0/0", // Use 0.0.0.0/0 as default, will be updated by updatePeer
 	})
 	if createReply.Status == lowlevel.MikrotikApiStatusOk {
 		newPeer, err := c.convertWireGuardPeer(createReply.Data)
 		if err != nil {
 			return nil, err
 		}
+		slog.Debug("successfully created Mikrotik peer", "peer", id, "interface", deviceId)
 		return &newPeer, nil
 	}
 
 	return nil, fmt.Errorf("failed to create peer %s for interface %s: %v", id, deviceId, createReply.Error)
 }
 
-func (c MikrotikController) updatePeer(
+func (c *MikrotikController) updatePeer(
 	ctx context.Context,
 	deviceId domain.InterfaceIdentifier,
 	pp *domain.PhysicalPeer,
@@ -585,6 +625,14 @@ func (c MikrotikController) updatePeer(
 		endpoint = s[0]
 		endpointPort = s[1]
 	}
+
+	allowedAddressStr := domain.CidrsToString(pp.AllowedIPs)
+	slog.Debug("updating Mikrotik peer",
+		"peer", pp.Identifier,
+		"interface", deviceId,
+		"allowed-address", allowedAddressStr,
+		"allowed-ips-count", len(pp.AllowedIPs),
+		"disabled", extras.Disabled)
 
 	wgReply := c.client.Update(ctx, "/interface/wireguard/peers/"+peerId, lowlevel.GenericJsonObject{
 		"name":                 extras.Name,
@@ -601,19 +649,31 @@ func (c MikrotikController) updatePeer(
 		"client-dns":           extras.ClientDns,
 		"endpoint-address":     endpoint,
 		"endpoint-port":        endpointPort,
+		"allowed-address":      allowedAddressStr, // Add the missing allowed-address field
 	})
 	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
 		return fmt.Errorf("failed to update peer %s on interface %s: %v", pp.Identifier, deviceId, wgReply.Error)
 	}
 
+	if extras.Disabled {
+		slog.Debug("successfully disabled Mikrotik peer", "peer", pp.Identifier, "interface", deviceId)
+	} else {
+		slog.Debug("successfully updated Mikrotik peer", "peer", pp.Identifier, "interface", deviceId)
+	}
+
 	return nil
 }
 
-func (c MikrotikController) DeletePeer(
+func (c *MikrotikController) DeletePeer(
 	ctx context.Context,
 	deviceId domain.InterfaceIdentifier,
 	id domain.PeerIdentifier,
 ) error {
+	// Lock the peer to prevent concurrent modifications
+	mutex := c.getPeerMutex(id)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	wgReply := c.client.Query(ctx, "/interface/wireguard/peers", &lowlevel.MikrotikRequestOptions{
 		PropList: []string{".id"},
 		Filters: map[string]string{
@@ -641,17 +701,17 @@ func (c MikrotikController) DeletePeer(
 
 // region wg-quick-related
 
-func (c MikrotikController) ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCmd string) error {
+func (c *MikrotikController) ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCmd string) error {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (c MikrotikController) SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error {
+func (c *MikrotikController) SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (c MikrotikController) UnsetDNS(id domain.InterfaceIdentifier) error {
+func (c *MikrotikController) UnsetDNS(id domain.InterfaceIdentifier) error {
 	// TODO implement me
 	panic("implement me")
 }
@@ -660,12 +720,12 @@ func (c MikrotikController) UnsetDNS(id domain.InterfaceIdentifier) error {
 
 // region routing-related
 
-func (c MikrotikController) SyncRouteRules(_ context.Context, rules []domain.RouteRule) error {
+func (c *MikrotikController) SyncRouteRules(_ context.Context, rules []domain.RouteRule) error {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (c MikrotikController) DeleteRouteRules(_ context.Context, rules []domain.RouteRule) error {
+func (c *MikrotikController) DeleteRouteRules(_ context.Context, rules []domain.RouteRule) error {
 	// TODO implement me
 	panic("implement me")
 }
@@ -674,7 +734,7 @@ func (c MikrotikController) DeleteRouteRules(_ context.Context, rules []domain.R
 
 // region statistics-related
 
-func (c MikrotikController) PingAddresses(
+func (c *MikrotikController) PingAddresses(
 	ctx context.Context,
 	addr string,
 ) (*domain.PingerResult, error) {
