@@ -1969,7 +1969,7 @@
                         "type": "string"
                     }
                 },
-                "Suffix": {
+                "Prefix": {
                     "type": "string"
                 }
             }

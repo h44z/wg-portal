@@ -206,7 +206,7 @@ definitions:
         items:
           type: string
         type: array
-      Suffix:
+      Prefix:
         type: string
     type: object
   model.Peer:
