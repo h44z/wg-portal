@@ -188,29 +188,29 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 
 	sessionUser := domain.GetUserInfo(ctx)
 
-    // Enforce peer limit for non-admin users if LimitAdditionalUserPeers is set
-    if m.cfg.Core.SelfProvisioningAllowed && !sessionUser.IsAdmin && m.cfg.Advanced.LimitAdditionalUserPeers > 0 {
-        peers, err := m.db.GetUserPeers(ctx, peer.UserIdentifier)
-        if err != nil {
-            return nil, fmt.Errorf("failed to fetch peers for user %s: %w", peer.UserIdentifier, err)
-        }
-        // Count enabled peers (disabled IS NULL)
-        peerCount := 0
-        for _, p := range peers {
-            if !p.IsDisabled() {
-                peerCount++
-            }
-        }
-        totalAllowedPeers := 1 + m.cfg.Advanced.LimitAdditionalUserPeers // 1 default peer + x additional peers
-        if peerCount >= totalAllowedPeers {
-            slog.WarnContext(ctx, "peer creation blocked due to limit",
-                "user", peer.UserIdentifier,
-                "current_count", peerCount,
-                "allowed_count", totalAllowedPeers)
-            return nil, fmt.Errorf("peer limit reached (%d peers allowed): %w", totalAllowedPeers, domain.ErrNoPermission)
-        }
-    }
-
+	// Enforce peer limit for non-admin users if LimitAdditionalUserPeers is set
+	if m.cfg.Core.SelfProvisioningAllowed && !sessionUser.IsAdmin && m.cfg.Advanced.LimitAdditionalUserPeers > 0 {
+		peers, err := m.db.GetUserPeers(ctx, peer.UserIdentifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch peers for user %s: %w", peer.UserIdentifier, err)
+		}
+		// Count enabled peers (disabled IS NULL)
+		peerCount := 0
+		for _, p := range peers {
+			if !p.IsDisabled() {
+				peerCount++
+			}
+		}
+		totalAllowedPeers := 1 + m.cfg.Advanced.LimitAdditionalUserPeers // 1 default peer + x additional peers
+		if peerCount >= totalAllowedPeers {
+			slog.WarnContext(ctx, "peer creation blocked due to limit",
+				"user", peer.UserIdentifier,
+				"current_count", peerCount,
+				"allowed_count", totalAllowedPeers)
+			return nil, fmt.Errorf("peer limit reached (%d peers allowed): %w", totalAllowedPeers,
+				domain.ErrNoPermission)
+		}
+	}
 
 	existingPeer, err := m.db.GetPeer(ctx, peer.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
@@ -257,7 +257,7 @@ func (m Manager) CreateMultiplePeers(
 		return nil, err
 	}
 
-	var newPeers []*domain.Peer
+	createdPeers := make([]domain.Peer, 0, len(r.UserIdentifiers))
 
 	for _, id := range r.UserIdentifiers {
 		freshPeer, err := m.PreparePeer(ctx, interfaceId)
@@ -266,27 +266,22 @@ func (m Manager) CreateMultiplePeers(
 		}
 
 		freshPeer.UserIdentifier = domain.UserIdentifier(id) // use id as user identifier. peers are allowed to have invalid user identifiers
-		if r.Suffix != "" {
-			freshPeer.DisplayName += " " + r.Suffix
+		if r.Prefix != "" {
+			freshPeer.DisplayName = r.Prefix + " " + freshPeer.DisplayName
 		}
 
 		if err := m.validatePeerCreation(ctx, nil, freshPeer); err != nil {
 			return nil, fmt.Errorf("creation not allowed: %w", err)
 		}
 
-		newPeers = append(newPeers, freshPeer)
-	}
+		// Save immediately to reserve the assigned IPs so the next prepared peer gets the next free IPs
+		if err := m.savePeers(ctx, freshPeer); err != nil {
+			return nil, fmt.Errorf("failed to create new peer %s: %w", freshPeer.Identifier, err)
+		}
 
-	err := m.savePeers(ctx, newPeers...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create new peers: %w", err)
-	}
+		createdPeers = append(createdPeers, *freshPeer)
 
-	createdPeers := make([]domain.Peer, len(newPeers))
-	for i := range newPeers {
-		createdPeers[i] = *newPeers[i]
-
-		m.bus.Publish(app.TopicPeerCreated, *newPeers[i])
+		m.bus.Publish(app.TopicPeerCreated, *freshPeer)
 	}
 
 	return createdPeers, nil
