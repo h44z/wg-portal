@@ -53,5 +53,21 @@ type BackendMikrotik struct {
 	ApiVerifyTls bool          `yaml:"api_verify_tls"` // Whether to verify the TLS certificate of the Mikrotik API
 	ApiTimeout   time.Duration `yaml:"api_timeout"`    // Timeout for API requests (default: 30 seconds)
 
+	// Concurrency controls the maximum number of concurrent API requests that this backend will issue
+	// when enumerating interfaces and their details. If 0 or negative, a default of 5 is used.
+	Concurrency int `yaml:"concurrency"`
+
 	Debug bool `yaml:"debug"` // Enable debug logging for the Mikrotik backend
+}
+
+// GetConcurrency returns the configured concurrency for this backend or a sane default (5)
+// when the configured value is zero or negative.
+func (b *BackendMikrotik) GetConcurrency() int {
+	if b == nil {
+		return 5
+	}
+	if b.Concurrency <= 0 {
+		return 5
+	}
+	return b.Concurrency
 }

@@ -72,13 +72,46 @@ func (c *MikrotikController) GetInterfaces(ctx context.Context) ([]domain.Physic
 		return nil, fmt.Errorf("failed to query interfaces: %v", wgReply.Error)
 	}
 
+	// Parallelize loading of interface details to speed up overall latency.
+	// Use a bounded semaphore to avoid overloading the MikroTik device.
+	maxConcurrent := c.cfg.GetConcurrency()
+	sem := make(chan struct{}, maxConcurrent)
+
 	interfaces := make([]domain.PhysicalInterface, 0, len(wgReply.Data))
-	for _, wg := range wgReply.Data {
-		physicalInterface, err := c.loadInterfaceData(ctx, wg)
-		if err != nil {
-			return nil, err
-		}
-		interfaces = append(interfaces, *physicalInterface)
+	var mu sync.Mutex
+	var wgWait sync.WaitGroup
+	var firstErr error
+	ctx2, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	for _, wgObj := range wgReply.Data {
+		wgWait.Add(1)
+		sem <- struct{}{} // block if more than maxConcurrent requests are processing
+		go func(wg lowlevel.GenericJsonObject) {
+			defer wgWait.Done()
+			defer func() { <-sem }() // read from the semaphore and make space for the next entry
+			if firstErr != nil {
+				return
+			}
+			pi, err := c.loadInterfaceData(ctx2, wg)
+			if err != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+					cancel()
+				}
+				mu.Unlock()
+				return
+			}
+			mu.Lock()
+			interfaces = append(interfaces, *pi)
+			mu.Unlock()
+		}(wgObj)
+	}
+
+	wgWait.Wait()
+	if firstErr != nil {
+		return nil, firstErr
 	}
 
 	return interfaces, nil
@@ -139,37 +172,63 @@ func (c *MikrotikController) loadIpAddresses(
 	ctx context.Context,
 	deviceName string,
 ) (ipv4 []lowlevel.GenericJsonObject, ipv6 []lowlevel.GenericJsonObject, err error) {
-	addrV4Reply := c.client.Query(ctx, "/ip/address", &lowlevel.MikrotikRequestOptions{
-		PropList: []string{
-			".id", "address", "network",
-		},
-		Filters: map[string]string{
-			"interface": deviceName,
-			"dynamic":   "false", // we only want static addresses
-			"disabled":  "false", // we only want addresses that are not disabled
-		},
-	})
-	if addrV4Reply.Status != lowlevel.MikrotikApiStatusOk {
-		return nil, nil, fmt.Errorf("failed to query IPv4 addresses for interface %s: %v", deviceName,
-			addrV4Reply.Error)
+	// Query IPv4 and IPv6 addresses in parallel to reduce latency.
+	var (
+		v4    []lowlevel.GenericJsonObject
+		v6    []lowlevel.GenericJsonObject
+		v4Err error
+		v6Err error
+		wg    sync.WaitGroup
+	)
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		addrV4Reply := c.client.Query(ctx, "/ip/address", &lowlevel.MikrotikRequestOptions{
+			PropList: []string{
+				".id", "address", "network",
+			},
+			Filters: map[string]string{
+				"interface": deviceName,
+				"dynamic":   "false", // we only want static addresses
+				"disabled":  "false", // we only want addresses that are not disabled
+			},
+		})
+		if addrV4Reply.Status != lowlevel.MikrotikApiStatusOk {
+			v4Err = fmt.Errorf("failed to query IPv4 addresses for interface %s: %v", deviceName, addrV4Reply.Error)
+			return
+		}
+		v4 = addrV4Reply.Data
+	}()
+
+	go func() {
+		defer wg.Done()
+		addrV6Reply := c.client.Query(ctx, "/ipv6/address", &lowlevel.MikrotikRequestOptions{
+			PropList: []string{
+				".id", "address", "network",
+			},
+			Filters: map[string]string{
+				"interface": deviceName,
+				"dynamic":   "false", // we only want static addresses
+				"disabled":  "false", // we only want addresses that are not disabled
+			},
+		})
+		if addrV6Reply.Status != lowlevel.MikrotikApiStatusOk {
+			v6Err = fmt.Errorf("failed to query IPv6 addresses for interface %s: %v", deviceName, addrV6Reply.Error)
+			return
+		}
+		v6 = addrV6Reply.Data
+	}()
+
+	wg.Wait()
+	if v4Err != nil {
+		return nil, nil, v4Err
+	}
+	if v6Err != nil {
+		return nil, nil, v6Err
 	}
 
-	addrV6Reply := c.client.Query(ctx, "/ipv6/address", &lowlevel.MikrotikRequestOptions{
-		PropList: []string{
-			".id", "address", "network",
-		},
-		Filters: map[string]string{
-			"interface": deviceName,
-			"dynamic":   "false", // we only want static addresses
-			"disabled":  "false", // we only want addresses that are not disabled
-		},
-	})
-	if addrV6Reply.Status != lowlevel.MikrotikApiStatusOk {
-		return nil, nil, fmt.Errorf("failed to query IPv6 addresses for interface %s: %v", deviceName,
-			addrV6Reply.Error)
-	}
-
-	return addrV4Reply.Data, addrV6Reply.Data, nil
+	return v4, v6, nil
 }
 
 func (c *MikrotikController) convertIpAddresses(
