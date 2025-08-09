@@ -32,7 +32,7 @@ const selectedInterface = computed(() => {
 function freshForm() {
   return {
     Identifiers: [],
-    Suffix: "",
+    Prefix: "",
   }
 }
 
@@ -102,7 +102,7 @@ async function save() {
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-multi-create.prefix.label') }}</label>
-          <input type="text" class="form-control" :placeholder="$t('modals.peer-multi-create.prefix.placeholder')" v-model="formData.Suffix">
+          <input type="text" class="form-control" :placeholder="$t('modals.peer-multi-create.prefix.placeholder')" v-model="formData.Prefix">
           <small class="form-text text-muted">{{ $t('modals.peer-multi-create.prefix.description') }}</small>
         </div>
       </fieldset>

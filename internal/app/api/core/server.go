@@ -138,7 +138,8 @@ func (s *Server) setupRoutes(endpoints ...ApiEndpointSetupFunc) {
 			s.versions[version].HandleFunc("GET /swagger/index.html", s.rapiDocHandler(version)) // Deprecated: old link
 			s.versions[version].HandleFunc("GET /doc.html", s.rapiDocHandler(version))
 
-			groupSetupFn(s.versions[version])
+			versionGroup := s.versions[version].Group()
+			groupSetupFn(versionGroup)
 		}
 	}
 }
