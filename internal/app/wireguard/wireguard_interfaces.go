@@ -11,6 +11,7 @@ import (
 
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/audit"
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -267,16 +268,10 @@ func (m Manager) RestoreInterfaceState(
 		// restore peers
 		for _, peer := range peers {
 			switch {
-			case iface.IsDisabled(): // if interface is disabled, delete all peers
+			case iface.IsDisabled() && iface.Backend == config.LocalBackendName: // if interface is disabled, delete all peers
 				if err := m.wg.GetController(iface).DeletePeer(ctx, iface.Identifier,
 					peer.Identifier); err != nil {
 					return fmt.Errorf("failed to remove peer %s for disabled interface %s: %w",
-						peer.Identifier, iface.Identifier, err)
-				}
-			case peer.IsDisabled(): // if peer is disabled, delete it
-				if err := m.wg.GetController(iface).DeletePeer(ctx, iface.Identifier,
-					peer.Identifier); err != nil {
-					return fmt.Errorf("failed to remove disbaled peer %s from interface %s: %w",
 						peer.Identifier, iface.Identifier, err)
 				}
 			default: // update peer
