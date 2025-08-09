@@ -98,7 +98,7 @@
       },
       "interface": {
         "headline": "接口状态",
-        "mode": "模式",
+        "backend": "后端",
         "key": "公钥",
         "endpoint": "公开节点",
         "port": "监听端口",

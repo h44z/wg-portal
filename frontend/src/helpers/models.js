@@ -5,6 +5,7 @@ export function freshInterface() {
     DisplayName: "",
     Identifier: "",
     Mode: "server",
+    Backend: "local",
 
     PublicKey: "",
     PrivateKey: "",

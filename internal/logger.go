@@ -12,8 +12,8 @@ import (
 	"sync"
 )
 
-// SetupLogging initializes the global logger with the given level and format
-func SetupLogging(level string, pretty, json bool) {
+// GetLoggingHandler initializes a slog.Handler based on the provided logging level and format options.
+func GetLoggingHandler(level string, pretty, json bool) slog.Handler {
 	var logLevel = new(slog.LevelVar)
 
 	switch strings.ToLower(level) {
@@ -45,6 +45,13 @@ func SetupLogging(level string, pretty, json bool) {
 	default:
 		handler = slog.NewTextHandler(output, opts)
 	}
+
+	return handler
+}
+
+// SetupLogging initializes the global logger with the given level and format
+func SetupLogging(level string, pretty, json bool) {
+	handler := GetLoggingHandler(level, pretty, json)
 
 	logger := slog.New(handler)
 
