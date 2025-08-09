@@ -560,6 +560,27 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 		return nil, fmt.Errorf("post-save hooks failed: %w", err)
 	}
 
+	// If the interface has just been enabled, restore its peers on the physical controller
+	if !oldEnabled && newEnabled && iface.Backend == config.LocalBackendName {
+		peers, err := m.db.GetInterfacePeers(ctx, iface.Identifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load peers for interface %s: %w", iface.Identifier, err)
+		}
+		for _, peer := range peers {
+			saveErr := m.wg.GetController(*iface).SavePeer(ctx, iface.Identifier, peer.Identifier,
+				func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
+					domain.MergeToPhysicalPeer(pp, &peer)
+					return pp, nil
+				})
+			if saveErr != nil {
+				return nil, fmt.Errorf("failed to restore peer %s for interface %s: %w", peer.Identifier,
+					iface.Identifier, saveErr)
+			}
+		}
+		// notify that peers for this interface have changed so config/routes can be updated
+		m.bus.Publish(app.TopicPeerInterfaceUpdated, iface.Identifier)
+	}
+
 	m.bus.Publish(app.TopicAuditInterfaceChanged, domain.AuditEventWrapper[audit.InterfaceEvent]{
 		Ctx: ctx,
 		Event: audit.InterfaceEvent{
