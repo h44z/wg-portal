@@ -21,17 +21,23 @@ import (
 //go:embed frontend_config.js.gotpl
 var frontendJs embed.FS
 
+type ControllerManager interface {
+	GetControllerNames() []config.BackendBase
+}
+
 type ConfigEndpoint struct {
 	cfg           *config.Config
 	authenticator Authenticator
+	controllerMgr ControllerManager
 
 	tpl *respond.TemplateRenderer
 }
 
-func NewConfigEndpoint(cfg *config.Config, authenticator Authenticator) ConfigEndpoint {
+func NewConfigEndpoint(cfg *config.Config, authenticator Authenticator, ctrlMgr ControllerManager) ConfigEndpoint {
 	ep := ConfigEndpoint{
 		cfg:           cfg,
 		authenticator: authenticator,
+		controllerMgr: ctrlMgr,
 		tpl: respond.NewTemplateRenderer(template.Must(template.ParseFS(frontendJs,
 			"frontend_config.js.gotpl"))),
 	}
@@ -96,13 +102,36 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sessionUser := domain.GetUserInfo(r.Context())
 
+		controllerFn := func() []model.SettingsBackendNames {
+			controllers := e.controllerMgr.GetControllerNames()
+			names := make([]model.SettingsBackendNames, 0, len(controllers))
+
+			for _, controller := range controllers {
+				displayName := controller.GetDisplayName()
+				if displayName == "" {
+					displayName = controller.Id // fallback to ID if no display name is set
+				}
+				if controller.Id == config.LocalBackendName {
+					displayName = "modals.interface-edit.backend.local" // use a localized string for the local backend
+				}
+				names = append(names, model.SettingsBackendNames{
+					Id:   controller.Id,
+					Name: displayName,
+				})
+			}
+
+			return names
+
+		}
+
 		hasSocialLogin := len(e.cfg.Auth.OAuth) > 0 || len(e.cfg.Auth.OpenIDConnect) > 0 || e.cfg.Auth.WebAuthn.Enabled
 
 		// For anonymous users, we return the settings object with minimal information
 		if sessionUser.Id == domain.CtxUnknownUserId || sessionUser.Id == "" {
 			respond.JSON(w, http.StatusOK, model.Settings{
-				WebAuthnEnabled:  e.cfg.Auth.WebAuthn.Enabled,
-				LoginFormVisible: !e.cfg.Auth.HideLoginForm || !hasSocialLogin,
+				WebAuthnEnabled:   e.cfg.Auth.WebAuthn.Enabled,
+				AvailableBackends: []model.SettingsBackendNames{}, // return an empty list instead of null
+				LoginFormVisible:  !e.cfg.Auth.HideLoginForm || !hasSocialLogin,
 			})
 		} else {
 			respond.JSON(w, http.StatusOK, model.Settings{
@@ -112,6 +141,7 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 				ApiAdminOnly:              e.cfg.Advanced.ApiAdminOnly,
 				WebAuthnEnabled:           e.cfg.Auth.WebAuthn.Enabled,
 				MinPasswordLength:         e.cfg.Auth.MinPasswordLength,
+				AvailableBackends:         controllerFn(),
 				LoginFormVisible:          !e.cfg.Auth.HideLoginForm || !hasSocialLogin,
 			})
 		}

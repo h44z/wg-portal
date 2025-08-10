@@ -24,6 +24,9 @@ core:
   self_provisioning_allowed: false
   import_existing: true
   restore_state: true
+  
+backend:
+  default: local
 
 advanced:
   log_level: info
@@ -102,6 +105,7 @@ webhook:
 
 Below you will find sections like
 [`core`](#core),
+[`backend`](#backend),
 [`advanced`](#advanced),
 [`database`](#database),
 [`statistics`](#statistics),
@@ -162,6 +166,65 @@ More advanced options are found in the subsequent `Advanced` section.
 ### `restore_state`
 - **Default:** `true`
 - **Description:** Restore the WireGuard interface states (up/down) that existed before WireGuard Portal started.
+
+---
+
+## Backend
+
+Configuration options for the WireGuard backend, which manages the WireGuard interfaces and peers.
+The current MikroTik backend is in **BETA** and may not support all features.
+
+### `default`
+- **Default:** `local`
+- **Description:** The default backend to use for managing WireGuard interfaces. 
+  Valid options are: `local`, or other backend id's configured in the `mikrotik` section.
+
+### Mikrotik
+
+The `mikrotik` array contains a list of MikroTik backend definitions. Each entry describes how to connect to a MikroTik RouterOS instance that hosts WireGuard interfaces.
+
+Below are the properties for each entry inside `backend.mikrotik`:
+
+#### `id`
+- **Default:** *(empty)*
+- **Description:** A unique identifier for this backend. 
+  This value can be referenced by `backend.default` to use this backend as default.
+  The identifier must be unique across all backends and must not use the reserved keyword `local`.
+
+#### `display_name`
+- **Default:** *(empty)*
+- **Description:** A human-friendly display name for this backend. If omitted, the `id` will be used as the display name.
+
+#### `api_url`
+- **Default:** *(empty)*
+- **Description:** Base URL of the MikroTik REST API, including scheme and path, e.g., `https://10.10.10.10:8729/rest`.
+
+#### `api_user`
+- **Default:** *(empty)*
+- **Description:** Username for authenticating against the MikroTik API.
+  Ensure that the user has sufficient permissions to manage WireGuard interfaces and peers.
+
+#### `api_password`
+- **Default:** *(empty)*
+- **Description:** Password for the specified API user.
+
+#### `api_verify_tls`
+- **Default:** `false`
+- **Description:** Whether to verify the TLS certificate of the MikroTik API endpoint. Set to `false` to allow self-signed certificates (not recommended for production).
+
+#### `api_timeout`
+- **Default:** `30s`
+- **Description:** Timeout for API requests to the MikroTik device. Uses Go duration format (e.g., `10s`, `1m`). If omitted, a default of 30 seconds is used.
+
+#### `concurrency`
+- **Default:** `5`
+- **Description:** Maximum number of concurrent API requests the backend will issue when enumerating interfaces and their details. If `0` or negative, a sane default of `5` is used.
+
+#### `debug`
+- **Default:** `false`
+- **Description:** Enable verbose debug logging for the MikroTik backend.
+
+For more details on configuring the MikroTik backend, see the [Backends](../usage/backends.md) documentation.
 
 ---
 

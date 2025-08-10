@@ -99,7 +99,7 @@
     },
     "interface": {
       "headline": "État de l'interface pour",
-      "mode": "mode",
+      "backend": "backend",
       "key": "Clé publique",
       "endpoint": "Point de terminaison public",
       "port": "Port d'écoute",

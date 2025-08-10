@@ -129,7 +129,7 @@ func (p *Peer) GenerateDisplayName(prefix string) {
 	p.DisplayName = fmt.Sprintf("%sPeer %s", prefix, internal.TruncateString(string(p.Identifier), 8))
 }
 
-// OverwriteUserEditableFields overwrites the user editable fields of the peer with the values from the userPeer
+// OverwriteUserEditableFields overwrites the user-editable fields of the peer with the values from the userPeer
 func (p *Peer) OverwriteUserEditableFields(userPeer *Peer, cfg *config.Config) {
 	p.DisplayName = userPeer.DisplayName
 	if cfg.Core.EditableKeys {
@@ -182,9 +182,12 @@ type PhysicalPeer struct {
 
 	BytesUpload   uint64 // upload bytes are the number of bytes that the remote peer has sent to the server
 	BytesDownload uint64 // upload bytes are the number of bytes that the remote peer has received from the server
+
+	ImportSource  string // import source (wgctrl, file, ...)
+	backendExtras any    // additional backend-specific extras, e.g., domain.MikrotikPeerExtras
 }
 
-func (p PhysicalPeer) GetPresharedKey() *wgtypes.Key {
+func (p *PhysicalPeer) GetPresharedKey() *wgtypes.Key {
 	if p.PresharedKey == "" {
 		return nil
 	}
@@ -196,7 +199,7 @@ func (p PhysicalPeer) GetPresharedKey() *wgtypes.Key {
 	return &key
 }
 
-func (p PhysicalPeer) GetEndpointAddress() *net.UDPAddr {
+func (p *PhysicalPeer) GetEndpointAddress() *net.UDPAddr {
 	if p.Endpoint == "" {
 		return nil
 	}
@@ -208,7 +211,7 @@ func (p PhysicalPeer) GetEndpointAddress() *net.UDPAddr {
 	return addr
 }
 
-func (p PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
+func (p *PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
 	if p.PersistentKeepalive == 0 {
 		return nil
 	}
@@ -217,13 +220,28 @@ func (p PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
 	return &keepAliveDuration
 }
 
-func (p PhysicalPeer) GetAllowedIPs() []net.IPNet {
+func (p *PhysicalPeer) GetAllowedIPs() []net.IPNet {
 	allowedIPs := make([]net.IPNet, len(p.AllowedIPs))
 	for i, ip := range p.AllowedIPs {
 		allowedIPs[i] = *ip.IpNet()
 	}
 
 	return allowedIPs
+}
+
+func (p *PhysicalPeer) GetExtras() any {
+	return p.backendExtras
+}
+
+func (p *PhysicalPeer) SetExtras(extras any) {
+	switch extras.(type) {
+	case MikrotikPeerExtras: // OK
+	case LocalPeerExtras: // OK
+	default: // we only support MikrotikPeerExtras and LocalPeerExtras for now
+		panic(fmt.Sprintf("unsupported peer backend extras type %T", extras))
+	}
+
+	p.backendExtras = extras
 }
 
 func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
@@ -242,6 +260,44 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 		Interface: PeerInterfaceConfig{
 			KeyPair: pp.KeyPair,
 		},
+	}
+
+	if pp.GetExtras() == nil {
+		return peer
+	}
+
+	// enrich the data with controller-specific extras
+	now := time.Now()
+	switch pp.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := pp.GetExtras().(MikrotikPeerExtras)
+		peer.Notes = extras.Comment
+		peer.DisplayName = extras.Name
+		if extras.ClientEndpoint != "" { // if the client endpoint is set, we assume that this is a client peer
+			peer.Endpoint = NewConfigOption(extras.ClientEndpoint, true)
+			peer.Interface.Type = InterfaceTypeClient
+			peer.Interface.Addresses, _ = CidrsFromString(extras.ClientAddress)
+			peer.Interface.DnsStr = NewConfigOption(extras.ClientDns, true)
+			peer.PersistentKeepalive = NewConfigOption(extras.ClientKeepalive, true)
+		} else {
+			peer.Interface.Type = InterfaceTypeServer
+		}
+		if extras.Disabled {
+			peer.Disabled = &now
+			peer.DisabledReason = "Disabled by Mikrotik controller"
+		} else {
+			peer.Disabled = nil
+			peer.DisabledReason = ""
+		}
+	case ControllerTypeLocal:
+		extras := pp.GetExtras().(LocalPeerExtras)
+		if extras.Disabled {
+			peer.Disabled = &now
+			peer.DisabledReason = "Disabled by Local controller"
+		} else {
+			peer.Disabled = nil
+			peer.DisabledReason = ""
+		}
 	}
 
 	return peer
@@ -265,6 +321,27 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 	pp.PresharedKey = p.PresharedKey
 	pp.PublicKey = p.Interface.PublicKey
 	pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()
+
+	switch pp.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := MikrotikPeerExtras{
+			Id:              "",
+			Name:            p.DisplayName,
+			Comment:         p.Notes,
+			IsResponder:     false,
+			Disabled:        p.IsDisabled(),
+			ClientEndpoint:  p.Endpoint.GetValue(),
+			ClientAddress:   CidrsToString(p.Interface.Addresses),
+			ClientDns:       p.Interface.DnsStr.GetValue(),
+			ClientKeepalive: p.PersistentKeepalive.GetValue(),
+		}
+		pp.SetExtras(extras)
+	case ControllerTypeLocal:
+		extras := LocalPeerExtras{
+			Disabled: p.IsDisabled(),
+		}
+		pp.SetExtras(extras)
+	}
 }
 
 type PeerCreationRequest struct {
