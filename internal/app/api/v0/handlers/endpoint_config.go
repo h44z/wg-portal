@@ -107,7 +107,7 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 			names := make([]model.SettingsBackendNames, 0, len(controllers))
 
 			for _, controller := range controllers {
-				displayName := controller.DisplayName
+				displayName := controller.GetDisplayName()
 				if displayName == "" {
 					displayName = controller.Id // fallback to ID if no display name is set
 				}

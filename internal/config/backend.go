@@ -44,6 +44,15 @@ type BackendBase struct {
 	DisplayName string `yaml:"display_name"` // A display name for the backend
 }
 
+// GetDisplayName returns the display name of the backend.
+// If no display name is set, it falls back to the ID.
+func (b BackendBase) GetDisplayName() string {
+	if b.DisplayName == "" {
+		return b.Id // Fallback to ID if no display name is set
+	}
+	return b.DisplayName
+}
+
 type BackendMikrotik struct {
 	BackendBase `yaml:",inline"` // Embed the base fields
 
@@ -70,4 +79,16 @@ func (b *BackendMikrotik) GetConcurrency() int {
 		return 5
 	}
 	return b.Concurrency
+}
+
+// GetApiTimeout returns the configured API timeout or a sane default (30 seconds)
+// when the configured value is zero or negative.
+func (b *BackendMikrotik) GetApiTimeout() time.Duration {
+	if b == nil {
+		return 30 * time.Second
+	}
+	if b.ApiTimeout <= 0 {
+		return 30 * time.Second
+	}
+	return b.ApiTimeout
 }

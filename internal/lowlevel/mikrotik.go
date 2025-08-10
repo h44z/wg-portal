@@ -150,10 +150,6 @@ func NewMikrotikApiClient(coreCfg *config.Config, cfg *config.BackendMikrotik) (
 		cfg:     cfg,
 	}
 
-	if cfg.ApiTimeout == 0 {
-		cfg.ApiTimeout = 30 * time.Second // Default timeout for API requests
-	}
-
 	err := c.setup()
 	if err != nil {
 		return nil, err
@@ -171,7 +167,7 @@ func (m *MikrotikApiClient) setup() error {
 				InsecureSkipVerify: !m.cfg.ApiVerifyTls,
 			},
 		},
-		Timeout: m.cfg.ApiTimeout,
+		Timeout: m.cfg.GetApiTimeout(),
 	}
 
 	if m.cfg.Debug {
@@ -304,7 +300,7 @@ func (m *MikrotikApiClient) Query(
 	command string,
 	opts *MikrotikRequestOptions,
 ) MikrotikApiResponse[[]GenericJsonObject] {
-	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.GetApiTimeout())
 	defer cancel()
 
 	fullUrl := opts.GetPath(m.getFullPath(command))
@@ -327,7 +323,7 @@ func (m *MikrotikApiClient) Get(
 	command string,
 	opts *MikrotikRequestOptions,
 ) MikrotikApiResponse[GenericJsonObject] {
-	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.GetApiTimeout())
 	defer cancel()
 
 	fullUrl := opts.GetPath(m.getFullPath(command))
@@ -350,7 +346,7 @@ func (m *MikrotikApiClient) Create(
 	command string,
 	payload GenericJsonObject,
 ) MikrotikApiResponse[GenericJsonObject] {
-	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.GetApiTimeout())
 	defer cancel()
 
 	fullUrl := m.getFullPath(command)
@@ -373,7 +369,7 @@ func (m *MikrotikApiClient) Update(
 	command string,
 	payload GenericJsonObject,
 ) MikrotikApiResponse[GenericJsonObject] {
-	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.GetApiTimeout())
 	defer cancel()
 
 	fullUrl := m.getFullPath(command)
@@ -395,7 +391,7 @@ func (m *MikrotikApiClient) Delete(
 	ctx context.Context,
 	command string,
 ) MikrotikApiResponse[EmptyResponse] {
-	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.GetApiTimeout())
 	defer cancel()
 
 	fullUrl := m.getFullPath(command)
@@ -418,7 +414,7 @@ func (m *MikrotikApiClient) ExecList(
 	command string,
 	payload GenericJsonObject,
 ) MikrotikApiResponse[[]GenericJsonObject] {
-	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.ApiTimeout)
+	apiCtx, cancel := context.WithTimeout(ctx, m.cfg.GetApiTimeout())
 	defer cancel()
 
 	fullUrl := m.getFullPath(command)
