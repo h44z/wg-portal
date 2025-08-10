@@ -32,6 +32,7 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL, or Pos
 * Docker ready
 * Can be used with existing WireGuard setups
 * Support for multiple WireGuard interfaces
+* Supports multiple WireGuard backends (wgctrl or MikroTik [BETA])
 * Peer Expiry Feature
 * Handles route and DNS settings like wg-quick does
 * Exposes Prometheus metrics for monitoring and alerting

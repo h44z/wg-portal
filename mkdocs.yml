@@ -80,6 +80,7 @@ nav:
           - Examples: documentation/configuration/examples.md
       - Usage:
           - General: documentation/usage/general.md
+          - Backends: documentation/usage/backends.md
           - LDAP: documentation/usage/ldap.md
           - Security: documentation/usage/security.md
           - Webhooks: documentation/usage/webhooks.md
