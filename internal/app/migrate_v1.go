@@ -47,10 +47,17 @@ func migrateFromV1(db *gorm.DB, source, typ string) error {
 	}
 	latestVersion := "1.0.9"
 	if lastVersion.Version != latestVersion {
-		return fmt.Errorf("unsupported old version, update to database version %s first: %w", latestVersion, err)
+		return fmt.Errorf("unsupported old version, update to database version %s first", latestVersion)
 	}
 
 	slog.Info("found valid V1 database", "version", lastVersion.Version)
+
+	// validate target database
+	if err := validateTargetDatabase(db); err != nil {
+		return fmt.Errorf("target database validation failed: %w", err)
+	}
+
+	slog.Info("found valid target database, starting migration...")
 
 	if err := migrateV1Users(oldDb, db); err != nil {
 		return fmt.Errorf("user migration failed: %w", err)
@@ -66,6 +73,36 @@ func migrateFromV1(db *gorm.DB, source, typ string) error {
 
 	slog.Info("migrated V1 database successfully, please restart WireGuard Portal",
 		"version", lastVersion.Version)
+
+	return nil
+}
+
+// validateTargetDatabase checks if the target database is empty and ready for migration.
+func validateTargetDatabase(db *gorm.DB) error {
+	var count int64
+	err := db.Model(&domain.User{}).Count(&count).Error
+	if err != nil {
+		return fmt.Errorf("failed to check user table: %w", err)
+	}
+	if count > 0 {
+		return fmt.Errorf("target database contains %d users, please use an empty database for migration", count)
+	}
+
+	err = db.Model(&domain.Interface{}).Count(&count).Error
+	if err != nil {
+		return fmt.Errorf("failed to check interface table: %w", err)
+	}
+	if count > 0 {
+		return fmt.Errorf("target database contains %d interfaces, please use an empty database for migration", count)
+	}
+
+	err = db.Model(&domain.Peer{}).Count(&count).Error
+	if err != nil {
+		return fmt.Errorf("failed to check peer table: %w", err)
+	}
+	if count > 0 {
+		return fmt.Errorf("target database contains %d peers, please use an empty database for migration", count)
+	}
 
 	return nil
 }
@@ -123,7 +160,7 @@ func migrateV1Users(oldDb, newDb *gorm.DB) error {
 			LinkedPeerCount: 0,
 		}
 
-		if err := newDb.Save(&newUser).Error; err != nil {
+		if err := newDb.Create(&newUser).Error; err != nil {
 			return fmt.Errorf("failed to migrate user %s: %w", oldUser.Email, err)
 		}
 
@@ -217,7 +254,8 @@ func migrateV1Interfaces(oldDb, newDb *gorm.DB) error {
 			PeerDefPostDown:            "",
 		}
 
-		if err := newDb.Save(&newInterface).Error; err != nil {
+		// Create new interface with associations
+		if err := newDb.Create(&newInterface).Error; err != nil {
 			return fmt.Errorf("failed to migrate device %s: %w", oldDevice.DeviceName, err)
 		}
 
@@ -362,7 +400,7 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 			},
 		}
 
-		if err := newDb.Save(&newPeer).Error; err != nil {
+		if err := newDb.Create(&newPeer).Error; err != nil {
 			return fmt.Errorf("failed to migrate peer %s (%s): %w", oldPeer.Identifier, oldPeer.PublicKey, err)
 		}
 
