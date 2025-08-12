@@ -70,8 +70,8 @@ github.com/go-openapi/spec v0.21.0 h1:LTVzPc3p/RzRnkQqLRndbAzjY0d0BCL72A6j3CdL9Z
 github.com/go-openapi/spec v0.21.0/go.mod h1:78u6VdPw81XU44qEWGhtr982gJ5BWg2c0I5XwVMotYk=
 github.com/go-openapi/swag v0.23.1 h1:lpsStH0n2ittzTnbaSloVZLuB5+fvSY/+hnagBjSNZU=
 github.com/go-openapi/swag v0.23.1/go.mod h1:STZs8TbRvEQQKUA+JZNAm3EWlgaOBGpyFDqQnDHMef0=
-github.com/go-pkgz/routegroup v1.5.1 h1:hwVU4w2ltMQXIGEM4WIM0aWyRn7FsZbfbZIlPH7f1Rk=
-github.com/go-pkgz/routegroup v1.5.1/go.mod h1:kDDPDRLRiRY1vnENrZJw1jQAzQX7fvsbsHGRQFNQfKc=
+github.com/go-pkgz/routegroup v1.5.2 h1:/W/5GwsHaojeEBldiSB/fcqPLm0AE/eT36reCsMEbtY=
+github.com/go-pkgz/routegroup v1.5.2/go.mod h1:Pmu04fhgWhRtBMIJ8HXppnnzOPjnL/IEPBIdO2zmeqg=
 github.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=
 github.com/go-playground/assert/v2 v2.2.0/go.mod h1:VDjEfimB/XKnb+ZQfWdccd7VUvScMdVu0Titje2rxJ4=
 github.com/go-playground/locales v0.14.1 h1:EWaQ/wswjilfKLTECiXz7Rh+3BjFhfDFKv/oXslEjJA=
