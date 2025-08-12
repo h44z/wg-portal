@@ -217,6 +217,15 @@ func (m Manager) RestoreInterfaceState(
 		if err != nil && !iface.IsDisabled() {
 			slog.Debug("creating missing interface", "interface", iface.Identifier)
 
+			// temporarily disable interface in database so that the current state is reflected correctly
+			_ = m.db.SaveInterface(ctx, iface.Identifier,
+				func(in *domain.Interface) (*domain.Interface, error) {
+					now := time.Now()
+					in.Disabled = &now // set
+					in.DisabledReason = domain.DisabledReasonInterfaceMissing
+					return in, nil
+				})
+
 			// try to create a new interface
 			_, err = m.saveInterface(ctx, &iface)
 			if err != nil {
