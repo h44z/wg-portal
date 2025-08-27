@@ -123,8 +123,11 @@ func (p *Peer) ApplyInterfaceDefaults(in *Interface) {
 }
 
 func (p *Peer) GenerateDisplayName(prefix string) {
+	if p.DisplayName != "" {
+		return
+	}
 	if prefix != "" {
-		prefix = fmt.Sprintf("%s ", strings.TrimSpace(prefix)) // add a space after the prefix
+		prefix = fmt.Sprintf("%s ", strings.TrimSpace(prefix))
 	}
 	p.DisplayName = fmt.Sprintf("%sPeer %s", prefix, internal.TruncateString(string(p.Identifier), 8))
 }
