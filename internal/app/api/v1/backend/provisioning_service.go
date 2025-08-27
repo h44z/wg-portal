@@ -162,7 +162,10 @@ func (p ProvisioningService) NewPeer(ctx context.Context, req models.Provisionin
 	if req.PresharedKey != "" {
 		peer.PresharedKey = domain.PreSharedKey(req.PresharedKey)
 	}
-	peer.GenerateDisplayName("API")
+
+	if peer.DisplayName == "" {
+		peer.GenerateDisplayName("API")
+	}
 
 	// save new peer
 	peer, err = p.peers.CreatePeer(ctx, peer)
