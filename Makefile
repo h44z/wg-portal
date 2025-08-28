@@ -78,7 +78,7 @@ build: build-dependencies
 	CGO_ENABLED=0 $(GOCMD) build -o $(BUILDDIR)/wg-portal \
 	 -ldflags "-w -s -extldflags \"-static\" -X 'github.com/fedor-git/wg-portal-2/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}'" \
 	 -tags netgo \
-	 cmd/wg-portal/main.go
+	 cmd/wg-portal-2/main.go
 
 #< build-amd64: Build all executables for AMD64
 .PHONY: build-amd64
@@ -86,7 +86,7 @@ build-amd64: build-dependencies
 	CGO_ENABLED=0 $(GOCMD) build -o $(BUILDDIR)/wg-portal-amd64 \
 	 -ldflags "-w -s -extldflags \"-static\" -X 'github.com/fedor-git/wg-portal-2/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}'" \
 	 -tags netgo \
-	 cmd/wg-portal/main.go
+	 cmd/wg-portal-2/main.go
 
 #< build-arm64: Build all executables for ARM64
 .PHONY: build-arm64
@@ -94,7 +94,7 @@ build-arm64: build-dependencies
 	CGO_ENABLED=0 CC=aarch64-linux-gnu-gcc GOOS=linux GOARCH=arm64 $(GOCMD) build -o $(BUILDDIR)/wg-portal-arm64 \
 	 -ldflags "-w -s -extldflags \"-static\" -X 'github.com/fedor-git/wg-portal-2/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}'" \
 	 -tags netgo \
-	 cmd/wg-portal/main.go
+	 cmd/wg-portal-2/main.go
 
 #< build-arm: Build all executables for ARM32
 .PHONY: build-arm
@@ -102,14 +102,14 @@ build-arm: build-dependencies
 	CGO_ENABLED=0 CC=arm-linux-gnueabi-gcc GOOS=linux GOARCH=arm GOARM=7 $(GOCMD) build -o $(BUILDDIR)/wg-portal-arm \
 	 -ldflags "-w -s -extldflags \"-static\" -X 'github.com/fedor-git/wg-portal-2/internal/server.Version=${ENV_BUILD_IDENTIFIER}-${ENV_BUILD_VERSION}'" \
 	 -tags netgo \
-	 cmd/wg-portal/main.go
+	 cmd/wg-portal-2/main.go
 
 #< build-dependencies: Generate the output directory for compiled executables and download dependencies
 .PHONY: build-dependencies
 build-dependencies:
 	@$(GOCMD) mod download -x
 	@mkdir -p $(BUILDDIR)
-	cp scripts/wg-portal.service $(BUILDDIR)
+	cp scripts/wg-portal-2.service $(BUILDDIR)
 
 #< frontend: Build Vue.js frontend
 frontend: frontend-dependencies

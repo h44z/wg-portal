@@ -36,16 +36,16 @@ ARG BUILD_VERSION
 # Split to cross-platform build
 ARG TARGETARCH
 # Build the application
-RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} go build -o /build/dist/wg-portal \
+RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} go build -o /build/dist/wg-portal-2 \
   -ldflags "-w -s -extldflags '-static' -X 'github.com/fedor-git/wg-portal-2/internal.Version=${BUILD_VERSION}'" \
   -tags netgo \
-  cmd/wg-portal/main.go
+  ./cmd/wg-portal-2
 
 ######
 # Export binaries
 ######
 FROM scratch AS binaries
-COPY --from=builder /build/dist/wg-portal /
+COPY --from=builder /build/dist/wg-portal-2 /
 
 ######
 # Final image
@@ -56,7 +56,7 @@ RUN apk add --no-cache bash curl iptables nftables openresolv wireguard-tools
 # Setup timezone
 ENV TZ=UTC
 # Copy binaries
-COPY --from=builder /build/dist/wg-portal /app/wg-portal
+COPY --from=builder /build/dist/wg-portal-2 /app/wg-portal-2
 # Set the Current Working Directory inside the container
 WORKDIR /app
 # Expose default ports for metrics, web and wireguard
@@ -66,4 +66,4 @@ EXPOSE 51820/udp
 # the database and config file can be mounted from the host
 VOLUME [ "/app/data", "/app/config" ]
 # Command to run the executable
-ENTRYPOINT [ "/app/wg-portal" ]
+ENTRYPOINT [ "/app/wg-portal-2" ]
