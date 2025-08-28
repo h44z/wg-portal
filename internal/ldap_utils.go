@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-ldap/ldap/v3"
 
-	"github.com/h44z/wg-portal/internal/config"
+	"github.com/fedor-git/wg-portal-2/internal/config"
 )
 
 type RawLdapUser map[string]any

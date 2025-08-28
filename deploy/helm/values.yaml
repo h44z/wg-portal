@@ -44,7 +44,7 @@ strategy:
 
 image:
   # -- Image repository
-  repository: ghcr.io/h44z/wg-portal
+  repository: ghcr.io/fedor-git/wg-portal-2
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion

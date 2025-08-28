@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fedor-git/wg-portal-2/internal/config"
 	"github.com/stretchr/testify/assert"
-	"github.com/h44z/wg-portal/internal/config"
 )
 
 func TestPeer_IsDisabled(t *testing.T) {

@@ -6,10 +6,10 @@ import (
 
 	"github.com/go-pkgz/routegroup"
 
-	"github.com/h44z/wg-portal/internal/app/api/core"
-	"github.com/h44z/wg-portal/internal/app/api/core/middleware/cors"
-	"github.com/h44z/wg-portal/internal/app/api/core/middleware/csrf"
-	"github.com/h44z/wg-portal/internal/app/api/core/respond"
+	"github.com/fedor-git/wg-portal-2/internal/app/api/core"
+	"github.com/fedor-git/wg-portal-2/internal/app/api/core/middleware/cors"
+	"github.com/fedor-git/wg-portal-2/internal/app/api/core/middleware/csrf"
+	"github.com/fedor-git/wg-portal-2/internal/app/api/core/respond"
 )
 
 type SessionMiddleware interface {
@@ -45,7 +45,7 @@ type Handler interface {
 // @description WireGuard Portal API - UI Endpoints
 
 // @contact.name WireGuard Portal Developers
-// @contact.url https://github.com/h44z/wg-portal
+// @contact.url https://github.com/fedor-git/wg-portal-2
 
 // @BasePath /api/v0
 // @query.collection.format multi

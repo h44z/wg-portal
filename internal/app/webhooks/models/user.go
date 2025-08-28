@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 // User represents a user model for webhooks. For details about the fields, see the domain.User struct.

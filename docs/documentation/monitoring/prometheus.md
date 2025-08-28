@@ -27,6 +27,6 @@ scrape_configs:
 
 # Grafana Dashboard
 
-You may import [`dashboard.json`](https://github.com/h44z/wg-portal/blob/master/deploy/helm/files/dashboard.json) into your Grafana instance.
+You may import [`dashboard.json`](https://github.com/fedor-git/wg-portal-2/blob/master/deploy/helm/files/dashboard.json) into your Grafana instance.
 
 ![Dashboard](../../assets/images/dashboard.png)

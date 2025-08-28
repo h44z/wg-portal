@@ -11,7 +11,7 @@ To build the application from source files, use the Makefile provided in the rep
 
 ```shell
 # Get source code
-git clone https://github.com/h44z/wg-portal -b ${WG_PORTAL_VERSION:-master} --depth 1
+git clone https://github.com/fedor-git/wg-portal-2 -b ${WG_PORTAL_VERSION:-master} --depth 1
 cd wg-portal
 # Build the frontend
 make frontend

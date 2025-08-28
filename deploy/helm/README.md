@@ -8,7 +8,7 @@ WireGuard Configuration Portal with LDAP, OAuth, OIDC authentication
 
 ## Source Code
 
-* <https://github.com/h44z/wg-portal>
+* <https://github.com/fedor-git/wg-portal-2>
 
 ## Requirements
 
@@ -42,7 +42,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | revisionHistoryLimit | string | `10` | The number of old ReplicaSets to retain to allow rollback. |
 | workloadType | string | `"Deployment"` | Workload type - `Deployment` or `StatefulSet` |
 | strategy | object | `{"type":"RollingUpdate"}` | Update strategy for the workload Valid values are:  `RollingUpdate` or `Recreate` for Deployment,  `RollingUpdate` or `OnDelete` for StatefulSet |
-| image.repository | string | `"ghcr.io/h44z/wg-portal"` | Image repository |
+| image.repository | string | `"ghcr.io/fedor-git/wg-portal-2"` | Image repository |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion |
 | imagePullSecrets | list | `[]` | Image pull secrets |

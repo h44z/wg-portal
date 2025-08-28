@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 type LoginProviderInfo struct {

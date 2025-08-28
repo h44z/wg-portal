@@ -1,4 +1,4 @@
-module github.com/h44z/wg-portal
+module github.com/fedor-git/wg-portal-2
 
 go 1.24.0
 

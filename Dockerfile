@@ -37,7 +37,7 @@ ARG BUILD_VERSION
 ARG TARGETARCH
 # Build the application
 RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} go build -o /build/dist/wg-portal \
-  -ldflags "-w -s -extldflags '-static' -X 'github.com/h44z/wg-portal/internal.Version=${BUILD_VERSION}'" \
+  -ldflags "-w -s -extldflags '-static' -X 'github.com/fedor-git/wg-portal-2/internal.Version=${BUILD_VERSION}'" \
   -tags netgo \
   cmd/wg-portal/main.go
 

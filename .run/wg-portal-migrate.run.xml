@@ -9,7 +9,7 @@
     </envs>
     <sudo value="true" />
     <kind value="PACKAGE" />
-    <package value="github.com/h44z/wg-portal/cmd/wg-portal" />
+    <package value="github.com/fedor-git/wg-portal-2/cmd/wg-portal" />
     <directory value="$PROJECT_DIR$" />
     <filePath value="$PROJECT_DIR$/cmd/wg-portal/main.go" />
     <method v="2" />

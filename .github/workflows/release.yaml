@@ -1,0 +1,34 @@
+name: Weekly release
+on:
+  schedule:
+    - cron: 0 8 * * 1
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: |
+          npm install -g semantic-release@23.0.4 \
+          @semantic-release/commit-analyzer@12.0.0 \
+          @semantic-release/release-notes-generator@12.1.0 \
+          @semantic-release/changelog@6.0.3 \
+          @semantic-release/github@10.0.2 \
+          @semantic-release/git@10.0.1 \
+          @saithodev/semantic-release-backmerge@4.0.1 \
+          conventional-changelog-conventionalcommits
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

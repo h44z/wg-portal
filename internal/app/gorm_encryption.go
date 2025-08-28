@@ -12,7 +12,7 @@ import (
 
 	"gorm.io/gorm/schema"
 
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 // GormEncryptedStringSerializer is a GORM serializer that encrypts and decrypts string values using AES256.

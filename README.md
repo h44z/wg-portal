@@ -1,12 +1,12 @@
 # WireGuard Portal v2
 
-[![Build Status](https://github.com/h44z/wg-portal/actions/workflows/docker-publish.yml/badge.svg?event=push)](https://github.com/h44z/wg-portal/actions/workflows/docker-publish.yml)
+[![Build Status](https://github.com/fedor-git/wg-portal-2/actions/workflows/docker-publish.yml/badge.svg?event=push)](https://github.com/fedor-git/wg-portal-2/actions/workflows/docker-publish.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
-![GitHub last commit](https://img.shields.io/github/last-commit/h44z/wg-portal/master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/h44z/wg-portal)](https://goreportcard.com/report/github.com/h44z/wg-portal)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/h44z/wg-portal)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/h44z/wg-portal)
-[![Docker Pulls](https://img.shields.io/docker/pulls/h44z/wg-portal.svg)](https://hub.docker.com/r/wgportal/wg-portal/)
+![GitHub last commit](https://img.shields.io/github/last-commit/fedor-git/wg-portal-2/master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fedor-git/wg-portal-2)](https://goreportcard.com/report/github.com/fedor-git/wg-portal-2)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/fedor-git/wg-portal-2)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/fedor-git/wg-portal-2)
+[![Docker Pulls](https://img.shields.io/docker/pulls/fedor-git/wg-portal-2.svg)](https://hub.docker.com/r/wgportal/wg-portal/)
 
 ## Introduction
 <!-- Text from this line # is included in docs/documentation/overview.md -->
@@ -65,4 +65,4 @@ For the complete documentation visit [wgportal.org](https://wgportal.org).
 
 > [!IMPORTANT]
 > Since the project was accepted by the Docker-Sponsored Open Source Program, the Docker image location has moved to [wgportal/wg-portal](https://hub.docker.com/r/wgportal/wg-portal).
-> Please update the Docker image from **h44z/wg-portal** to **wgportal/wg-portal**.
+> Please update the Docker image from **fedor-git/wg-portal-2** to **wgportal/wg-portal**.

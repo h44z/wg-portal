@@ -7,9 +7,9 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/h44z/wg-portal/internal/adapters/wgcontroller"
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/fedor-git/wg-portal-2/internal/adapters/wgcontroller"
+	"github.com/fedor-git/wg-portal-2/internal/config"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 type InterfaceController interface {

@@ -13,7 +13,7 @@ If you believe you've found a security issue in one of the supported versions of
 
 Please do not report security vulnerabilities through public GitHub issues. 
 
-Instead, we encourage you to submit a report through GitHub [private vulnerability reporting](https://github.com/h44z/wg-portal/security).
+Instead, we encourage you to submit a report through GitHub [private vulnerability reporting](https://github.com/fedor-git/wg-portal-2/security).
 If you prefer to submit a report without logging in to GitHub, please email *info (at) wgportal.org*. 
 We will respond as soon as possible, but as only two people currently maintain this project, we cannot guarantee specific response times.
 

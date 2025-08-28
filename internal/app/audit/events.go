@@ -1,6 +1,6 @@
 package audit
 
-import "github.com/h44z/wg-portal/internal/domain"
+import "github.com/fedor-git/wg-portal-2/internal/domain"
 
 type AuthEvent struct {
 	Username string

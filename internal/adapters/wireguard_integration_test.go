@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/h44z/wg-portal/internal"
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/fedor-git/wg-portal-2/internal"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 // setup WireGuard manager with no linked store

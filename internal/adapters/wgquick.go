@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/h44z/wg-portal/internal"
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/fedor-git/wg-portal-2/internal"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 // WgQuickRepo implements higher level wg-quick like interactions like setting DNS, routing tables or interface hooks.

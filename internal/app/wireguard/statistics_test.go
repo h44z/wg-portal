@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 func Test_getSessionStartTime(t *testing.T) {

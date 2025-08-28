@@ -7,7 +7,7 @@ type: application
 home: https://wgportal.org
 icon: https://wgportal.org/latest/assets/images/logo.svg
 sources:
-  - https://github.com/h44z/wg-portal
+  - https://github.com/fedor-git/wg-portal-2
 
 annotations:
   artifacthub.io/category: networking

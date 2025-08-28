@@ -1,6 +1,6 @@
 ## Image Usage
 
-The WireGuard Portal Docker image is available on both [Docker Hub](https://hub.docker.com/r/wgportal/wg-portal) and [GitHub Container Registry](https://github.com/h44z/wg-portal/pkgs/container/wg-portal).
+The WireGuard Portal Docker image is available on both [Docker Hub](https://hub.docker.com/r/wgportal/wg-portal) and [GitHub Container Registry](https://github.com/fedor-git/wg-portal-2/pkgs/container/wg-portal).
 It is built on the official Alpine Linux base image and comes pre-packaged with all necessary WireGuard dependencies.
 
 This container allows you to establish WireGuard VPN connections without relying on a host system that supports WireGuard or using the `linuxserver/wireguard` Docker image.
@@ -109,7 +109,7 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
 
 ## Image Versioning
 
-All images are hosted on Docker Hub at [https://hub.docker.com/r/wgportal/wg-portal](https://hub.docker.com/r/wgportal/wg-portal) or in the [GitHub Container Registry](https://github.com/h44z/wg-portal/pkgs/container/wg-portal).
+All images are hosted on Docker Hub at [https://hub.docker.com/r/wgportal/wg-portal](https://hub.docker.com/r/wgportal/wg-portal) or in the [GitHub Container Registry](https://github.com/fedor-git/wg-portal-2/pkgs/container/wg-portal).
 
 Version **2** is the current stable release. Version **1** has moved to legacy status and is no longer recommended.
 
@@ -125,7 +125,7 @@ There are different types of these tags:
 
  - Major version tags: `v2` or `2`. These tags always refer to the latest image for WireGuard Portal version **2**.
  - Minor version tags: `v2.x` or `2.0`. These tags always refer to the latest image for WireGuard Portal version **2.x**.
- - Specific version tags (patch version): `v2.0.0` or `2.0.0`. These tags denote a very specific release. They correspond to the GitHub tags that we make, and you can see the release notes for them here: [https://github.com/h44z/wg-portal/releases](https://github.com/h44z/wg-portal/releases). Once these tags for a specific version show up in the Docker repository, they will never change. 
+ - Specific version tags (patch version): `v2.0.0` or `2.0.0`. These tags denote a very specific release. They correspond to the GitHub tags that we make, and you can see the release notes for them here: [https://github.com/fedor-git/wg-portal-2/releases](https://github.com/fedor-git/wg-portal-2/releases). Once these tags for a specific version show up in the Docker repository, they will never change. 
 
 #### The `latest` tag
 

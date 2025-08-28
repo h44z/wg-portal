@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 type AuditEntry struct {

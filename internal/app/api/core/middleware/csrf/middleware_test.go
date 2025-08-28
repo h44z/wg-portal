@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/h44z/wg-portal/internal/app/api/core/request"
+	"github.com/fedor-git/wg-portal-2/internal/app/api/core/request"
 )
 
 func TestMiddleware_Handler(t *testing.T) {

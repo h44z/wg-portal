@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/h44z/wg-portal/internal"
+	"github.com/fedor-git/wg-portal-2/internal"
 )
 
 const (

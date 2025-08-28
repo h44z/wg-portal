@@ -2,8 +2,8 @@
 site_name: WireGuard Portal
 site_description: Manage WireGuard Peers and Interface using a beautiful and simple web UI.
 site_url: https://wgportal.org/
-repo_name: h44z/wg-portal
-repo_url: https://github.com/h44z/wg-portal
+repo_name: fedor-git/wg-portal-2
+repo_url: https://github.com/fedor-git/wg-portal-2
 copyright: Copyright &copy; 2023-2025 WireGuard Portal Project
 
 extra_css:
@@ -46,7 +46,7 @@ extra:
     default: latest
   social:
     - icon: fontawesome/brands/github-alt
-      link: https://github.com/h44z/wg-portal
+      link: https://github.com/fedor-git/wg-portal-2
     - icon: fontawesome/brands/docker
       link: https://hub.docker.com/r/wgportal/wg-portal
     - icon: fontawesome/brands/twitter

@@ -6,10 +6,10 @@ import (
 
 	"github.com/go-pkgz/routegroup"
 
-	"github.com/h44z/wg-portal/internal/app/api/core/request"
-	"github.com/h44z/wg-portal/internal/app/api/core/respond"
-	"github.com/h44z/wg-portal/internal/app/api/v1/models"
-	"github.com/h44z/wg-portal/internal/domain"
+	"github.com/fedor-git/wg-portal-2/internal/app/api/core/request"
+	"github.com/fedor-git/wg-portal-2/internal/app/api/core/respond"
+	"github.com/fedor-git/wg-portal-2/internal/app/api/v1/models"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 type InterfaceEndpointInterfaceService interface {

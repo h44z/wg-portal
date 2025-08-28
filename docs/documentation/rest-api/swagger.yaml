@@ -580,14 +580,14 @@ definitions:
 info:
     contact:
         name: WireGuard Portal Project
-        url: https://github.com/h44z/wg-portal
+        url: https://github.com/fedor-git/wg-portal-2
     description: |-
         The WireGuard Portal REST API enables efficient management of WireGuard VPN configurations through a set of JSON-based endpoints.
         It supports creating and editing peers, interfaces, and user profiles, while also providing role-based access control and auditing.
         This API allows seamless integration with external tools or scripts for automated network configuration and administration.
     license:
         name: MIT
-        url: https://github.com/h44z/wg-portal/blob/master/LICENSE.txt
+        url: https://github.com/fedor-git/wg-portal-2/blob/master/LICENSE.txt
     title: WireGuard Portal Public API
     version: "1.0"
 paths:
