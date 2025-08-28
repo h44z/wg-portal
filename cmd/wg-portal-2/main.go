@@ -28,6 +28,7 @@ import (
 	"github.com/fedor-git/wg-portal-2/internal/app/webhooks"
 	"github.com/fedor-git/wg-portal-2/internal/app/wireguard"
 	"github.com/fedor-git/wg-portal-2/internal/config"
+	"github.com/fedor-git/wg-portal-2/internal/sync"
 )
 
 // main entry point for WireGuard Portal
@@ -181,6 +182,11 @@ func main() {
 
 	go metricsServer.Run(ctx)
 	go webSrv.Run(ctx, cfg.Web.ListeningAddress)
+
+	// sync WireGuard state periodically in the background
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go sync.StartPeriodicSync(ctx, wgManager, 30*time.Second)
 
 	slog.Info("Application startup complete")
 
