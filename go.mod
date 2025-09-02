@@ -8,7 +8,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.15.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.11
-	github.com/go-pkgz/routegroup v1.5.2
+	github.com/go-pkgz/routegroup v1.5.3
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/go-webauthn/webauthn v0.13.4
 	github.com/google/uuid v1.6.0
@@ -29,7 +29,7 @@ require (
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlserver v1.6.1
-	gorm.io/gorm v1.30.1
+	gorm.io/gorm v1.30.2
 )
 
 require (
