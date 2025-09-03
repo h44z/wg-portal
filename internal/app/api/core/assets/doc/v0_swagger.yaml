@@ -65,6 +65,10 @@ definitions:
         items:
           type: string
         type: array
+      Backend:
+        description: the backend used for this interface e.g., local, mikrotik, ...
+        example: local
+        type: string
       Disabled:
         description: flag that specifies if the interface is enabled (up) or not (down)
         type: boolean
@@ -381,6 +385,10 @@ definitions:
     properties:
       ApiAdminOnly:
         type: boolean
+      AvailableBackends:
+        items:
+          $ref: '#/definitions/model.SettingsBackendNames'
+        type: array
       LoginFormVisible:
         type: boolean
       MailLinkOnly:
@@ -393,6 +401,13 @@ definitions:
         type: boolean
       WebAuthnEnabled:
         type: boolean
+    type: object
+  model.SettingsBackendNames:
+    properties:
+      Id:
+        type: string
+      Name:
+        type: string
     type: object
   model.User:
     properties:

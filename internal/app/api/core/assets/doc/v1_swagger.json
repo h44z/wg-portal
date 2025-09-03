@@ -2086,6 +2086,11 @@
                 "InterfaceIdentifier"
             ],
             "properties": {
+                "DisplayName": {
+                    "description": "DisplayName is an optional name for the new peer.\nIf unset, a default template value (e.g., \"API Peer ...\") will be assigned.",
+                    "type": "string",
+                    "example": "API Peer xyz"
+                },
                 "InterfaceIdentifier": {
                     "description": "InterfaceIdentifier is the identifier of the WireGuard interface the peer should be linked to.",
                     "type": "string",
