@@ -1781,6 +1781,11 @@
                         "type": "string"
                     }
                 },
+                "Backend": {
+                    "description": "the backend used for this interface e.g., local, mikrotik, ...",
+                    "type": "string",
+                    "example": "local"
+                },
                 "Disabled": {
                     "description": "flag that specifies if the interface is enabled (up) or not (down)",
                     "type": "boolean"
@@ -2249,6 +2254,12 @@
                 "ApiAdminOnly": {
                     "type": "boolean"
                 },
+                "AvailableBackends": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SettingsBackendNames"
+                    }
+                },
                 "LoginFormVisible": {
                     "type": "boolean"
                 },
@@ -2266,6 +2277,17 @@
                 },
                 "WebAuthnEnabled": {
                     "type": "boolean"
+                }
+            }
+        },
+        "model.SettingsBackendNames": {
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
                 }
             }
         },
