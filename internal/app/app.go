@@ -52,8 +52,12 @@ func Initialize(
 	// Switch to admin user context
 	startupContext = domain.SetUserInfo(startupContext, domain.SystemAdminContextUserInfo())
 
-	if err := a.createDefaultUser(startupContext); err != nil {
-		return fmt.Errorf("failed to create default user: %w", err)
+	if !cfg.Core.AdminUserDisabled {
+		if err := a.createDefaultUser(startupContext); err != nil {
+			return fmt.Errorf("failed to create default user: %w", err)
+		}
+	} else {
+		slog.Info("Local Admin user disabled!")
 	}
 
 	if err := a.importNewInterfaces(startupContext); err != nil {
