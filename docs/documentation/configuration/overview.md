@@ -16,6 +16,7 @@ core:
   admin_user: admin@wgportal.local
   admin_password: wgportal-default
   admin_api_token: ""
+  disable_admin_user: false
   editable_keys: true
   create_default_peer: false
   create_default_peer_on_creation: false
@@ -130,6 +131,10 @@ More advanced options are found in the subsequent `Advanced` section.
 - **Default:** `wgportal-default`
 - **Description:** The administrator password. The default password should be changed immediately!
 - **Important:** The password should be strong and secure. The minimum password length is specified in [auth.min_password_length](#min_password_length). By default, it is 16 characters.
+
+### `disable_admin_user`
+- **Default:** `false`
+- **Description:** If `true`, no admin user is created. This is useful if you plan to manage users exclusively through external authentication providers such as LDAP or OAuth.
 
 ### `admin_api_token`
 - **Default:** *(empty)*
