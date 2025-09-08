@@ -544,6 +544,30 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 		return nil, fmt.Errorf("failed to save interface: %w", err)
 	}
 
+	// update the interface type of peers in db
+	peers, err := m.db.GetInterfacePeers(ctx, iface.Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load peers for interface %s: %w", iface.Identifier, err)
+	}
+	for _, peer := range peers {
+		err := m.db.SavePeer(ctx, peer.Identifier, func(_ *domain.Peer) (*domain.Peer, error) {
+			switch iface.Type {
+			case domain.InterfaceTypeAny:
+				peer.Interface.Type = domain.InterfaceTypeAny
+			case domain.InterfaceTypeClient:
+				peer.Interface.Type = domain.InterfaceTypeServer
+			case domain.InterfaceTypeServer:
+				peer.Interface.Type = domain.InterfaceTypeClient
+			}
+
+			return &peer, nil
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update peer %s for interface %s: %w", peer.Identifier,
+				iface.Identifier, err)
+		}
+	}
+
 	if iface.IsDisabled() {
 		physicalInterface, _ := m.wg.GetController(*iface).GetInterface(ctx, iface.Identifier)
 		fwMark := iface.FirewallMark

@@ -328,7 +328,7 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 			Id:              "",
 			Name:            p.DisplayName,
 			Comment:         p.Notes,
-			IsResponder:     false,
+			IsResponder:     p.Interface.Type == InterfaceTypeClient,
 			Disabled:        p.IsDisabled(),
 			ClientEndpoint:  p.Endpoint.GetValue(),
 			ClientAddress:   CidrsToString(p.Interface.Addresses),

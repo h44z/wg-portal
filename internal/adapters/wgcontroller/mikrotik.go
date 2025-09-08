@@ -3,13 +3,12 @@ package wgcontroller
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"log/slog"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -678,11 +677,15 @@ func (c *MikrotikController) updatePeer(
 	extras := pp.GetExtras().(domain.MikrotikPeerExtras)
 	peerId := extras.Id
 
-	endpoint := pp.Endpoint
-	endpointPort := "51820" // default port if not set
-	if s := strings.Split(endpoint, ":"); len(s) == 2 {
-		endpoint = s[0]
-		endpointPort = s[1]
+	endpoint := ""           // by default, we have no endpoint (the peer does not initiate a connection)
+	endpointPort := "0"      // by default, we have no endpoint port (the peer does not initiate a connection)
+	if !extras.IsResponder { // if the peer is not only a responder, it needs the endpoint to initiate a connection
+		endpoint = pp.Endpoint
+		endpointPort = "51820" // default port if not set
+		if s := strings.Split(endpoint, ":"); len(s) == 2 {
+			endpoint = s[0]
+			endpointPort = s[1]
+		}
 	}
 
 	allowedAddressStr := domain.CidrsToString(pp.AllowedIPs)
