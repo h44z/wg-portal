@@ -14,9 +14,10 @@ import (
 type Config struct {
 	Core struct {
 		// AdminUser defines the default administrator account that will be created
-		AdminUser     string `yaml:"admin_user"`
-		AdminPassword string `yaml:"admin_password"`
-		AdminApiToken string `yaml:"admin_api_token"` // if set, the API access is enabled automatically
+		AdminUserDisabled bool   `yaml:"disable_admin_user"`
+		AdminUser         string `yaml:"admin_user"`
+		AdminPassword     string `yaml:"admin_password"`
+		AdminApiToken     string `yaml:"admin_api_token"` // if set, the API access is enabled automatically
 
 		EditableKeys                bool `yaml:"editable_keys"`
 		CreateDefaultPeer           bool `yaml:"create_default_peer"`
@@ -113,6 +114,7 @@ func (c *Config) LogStartupValues() {
 func defaultConfig() *Config {
 	cfg := &Config{}
 
+	cfg.Core.AdminUserDisabled = false
 	cfg.Core.AdminUser = "admin@wgportal.local"
 	cfg.Core.AdminPassword = "wgportal-default"
 	cfg.Core.AdminApiToken = "" // by default, the API access is disabled
