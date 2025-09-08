@@ -374,8 +374,8 @@ gorm.io/driver/postgres v1.6.0/go.mod h1:vUw0mrGgrTK+uPHEhAdV4sfFELrByKVGnaVRkXD
 gorm.io/driver/sqlserver v1.6.1 h1:XWISFsu2I2pqd1KJhhTZNJMx1jNQ+zVL/Q8ovDcUjtY=
 gorm.io/driver/sqlserver v1.6.1/go.mod h1:VZeNn7hqX1aXoN5TPAFGWvxWG90xtA8erGn2gQmpc6U=
 gorm.io/gorm v1.30.0/go.mod h1:8Z33v652h4//uMA76KjeDH8mJXPm1QNCYrMeatR0DOE=
-gorm.io/gorm v1.30.2 h1:f7bevlVoVe4Byu3pmbWPVHnPsLoWaMjEb7/clyr9Ivs=
-gorm.io/gorm v1.30.2/go.mod h1:8Z33v652h4//uMA76KjeDH8mJXPm1QNCYrMeatR0DOE=
+gorm.io/gorm v1.30.5 h1:dvEfYwxL+i+xgCNSGGBT1lDjCzfELK8fHZxL3Ee9X0s=
+gorm.io/gorm v1.30.5/go.mod h1:8Z33v652h4//uMA76KjeDH8mJXPm1QNCYrMeatR0DOE=
 modernc.org/cc/v4 v4.26.3 h1:yEN8dzrkRFnn4PUUKXLYIqVf2PJYAEjMTFjO3BDGc3I=
 modernc.org/cc/v4 v4.26.3/go.mod h1:uVtb5OGqUKpoLWhqwNQo/8LwvoiEBLvZXIQ/SmO6mL0=
 modernc.org/ccgo/v4 v4.28.0 h1:rjznn6WWehKq7dG4JtLRKxb52Ecv8OUGah8+Z/SfpNU=

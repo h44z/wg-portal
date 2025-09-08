@@ -29,7 +29,7 @@ require (
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlserver v1.6.1
-	gorm.io/gorm v1.30.2
+	gorm.io/gorm v1.30.5
 )
 
 require (
