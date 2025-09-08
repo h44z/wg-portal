@@ -11,6 +11,24 @@ core:
   create_default_peer: true
   self_provisioning_allowed: true
 
+backend:
+  # default backend decides where new interfaces are created
+  default: mikrotik
+
+  mikrotik:
+    - id: mikrotik                   # unique id, not "local"
+      display_name: RouterOS RB5009  # optional nice name
+      api_url: https://10.10.10.10/rest
+      api_user: wgportal
+      api_password: a-super-secret-password
+      api_verify_tls: false        # set to false only if using self-signed during testing
+      api_timeout: 30s             # maximum request duration
+      concurrency: 5               # limit parallel REST calls to device
+      debug: false                 # verbose logging for this backend
+      ignored_interfaces:          # ignore these interfaces during import
+      - wgTest1
+      - wgTest2
+
 web:
   site_title: My WireGuard Server
   site_company_name: My Company
@@ -195,3 +213,5 @@ auth:
       registration_enabled: true
       log_user_info: true
 ```
+
+For more information, check out the usage documentation (e.g. [General Configuration](../usage/general.md) or [Backends Configuration](../usage/backends.md)).

@@ -82,8 +82,9 @@ func (c *ControllerManager) registerLocalController() error {
 
 	c.controllers[config.LocalBackendName] = backendInstance{
 		Config: config.BackendBase{
-			Id:          config.LocalBackendName,
-			DisplayName: "Local WireGuard Controller",
+			Id:                config.LocalBackendName,
+			DisplayName:       "Local WireGuard Controller",
+			IgnoredInterfaces: c.cfg.Backend.IgnoredLocalInterfaces,
 		},
 		Implementation: localController,
 	}
@@ -118,17 +119,17 @@ func (c *ControllerManager) logRegisteredControllers() {
 }
 
 func (c *ControllerManager) GetControllerByName(backend domain.InterfaceBackend) InterfaceController {
-	return c.getController(backend, "")
+	return c.getController(backend, "").Implementation
 }
 
 func (c *ControllerManager) GetController(iface domain.Interface) InterfaceController {
-	return c.getController(iface.Backend, iface.Identifier)
+	return c.getController(iface.Backend, iface.Identifier).Implementation
 }
 
 func (c *ControllerManager) getController(
 	backend domain.InterfaceBackend,
 	ifaceId domain.InterfaceIdentifier,
-) InterfaceController {
+) backendInstance {
 	if backend == "" {
 		// If no backend is specified, use the local controller.
 		// This might be the case for interfaces created in previous WireGuard Portal versions.
@@ -145,13 +146,13 @@ func (c *ControllerManager) getController(
 		slog.Warn("controller for backend not found, using local controller",
 			"backend", backend, "interface", ifaceId)
 	}
-	return controller.Implementation
+	return controller
 }
 
-func (c *ControllerManager) GetAllControllers() []InterfaceController {
-	var backendInstances = make([]InterfaceController, 0, len(c.controllers))
+func (c *ControllerManager) GetAllControllers() []backendInstance {
+	var backendInstances = make([]backendInstance, 0, len(c.controllers))
 	for instance := range maps.Values(c.controllers) {
-		backendInstances = append(backendInstances, instance.Implementation)
+		backendInstances = append(backendInstances, instance)
 	}
 	return backendInstances
 }

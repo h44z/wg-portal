@@ -15,26 +15,6 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-// GetImportableInterfaces returns all physical interfaces that are available on the system.
-// This function also returns interfaces that are already available in the database.
-func (m Manager) GetImportableInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
-	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
-		return nil, err
-	}
-
-	var allPhysicalInterfaces []domain.PhysicalInterface
-	for _, wgBackend := range m.wg.GetAllControllers() {
-		physicalInterfaces, err := wgBackend.GetInterfaces(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		allPhysicalInterfaces = append(allPhysicalInterfaces, physicalInterfaces...)
-	}
-
-	return allPhysicalInterfaces, nil
-}
-
 // GetInterfaceAndPeers returns the interface and all peers for the given interface identifier.
 func (m Manager) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (
 	*domain.Interface,
@@ -110,52 +90,62 @@ func (m Manager) GetUserInterfaces(ctx context.Context, _ domain.UserIdentifier)
 }
 
 // ImportNewInterfaces imports all new physical interfaces that are available on the system.
+// If a filter is set, only interfaces that match the filter will be imported.
 func (m Manager) ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) (int, error) {
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return 0, err
 	}
 
+	var existingInterfaceIds []domain.InterfaceIdentifier
+	existingInterfaces, err := m.db.GetAllInterfaces(ctx)
+	if err != nil {
+		return 0, err
+	}
+	for _, existingInterface := range existingInterfaces {
+		existingInterfaceIds = append(existingInterfaceIds, existingInterface.Identifier)
+	}
+
 	imported := 0
 	for _, wgBackend := range m.wg.GetAllControllers() {
-		physicalInterfaces, err := wgBackend.GetInterfaces(ctx)
+		physicalInterfaces, err := wgBackend.Implementation.GetInterfaces(ctx)
 		if err != nil {
 			return 0, err
 		}
 
-		// if no filter is given, exclude already existing interfaces
-		var excludedInterfaces []domain.InterfaceIdentifier
-		if len(filter) == 0 {
-			existingInterfaces, err := m.db.GetAllInterfaces(ctx)
-			if err != nil {
-				return 0, err
-			}
-			for _, existingInterface := range existingInterfaces {
-				excludedInterfaces = append(excludedInterfaces, existingInterface.Identifier)
-			}
-		}
-
 		for _, physicalInterface := range physicalInterfaces {
-			if slices.Contains(excludedInterfaces, physicalInterface.Identifier) {
+			if slices.Contains(wgBackend.Config.IgnoredInterfaces, string(physicalInterface.Identifier)) {
+				slog.Info("ignoring interface due to backend filter restrictions",
+					"interface", physicalInterface.Identifier, "filter", wgBackend.Config.IgnoredInterfaces,
+					"backend", wgBackend.Config.Id)
+				continue // skip ignored interfaces
+			}
+
+			if slices.Contains(existingInterfaceIds, physicalInterface.Identifier) {
+				continue // skip interfaces that already exist
+			}
+
+			if len(filter) > 0 && !slices.Contains(filter, physicalInterface.Identifier) {
+				slog.Info("ignoring interface due to filter restrictions",
+					"interface", physicalInterface.Identifier, "filter", wgBackend.Config.IgnoredInterfaces,
+					"backend", wgBackend.Config.Id)
 				continue
 			}
 
-			if len(filter) != 0 && !slices.Contains(filter, physicalInterface.Identifier) {
-				continue
-			}
+			slog.Info("importing new interface",
+				"interface", physicalInterface.Identifier, "backend", wgBackend.Config.Id)
 
-			slog.Info("importing new interface", "interface", physicalInterface.Identifier)
-
-			physicalPeers, err := wgBackend.GetPeers(ctx, physicalInterface.Identifier)
+			physicalPeers, err := wgBackend.Implementation.GetPeers(ctx, physicalInterface.Identifier)
 			if err != nil {
 				return 0, err
 			}
 
-			err = m.importInterface(ctx, wgBackend, &physicalInterface, physicalPeers)
+			err = m.importInterface(ctx, wgBackend.Implementation, &physicalInterface, physicalPeers)
 			if err != nil {
 				return 0, fmt.Errorf("import of %s failed: %w", physicalInterface.Identifier, err)
 			}
 
-			slog.Info("imported new interface", "interface", physicalInterface.Identifier, "peers", len(physicalPeers))
+			slog.Info("imported new interface",
+				"interface", physicalInterface.Identifier, "peers", len(physicalPeers), "backend", wgBackend.Config.Id)
 			imported++
 		}
 	}
@@ -221,9 +211,11 @@ func (m Manager) RestoreInterfaceState(
 			return fmt.Errorf("failed to load peers for %s: %w", iface.Identifier, err)
 		}
 
-		_, err = m.wg.GetController(iface).GetInterface(ctx, iface.Identifier)
+		controller := m.wg.GetController(iface)
+
+		_, err = controller.GetInterface(ctx, iface.Identifier)
 		if err != nil && !iface.IsDisabled() {
-			slog.Debug("creating missing interface", "interface", iface.Identifier)
+			slog.Debug("creating missing interface", "interface", iface.Identifier, "backend", controller.GetId())
 
 			// temporarily disable interface in database so that the current state is reflected correctly
 			_ = m.db.SaveInterface(ctx, iface.Identifier,
@@ -250,7 +242,8 @@ func (m Manager) RestoreInterfaceState(
 				return fmt.Errorf("failed to create physical interface %s: %w", iface.Identifier, err)
 			}
 		} else {
-			slog.Debug("restoring interface state", "interface", iface.Identifier, "disabled", iface.IsDisabled())
+			slog.Debug("restoring interface state",
+				"interface", iface.Identifier, "disabled", iface.IsDisabled(), "backend", controller.GetId())
 
 			// try to move interface to stored state
 			_, err = m.saveInterface(ctx, &iface)
@@ -278,13 +271,13 @@ func (m Manager) RestoreInterfaceState(
 		for _, peer := range peers {
 			switch {
 			case iface.IsDisabled() && iface.Backend == config.LocalBackendName: // if interface is disabled, delete all peers
-				if err := m.wg.GetController(iface).DeletePeer(ctx, iface.Identifier,
+				if err := controller.DeletePeer(ctx, iface.Identifier,
 					peer.Identifier); err != nil {
 					return fmt.Errorf("failed to remove peer %s for disabled interface %s: %w",
 						peer.Identifier, iface.Identifier, err)
 				}
 			default: // update peer
-				err := m.wg.GetController(iface).SavePeer(ctx, iface.Identifier, peer.Identifier,
+				err := controller.SavePeer(ctx, iface.Identifier, peer.Identifier,
 					func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
 						domain.MergeToPhysicalPeer(pp, &peer)
 						return pp, nil
@@ -297,7 +290,7 @@ func (m Manager) RestoreInterfaceState(
 		}
 
 		// remove non-wgportal peers
-		physicalPeers, _ := m.wg.GetController(iface).GetPeers(ctx, iface.Identifier)
+		physicalPeers, _ := controller.GetPeers(ctx, iface.Identifier)
 		for _, physicalPeer := range physicalPeers {
 			isWgPortalPeer := false
 			for _, peer := range peers {
@@ -307,7 +300,7 @@ func (m Manager) RestoreInterfaceState(
 				}
 			}
 			if !isWgPortalPeer {
-				err := m.wg.GetController(iface).DeletePeer(ctx, iface.Identifier,
+				err := controller.DeletePeer(ctx, iface.Identifier,
 					domain.PeerIdentifier(physicalPeer.PublicKey))
 				if err != nil {
 					return fmt.Errorf("failed to remove non-wgportal peer %s from interface %s: %w",
