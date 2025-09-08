@@ -35,7 +35,7 @@ jobs:
       # ct lint requires Python 3.x to run following packages:
       #  - yamale (https://github.com/23andMe/Yamale)
       #  - yamllint (https://github.com/adrienverge/yamllint)
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
 
