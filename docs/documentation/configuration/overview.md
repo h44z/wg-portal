@@ -184,6 +184,11 @@ The current MikroTik backend is in **BETA** and may not support all features.
 - **Description:** The default backend to use for managing WireGuard interfaces. 
   Valid options are: `local`, or other backend id's configured in the `mikrotik` section.
 
+### `ignored_local_interfaces`
+- **Default:** *(empty)*
+- **Description:** A list of interface names to exclude when enumerating local interfaces.
+  This is useful if you want to prevent certain interfaces from being imported from the local system.
+
 ### Mikrotik
 
 The `mikrotik` array contains a list of MikroTik backend definitions. Each entry describes how to connect to a MikroTik RouterOS instance that hosts WireGuard interfaces.
@@ -224,6 +229,11 @@ Below are the properties for each entry inside `backend.mikrotik`:
 #### `concurrency`
 - **Default:** `5`
 - **Description:** Maximum number of concurrent API requests the backend will issue when enumerating interfaces and their details. If `0` or negative, a sane default of `5` is used.
+
+#### `ignored_interfaces`
+- **Default:** *(empty)*
+- **Description:** A list of interface names to exclude during interface enumeration.
+  This is useful if you want to prevent specific interfaces from being imported from the MikroTik device.
 
 #### `debug`
 - **Default:** `false`

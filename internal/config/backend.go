@@ -10,6 +10,12 @@ const LocalBackendName = "local"
 type Backend struct {
 	Default string `yaml:"default"` // The default backend to use (defaults to the internal backend)
 
+	// Local Backend-specific configuration
+
+	IgnoredLocalInterfaces []string `yaml:"ignored_local_interfaces"` // A list of interface names that should be ignored by this backend (e.g., "wg0")
+
+	// External Backend-specific configuration
+
 	Mikrotik []BackendMikrotik `yaml:"mikrotik"`
 }
 
@@ -42,6 +48,8 @@ func (b *Backend) Validate() error {
 type BackendBase struct {
 	Id          string `yaml:"id"`           // A unique id for the backend
 	DisplayName string `yaml:"display_name"` // A display name for the backend
+
+	IgnoredInterfaces []string `yaml:"ignored_interfaces"` // A list of interface names that should be ignored by this backend (e.g., "wg0")
 }
 
 // GetDisplayName returns the display name of the backend.
