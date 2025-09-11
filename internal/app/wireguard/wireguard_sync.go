@@ -42,14 +42,10 @@ func (m Manager) SyncAllPeersFromDB(ctx context.Context) (int, error) {
             slog.ErrorContext(ctx, "peer sync: failed to load peers", "iface", in.Identifier, "err", err)
             continue
         }
-        // >>> ДОДАЙ ЦЕ: якщо peers немає – прибираємо всіх на інтерфейсі
         if len(peers) == 0 {
-            if err := m.clearPeers(ctx, in.Identifier); err != nil {
+            // або ReplacePeers=true з пустим списком, або спеціальний ClearPeers
+            if err := m.wg.ClearPeers(ctx, string(in.Identifier)); err != nil {
                 slog.ErrorContext(ctx, "clear peers failed", "iface", in.Identifier, "err", err)
-            }
-            // не публікуємо івенти, якщо це fanout-sync
-            if !app.NoFanout(ctx) {
-                m.bus.Publish(app.TopicPeerUpdated)
             }
             continue
         }

@@ -59,18 +59,6 @@ func (e *PeerEndpoint) publish(topic string, args ...any) {
     e.bus.Publish(topic, args...)
 }
 
-// 0-arg для штатних подій (внутрішні підписники)
-func (e *PeerEndpoint) publish0(topic string) {
-	if e.bus == nil || topic == "" { return }
-	e.bus.Publish(topic) // без аргументів
-}
-
-// 1-arg для fanout (йому потрібен рівно ОДИН аргумент)
-func (e *PeerEndpoint) publish1(topic string, arg any) {
-	if e.bus == nil || topic == "" { return }
-	e.bus.Publish(topic, arg)
-}
-
 func (e PeerEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/peer")
 	apiGroup.Use(e.authenticator.LoggedIn())
@@ -259,13 +247,10 @@ func (e PeerEndpoint) handleCreatePost() http.HandlerFunc {
 			return
 		}
 
-		// внутрішні
-		e.publish0(app.TopicPeerCreated)
-		e.publish0(app.TopicPeerUpdated)
-
-		// fanout
-		e.publish1("peer.save", newPeer)
-		e.publish1("peers.updated", "v1:create")
+        e.publish(app.TopicPeerCreated)
+        e.publish(app.TopicPeerUpdated)
+        e.publish("peer.save", newPeer)
+        e.publish("peers.updated", "v1:create")
 
 		respond.JSON(w, http.StatusOK, models.NewPeer(newPeer))
 	}
@@ -314,12 +299,9 @@ func (e PeerEndpoint) handleUpdatePut() http.HandlerFunc {
 			return
 		}
 
-		// внутрішні
-		e.publish0(app.TopicPeerUpdated)
-
-		// fanout
-		e.publish1("peer.save", updatedPeer)
-		e.publish1("peers.updated", "v1:update")
+        e.publish(app.TopicPeerUpdated)
+        e.publish("peer.save", updatedPeer)
+        e.publish("peers.updated", "v1:update")
 
 		respond.JSON(w, http.StatusOK, models.NewPeer(updatedPeer))
 	}
@@ -357,47 +339,24 @@ func (e PeerEndpoint) handleDelete() http.HandlerFunc {
 		}
 
 		// внутрішні
-		e.publish0(app.TopicPeerDeleted)
-		e.publish0(app.TopicPeerUpdated)
-
-		// fanout
-		e.publish1("peer.delete", domain.PeerIdentifier(id))
-		e.publish1("peers.updated", "v1:delete")
+        e.publish(app.TopicPeerDeleted)
+        e.publish(app.TopicPeerUpdated)
+        e.publish("peer.delete", domain.PeerIdentifier(id))
+        e.publish("peers.updated", "v1:delete")
 
 		respond.Status(w, http.StatusNoContent)
 	}
 }
 
-// func (e PeerEndpoint) handleSyncPost() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		count, err := e.peers.SyncAllPeersFromDB(r.Context())
-// 		if err != nil {
-// 			status, model := ParseServiceError(err)
-// 			respond.JSON(w, status, model)
-// 			return
-// 		}
-// 		respond.JSON(w, http.StatusOK, map[string]any{
-// 			"synced": count,
-// 		})
-// 	}
-// }
 
 func (e PeerEndpoint) handleSyncPost() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		// Якщо fanout поставив заголовок "не ехо", забороняємо локальні публікації
-		if r.Header.Get("X-WGP-NoEcho") == "1" {
-			ctx = app.WithNoFanout(ctx)
-		}
-
-		count, err := e.peers.SyncAllPeersFromDB(ctx)
-		if err != nil {
-			status, model := ParseServiceError(err)
-			respond.JSON(w, status, model)
-			return
-		}
-		respond.JSON(w, http.StatusOK, map[string]any{
-			"synced": count,
-		})
-	}
+    return func(w http.ResponseWriter, r *http.Request) {
+        ctx := r.Context()
+        if r.Header.Get("X-WGP-NoEcho") == "1" {
+            ctx = app.WithNoFanout(ctx)
+        }
+        count, err := e.peers.SyncAllPeersFromDB(ctx)
+        if err != nil { /* ... */ }
+        respond.JSON(w, http.StatusOK, map[string]any{"synced": count})
+    }
 }

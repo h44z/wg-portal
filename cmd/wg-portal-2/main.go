@@ -186,14 +186,17 @@ func main() {
 
 	apiV1Auth := handlersV1.NewAuthenticationHandler(userManager)
 	apiV1BackendUsers := backendV1.NewUserService(cfg, userManager)
-	apiV1BackendPeers := backendV1.NewPeerService(cfg, wireGuardManager, userManager)
+	// apiV1BackendPeers := backendV1.NewPeerService(cfg, wireGuardManager, userManager)
+	coreV1Peers := backendV1.NewPeerService(cfg, wireGuardManager, userManager)
 	apiV1BackendInterfaces := backendV1.NewInterfaceService(cfg, wireGuardManager)
 	apiV1BackendProvisioning := backendV1.NewProvisioningService(cfg, userManager, wireGuardManager, cfgFileManager)
 	apiV1BackendMetrics := backendV1.NewMetricsService(cfg, database, userManager, wireGuardManager)
 
 	apiV1EndpointUsers := handlersV1.NewUserEndpoint(apiV1Auth, validatorManager, apiV1BackendUsers)
+	// apiV1EndpointPeers := handlersV1.NewPeerEndpoint(apiV1Auth, validatorManager, apiV1BackendPeers)
+	apiV1BackendPeers := handlersV1.NewEventingPeerService(coreV1Peers, eventBus)
 	apiV1EndpointPeers := handlersV1.NewPeerEndpoint(apiV1Auth, validatorManager, apiV1BackendPeers)
-	apiV1EndpointPeers.SetEventBus(eventBus)
+	//apiV1EndpointPeers.SetEventBus(eventBus)
 	apiV1EndpointInterfaces := handlersV1.NewInterfaceEndpoint(apiV1Auth, validatorManager, apiV1BackendInterfaces)
 	apiV1EndpointProvisioning := handlersV1.NewProvisioningEndpoint(apiV1Auth, validatorManager,
 		apiV1BackendProvisioning)
