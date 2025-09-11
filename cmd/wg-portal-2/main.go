@@ -22,13 +22,14 @@ import (
 	"github.com/fedor-git/wg-portal-2/internal/app/audit"
 	"github.com/fedor-git/wg-portal-2/internal/app/auth"
 	"github.com/fedor-git/wg-portal-2/internal/app/configfile"
+	"github.com/fedor-git/wg-portal-2/internal/app/fanout"
 	"github.com/fedor-git/wg-portal-2/internal/app/mail"
 	"github.com/fedor-git/wg-portal-2/internal/app/route"
 	"github.com/fedor-git/wg-portal-2/internal/app/users"
 	"github.com/fedor-git/wg-portal-2/internal/app/webhooks"
 	"github.com/fedor-git/wg-portal-2/internal/app/wireguard"
 	"github.com/fedor-git/wg-portal-2/internal/config"
-	"github.com/fedor-git/wg-portal-2/internal/sync"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
 )
 
 // main entry point for WireGuard Portal
@@ -77,6 +78,17 @@ func main() {
 	queueSize := 100
 	eventBus := evbus.New(queueSize)
 
+	fanout.Start(ctx, eventBus, cfg.Core.Fanout)
+	// fanout.Start(ctx, eventBus, fanout.Config{
+	// 	Enabled:    cfg.Core.Fanout.Enabled,
+	// 	Peers:      cfg.Core.Fanout.Peers,
+	// 	AuthHeader: cfg.Core.Fanout.AuthHeader,
+	// 	AuthValue:  cfg.Core.Fanout.AuthValue,
+	// 	Timeout:    cfg.Core.Fanout.Timeout,
+	// 	Debounce:   cfg.Core.Fanout.Debounce,
+	// 	SelfURL:    cfg.Core.Fanout.SelfURL,
+	// })
+
 	auditManager := audit.NewManager(database)
 
 	auditRecorder, err := audit.NewAuditRecorder(cfg, eventBus, database)
@@ -104,6 +116,7 @@ func main() {
 
 	cfgFileManager, err := configfile.NewConfigFileManager(cfg, eventBus, database, database, cfgFileSystem)
 	internal.AssertNoError(err)
+    cfgFileManager.StartBackgroundJobs(ctx)
 
 	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)
 	internal.AssertNoError(err)
@@ -119,6 +132,18 @@ func main() {
 	err = app.Initialize(cfg, wireGuardManager, userManager)
 	internal.AssertNoError(err)
 
+	if cfg.Core.SyncOnStartup {
+		syncCtx := domain.SetUserInfo(ctx, domain.SystemAdminContextUserInfo())
+		if err := wireGuardManager.RestoreInterfaceState(syncCtx, true /*updateDbOnError*/); err != nil {
+			slog.Error("initial interface restore failed", "err", err)
+		}
+		if n, err := wireGuardManager.SyncAllPeersFromDB(syncCtx); err != nil {
+			slog.Error("initial peer sync failed", "err", err)
+		} else {
+			slog.Info("initial peer sync done", "applied", n)
+		}
+	}
+
 	validatorManager := validator.New()
 
 	// region API v0 (SPA frontend)
@@ -129,13 +154,19 @@ func main() {
 	apiV0BackendUsers := backendV0.NewUserService(cfg, userManager, wireGuardManager)
 	apiV0BackendInterfaces := backendV0.NewInterfaceService(cfg, wireGuardManager, cfgFileManager)
 	apiV0BackendPeers := backendV0.NewPeerService(cfg, wireGuardManager, cfgFileManager, mailManager)
+	// apiV0BackendPeersWithEvents := handlersV0.NewEventingPeerService(apiV0BackendPeers, eventBus)
+	// apiV0BackendPeersWithEvents := handlersV0.NewEventingPeerService(apiV0BackendPeers, eventBus)
 
 	apiV0EndpointAuth := handlersV0.NewAuthEndpoint(cfg, apiV0Auth, apiV0Session, validatorManager, authenticator,
 		webAuthn)
 	apiV0EndpointAudit := handlersV0.NewAuditEndpoint(cfg, apiV0Auth, auditManager)
 	apiV0EndpointUsers := handlersV0.NewUserEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendUsers)
 	apiV0EndpointInterfaces := handlersV0.NewInterfaceEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendInterfaces)
+
 	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendPeers)
+	// apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendPeersWithEvents)
+	apiV0EndpointPeers.SetEventBus(eventBus)
+
 	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth, wireGuard)
 	apiV0EndpointTest := handlersV0.NewTestEndpoint(apiV0Auth)
 
@@ -162,6 +193,7 @@ func main() {
 
 	apiV1EndpointUsers := handlersV1.NewUserEndpoint(apiV1Auth, validatorManager, apiV1BackendUsers)
 	apiV1EndpointPeers := handlersV1.NewPeerEndpoint(apiV1Auth, validatorManager, apiV1BackendPeers)
+	apiV1EndpointPeers.SetEventBus(eventBus)
 	apiV1EndpointInterfaces := handlersV1.NewInterfaceEndpoint(apiV1Auth, validatorManager, apiV1BackendInterfaces)
 	apiV1EndpointProvisioning := handlersV1.NewProvisioningEndpoint(apiV1Auth, validatorManager,
 		apiV1BackendProvisioning)
@@ -182,11 +214,6 @@ func main() {
 
 	go metricsServer.Run(ctx)
 	go webSrv.Run(ctx, cfg.Web.ListeningAddress)
-
-	// sync WireGuard state periodically in the background
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go sync.StartPeriodicSync(ctx, wgManager, 30*time.Second)
 
 	slog.Info("Application startup complete")
 

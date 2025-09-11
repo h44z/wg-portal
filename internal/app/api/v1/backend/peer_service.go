@@ -155,3 +155,24 @@ func (s PeerService) Delete(ctx context.Context, id domain.PeerIdentifier) error
 
 	return nil
 }
+
+func (s *PeerService) SyncAllPeersFromDB(ctx context.Context) (int, error) {
+    type syncer interface {
+        SyncAllPeersFromDB(context.Context) (int, error)
+    }
+    if v, ok := any(s.peers).(syncer); ok {
+        return v.SyncAllPeersFromDB(ctx)
+    }
+
+    type syncerErrOnly interface {
+        SyncAllPeersFromDB(context.Context) error
+    }
+    if v, ok := any(s.peers).(syncerErrOnly); ok {
+        if err := v.SyncAllPeersFromDB(ctx); err != nil {
+            return 0, err
+        }
+        return 0, nil
+    }
+
+    return 0, fmt.Errorf("sync not supported by current peers backend")
+}

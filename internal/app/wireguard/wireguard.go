@@ -321,3 +321,7 @@ func (m Manager) checkExpiredPeers(ctx context.Context, peers []domain.Peer) {
 		}
 	}
 }
+
+func (m Manager) ClearPeers(ctx context.Context, iface domain.InterfaceIdentifier) error {
+    return m.clearPeers(ctx, iface)
+}

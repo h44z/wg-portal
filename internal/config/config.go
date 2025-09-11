@@ -10,6 +10,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type FanoutConfig struct {
+    Enabled     bool          `yaml:"enabled"`
+    Peers       []string      `yaml:"peers"`
+    AuthHeader  string        `yaml:"auth_header"`
+    AuthValue   string        `yaml:"auth_value"`
+    Timeout     time.Duration `yaml:"timeout"`
+    Debounce    time.Duration `yaml:"debounce"`
+    SelfURL     string        `yaml:"self_url"`
+    Origin      string        `yaml:"origin" mapstructure:"origin"`
+    KickOnStart bool          `yaml:"kick_on_start" mapstructure:"kick_on_start"`
+    Topics      []string      `yaml:"topics" mapstructure:"topics"`
+}
+
 // Config is the main configuration struct.
 type Config struct {
 	Core struct {
@@ -26,6 +39,9 @@ type Config struct {
 		SelfProvisioningAllowed     bool `yaml:"self_provisioning_allowed"`
 		ImportExisting              bool `yaml:"import_existing"`
 		RestoreState                bool `yaml:"restore_state"`
+		SyncOnStartup               bool `mapstructure:"sync_on_startup" yaml:"sync_on_startup" env:"WG_SYNC_ON_STARTUP"`
+
+		Fanout              FanoutConfig `yaml:"fanout"`
 	} `yaml:"core"`
 
 	Advanced struct {

@@ -1085,3 +1085,16 @@ func (r *SqlRepo) GetAllAuditEntries(ctx context.Context) ([]domain.AuditEntry, 
 }
 
 // endregion audit
+
+func (r *SqlRepo) GetAllPeers(ctx context.Context) ([]domain.Peer, error) {
+    var peers []domain.Peer
+    err := r.db.WithContext(ctx).
+        Preload("Addresses").
+        Preload("Interface").
+        Find(&peers).Error
+    if err != nil {
+        return nil, err
+    }
+
+    return peers, nil
+}

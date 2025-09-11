@@ -284,3 +284,7 @@ type nopCloser struct {
 
 // Close is a no-op for the nopCloser.
 func (nopCloser) Close() error { return nil }
+
+func (m *Manager) StartBackgroundJobs(ctx context.Context) {
+    m.connectToMessageBus()
+}

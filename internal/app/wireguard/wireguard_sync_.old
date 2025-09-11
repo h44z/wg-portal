@@ -1,0 +1,108 @@
+package wireguard
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
+	"os"
+	"strings"
+
+	"github.com/fedor-git/wg-portal-2/internal/app"
+	"github.com/fedor-git/wg-portal-2/internal/domain"
+)
+
+type peerLister interface {
+	GetAllPeers(ctx context.Context) ([]domain.Peer, error)
+}
+
+func (m Manager) SyncAllPeersFromDB(ctx context.Context) (int, error) {
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return 0, err
+	}
+	if m.db == nil {
+		return 0, fmt.Errorf("db repo is nil")
+	}
+	if m.wg == nil {
+		return 0, fmt.Errorf("wg controller is nil")
+	}
+
+	ifaces, err := m.db.GetAllInterfaces(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("list interfaces: %w", err)
+	}
+
+	applied := 0
+	for _, in := range ifaces {
+		if err := m.RestoreInterfaceState(ctx, true, in.Identifier); err != nil {
+			slog.ErrorContext(ctx, "restore interface state failed", "iface", in.Identifier, "err", err)
+			continue
+		}
+
+		peers, err := m.db.GetInterfacePeers(ctx, in.Identifier)
+		if err != nil {
+			slog.ErrorContext(ctx, "peer sync: failed to load peers", "iface", in.Identifier, "err", err)
+			continue
+		}
+
+		for i := range peers {
+			p := &peers[i]
+
+			err = m.applyPeers(ctx, []domain.Peer{*p})
+			if err == nil {
+				applied++
+				continue
+			}
+
+			if isNoSuchFile(err) {
+				slog.WarnContext(ctx, "peer apply failed (no iface/file), restoring interface and retrying",
+					"peer", p.Identifier, "iface", p.InterfaceIdentifier, "err", err)
+
+				if rErr := m.RestoreInterfaceState(ctx, true, in.Identifier); rErr != nil {
+					slog.ErrorContext(ctx, "retry restore interface failed", "iface", in.Identifier, "err", rErr)
+					continue
+				}
+
+				if r2 := m.applyPeers(ctx, []domain.Peer{*p}); r2 != nil {
+					slog.ErrorContext(ctx, "peer apply retry failed",
+						"peer", p.Identifier, "iface", p.InterfaceIdentifier, "err", r2)
+					continue
+				}
+
+				applied++
+				continue
+			}
+
+			slog.ErrorContext(ctx, "peer sync failed",
+				"peer", p.Identifier, "iface", p.InterfaceIdentifier, "err", err)
+		}
+	}
+
+	return applied, nil
+}
+
+func (m Manager) applyPeers(ctx context.Context, peers []domain.Peer) error {
+	var firstErr error
+	for i := range peers {
+		p := &peers[i]
+		if p.IsDisabled() {
+			continue
+		}
+		if err := m.savePeers(ctx, p); err != nil {
+			if firstErr == nil {
+				firstErr = fmt.Errorf("apply peer %s (iface %s): %w",
+					p.Identifier, p.InterfaceIdentifier, err)
+			}
+			continue
+		}
+		m.bus.Publish(app.TopicPeerUpdated, *p)
+	}
+	return firstErr
+}
+
+func isNoSuchFile(err error) bool {
+	if err == nil {
+		return false
+	}
+	return errors.Is(err, os.ErrNotExist) || strings.Contains(err.Error(), "file does not exist")
+}

@@ -48,4 +48,25 @@ const TopicAuditLoginFailed = "audit:login:failed"
 const TopicAuditInterfaceChanged = "audit:interface:changed"
 const TopicAuditPeerChanged = "audit:peer:changed"
 
+
+const TopicFanPeersUpdated     = "peers.updated"
+const TopicFanPeerSave         = "peer.save"
+const TopicFanPeerDelete       = "peer.delete"
+const TopicFanInterfaceSave    = "interface.save"
+const TopicFanInterfaceUpdated = "interface.updated"
+
 // endregion audit-events
+
+type EventPublisher interface {
+    Publish(topic string, args ...any)
+}
+
+type EventSubscriber interface {
+    Subscribe(topic string, fn interface{}) error
+}
+
+// Зручно мати комбінований інтерфейс:
+type EventBus interface {
+    EventPublisher
+    EventSubscriber
+}
