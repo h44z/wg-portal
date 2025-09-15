@@ -188,6 +188,8 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 
 	sessionUser := domain.GetUserInfo(ctx)
 
+	peer.Identifier = domain.PeerIdentifier(peer.Interface.PublicKey) // ensure that identifier corresponds to the public key
+
 	// Enforce peer limit for non-admin users if LimitAdditionalUserPeers is set
 	if m.cfg.Core.SelfProvisioningAllowed && !sessionUser.IsAdmin && m.cfg.Advanced.LimitAdditionalUserPeers > 0 {
 		peers, err := m.db.GetUserPeers(ctx, peer.UserIdentifier)
