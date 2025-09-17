@@ -300,6 +300,59 @@
   background: var(--md-accent-fg-color--transparent);
 }
 
+.before,
+.after {
+    margin: 0;
+}
+
+.after figcaption {
+    background: #fff;
+    font-weight: bold;
+    border: 1px solid #c0c0c0;
+    color: #000000;
+    opacity: 0.9;
+    padding: 9px;
+    position: absolute;
+    top: 100%;
+    transform: translateY(-100%);
+    line-height: 100%;
+}
+
+.before figcaption {
+    background: #000;
+    font-weight: bold;
+    border: 1px solid #c0c0c0;
+    color: #ffffff;
+    opacity: 0.9;
+    padding: 9px;
+    position: absolute;
+    top: 100%;
+    transform: translateY(-100%);
+    line-height: 100%;
+}
+
+.before figcaption {
+    left: 0px;
+}
+.after figcaption {
+    right: 0px;
+}
+.custom-animated-handle {
+    transition: transform 0.2s;
+}
+
+.slider-with-animated-handle:hover .custom-animated-handle {
+    transform: scale(1.2);
+}
+.md-typeset img-comparison-slider figure {
+    margin: initial;
+}
+
+.first-overlay {
+    color: #000;
+}
+
+
 </style>
 
   <!-- Hero for landing page -->
@@ -326,11 +379,21 @@
 
   <div class="md-container">
     <div class="tx-hero__image">
-      <img
-        src="{{config.site_url}}/assets/images/screenshot.png"
-        alt=""
-        draggable="false"
-      >
+      <div>
+        <img-comparison-slider hover="hover">
+          <figure slot="first" class="before">
+            <img src="{{config.site_url}}/assets/images/wgportal_light.png" alt="Light Mode"/>
+            <figcaption>Light Mode</figcaption>
+          </figure>
+          <figure slot="second" class="after">
+            <img src="{{config.site_url}}/assets/images/wgportal_dark.png" alt="Dark Mode"/>
+            <figcaption>Dark Mode</figcaption>
+          </figure>
+          <svg slot="handle" class="custom-animated-handle" xmlns="http://www.w3.org/2000/svg" width="100" viewBox="-8 -3 16 6">
+            <path stroke="#fff" d="M -5 -2 L -7 0 L -5 2 M -5 -2 L -5 2 M 5 -2 L 7 0 L 5 2 M 5 -2 L 5 2" stroke-width="1" fill="#fff" vector-effect="non-scaling-stroke"></path>
+          </svg>
+        </img-comparison-slider>
+      </div>
     </div>
   </div>
 
