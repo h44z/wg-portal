@@ -400,7 +400,7 @@ onMounted(async () => {
             <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning" :title="$t('interfaces.peer-expiring') + ' ' +  peer.ExpiresAt"><i class="fas fa-hourglass-end expiring-peer"></i></span>
           </td>
           <td><span v-if="peer.DisplayName" :title="peer.Identifier">{{peer.DisplayName}}</span><span v-else :title="peer.Identifier">{{ $filters.truncate(peer.Identifier, 10)}}</span></td>
-          <td>{{peer.UserIdentifier}}</td>
+          <td><span :title="peer.UserDisplayName">{{peer.UserIdentifier}}</span></td>
           <td>
             <span v-for="ip in peer.Addresses" :key="ip" class="badge bg-light me-1">{{ ip }}</span>
           </td>

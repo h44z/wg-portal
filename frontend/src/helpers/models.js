@@ -53,6 +53,7 @@ export function freshPeer() {
     Identifier: "",
     DisplayName: "",
     UserIdentifier: "",
+    UserDisplayName: "",
     InterfaceIdentifier: "",
     Disabled: false,
     ExpiresAt: null,
