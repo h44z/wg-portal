@@ -47,7 +47,7 @@
   "home": {
     "headline": "Portal VPN WireGuard®",
     "info-headline": "Más información",
-    "abstract": "WireGuard® es una VPN extremadamente simple pero rápida y moderna que utiliza criptografía de última generación. Su objetivo es ser más rápida, simple, ligera y útil que IPsec, evitando los dolores de cabeza masivos. Pretende ser considerablemente más eficiente que OpenVPN.",
+    "abstract": "WireGuard® es una VPN extremadamente simple pero rápida y moderna que utiliza criptografía de última generación. Su objetivo es ser más rápida, simple, ligera y útil que IPsec, a la vez que evita los enormes problemas que supone. Su objetivo es ofrecer un rendimiento considerablemente superior al de OpenVPN.",
     "installation": {
       "box-header": "Instalación de WireGuard",
       "headline": "Instalación",
@@ -240,22 +240,22 @@
     }
   },
   "keygen": {
-    "headline": "Generador de llaves WireGuard",
+    "headline": "Generador de claves WireGuard",
     "abstract": "Genera nuevas claves de WireGuard. Las claves se generan en tu navegador local y nunca se envían al servidor.",
     "headline-keypair": "Nuevo par de claves",
-    "headline-preshared-key": "Nueva clave pre compartida",
+    "headline-preshared-key": "Nueva clave pre-compartida",
     "button-generate": "Generar",
     "private-key": {
-      "label": "Llave privada",
-      "placeholder": "La llave privada"
+      "label": "Clave privada",
+      "placeholder": "La clave privada"
     },
     "public-key": {
-      "label": "Llave pública",
-      "placeholder": "La llave pública"
+      "label": "Clave pública",
+      "placeholder": "La clave pública"
     },
     "preshared-key": {
-      "label": "Llave pre compartida",
-      "placeholder": "La llave pre compartida"
+      "label": "Clave pre-compartida",
+      "placeholder": "La clave pre-compartida"
     }
   },
   "modals": {
@@ -369,12 +369,12 @@
         "placeholder": "El nombre descriptivo de la interfaz"
       },
       "private-key": {
-        "label": "La llave Privada",
-        "placeholder": "La llave privada"
+        "label": "La clave Privada",
+        "placeholder": "La clave privada"
       },
       "public-key": {
-        "label": "La llave Pública",
-        "placeholder": "La llave pública"
+        "label": "La clave pública",
+        "placeholder": "La clave pública"
       },
       "ip": {
         "label": "Direcciones IP",
@@ -496,17 +496,17 @@
         "placeholder": "La cuenta de usuario que posee este peer"
       },
       "private-key": {
-        "label": "Llave Privada",
-        "placeholder": "Llave privada",
-        "help": "La llave privada se almacena de forma segura en el servidor. Si el usuario ya posee una copia, puedes omitir este campo. El servidor sigue funcionando exclusivamente con la llave pública del peer."
+        "label": "Clave Privada",
+        "placeholder": "Clave privada",
+        "help": "La clave privada se almacena de forma segura en el servidor. Si el usuario ya posee una copia, puedes omitir este campo. El servidor sigue funcionando exclusivamente con la clave pública del peer."
       },
       "public-key": {
-        "label": "Llave Pública",
-        "placeholder": "La llave pública"
+        "label": "Cave Pública",
+        "placeholder": "La Clave pública"
       },
       "preshared-key": {
-        "label": "Llave pre compartida",
-        "placeholder": "Llave pre compartida opcional"
+        "label": "Clave pre-compartida",
+        "placeholder": "Clave pre-compartida opcional"
       },
       "endpoint": {
         "label": "Dirección del endpoint",
