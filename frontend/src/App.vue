@@ -63,6 +63,7 @@ const languageFlag = computed(() => {
     uk: "ua",
     zh: "cn",
     ko: "kr",
+    es: "es",
 
   };
   return "fi-" + (langMap[lang] || lang);
@@ -182,6 +183,7 @@ const userDisplayName = computed(() => {
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('uk')"><span class="fi fi-ua"></span> Українська</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('vi')"><span class="fi fi-vi"></span> Tiếng Việt</a>
                 <a class="dropdown-item" href="#" @click.prevent="switchLanguage('zh')"><span class="fi fi-cn"></span> 中文</a>
+                <a class="dropdown-item" href="#" @click.prevent="switchLanguage('es')"><span class="fi fi-es"></span> Español</a>
                 
               </div>
             </div>
