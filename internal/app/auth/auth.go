@@ -125,10 +125,26 @@ func NewAuthenticator(cfg *config.Auth, extUrl string, bus EventBus, users UserM
 // It sets up the external authentication providers (OIDC, OAuth, LDAP) and retries in case of errors.
 func (a *Authenticator) StartBackgroundJobs(ctx context.Context) {
 	go func() {
+		slog.Debug("setting up external auth providers...")
+
 		// Initialize local copies of authentication providers to allow retry in case of errors
 		oidcQueue := a.cfg.OpenIDConnect
 		oauthQueue := a.cfg.OAuth
 		ldapQueue := a.cfg.Ldap
+
+		// Immediate attempt
+		failedOidc, failedOauth, failedLdap := a.setupExternalAuthProviders(oidcQueue, oauthQueue, ldapQueue)
+		if len(failedOidc) == 0 && len(failedOauth) == 0 && len(failedLdap) == 0 {
+			slog.Info("successfully setup all external auth providers")
+			return
+		}
+
+		// Prepare for retries with only the failed ones
+		oidcQueue = failedOidc
+		oauthQueue = failedOauth
+		ldapQueue = failedLdap
+		slog.Warn("failed to setup some external auth providers, retrying in 30 seconds",
+			"failedOidc", len(failedOidc), "failedOauth", len(failedOauth), "failedLdap", len(failedLdap))
 
 		ticker := time.NewTicker(30 * time.Second) // Ticker for delay between retries
 		defer ticker.Stop()
