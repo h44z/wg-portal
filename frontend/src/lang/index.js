@@ -8,6 +8,7 @@ import ru from './translations/ru.json';
 import uk from './translations/uk.json';
 import vi from './translations/vi.json';
 import zh from './translations/zh.json';
+import es from './translations/es.json';
 
 import {createI18n} from "vue-i18n";
 
@@ -32,6 +33,7 @@ const i18n = createI18n({
     "uk": uk,
     "vi": vi,
     "zh": zh,
+    "es": es,    
   }
 });
 
