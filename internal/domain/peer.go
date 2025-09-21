@@ -1,12 +1,14 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
 	"time"
 
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"gorm.io/gorm"
 
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
@@ -44,6 +46,7 @@ type Peer struct {
 	DisplayName          string              // a nice display name/ description for the peer
 	Identifier           PeerIdentifier      `gorm:"primaryKey;column:identifier"`      // peer unique identifier
 	UserIdentifier       UserIdentifier      `gorm:"index;column:user_identifier"`      // the owner
+	User                 *User               `gorm:"-"`                                 // the owner user object; loaded automatically after fetch
 	InterfaceIdentifier  InterfaceIdentifier `gorm:"index;column:interface_identifier"` // the interface id
 	Disabled             *time.Time          `gorm:"column:disabled"`                   // if this field is set, the peer is disabled
 	DisabledReason       string              // the reason why the peer has been disabled
@@ -347,4 +350,27 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 type PeerCreationRequest struct {
 	UserIdentifiers []string
 	Prefix          string
+}
+
+// AfterFind is a GORM hook that automatically loads the associated User object
+// based on the UserIdentifier field. If the identifier is empty or no user is
+// found, the User field is set to nil.
+func (p *Peer) AfterFind(tx *gorm.DB) error {
+	if p == nil {
+		return nil
+	}
+	if p.UserIdentifier == "" {
+		p.User = nil
+		return nil
+	}
+	var u User
+	if err := tx.Where("identifier = ?", p.UserIdentifier).First(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			p.User = nil
+			return nil
+		}
+		return err
+	}
+	p.User = &u
+	return nil
 }
