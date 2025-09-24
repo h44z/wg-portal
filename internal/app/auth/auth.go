@@ -374,13 +374,15 @@ func (a *Authenticator) passwordAuthentication(
 			rawUserInfo, err := ldapAuth.GetUserInfo(context.Background(), identifier)
 			if err != nil {
 				if !errors.Is(err, domain.ErrNotFound) {
-					slog.Warn("failed to fetch ldap user info", "identifier", identifier, "error", err)
+					slog.Warn("failed to fetch ldap user info",
+						"source", ldapAuth.GetName(), "identifier", identifier, "error", err)
 				}
 				continue // user not found / other ldap error
 			}
 			ldapUserInfo, err = ldapAuth.ParseUserInfo(rawUserInfo)
 			if err != nil {
-				slog.Error("failed to parse ldap user info", "identifier", identifier, "error", err)
+				slog.Error("failed to parse ldap user info",
+					"source", ldapAuth.GetName(), "identifier", identifier, "error", err)
 				continue
 			}
 
@@ -393,13 +395,14 @@ func (a *Authenticator) passwordAuthentication(
 	}
 
 	if userSource == "" {
-		slog.Warn("no user source found for user", "identifier", identifier, "ldapProviderCount", a.ldapAuthenticators)
+		slog.Warn("no user source found for user",
+			"identifier", identifier, "ldapProviderCount", len(a.ldapAuthenticators), "inDb", userInDatabase)
 		return nil, errors.New("user not found")
 	}
 
 	if userSource == domain.UserSourceLdap && ldapProvider == nil {
 		slog.Warn("no ldap provider found for user",
-			"identifier", identifier, "ldapProviderCount", a.ldapAuthenticators)
+			"identifier", identifier, "ldapProviderCount", len(a.ldapAuthenticators), "inDb", userInDatabase)
 		return nil, errors.New("ldap provider not found")
 	}
 

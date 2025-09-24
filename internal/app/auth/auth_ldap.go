@@ -113,10 +113,13 @@ func (l LdapAuthenticator) GetUserInfo(_ context.Context, userId domain.UserIden
 	}
 
 	if len(sr.Entries) == 0 {
+		slog.Debug("LDAP user not found", "source", l.GetName(), "userId", userId, "filter", loginFilter)
 		return nil, domain.ErrNotFound
 	}
 
 	if len(sr.Entries) > 1 {
+		slog.Debug("LDAP user not unique",
+			"source", l.GetName(), "userId", userId, "filter", loginFilter, "entries", len(sr.Entries))
 		return nil, domain.ErrNotUnique
 	}
 
