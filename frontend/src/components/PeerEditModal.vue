@@ -358,7 +358,7 @@ async function del() {
           <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.endpoint.placeholder')"
             v-model="formData.Endpoint.Value">
         </div>
-        <div class="form-group">
+        <div class="form-group" v-if="selectedInterface.Mode !== 'client'">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.ip.label') }}</label>
           <vue-tags-input class="form-control" v-model="currentTags.Addresses"
                            :tags="formData.Addresses.map(str => ({ text: str }))"

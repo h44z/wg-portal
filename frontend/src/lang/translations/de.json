@@ -461,6 +461,8 @@
       "section-config": "Konfiguration",
       "identifier": "Kennung",
       "ip": "IP-Adressen",
+      "allowed-ip": "Erlaubte IP-Adressen",
+      "extra-allowed-ip": "Serverseitig erlaubte IP-Adressen",
       "user": "Zugeordneter Benutzer",
       "notes": "Notizen",
       "expiry-status": "Läuft ab am",
@@ -473,6 +475,8 @@
       "handshake": "Letzter Handshake",
       "connected-since": "Verbunden seit",
       "endpoint": "Endpunkt",
+      "endpoint-key": "Öffentlicher Endpunkt-Schlüssel",
+      "keepalive": "Persistentes Keepalive",
       "button-download": "Konfiguration herunterladen",
       "button-email": "Konfiguration per E-Mail senden",
       "style-label": "Konfigurationsformat"

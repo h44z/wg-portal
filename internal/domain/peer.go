@@ -308,22 +308,33 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 
 func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 	pp.Identifier = p.Identifier
-	pp.Endpoint = p.Endpoint.GetValue()
-	if p.Interface.Type == InterfaceTypeServer {
-		allowedIPs, _ := CidrsFromString(p.AllowedIPsStr.GetValue())
-		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
-		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
-	} else {
+	pp.PresharedKey = p.PresharedKey
+	pp.PublicKey = p.Interface.PublicKey
+
+	switch p.Interface.Type {
+	case InterfaceTypeClient: // this means that the corresponding interface in wgportal is a server interface
 		allowedIPs := make([]Cidr, len(p.Interface.Addresses))
 		for i, ip := range p.Interface.Addresses {
-			allowedIPs[i] = ip.HostAddr()
+			allowedIPs[i] = ip.HostAddr() // add the peer's host address to the allowed IPs
 		}
 		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
 		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
+	case InterfaceTypeServer: // this means that the corresponding interface in wgportal is a client interface
+		allowedIPs, _ := CidrsFromString(p.AllowedIPsStr.GetValue())
+		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
+		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
+		pp.Endpoint = p.Endpoint.GetValue()
+		pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()
+	case InterfaceTypeAny: // this means that the corresponding interface in wgportal has no specific type
+		allowedIPs := make([]Cidr, len(p.Interface.Addresses))
+		for i, ip := range p.Interface.Addresses {
+			allowedIPs[i] = ip.HostAddr() // add the peer's host address to the allowed IPs
+		}
+		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
+		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
+		pp.Endpoint = p.Endpoint.GetValue()
+		pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()
 	}
-	pp.PresharedKey = p.PresharedKey
-	pp.PublicKey = p.Interface.PublicKey
-	pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()
 
 	switch pp.ImportSource {
 	case ControllerTypeMikrotik:

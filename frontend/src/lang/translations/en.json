@@ -462,6 +462,8 @@
       "section-config": "Configuration",
       "identifier": "Identifier",
       "ip": "IP Addresses",
+      "allowed-ip": "Allowed IP Addresses",
+      "extra-allowed-ip": "Server Side Allowed IP Addresses",
       "user": "Associated User",
       "notes": "Notes",
       "expiry-status": "Expires At",
@@ -474,6 +476,8 @@
       "handshake": "Last Handshake",
       "connected-since": "Connected since",
       "endpoint": "Endpoint",
+      "endpoint-key": "Endpoint Public Key",
+      "keepalive": "Persistent Keepalive",
       "button-download": "Download configuration",
       "button-email": "Send configuration via E-Mail",
       "style-label": "Configuration Style"
