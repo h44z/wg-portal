@@ -1,0 +1,15 @@
+img-comparison-slider {
+  visibility: hidden;
+}
+
+img-comparison-slider [slot='second'] {
+  display: none;
+}
+
+img-comparison-slider.rendered {
+  visibility: inherit;
+}
+
+img-comparison-slider.rendered [slot='second'] {
+  display: unset;
+}
