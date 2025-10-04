@@ -6,8 +6,12 @@ repo_name: h44z/wg-portal
 repo_url: https://github.com/h44z/wg-portal
 copyright: Copyright &copy; 2023-2025 WireGuard Portal Project
 
+extra_javascript:
+  - javascript/img-comparison-slider.js
+
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/img-comparison-slider.css
 
 theme:
   name: material
