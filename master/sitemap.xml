@@ -2,70 +2,70 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://wgportal.org/master/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/overview/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/configuration/examples/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/configuration/overview/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/getting-started/binaries/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/getting-started/docker/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/getting-started/helm/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/getting-started/reverse-proxy/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/getting-started/sources/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/monitoring/prometheus/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/rest-api/api-doc/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/upgrade/v1/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/usage/backends/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/usage/general/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/usage/ldap/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/usage/security/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
     <url>
          <loc>https://wgportal.org/master/documentation/usage/webhooks/</loc>
-         <lastmod>2025-10-04</lastmod>
+         <lastmod>2025-10-06</lastmod>
     </url>
 </urlset>
