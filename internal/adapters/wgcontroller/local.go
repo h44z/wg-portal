@@ -14,7 +14,6 @@ import (
 
 	probing "github.com/prometheus-community/pro-bing"
 	"github.com/vishvananda/netlink"
-	"golang.org/x/sys/unix"
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 
@@ -84,8 +83,8 @@ func NewLocalController(cfg *config.Config) (*LocalController, error) {
 		wg: wg,
 		nl: nl,
 
-		shellCmd:              "bash", // we only support bash at the moment
-		resolvConfIfacePrefix: "tun.", // WireGuard interfaces have a tun. prefix in resolvconf
+		shellCmd:              "bash",                            // we only support bash at the moment
+		resolvConfIfacePrefix: cfg.Backend.LocalResolvconfPrefix, // WireGuard interfaces have a tun. prefix in resolvconf
 	}
 
 	return repo, nil
@@ -546,7 +545,11 @@ func (c LocalController) deletePeer(deviceId domain.InterfaceIdentifier, id doma
 
 // region wg-quick-related
 
-func (c LocalController) ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCmd string) error {
+func (c LocalController) ExecuteInterfaceHook(
+	_ context.Context,
+	id domain.InterfaceIdentifier,
+	hookCmd string,
+) error {
 	if hookCmd == "" {
 		return nil
 	}
@@ -560,7 +563,7 @@ func (c LocalController) ExecuteInterfaceHook(id domain.InterfaceIdentifier, hoo
 	return nil
 }
 
-func (c LocalController) SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error {
+func (c LocalController) SetDNS(_ context.Context, id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error {
 	if dnsStr == "" && dnsSearchStr == "" {
 		return nil
 	}
@@ -589,7 +592,7 @@ func (c LocalController) SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearch
 	return nil
 }
 
-func (c LocalController) UnsetDNS(id domain.InterfaceIdentifier) error {
+func (c LocalController) UnsetDNS(_ context.Context, id domain.InterfaceIdentifier, _, _ string) error {
 	dnsCommand := "resolvconf -d %resPref%i -f"
 
 	err := c.exec(dnsCommand, id)
@@ -611,7 +614,7 @@ func (c LocalController) exec(command string, interfaceId domain.InterfaceIdenti
 	if len(stdin) > 0 {
 		b := &bytes.Buffer{}
 		for _, ln := range stdin {
-			if _, err := fmt.Fprint(b, ln); err != nil {
+			if _, err := fmt.Fprint(b, ln+"\n"); err != nil {
 				return err
 			}
 		}
@@ -619,6 +622,8 @@ func (c LocalController) exec(command string, interfaceId domain.InterfaceIdenti
 	}
 	out, err := cmd.CombinedOutput() // execute and wait for output
 	if err != nil {
+		slog.Warn("failed to executed shell command",
+			"command", commandWithInterfaceName, "stdin", stdin, "output", string(out), "error", err)
 		return fmt.Errorf("failed to exexute shell command %s: %w", commandWithInterfaceName, err)
 	}
 	slog.Debug("executed shell command",
@@ -631,203 +636,26 @@ func (c LocalController) exec(command string, interfaceId domain.InterfaceIdenti
 
 // region routing-related
 
-func (c LocalController) SyncRouteRules(_ context.Context, rules []domain.RouteRule) error {
-	// update fwmark rules
-	if err := c.setFwMarkRules(rules); err != nil {
-		return err
-	}
-
-	// update main rule
-	if err := c.setMainRule(rules); err != nil {
-		return err
-	}
-
-	// cleanup old main rules
-	if err := c.cleanupMainRule(rules); err != nil {
-		return err
-	}
-
+// SetRoutes sets the routes for the given interface. If no routes are provided, the function is a no-op.
+func (c LocalController) SetRoutes(
+	ctx context.Context,
+	interfaceId domain.InterfaceIdentifier,
+	table int,
+	fwMark uint32,
+	cidrs []domain.Cidr,
+) error {
 	return nil
 }
 
-func (c LocalController) setFwMarkRules(rules []domain.RouteRule) error {
-	for _, rule := range rules {
-		existingRules, err := c.nl.RuleList(int(rule.IpFamily))
-		if err != nil {
-			return fmt.Errorf("failed to get existing rules for family %s: %w", rule.IpFamily, err)
-		}
-
-		ruleExists := false
-		for _, existingRule := range existingRules {
-			if rule.FwMark == existingRule.Mark && rule.Table == existingRule.Table {
-				ruleExists = true
-				break
-			}
-		}
-
-		if ruleExists {
-			continue // rule already exists, no need to recreate it
-		}
-
-		// create a missing rule
-		if err := c.nl.RuleAdd(&netlink.Rule{
-			Family:            int(rule.IpFamily),
-			Table:             rule.Table,
-			Mark:              rule.FwMark,
-			Invert:            true,
-			SuppressIfgroup:   -1,
-			SuppressPrefixlen: -1,
-			Priority:          c.getRulePriority(existingRules),
-			Mask:              nil,
-			Goto:              -1,
-			Flow:              -1,
-		}); err != nil {
-			return fmt.Errorf("failed to setup %s rule for fwmark %d and table %d: %w",
-				rule.IpFamily, rule.FwMark, rule.Table, err)
-		}
-	}
+// RemoveRoutes removes the routes for the given interface. If no routes are provided, the function is a no-op.
+func (c LocalController) RemoveRoutes(
+	ctx context.Context,
+	interfaceId domain.InterfaceIdentifier,
+	table int,
+	fwMark uint32,
+	oldCidrs []domain.Cidr,
+) error {
 	return nil
-}
-
-func (c LocalController) getRulePriority(existingRules []netlink.Rule) int {
-	prio := 32700 // linux main rule has a priority of 32766
-	for {
-		isFresh := true
-		for _, existingRule := range existingRules {
-			if existingRule.Priority == prio {
-				isFresh = false
-				break
-			}
-		}
-		if isFresh {
-			break
-		} else {
-			prio--
-		}
-	}
-	return prio
-}
-
-func (c LocalController) setMainRule(rules []domain.RouteRule) error {
-	var family domain.IpFamily
-	shouldHaveMainRule := false
-	for _, rule := range rules {
-		family = rule.IpFamily
-		if rule.HasDefault == true {
-			shouldHaveMainRule = true
-			break
-		}
-	}
-	if !shouldHaveMainRule {
-		return nil
-	}
-
-	existingRules, err := c.nl.RuleList(int(family))
-	if err != nil {
-		return fmt.Errorf("failed to get existing rules for family %s: %w", family, err)
-	}
-
-	ruleExists := false
-	for _, existingRule := range existingRules {
-		if existingRule.Table == unix.RT_TABLE_MAIN && existingRule.SuppressPrefixlen == 0 {
-			ruleExists = true
-			break
-		}
-	}
-
-	if ruleExists {
-		return nil // rule already exists, skip re-creation
-	}
-
-	if err := c.nl.RuleAdd(&netlink.Rule{
-		Family:            int(family),
-		Table:             unix.RT_TABLE_MAIN,
-		SuppressIfgroup:   -1,
-		SuppressPrefixlen: 0,
-		Priority:          c.getMainRulePriority(existingRules),
-		Mark:              0,
-		Mask:              nil,
-		Goto:              -1,
-		Flow:              -1,
-	}); err != nil {
-		return fmt.Errorf("failed to setup rule for main table: %w", err)
-	}
-
-	return nil
-}
-
-func (c LocalController) getMainRulePriority(existingRules []netlink.Rule) int {
-	priority := c.cfg.Advanced.RulePrioOffset
-	for {
-		isFresh := true
-		for _, existingRule := range existingRules {
-			if existingRule.Priority == priority {
-				isFresh = false
-				break
-			}
-		}
-		if isFresh {
-			break
-		} else {
-			priority++
-		}
-	}
-	return priority
-}
-
-func (c LocalController) cleanupMainRule(rules []domain.RouteRule) error {
-	var family domain.IpFamily
-	for _, rule := range rules {
-		family = rule.IpFamily
-		break
-	}
-
-	existingRules, err := c.nl.RuleList(int(family))
-	if err != nil {
-		return fmt.Errorf("failed to get existing rules for family %s: %w", family, err)
-	}
-
-	shouldHaveMainRule := false
-	for _, rule := range rules {
-		if rule.HasDefault == true {
-			shouldHaveMainRule = true
-			break
-		}
-	}
-
-	mainRules := 0
-	for _, existingRule := range existingRules {
-		if existingRule.Table == unix.RT_TABLE_MAIN && existingRule.SuppressPrefixlen == 0 {
-			mainRules++
-		}
-	}
-
-	removalCount := 0
-	if mainRules > 1 {
-		removalCount = mainRules - 1 // we only want one single rule
-	}
-	if !shouldHaveMainRule {
-		removalCount = mainRules
-	}
-
-	for _, existingRule := range existingRules {
-		if existingRule.Table == unix.RT_TABLE_MAIN && existingRule.SuppressPrefixlen == 0 {
-			if removalCount > 0 {
-				existingRule.Family = int(family) // set family, somehow the RuleList method does not populate the family field
-				if err := c.nl.RuleDel(&existingRule); err != nil {
-					return fmt.Errorf("failed to delete main rule: %w", err)
-				}
-				removalCount--
-			}
-		}
-	}
-
-	return nil
-}
-
-func (c LocalController) DeleteRouteRules(_ context.Context, rules []domain.RouteRule) error {
-	// TODO implement me
-	panic("implement me")
 }
 
 // endregion routing-related

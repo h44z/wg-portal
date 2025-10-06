@@ -53,8 +53,6 @@ func main() {
 	wireGuard, err := wireguard.NewControllerManager(cfg)
 	internal.AssertNoError(err)
 
-	wgQuick := adapters.NewWgQuickRepo()
-
 	mailer := adapters.NewSmtpMailRepo(cfg.Mail)
 
 	metricsServer := adapters.NewMetricsServer(cfg)
@@ -93,7 +91,7 @@ func main() {
 	webAuthn, err := auth.NewWebAuthnAuthenticator(cfg, eventBus, userManager)
 	internal.AssertNoError(err)
 
-	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, wgQuick, database)
+	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, database)
 	internal.AssertNoError(err)
 	wireGuardManager.StartBackgroundJobs(ctx)
 
@@ -107,7 +105,7 @@ func main() {
 	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)
 	internal.AssertNoError(err)
 
-	routeManager, err := route.NewRouteManager(cfg, eventBus, database)
+	routeManager, err := route.NewRouteManager(cfg, eventBus, database, wireGuard)
 	internal.AssertNoError(err)
 	routeManager.StartBackgroundJobs(ctx)
 

@@ -199,3 +199,22 @@ func (c Cidr) Contains(other Cidr) bool {
 
 	return subnet.Contains(otherIP)
 }
+
+// ContainsDefaultRoute returns true if the given CIDRs contain a default route.
+func ContainsDefaultRoute(cidrs []Cidr) (ipV4, ipV6 bool) {
+	for _, allowedIP := range cidrs {
+		if ipV4 && ipV6 {
+			break // speed up
+		}
+
+		if allowedIP.Prefix().Bits() == 0 {
+			if allowedIP.IsV4() {
+				ipV4 = true
+			} else {
+				ipV6 = true
+			}
+		}
+	}
+
+	return
+}

@@ -28,6 +28,7 @@ core:
   
 backend:
   default: local
+  local_resolvconf_prefix: tun.
 
 advanced:
   log_level: info
@@ -183,6 +184,11 @@ The current MikroTik backend is in **BETA** and may not support all features.
 - **Default:** `local`
 - **Description:** The default backend to use for managing WireGuard interfaces. 
   Valid options are: `local`, or other backend id's configured in the `mikrotik` section.
+
+### `local_resolvconf_prefix`
+- **Default:** `tun.`
+- **Description:** Interface name prefix for WireGuard interfaces on the local system which is used to configure DNS servers with *resolvconf*. 
+  It depends on the *resolvconf* implementation you are using, most use a prefix of `tun.`, but some have an empty prefix (e.g., systemd).
 
 ### `ignored_local_interfaces`
 - **Default:** *(empty)*

@@ -267,6 +267,7 @@ func parseHttpResponse[T any](resp *http.Response, err error) MikrotikApiRespons
 	}
 
 	defer func(Body io.ReadCloser) {
+		_, _ = io.Copy(io.Discard, Body) // ensure to empty the body
 		err := Body.Close()
 		if err != nil {
 			slog.Error("failed to close response body", "error", err)

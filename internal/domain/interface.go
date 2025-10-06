@@ -308,12 +308,14 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 }
 
 type RoutingTableInfo struct {
-	FwMark uint32
-	Table  int
+	Interface  Interface
+	AllowedIps []Cidr
+	FwMark     uint32
+	Table      int
 }
 
 func (r RoutingTableInfo) String() string {
-	return fmt.Sprintf("%d -> %d", r.FwMark, r.Table)
+	return fmt.Sprintf("%s: %d -> %d", r.Interface.Identifier, r.FwMark, r.Table)
 }
 
 func (r RoutingTableInfo) ManagementEnabled() bool {

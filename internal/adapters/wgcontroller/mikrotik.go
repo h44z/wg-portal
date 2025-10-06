@@ -22,8 +22,9 @@ type MikrotikController struct {
 	client *lowlevel.MikrotikApiClient
 
 	// Add mutexes to prevent race conditions
-	interfaceMutexes sync.Map // map[domain.InterfaceIdentifier]*sync.Mutex
-	peerMutexes      sync.Map // map[domain.PeerIdentifier]*sync.Mutex
+	interfaceMutexes sync.Map   // map[domain.InterfaceIdentifier]*sync.Mutex
+	peerMutexes      sync.Map   // map[domain.PeerIdentifier]*sync.Mutex
+	coreMutex        sync.Mutex // for updating the core configuration such as routing table or DNS settings
 }
 
 func NewMikrotikController(coreCfg *config.Config, cfg *config.BackendMikrotik) (*MikrotikController, error) {
@@ -40,6 +41,7 @@ func NewMikrotikController(coreCfg *config.Config, cfg *config.BackendMikrotik) 
 
 		interfaceMutexes: sync.Map{},
 		peerMutexes:      sync.Map{},
+		coreMutex:        sync.Mutex{},
 	}, nil
 }
 
@@ -763,33 +765,126 @@ func (c *MikrotikController) DeletePeer(
 
 // region wg-quick-related
 
-func (c *MikrotikController) ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCmd string) error {
+func (c *MikrotikController) ExecuteInterfaceHook(
+	_ context.Context,
+	_ domain.InterfaceIdentifier,
+	_ string,
+) error {
 	// TODO implement me
-	panic("implement me")
+	slog.Error("interface hooks are not yet supported for Mikrotik backends, please open an issue on GitHub")
+	return nil
 }
 
-func (c *MikrotikController) SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error {
-	// TODO implement me
-	panic("implement me")
+func (c *MikrotikController) SetDNS(
+	ctx context.Context,
+	_ domain.InterfaceIdentifier,
+	dnsStr, _ string,
+) error {
+	// Lock the interface to prevent concurrent modifications
+	c.coreMutex.Lock()
+	defer c.coreMutex.Unlock()
+
+	// check if the server is already configured
+	wgReply := c.client.Get(ctx, "/ip/dns", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{"servers"},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("unable to find WireGuard dns settings: %v", wgReply.Error)
+	}
+
+	var existingServers []string
+	existingServers = append(existingServers, strings.Split(wgReply.Data.GetString("servers"), ",")...)
+
+	newServers := strings.Split(dnsStr, ",")
+
+	mergedServers := slices.Clone(existingServers)
+	for _, s := range newServers {
+		if s == "" {
+			continue
+		}
+		if !slices.Contains(mergedServers, s) {
+			mergedServers = append(mergedServers, s)
+		}
+	}
+	mergedServersStr := strings.Join(mergedServers, ",")
+
+	reply := c.client.ExecList(ctx, "/ip/dns/set", lowlevel.GenericJsonObject{
+		"servers": mergedServersStr,
+	})
+	if reply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("failed to set DNS servers: %s: %v", mergedServersStr, reply.Error)
+	}
+
+	return nil
 }
 
-func (c *MikrotikController) UnsetDNS(id domain.InterfaceIdentifier) error {
-	// TODO implement me
-	panic("implement me")
+func (c *MikrotikController) UnsetDNS(
+	ctx context.Context,
+	_ domain.InterfaceIdentifier,
+	dnsStr, _ string,
+) error {
+	// Lock the interface to prevent concurrent modifications
+	c.coreMutex.Lock()
+	defer c.coreMutex.Unlock()
+
+	// retrieve current DNS settings
+	wgReply := c.client.Get(ctx, "/ip/dns", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{"servers"},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("unable to find WireGuard dns settings: %v", wgReply.Error)
+	}
+
+	var existingServers []string
+	existingServers = append(existingServers, strings.Split(wgReply.Data.GetString("servers"), ",")...)
+
+	oldServers := strings.Split(dnsStr, ",")
+
+	mergedServers := make([]string, 0, len(existingServers))
+	for _, s := range existingServers {
+		if s == "" {
+			continue
+		}
+		if !slices.Contains(oldServers, s) {
+			mergedServers = append(mergedServers, s) // only keep the servers that are not in the old list
+		}
+	}
+	mergedServersStr := strings.Join(mergedServers, ",")
+
+	reply := c.client.ExecList(ctx, "/ip/dns/set", lowlevel.GenericJsonObject{
+		"servers": mergedServersStr,
+	})
+	if reply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("failed to set DNS servers: %s: %v", mergedServersStr, reply.Error)
+	}
+
+	return nil
 }
 
 // endregion wg-quick-related
 
 // region routing-related
 
-func (c *MikrotikController) SyncRouteRules(_ context.Context, rules []domain.RouteRule) error {
-	// TODO implement me
-	panic("implement me")
+// SetRoutes sets the routes for the given interface. If no routes are provided, the function is a no-op.
+func (c *MikrotikController) SetRoutes(
+	ctx context.Context,
+	interfaceId domain.InterfaceIdentifier,
+	table int,
+	fwMark uint32,
+	cidrs []domain.Cidr,
+) error {
+	return nil
 }
 
-func (c *MikrotikController) DeleteRouteRules(_ context.Context, rules []domain.RouteRule) error {
-	// TODO implement me
-	panic("implement me")
+// RemoveRoutes removes the routes for the given interface. If no routes are provided, the function is a no-op.
+func (c *MikrotikController) RemoveRoutes(
+	ctx context.Context,
+	interfaceId domain.InterfaceIdentifier,
+	table int,
+	fwMark uint32,
+	oldCidrs []domain.Cidr,
+) error {
+	return nil
 }
 
 // endregion routing-related

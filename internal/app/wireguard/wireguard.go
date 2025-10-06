@@ -38,9 +38,9 @@ type InterfaceAndPeerDatabaseRepo interface {
 }
 
 type WgQuickController interface {
-	ExecuteInterfaceHook(id domain.InterfaceIdentifier, hookCmd string) error
-	SetDNS(id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error
-	UnsetDNS(id domain.InterfaceIdentifier) error
+	ExecuteInterfaceHook(ctx context.Context, id domain.InterfaceIdentifier, hookCmd string) error
+	SetDNS(ctx context.Context, id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error
+	UnsetDNS(ctx context.Context, id domain.InterfaceIdentifier, dnsStr, dnsSearchStr string) error
 }
 
 type EventBus interface {
@@ -53,11 +53,10 @@ type EventBus interface {
 // endregion dependencies
 
 type Manager struct {
-	cfg   *config.Config
-	bus   EventBus
-	db    InterfaceAndPeerDatabaseRepo
-	wg    *ControllerManager
-	quick WgQuickController
+	cfg *config.Config
+	bus EventBus
+	db  InterfaceAndPeerDatabaseRepo
+	wg  *ControllerManager
 
 	userLockMap *sync.Map
 }
@@ -66,7 +65,6 @@ func NewWireGuardManager(
 	cfg *config.Config,
 	bus EventBus,
 	wg *ControllerManager,
-	quick WgQuickController,
 	db InterfaceAndPeerDatabaseRepo,
 ) (*Manager, error) {
 	m := &Manager{
@@ -74,7 +72,6 @@ func NewWireGuardManager(
 		bus:         bus,
 		wg:          wg,
 		db:          db,
-		quick:       quick,
 		userLockMap: &sync.Map{},
 	}
 
