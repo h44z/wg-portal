@@ -117,6 +117,7 @@
       "dns": "DNS-Server",
       "mtu": "MTU",
       "default-keep-alive": "Standard Keepalive-Intervall",
+      "default-dns": "Standard DNS-Server",
       "button-show-config": "Konfiguration anzeigen",
       "button-download-config": "Konfiguration herunterladen",
       "button-store-config": "Konfiguration für wg-quick speichern",

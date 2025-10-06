@@ -218,12 +218,12 @@ onMounted(async () => {
                   <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.Addresses" :key="addr">{{addr}}</span></td>
                 </tr>
                 <tr>
-                  <td>{{ $t('interfaces.interface.dns') }}:</td>
-                  <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.Dns" :key="addr">{{addr}}</span></td>
-                </tr>
-                <tr>
                   <td>{{ $t('interfaces.interface.mtu') }}:</td>
                   <td>{{interfaces.GetSelected.Mtu}}</td>
+                </tr>
+                <tr>
+                  <td>{{ $t('interfaces.interface.default-dns') }}:</td>
+                  <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.PeerDefDns" :key="addr">{{addr}}</span></td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.interface.default-keep-alive') }}:</td>
