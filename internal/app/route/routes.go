@@ -138,6 +138,12 @@ func (m Manager) syncRoutes(ctx context.Context, info domain.RoutingTableInfo) e
 		return nil
 	}
 
+	if !info.Interface.ManageRoutingTable() {
+		slog.Debug("interface does not manage routing table, skipping route update",
+			"interface", info.Interface.Identifier)
+		return nil
+	}
+
 	err := rc.SetRoutes(ctx, info.Interface.Identifier, info.Table, info.FwMark, info.AllowedIps)
 	if err != nil {
 		return fmt.Errorf("failed to set routes for interface %s: %w", info.Interface.Identifier, err)
@@ -149,6 +155,12 @@ func (m Manager) removeRoutes(ctx context.Context, info domain.RoutingTableInfo)
 	rc, ok := m.wgController.GetController(info.Interface).(RoutesController)
 	if !ok {
 		slog.Warn("no capable routes-controller found for interface", "interface", info.Interface.Identifier)
+		return nil
+	}
+
+	if !info.Interface.ManageRoutingTable() {
+		slog.Debug("interface does not manage routing table, skipping route removal",
+			"interface", info.Interface.Identifier)
 		return nil
 	}
 

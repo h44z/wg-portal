@@ -201,20 +201,24 @@ func (c Cidr) Contains(other Cidr) bool {
 }
 
 // ContainsDefaultRoute returns true if the given CIDRs contain a default route.
-func ContainsDefaultRoute(cidrs []Cidr) (ipV4, ipV6 bool) {
+func ContainsDefaultRoute(cidrs []Cidr) bool {
 	for _, allowedIP := range cidrs {
-		if ipV4 && ipV6 {
-			break // speed up
-		}
-
 		if allowedIP.Prefix().Bits() == 0 {
-			if allowedIP.IsV4() {
-				ipV4 = true
-			} else {
-				ipV6 = true
-			}
+			return true
 		}
 	}
 
+	return false
+}
+
+// CidrsPerFamily returns a slice of CIDRs, one for each family (IPv4 and IPv6).
+func CidrsPerFamily(cidrs []Cidr) (ipv4, ipv6 []Cidr) {
+	for _, cidr := range cidrs {
+		if cidr.IsV4() {
+			ipv4 = append(ipv4, cidr)
+		} else {
+			ipv6 = append(ipv6, cidr)
+		}
+	}
 	return
 }
