@@ -132,17 +132,30 @@ func (i *Interface) GetConfigFileName() string {
 	return filename
 }
 
+// GetAllowedIPs returns the allowed IPs for the interface depending on the interface type and peers.
+// For example, if the interface type is Server, the allowed IPs are the IPs of the peers.
+// If the interface type is Client, the allowed IPs correspond to the AllowedIPsStr of the peers.
 func (i *Interface) GetAllowedIPs(peers []Peer) []Cidr {
 	var allowedCidrs []Cidr
 
-	for _, peer := range peers {
-		for _, ip := range peer.Interface.Addresses {
-			allowedCidrs = append(allowedCidrs, ip.HostAddr())
+	switch i.Type {
+	case InterfaceTypeServer, InterfaceTypeAny:
+		for _, peer := range peers {
+			for _, ip := range peer.Interface.Addresses {
+				allowedCidrs = append(allowedCidrs, ip.HostAddr())
+			}
+			if peer.ExtraAllowedIPsStr != "" {
+				extraIPs, err := CidrsFromString(peer.ExtraAllowedIPsStr)
+				if err == nil {
+					allowedCidrs = append(allowedCidrs, extraIPs...)
+				}
+			}
 		}
-		if peer.ExtraAllowedIPsStr != "" {
-			extraIPs, err := CidrsFromString(peer.ExtraAllowedIPsStr)
+	case InterfaceTypeClient:
+		for _, peer := range peers {
+			allowedIPs, err := CidrsFromString(peer.AllowedIPsStr.GetValue())
 			if err == nil {
-				allowedCidrs = append(allowedCidrs, extraIPs...)
+				allowedCidrs = append(allowedCidrs, allowedIPs...)
 			}
 		}
 	}
@@ -315,7 +328,8 @@ type RoutingTableInfo struct {
 }
 
 func (r RoutingTableInfo) String() string {
-	return fmt.Sprintf("%s: %d -> %d", r.Interface.Identifier, r.FwMark, r.Table)
+	v4, v6 := CidrsPerFamily(r.AllowedIps)
+	return fmt.Sprintf("%s: fwmark=%d; table=%d; routes_4=%d; routes_6=%d", r.Interface.Identifier, r.FwMark, r.Table, len(v4), len(v6))
 }
 
 func (r RoutingTableInfo) ManagementEnabled() bool {

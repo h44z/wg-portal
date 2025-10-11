@@ -449,7 +449,6 @@ func (m Manager) GetUserPeerStats(ctx context.Context, id domain.UserIdentifier)
 
 func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 	interfaces := make(map[domain.InterfaceIdentifier]domain.Interface)
-	interfacePeers := make(map[domain.InterfaceIdentifier][]domain.Peer)
 
 	for _, peer := range peers {
 		// get interface from db if it is not yet in the map
@@ -462,7 +461,6 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 		}
 
 		iface := interfaces[peer.InterfaceIdentifier]
-		interfacePeers[iface.Identifier] = append(interfacePeers[iface.Identifier], *peer)
 
 		// Always save the peer to the backend, regardless of disabled/expired state
 		// The backend will handle the disabled state appropriately
@@ -497,9 +495,14 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 
 	// Update routes after peers have changed
 	for id, iface := range interfaces {
+		interfacePeers, err := m.db.GetInterfacePeers(ctx, id)
+		if err != nil {
+			return fmt.Errorf("failed to re-load peers for interface %s: %w", id, err)
+		}
+
 		m.bus.Publish(app.TopicRouteUpdate, domain.RoutingTableInfo{
 			Interface:  iface,
-			AllowedIps: iface.GetAllowedIPs(interfacePeers[id]),
+			AllowedIps: iface.GetAllowedIPs(interfacePeers),
 			FwMark:     iface.FirewallMark,
 			Table:      iface.GetRoutingTable(),
 		})

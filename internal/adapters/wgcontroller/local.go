@@ -658,7 +658,12 @@ func (c LocalController) SetRoutes(
 	if err != nil {
 		return fmt.Errorf("failed to get or create routing table and fwmark for %s: %w", interfaceId, err)
 	}
-	if realFwMark != fwMark {
+	wgDev, err := c.wg.Device(string(interfaceId))
+	if err != nil {
+		return fmt.Errorf("failed to get wg device for %s: %w", interfaceId, err)
+	}
+	currentFwMark := wgDev.FirewallMark
+	if int(realFwMark) != currentFwMark {
 		slog.Debug("updating fwmark for interface", "interface", interfaceId, "oldFwMark", fwMark,
 			"newFwMark", realFwMark, "oldTable", table, "newTable", realTable)
 		if err := c.updateFwMarkOnInterface(interfaceId, int(realFwMark)); err != nil {
@@ -878,9 +883,26 @@ func (c LocalController) RemoveRoutes(
 ) error {
 	slog.Debug("removing linux routes", "interface", interfaceId, "table", table, "fwMark", fwMark, "cidrs", oldCidrs)
 
+	wgDev, err := c.wg.Device(string(interfaceId))
+	if err != nil {
+		slog.Debug("wg device already removed, route cleanup might be incomplete", "interface", interfaceId)
+		wgDev = nil
+	}
 	link, err := c.nl.LinkByName(string(interfaceId))
 	if err != nil {
-		return fmt.Errorf("failed to find physical link for %s: %w", interfaceId, err)
+		slog.Debug("physical link already removed, route cleanup might be incomplete", "interface", interfaceId)
+		link = nil
+	}
+
+	if wgDev != nil && fwMark == 0 {
+		fwMark = uint32(wgDev.FirewallMark)
+	}
+	if wgDev != nil && table == 0 {
+		table = wgDev.FirewallMark // use the fwMark as table, this is the default behavior
+	}
+	linkIndex := -1
+	if link != nil {
+		linkIndex = link.Attrs().Index
 	}
 
 	cidrsV4, cidrsV6 := domain.CidrsPerFamily(oldCidrs)
@@ -889,13 +911,26 @@ func (c LocalController) RemoveRoutes(
 		return fmt.Errorf("failed to get or create routing table and fwmark for %s: %w", interfaceId, err)
 	}
 
-	err = c.removeRoutesForFamily(interfaceId, link, netlink.FAMILY_V4, realTable, realFwMark, cidrsV4)
-	if err != nil {
-		return fmt.Errorf("failed to remove v4 routes: %w", err)
+	if linkIndex > 0 {
+		err = c.removeRoutesForFamily(interfaceId, link, netlink.FAMILY_V4, realTable, realFwMark, cidrsV4)
+		if err != nil {
+			return fmt.Errorf("failed to remove v4 routes: %w", err)
+		}
+		err = c.removeRoutesForFamily(interfaceId, link, netlink.FAMILY_V6, realTable, realFwMark, cidrsV6)
+		if err != nil {
+			return fmt.Errorf("failed to remove v6 routes: %w", err)
+		}
 	}
-	err = c.removeRoutesForFamily(interfaceId, link, netlink.FAMILY_V6, realTable, realFwMark, cidrsV6)
-	if err != nil {
-		return fmt.Errorf("failed to remove v6 routes: %w", err)
+
+	if table > 0 {
+		err = c.removeRouteRulesForTable(netlink.FAMILY_V4, realTable)
+		if err != nil {
+			return fmt.Errorf("failed to remove v4 route rules for %s: %w", interfaceId, err)
+		}
+		err = c.removeRouteRulesForTable(netlink.FAMILY_V6, realTable)
+		if err != nil {
+			return fmt.Errorf("failed to remove v6 route rules for %s: %w", interfaceId, err)
+		}
 	}
 
 	return nil
@@ -955,6 +990,25 @@ func (c LocalController) removeRoutesForFamily(
 		}
 	}
 
+	return nil
+}
+
+func (c LocalController) removeRouteRulesForTable(
+	family int,
+	table int,
+) error {
+	existingRules, err := c.nl.RuleList(family)
+	if err != nil {
+		return fmt.Errorf("failed to get existing route rules for family-id %d: %w", family, err)
+	}
+	for _, existingRule := range existingRules {
+		if existingRule.Table == table {
+			err := c.nl.RuleDel(&existingRule)
+			if err != nil {
+				return fmt.Errorf("failed to delete old rule for table %d and family-id %d: %w", table, family, err)
+			}
+		}
+	}
 	return nil
 }
 

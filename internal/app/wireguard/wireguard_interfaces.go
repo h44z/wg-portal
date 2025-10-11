@@ -462,11 +462,16 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		return fmt.Errorf("deletion not allowed: %w", err)
 	}
 
+	m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
+		Interface:  *existingInterface,
+		AllowedIps: existingInterface.GetAllowedIPs(existingPeers),
+		FwMark:     existingInterface.FirewallMark,
+		Table:      existingInterface.GetRoutingTable(),
+	})
+
 	now := time.Now()
 	existingInterface.Disabled = &now // simulate a disabled interface
 	existingInterface.DisabledReason = domain.DisabledReasonDeleted
-
-	physicalInterface, _ := m.wg.GetController(*existingInterface).GetInterface(ctx, id)
 
 	if err := m.handleInterfacePreSaveHooks(ctx, existingInterface, !existingInterface.IsDisabled(),
 		false); err != nil {
@@ -488,17 +493,6 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 	if err := m.db.DeleteInterface(ctx, id); err != nil {
 		return fmt.Errorf("deletion failure: %w", err)
 	}
-
-	fwMark := existingInterface.FirewallMark
-	if physicalInterface != nil && fwMark == 0 {
-		fwMark = physicalInterface.FirewallMark
-	}
-	m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
-		Interface:  *existingInterface,
-		AllowedIps: existingInterface.GetAllowedIPs(existingPeers),
-		FwMark:     fwMark,
-		Table:      existingInterface.GetRoutingTable(),
-	})
 
 	if err := m.handleInterfacePostSaveHooks(
 		ctx,
@@ -577,15 +571,10 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 	}
 
 	if iface.IsDisabled() {
-		physicalInterface, _ := m.wg.GetController(*iface).GetInterface(ctx, iface.Identifier)
-		fwMark := iface.FirewallMark
-		if physicalInterface != nil && fwMark == 0 {
-			fwMark = physicalInterface.FirewallMark
-		}
 		m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
 			Interface:  *iface,
 			AllowedIps: iface.GetAllowedIPs(peers),
-			FwMark:     fwMark,
+			FwMark:     iface.FirewallMark,
 			Table:      iface.GetRoutingTable(),
 		})
 	} else {
