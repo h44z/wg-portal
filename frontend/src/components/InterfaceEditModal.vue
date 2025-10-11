@@ -316,6 +316,16 @@ async function del() {
   isDeleting.value = true
   try {
     await interfaces.DeleteInterface(selectedInterface.value.Identifier)
+
+    // reload all interfaces and peers
+    await interfaces.LoadInterfaces()
+    if (interfaces.Count > 0 && interfaces.GetSelected !== undefined) {
+      const selectedInterface = interfaces.GetSelected
+      await peers.LoadPeers(selectedInterface.Identifier)
+      await peers.LoadStats(selectedInterface.Identifier)
+    } else {
+      await peers.Reset() // reset peers if no interfaces are available
+    }
     close()
   } catch (e) {
     console.log(e)
