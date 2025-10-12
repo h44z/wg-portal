@@ -1,6 +1,6 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router';
-import { computed, getCurrentInstance, onMounted, ref } from "vue";
+import {computed, getCurrentInstance, nextTick, onMounted, ref} from "vue";
 import { authStore } from "./stores/auth";
 import { securityStore } from "./stores/security";
 import { settingsStore } from "@/stores/settings";
@@ -11,12 +11,13 @@ const auth = authStore()
 const sec = securityStore()
 const settings = settingsStore()
 
+const currentTheme = ref("auto")
+
 onMounted(async () => {
   console.log("Starting WireGuard Portal frontend...");
 
   // restore theme from localStorage
-  const theme = localStorage.getItem('wgTheme') || 'light';
-  document.documentElement.setAttribute('data-bs-theme', theme);
+  switchTheme(getTheme());
 
   await sec.LoadSecurityProperties();
   await auth.LoadProviders();
@@ -44,10 +45,22 @@ const switchLanguage = function (lang) {
   }
 }
 
+const getTheme = function () {
+  return localStorage.getItem('wgTheme') || 'auto';
+}
+
 const switchTheme = function (theme) {
-  if (document.documentElement.getAttribute('data-bs-theme') !== theme) {
+  let bsTheme = theme;
+  if (theme === 'auto') {
+    bsTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  currentTheme.value = theme;
+
+  if (document.documentElement.getAttribute('data-bs-theme') !== bsTheme) {
+    console.log("Switching theme to " + theme + " (" + bsTheme + ")");
     localStorage.setItem('wgTheme', theme);
-    document.documentElement.setAttribute('data-bs-theme', theme);
+    document.documentElement.setAttribute('data-bs-theme', bsTheme);
   }
 }
 
@@ -137,20 +150,25 @@ const userDisplayName = computed(() => {
           <div v-if="!auth.IsAuthenticated" class="nav-item">
             <RouterLink :to="{ name: 'login' }" class="nav-link"><i class="fas fa-sign-in-alt fa-sm fa-fw me-2"></i>{{ $t('menu.login') }}</RouterLink>
           </div>
-          <div class="nav-item dropdown" data-bs-theme="light">
+          <div class="nav-item dropdown" :key="currentTheme">
             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="theme-menu" aria-expanded="false" data-bs-toggle="dropdown" data-bs-display="static" aria-label="Toggle theme">
               <i class="fa-solid fa-circle-half-stroke"></i>
               <span class="d-lg-none ms-2">Toggle theme</span>
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
               <li>
+                <button type="button" class="dropdown-item d-flex align-items-center" @click.prevent="switchTheme('auto')" aria-pressed="false">
+                  <i class="fa-solid fa-circle-half-stroke"></i><span class="ms-2">System</span><i class="fa-solid fa-check ms-5" :class="{invisible:currentTheme!=='auto'}"></i>
+                </button>
+              </li>
+              <li>
                 <button type="button" class="dropdown-item d-flex align-items-center" @click.prevent="switchTheme('light')" aria-pressed="false">
-                  <i class="fa-solid fa-sun"></i><span class="ms-2">Light</span>
+                  <i class="fa-solid fa-sun"></i><span class="ms-2">Light</span><i class="fa-solid fa-check ms-5" :class="{invisible:currentTheme!=='light'}"></i>
                 </button>
               </li>
               <li>
                 <button type="button" class="dropdown-item d-flex align-items-center" @click.prevent="switchTheme('dark')" aria-pressed="true">
-                  <i class="fa-solid fa-moon"></i><span class="ms-2">Dark</span>
+                  <i class="fa-solid fa-moon"></i><span class="ms-2">Dark</span><i class="fa-solid fa-check ms-5" :class="{invisible:currentTheme!=='dark'}"></i>
                 </button>
               </li>
             </ul>
@@ -220,5 +238,9 @@ const userDisplayName = computed(() => {
   --bs-bg-opacity: 1;
   background-color: rgba(var(--bs-dark-rgb), var(--bs-bg-opacity)) !important;
   color: var(--bs-badge-color)!important;
+}
+
+[data-bs-theme=dark] .navbar-dark, .navbar {
+  background-color: #000 !important;
 }
 </style>

@@ -126,9 +126,14 @@ export const peerStore = defineStore('peers', {
       if (!statsResponse) {
         this.stats = {}
         this.statsEnabled = false
+      } else {
+          this.stats = statsResponse.Stats
+          this.statsEnabled = statsResponse.Enabled
       }
-      this.stats = statsResponse.Stats
-      this.statsEnabled = statsResponse.Enabled
+    },
+    async Reset() {
+      this.setPeers([])
+      this.setStats(undefined)
     },
     async PreparePeer(interfaceId) {
       return apiWrapper.get(`${baseUrl}/iface/${base64_url_encode(interfaceId)}/prepare`)
@@ -186,10 +191,10 @@ export const peerStore = defineStore('peers', {
     async LoadStats(interfaceId) {
       // if no interfaceId is given, use the currently selected interface
       if (!interfaceId) {
-        interfaceId = interfaceStore().GetSelected.Identifier
-        if (!interfaceId) {
-          return // no interface, nothing to load
+        if (!interfaceStore().GetSelected || !interfaceStore().GetSelected.Identifier) {
+            return // no interface, nothing to load
         }
+        interfaceId = interfaceStore().GetSelected.Identifier
       }
       this.fetching = true
 
@@ -260,10 +265,10 @@ export const peerStore = defineStore('peers', {
     async LoadPeers(interfaceId) {
       // if no interfaceId is given, use the currently selected interface
       if (!interfaceId) {
-        interfaceId = interfaceStore().GetSelected.Identifier
-        if (!interfaceId) {
+        if (!interfaceStore().GetSelected || !interfaceStore().GetSelected.Identifier) {
           return // no interface, nothing to load
         }
+        interfaceId = interfaceStore().GetSelected.Identifier
       }
       this.fetching = true
 

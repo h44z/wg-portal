@@ -115,6 +115,7 @@ export const interfaceStore = defineStore('interfaces', {
       return apiWrapper.post(`${baseUrl}/new`, formData)
         .then(iface => {
           this.interfaces.push(iface)
+          this.selected = iface.Identifier
           this.fetching = false
         })
         .catch(error => {
