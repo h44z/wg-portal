@@ -26,6 +26,10 @@ func (c Cidr) IsValid() bool {
 	return c.Prefix().IsValid()
 }
 
+func (c Cidr) EqualPrefix(other Cidr) bool {
+	return c.Addr == other.Addr && c.NetLength == other.NetLength
+}
+
 func CidrFromString(str string) (Cidr, error) {
 	prefix, err := netip.ParsePrefix(strings.TrimSpace(str))
 	if err != nil {

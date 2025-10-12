@@ -15,6 +15,9 @@ import (
 	"github.com/h44z/wg-portal/internal/lowlevel"
 )
 
+const MikrotikRouteDistance = 5
+const MikrotikDefaultRoutingTable = "main"
+
 type MikrotikController struct {
 	coreCfg *config.Config
 	cfg     *config.BackendMikrotik
@@ -866,24 +869,302 @@ func (c *MikrotikController) UnsetDNS(
 // region routing-related
 
 // SetRoutes sets the routes for the given interface. If no routes are provided, the function is a no-op.
-func (c *MikrotikController) SetRoutes(
+func (c *MikrotikController) SetRoutes(ctx context.Context, info domain.RoutingTableInfo) error {
+	interfaceId := info.Interface.Identifier
+	slog.Debug("setting mikrotik routes", "interface", interfaceId, "table", info.TableStr, "cidrs", info.AllowedIps)
+
+	// Mikrotik needs some time to apply the changes.
+	// If we don't wait, the routes might get created multiple times as the dynamic routes are not yet available.
+	time.Sleep(2 * time.Second)
+
+	tableName, err := c.getOrCreateRoutingTables(ctx, info.Interface.Identifier, info.TableStr)
+	if err != nil {
+		return fmt.Errorf("failed to get or create routing table for %s: %v", interfaceId, err)
+	}
+
+	cidrsV4, cidrsV6 := domain.CidrsPerFamily(info.AllowedIps)
+
+	err = c.setRoutesForFamily(ctx, interfaceId, false, tableName, cidrsV4)
+	if err != nil {
+		return fmt.Errorf("failed to set IPv4 routes for %s: %v", interfaceId, err)
+	}
+
+	err = c.setRoutesForFamily(ctx, interfaceId, true, tableName, cidrsV6)
+	if err != nil {
+		return fmt.Errorf("failed to set IPv6 routes for %s: %v", interfaceId, err)
+	}
+
+	return nil
+}
+
+func (c *MikrotikController) resolveRouteTableName(name string) string {
+	name = strings.TrimSpace(name)
+
+	var mikrotikTableName string
+	switch strings.ToLower(name) {
+	case "", "0":
+		mikrotikTableName = MikrotikDefaultRoutingTable
+	case MikrotikDefaultRoutingTable:
+		return fmt.Sprintf("wgportal-%s",
+			MikrotikDefaultRoutingTable) // if the Mikrotik Main table should be used, the table-name should be left empty or set to "0".
+	default:
+		mikrotikTableName = name
+	}
+
+	return mikrotikTableName
+}
+
+func (c *MikrotikController) getOrCreateRoutingTables(
 	ctx context.Context,
 	interfaceId domain.InterfaceIdentifier,
-	table int,
-	fwMark uint32,
+	table string,
+) (string, error) {
+	// retrieve current routing tables
+	wgReply := c.client.Query(ctx, "/routing/table", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			".id", "dynamic", "fib", "name",
+		},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return "", fmt.Errorf("unable to query routing tables: %v", wgReply.Error)
+	}
+
+	wantedTableName := c.resolveRouteTableName(table)
+
+	// check if the table already exists
+	for _, table := range wgReply.Data {
+		if table.GetString("name") == wantedTableName {
+			return wantedTableName, nil // already exists, nothing to do
+		}
+	}
+
+	// create the table if it does not exist
+	createReply := c.client.Create(ctx, "/routing/table", lowlevel.GenericJsonObject{
+		"name":    wantedTableName,
+		"comment": fmt.Sprintf("Routing Table for %s", interfaceId),
+		"fib":     strconv.FormatBool(true),
+	})
+	if createReply.Status != lowlevel.MikrotikApiStatusOk {
+		return "", fmt.Errorf("failed to create routing table %s: %v", wantedTableName, createReply.Error)
+	}
+
+	return wantedTableName, nil
+}
+
+func (c *MikrotikController) setRoutesForFamily(
+	ctx context.Context,
+	interfaceId domain.InterfaceIdentifier,
+	ipV6 bool,
+	table string,
 	cidrs []domain.Cidr,
 ) error {
+	apiPath := "/ip/route"
+	if ipV6 {
+		apiPath = "/ipv6/route"
+	}
+
+	// retrieve current routes
+	wgReply := c.client.Query(ctx, apiPath, &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			".id", "disabled", "inactive", "distance", "dst-address", "dynamic", "gateway", "immediate-gw",
+			"routing-table", "scope", "target-scope", "client-dns", "comment", "disabled", "responder",
+		},
+		Filters: map[string]string{
+			"gateway": string(interfaceId),
+		},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("unable to find WireGuard IP route settings (v6=%t): %v", ipV6, wgReply.Error)
+	}
+
+	// first create or update the routes
+	for _, cidr := range cidrs {
+		// check if the route already exists
+		exists := false
+		for _, route := range wgReply.Data {
+			existingRoute, err := domain.CidrFromString(route.GetString("dst-address"))
+			if err != nil {
+				slog.Warn("failed to parse route destination address",
+					"cidr", route.GetString("dst-address"), "error", err)
+				continue
+			}
+			if existingRoute.EqualPrefix(cidr) && route.GetString("routing-table") == table {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			continue // route already exists, nothing to do
+		}
+
+		// create the route
+		reply := c.client.Create(ctx, apiPath, lowlevel.GenericJsonObject{
+			"gateway":       string(interfaceId),
+			"dst-address":   cidr.String(),
+			"distance":      strconv.Itoa(MikrotikRouteDistance),
+			"disabled":      strconv.FormatBool(false),
+			"routing-table": table,
+		})
+		if reply.Status != lowlevel.MikrotikApiStatusOk {
+			return fmt.Errorf("failed to create new route %s via %s: %v", cidr.String(), interfaceId, reply.Error)
+		}
+	}
+
+	// finally, remove the routes that are not in the new list
+	for _, route := range wgReply.Data {
+		if route.GetBool("dynamic") {
+			continue // dynamic routes are not managed by the controller, nothing to do
+		}
+
+		existingRoute, err := domain.CidrFromString(route.GetString("dst-address"))
+		if err != nil {
+			slog.Warn("failed to parse route destination address",
+				"cidr", route.GetString("dst-address"), "error", err)
+			continue
+		}
+
+		valid := false
+		for _, cidr := range cidrs {
+			if existingRoute.EqualPrefix(cidr) {
+				valid = true
+				break
+			}
+		}
+		if valid {
+			continue // route is still valid, nothing to do
+		}
+
+		// remove the route
+		reply := c.client.Delete(ctx, apiPath+"/"+route.GetString(".id"))
+		if reply.Status != lowlevel.MikrotikApiStatusOk {
+			return fmt.Errorf("failed to remove outdated route %s: %v", existingRoute.String(), reply.Error)
+		}
+	}
+
 	return nil
 }
 
 // RemoveRoutes removes the routes for the given interface. If no routes are provided, the function is a no-op.
-func (c *MikrotikController) RemoveRoutes(
+func (c *MikrotikController) RemoveRoutes(ctx context.Context, info domain.RoutingTableInfo) error {
+	interfaceId := info.Interface.Identifier
+	slog.Debug("removing mikrotik routes", "interface", interfaceId, "table", info.TableStr, "cidrs", info.AllowedIps)
+
+	tableName := c.resolveRouteTableName(info.TableStr)
+
+	cidrsV4, cidrsV6 := domain.CidrsPerFamily(info.AllowedIps)
+
+	err := c.removeRoutesForFamily(ctx, interfaceId, false, tableName, cidrsV4)
+	if err != nil {
+		return fmt.Errorf("failed to remove IPv4 routes for %s: %v", interfaceId, err)
+	}
+
+	err = c.removeRoutesForFamily(ctx, interfaceId, true, tableName, cidrsV6)
+	if err != nil {
+		return fmt.Errorf("failed to remove IPv6 routes for %s: %v", interfaceId, err)
+	}
+
+	err = c.removeRoutingTable(ctx, tableName)
+	if err != nil {
+		return fmt.Errorf("failed to remove routing table for %s: %v", interfaceId, err)
+	}
+
+	return nil
+}
+
+func (c *MikrotikController) removeRoutesForFamily(
 	ctx context.Context,
 	interfaceId domain.InterfaceIdentifier,
-	table int,
-	fwMark uint32,
-	oldCidrs []domain.Cidr,
+	ipV6 bool,
+	table string,
+	cidrs []domain.Cidr,
 ) error {
+	apiPath := "/ip/route"
+	if ipV6 {
+		apiPath = "/ipv6/route"
+	}
+
+	// retrieve current routes
+	wgReply := c.client.Query(ctx, apiPath, &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			".id", "disabled", "inactive", "distance", "dst-address", "dynamic", "gateway", "immediate-gw",
+			"routing-table", "scope", "target-scope", "client-dns", "comment", "disabled", "responder",
+		},
+		Filters: map[string]string{
+			"gateway": string(interfaceId),
+		},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("unable to find WireGuard IP route settings (v6=%t): %v", ipV6, wgReply.Error)
+	}
+
+	// remove the routes from the list
+	for _, route := range wgReply.Data {
+		if route.GetBool("dynamic") {
+			continue // dynamic routes are not managed by the controller, nothing to do
+		}
+
+		existingRoute, err := domain.CidrFromString(route.GetString("dst-address"))
+		if err != nil {
+			slog.Warn("failed to parse route destination address",
+				"cidr", route.GetString("dst-address"), "error", err)
+			continue
+		}
+
+		remove := false
+		for _, cidr := range cidrs {
+			if existingRoute.EqualPrefix(cidr) && route.GetString("routing-table") == table {
+				remove = true
+				break
+			}
+		}
+		if !remove {
+			continue // route is still valid, nothing to do
+		}
+
+		// remove the route
+		reply := c.client.Delete(ctx, apiPath+"/"+route.GetString(".id"))
+		if reply.Status != lowlevel.MikrotikApiStatusOk {
+			return fmt.Errorf("failed to remove old route %s: %v", existingRoute.String(), reply.Error)
+		}
+	}
+
+	return nil
+}
+
+func (c *MikrotikController) removeRoutingTable(
+	ctx context.Context,
+	table string,
+) error {
+	if table == MikrotikDefaultRoutingTable {
+		return nil // we cannot remove the default table
+	}
+
+	// retrieve current routing tables
+	wgReply := c.client.Query(ctx, "/routing/table", &lowlevel.MikrotikRequestOptions{
+		PropList: []string{
+			".id", "dynamic", "fib", "name",
+		},
+	})
+	if wgReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("unable to query routing tables: %v", wgReply.Error)
+	}
+
+	for _, existingTable := range wgReply.Data {
+		if existingTable.GetBool("dynamic") {
+			continue // dynamic tables are not managed by the controller, nothing to do
+		}
+		if existingTable.GetString("name") != table {
+			continue // not the table we want to remove
+		}
+
+		// remove the table
+		reply := c.client.Delete(ctx, "/routing/table/"+existingTable.GetString(".id"))
+		if reply.Status != lowlevel.MikrotikApiStatusOk {
+			return fmt.Errorf("failed to remove routing table %s: %v", table, reply.Error)
+		}
+		return nil
+	}
+
 	return nil
 }
 

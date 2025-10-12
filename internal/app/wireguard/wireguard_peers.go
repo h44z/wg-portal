@@ -400,6 +400,7 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 		AllowedIps: iface.GetAllowedIPs(peers),
 		FwMark:     iface.FirewallMark,
 		Table:      iface.GetRoutingTable(),
+		TableStr:   iface.RoutingTable,
 	})
 	// Update interface after peers have changed
 	m.bus.Publish(app.TopicPeerInterfaceUpdated, peer.InterfaceIdentifier)
@@ -505,6 +506,7 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 			AllowedIps: iface.GetAllowedIPs(interfacePeers),
 			FwMark:     iface.FirewallMark,
 			Table:      iface.GetRoutingTable(),
+			TableStr:   iface.RoutingTable,
 		})
 	}
 

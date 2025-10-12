@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/config"
@@ -29,21 +30,9 @@ type EventBus interface {
 
 type RoutesController interface {
 	// SetRoutes sets the routes for the given interface. If no routes are provided, the function is a no-op.
-	SetRoutes(
-		ctx context.Context,
-		interfaceId domain.InterfaceIdentifier,
-		table int,
-		fwMark uint32,
-		cidrs []domain.Cidr,
-	) error
+	SetRoutes(ctx context.Context, info domain.RoutingTableInfo) error
 	// RemoveRoutes removes the routes for the given interface. If no routes are provided, the function is a no-op.
-	RemoveRoutes(
-		ctx context.Context,
-		interfaceId domain.InterfaceIdentifier,
-		table int,
-		fwMark uint32,
-		oldCidrs []domain.Cidr,
-	) error
+	RemoveRoutes(ctx context.Context, info domain.RoutingTableInfo) error
 }
 
 // endregion dependencies
@@ -64,6 +53,8 @@ type Manager struct {
 	bus          EventBus
 	db           InterfaceAndPeerDatabaseRepo
 	wgController ControllerManager
+
+	mux *sync.Mutex
 }
 
 // NewRouteManager creates a new route manager instance.
@@ -79,6 +70,7 @@ func NewRouteManager(
 
 		db:           db,
 		wgController: wgController,
+		mux:          &sync.Mutex{},
 	}
 
 	m.connectToMessageBus()
@@ -98,6 +90,9 @@ func (m Manager) StartBackgroundJobs(_ context.Context) {
 }
 
 func (m Manager) handleRouteUpdateEvent(info domain.RoutingTableInfo) {
+	m.mux.Lock() // ensure that only one route update is processed at a time
+	defer m.mux.Unlock()
+
 	slog.Debug("handling route update event", "info", info.String())
 
 	if !info.ManagementEnabled() {
@@ -115,6 +110,9 @@ func (m Manager) handleRouteUpdateEvent(info domain.RoutingTableInfo) {
 }
 
 func (m Manager) handleRouteRemoveEvent(info domain.RoutingTableInfo) {
+	m.mux.Lock() // ensure that only one route update is processed at a time
+	defer m.mux.Unlock()
+
 	slog.Debug("handling route remove event", "info", info.String())
 
 	if !info.ManagementEnabled() {
@@ -144,7 +142,7 @@ func (m Manager) syncRoutes(ctx context.Context, info domain.RoutingTableInfo) e
 		return nil
 	}
 
-	err := rc.SetRoutes(ctx, info.Interface.Identifier, info.Table, info.FwMark, info.AllowedIps)
+	err := rc.SetRoutes(ctx, info)
 	if err != nil {
 		return fmt.Errorf("failed to set routes for interface %s: %w", info.Interface.Identifier, err)
 	}
@@ -164,7 +162,7 @@ func (m Manager) removeRoutes(ctx context.Context, info domain.RoutingTableInfo)
 		return nil
 	}
 
-	err := rc.RemoveRoutes(ctx, info.Interface.Identifier, info.Table, info.FwMark, info.AllowedIps)
+	err := rc.RemoveRoutes(ctx, info)
 	if err != nil {
 		return fmt.Errorf("failed to remove routes for interface %s: %w", info.Interface.Identifier, err)
 	}

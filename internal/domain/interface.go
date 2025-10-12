@@ -13,6 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 
 	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/config"
 )
 
 const (
@@ -172,6 +173,7 @@ func (i *Interface) ManageRoutingTable() bool {
 //
 //	-1 if RoutingTable was set to "off" or an error occurred
 func (i *Interface) GetRoutingTable() int {
+
 	routingTableStr := strings.ToLower(i.RoutingTable)
 	switch {
 	case routingTableStr == "":
@@ -179,6 +181,9 @@ func (i *Interface) GetRoutingTable() int {
 	case routingTableStr == "off":
 		return -1
 	case strings.HasPrefix(routingTableStr, "0x"):
+		if i.Backend != config.LocalBackendName {
+			return 0 // ignore numeric routing table numbers for non-local controllers
+		}
 		numberStr := strings.ReplaceAll(routingTableStr, "0x", "")
 		routingTable, err := strconv.ParseUint(numberStr, 16, 64)
 		if err != nil {
@@ -191,6 +196,9 @@ func (i *Interface) GetRoutingTable() int {
 		}
 		return int(routingTable)
 	default:
+		if i.Backend != config.LocalBackendName {
+			return 0 // ignore numeric routing table numbers for non-local controllers
+		}
 		routingTable, err := strconv.Atoi(routingTableStr)
 		if err != nil {
 			slog.Error("failed to parse routing table number", "table", routingTableStr, "error", err)
@@ -325,11 +333,14 @@ type RoutingTableInfo struct {
 	AllowedIps []Cidr
 	FwMark     uint32
 	Table      int
+	TableStr   string // the routing table number as string (used by mikrotik, linux uses the numeric value)
+	IsDeleted  bool   // true if the interface was deleted, false otherwise
 }
 
 func (r RoutingTableInfo) String() string {
 	v4, v6 := CidrsPerFamily(r.AllowedIps)
-	return fmt.Sprintf("%s: fwmark=%d; table=%d; routes_4=%d; routes_6=%d", r.Interface.Identifier, r.FwMark, r.Table, len(v4), len(v6))
+	return fmt.Sprintf("%s: fwmark=%d; table=%d; routes_4=%d; routes_6=%d", r.Interface.Identifier, r.FwMark, r.Table,
+		len(v4), len(v6))
 }
 
 func (r RoutingTableInfo) ManagementEnabled() bool {

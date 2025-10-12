@@ -639,22 +639,18 @@ func (c LocalController) exec(command string, interfaceId domain.InterfaceIdenti
 // region routing-related
 
 // SetRoutes sets the routes for the given interface. If no routes are provided, the function is a no-op.
-func (c LocalController) SetRoutes(
-	_ context.Context,
-	interfaceId domain.InterfaceIdentifier,
-	table int,
-	fwMark uint32,
-	cidrs []domain.Cidr,
-) error {
-	slog.Debug("setting linux routes", "interface", interfaceId, "table", table, "fwMark", fwMark, "cidrs", cidrs)
+func (c LocalController) SetRoutes(_ context.Context, info domain.RoutingTableInfo) error {
+	interfaceId := info.Interface.Identifier
+	slog.Debug("setting linux routes", "interface", interfaceId, "table", info.Table, "fwMark", info.FwMark,
+		"cidrs", info.AllowedIps)
 
 	link, err := c.nl.LinkByName(string(interfaceId))
 	if err != nil {
 		return fmt.Errorf("failed to find physical link for %s: %w", interfaceId, err)
 	}
 
-	cidrsV4, cidrsV6 := domain.CidrsPerFamily(cidrs)
-	realTable, realFwMark, err := c.getOrCreateRoutingTableAndFwMark(link, table, fwMark)
+	cidrsV4, cidrsV6 := domain.CidrsPerFamily(info.AllowedIps)
+	realTable, realFwMark, err := c.getOrCreateRoutingTableAndFwMark(link, info.Table, info.FwMark)
 	if err != nil {
 		return fmt.Errorf("failed to get or create routing table and fwmark for %s: %w", interfaceId, err)
 	}
@@ -664,8 +660,8 @@ func (c LocalController) SetRoutes(
 	}
 	currentFwMark := wgDev.FirewallMark
 	if int(realFwMark) != currentFwMark {
-		slog.Debug("updating fwmark for interface", "interface", interfaceId, "oldFwMark", fwMark,
-			"newFwMark", realFwMark, "oldTable", table, "newTable", realTable)
+		slog.Debug("updating fwmark for interface", "interface", interfaceId, "oldFwMark", currentFwMark,
+			"newFwMark", realFwMark, "oldTable", info.Table, "newTable", realTable)
 		if err := c.updateFwMarkOnInterface(interfaceId, int(realFwMark)); err != nil {
 			return fmt.Errorf("failed to update fwmark for interface %s to %d: %w", interfaceId, realFwMark, err)
 		}
@@ -874,14 +870,10 @@ func (c LocalController) getRulePriority(existingRules []netlink.Rule) int {
 }
 
 // RemoveRoutes removes the routes for the given interface. If no routes are provided, the function is a no-op.
-func (c LocalController) RemoveRoutes(
-	_ context.Context,
-	interfaceId domain.InterfaceIdentifier,
-	table int,
-	fwMark uint32,
-	oldCidrs []domain.Cidr,
-) error {
-	slog.Debug("removing linux routes", "interface", interfaceId, "table", table, "fwMark", fwMark, "cidrs", oldCidrs)
+func (c LocalController) RemoveRoutes(_ context.Context, info domain.RoutingTableInfo) error {
+	interfaceId := info.Interface.Identifier
+	slog.Debug("removing linux routes", "interface", interfaceId, "table", info.Table, "fwMark", info.FwMark,
+		"cidrs", info.AllowedIps)
 
 	wgDev, err := c.wg.Device(string(interfaceId))
 	if err != nil {
@@ -894,10 +886,12 @@ func (c LocalController) RemoveRoutes(
 		link = nil
 	}
 
-	if wgDev != nil && fwMark == 0 {
+	fwMark := info.FwMark
+	if wgDev != nil && info.FwMark == 0 {
 		fwMark = uint32(wgDev.FirewallMark)
 	}
-	if wgDev != nil && table == 0 {
+	table := info.Table
+	if wgDev != nil && info.Table == 0 {
 		table = wgDev.FirewallMark // use the fwMark as table, this is the default behavior
 	}
 	linkIndex := -1
@@ -905,7 +899,7 @@ func (c LocalController) RemoveRoutes(
 		linkIndex = link.Attrs().Index
 	}
 
-	cidrsV4, cidrsV6 := domain.CidrsPerFamily(oldCidrs)
+	cidrsV4, cidrsV6 := domain.CidrsPerFamily(info.AllowedIps)
 	realTable, realFwMark, err := c.getOrCreateRoutingTableAndFwMark(link, table, fwMark)
 	if err != nil {
 		return fmt.Errorf("failed to get or create routing table and fwmark for %s: %w", interfaceId, err)
@@ -978,6 +972,10 @@ func (c LocalController) removeRoutesForFamily(
 				netlinkAddr, _ = domain.CidrFromString("::/0")
 			}
 			rawRoute.Dst = netlinkAddr.IpNet()
+		}
+
+		if rawRoute.Table != table {
+			continue // ignore routes from other tables
 		}
 
 		route := domain.CidrFromIpNet(*rawRoute.Dst)

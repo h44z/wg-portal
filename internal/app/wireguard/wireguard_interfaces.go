@@ -467,6 +467,8 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		AllowedIps: existingInterface.GetAllowedIPs(existingPeers),
 		FwMark:     existingInterface.FirewallMark,
 		Table:      existingInterface.GetRoutingTable(),
+		TableStr:   existingInterface.RoutingTable,
+		IsDeleted:  true,
 	})
 
 	now := time.Now()
@@ -518,7 +520,11 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 		return nil, fmt.Errorf("interface validation failed: %w", err)
 	}
 
-	oldEnabled, newEnabled := m.getInterfaceStateHistory(ctx, iface)
+	oldEnabled, newEnabled, routeTableChanged := false, !iface.IsDisabled(), false // if the interface did not exist, we assume it was not enabled
+	oldInterface, err := m.db.GetInterface(ctx, iface.Identifier)
+	if err == nil {
+		oldEnabled, newEnabled, routeTableChanged = m.getInterfaceStateHistory(oldInterface, iface)
+	}
 
 	if err := m.handleInterfacePreSaveHooks(ctx, iface, oldEnabled, newEnabled); err != nil {
 		return nil, fmt.Errorf("pre-save hooks failed: %w", err)
@@ -528,7 +534,7 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 		return nil, fmt.Errorf("pre-save actions failed: %w", err)
 	}
 
-	err := m.db.SaveInterface(ctx, iface.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
+	err = m.db.SaveInterface(ctx, iface.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
 		iface.CopyCalculatedAttributes(i)
 
 		err := m.wg.GetController(*iface).SaveInterface(ctx, iface.Identifier,
@@ -576,6 +582,7 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 			AllowedIps: iface.GetAllowedIPs(peers),
 			FwMark:     iface.FirewallMark,
 			Table:      iface.GetRoutingTable(),
+			TableStr:   iface.RoutingTable,
 		})
 	} else {
 		m.bus.Publish(app.TopicRouteUpdate, domain.RoutingTableInfo{
@@ -583,7 +590,19 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 			AllowedIps: iface.GetAllowedIPs(peers),
 			FwMark:     iface.FirewallMark,
 			Table:      iface.GetRoutingTable(),
+			TableStr:   iface.RoutingTable,
 		})
+		// if the route table changed, ensure that the old entries are remove
+		if routeTableChanged {
+			m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
+				Interface:  *oldInterface,
+				AllowedIps: oldInterface.GetAllowedIPs(peers),
+				FwMark:     oldInterface.FirewallMark,
+				Table:      oldInterface.GetRoutingTable(),
+				TableStr:   oldInterface.RoutingTable,
+				IsDeleted:  true, // mark the old entries as deleted
+			})
+		}
 	}
 
 	if err := m.handleInterfacePostSaveHooks(ctx, iface, oldEnabled, newEnabled); err != nil {
@@ -622,13 +641,11 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 	return iface, nil
 }
 
-func (m Manager) getInterfaceStateHistory(ctx context.Context, iface *domain.Interface) (oldEnabled, newEnabled bool) {
-	oldInterface, err := m.db.GetInterface(ctx, iface.Identifier)
-	if err != nil {
-		return false, !iface.IsDisabled() // if the interface did not exist, we assume it was not enabled
-	}
-
-	return !oldInterface.IsDisabled(), !iface.IsDisabled()
+func (m Manager) getInterfaceStateHistory(
+	oldInterface *domain.Interface,
+	iface *domain.Interface,
+) (oldEnabled, newEnabled, routeTableChanged bool) {
+	return !oldInterface.IsDisabled(), !iface.IsDisabled(), oldInterface.RoutingTable != iface.RoutingTable
 }
 
 func (m Manager) handleInterfacePreSaveActions(ctx context.Context, iface *domain.Interface) error {

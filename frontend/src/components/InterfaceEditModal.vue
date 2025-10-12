@@ -444,6 +444,11 @@ async function del() {
                 <label class="form-label mt-4">{{ $t('modals.interface-edit.firewall-mark.label') }}</label>
                 <input v-model="formData.FirewallMark" class="form-control" :placeholder="$t('modals.interface-edit.firewall-mark.placeholder')" type="number">
               </div>
+              <div class="form-group col-md-6" v-if="formData.Backend!=='local'">
+                <label class="form-label mt-4">{{ $t('modals.interface-edit.routing-table.label') }}</label>
+                <input v-model="formData.RoutingTable" aria-describedby="routingTableHelp" class="form-control" :placeholder="$t('modals.interface-edit.routing-table.placeholder')" type="text">
+                <small id="routingTableHelp" class="form-text text-muted">{{ $t('modals.interface-edit.routing-table.description') }}</small>
+              </div>
               <div class="form-group col-md-6" v-else>
               </div>
             </div>
@@ -457,7 +462,7 @@ async function del() {
               </div>
             </div>
           </fieldset>
-          <fieldset>
+          <fieldset v-if="formData.Backend==='local'">
             <legend class="mt-4">{{ $t('modals.interface-edit.header-hooks') }}</legend>
             <div class="form-group">
               <label class="form-label mt-4">{{ $t('modals.interface-edit.pre-up.label') }}</label>
@@ -482,7 +487,7 @@ async function del() {
               <input v-model="formData.Disabled" class="form-check-input" type="checkbox">
               <label class="form-check-label">{{ $t('modals.interface-edit.disabled.label') }}</label>
             </div>
-            <div class="form-check form-switch">
+            <div class="form-check form-switch" v-if="formData.Backend==='local'">
               <input v-model="formData.SaveConfig" checked="" class="form-check-input" type="checkbox">
               <label class="form-check-label">{{ $t('modals.interface-edit.save-config.label') }}</label>
             </div>
