@@ -10,6 +10,9 @@
 <span class=w>  </span><span class=c1># default backend decides where new interfaces are created</span>
 <span class=w>  </span><span class=nt>default</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">mikrotik</span>
 
+<span class=w>  </span><span class=c1># A prefix for resolvconf. Usually it is &quot;tun.&quot;. If you are using systemd, the prefix should be empty.</span>
+<span class=w>  </span><span class=nt>local_resolvconf_prefix</span><span class=p>:</span><span class=w> </span><span class=s>&quot;tun.&quot;</span>
+
 <span class=w>  </span><span class=nt>mikrotik</span><span class=p>:</span>
 <span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">mikrotik</span><span class=w>                   </span><span class=c1># unique id, not &quot;local&quot;</span>
 <span class=w>      </span><span class=nt>display_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">RouterOS RB5009</span><span class=w>  </span><span class=c1># optional nice name</span>
