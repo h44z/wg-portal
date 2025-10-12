@@ -72,6 +72,7 @@ mail:
   auth_type: plain
   from: Wireguard Portal <noreply@wireguard.local>
   link_only: false
+  allow_peer_email: false
 
 auth:
   oidc: []
@@ -380,7 +381,9 @@ Controls how WireGuard Portal collects and reports usage statistics, including p
 
 ## Mail
 
-Options for configuring email notifications or sending peer configurations via email.
+Options for configuring email notifications or sending peer configurations via email. 
+By default, emails will only be sent to peers that have a valid user record linked. 
+To send emails to all peers that have a valid email-address as user-identifier, set `allow_peer_email` to `true`.
 
 ### `host`
 - **Default:** `127.0.0.1`
@@ -417,6 +420,12 @@ Options for configuring email notifications or sending peer configurations via e
 ### `link_only`
 - **Default:** `false`
 - **Description:** If `true`, emails only contain a link to WireGuard Portal, rather than attaching the full configuration.
+
+### `allow_peer_email`
+- **Default:** `false`
+  - **Description:** If `true`, and a peer has no valid user record linked, but the user-identifier of the peer is a valid email address, emails will be sent to that email address.
+    If false, and the peer has no valid user record linked, emails will not be sent.
+    If a peer has linked a valid user, the email address is always taken from the user record.
 
 ---
 
