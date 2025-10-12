@@ -134,6 +134,9 @@ func defaultConfig() *Config {
 
 	cfg.Backend = Backend{
 		Default: LocalBackendName, // local backend is the default (using wgcrtl)
+		// Most resolconf implementations use "tun." as a prefix for interface names.
+		// But systemd's implementation uses no prefix, for example.
+		LocalResolvconfPrefix: "tun.",
 	}
 
 	cfg.Web = WebConfig{

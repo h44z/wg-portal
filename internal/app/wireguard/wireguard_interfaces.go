@@ -453,7 +453,7 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		return err
 	}
 
-	existingInterface, err := m.db.GetInterface(ctx, id)
+	existingInterface, existingPeers, err := m.db.GetInterfaceAndPeers(ctx, id)
 	if err != nil {
 		return fmt.Errorf("unable to find interface %s: %w", id, err)
 	}
@@ -462,21 +462,29 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		return fmt.Errorf("deletion not allowed: %w", err)
 	}
 
+	m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
+		Interface:  *existingInterface,
+		AllowedIps: existingInterface.GetAllowedIPs(existingPeers),
+		FwMark:     existingInterface.FirewallMark,
+		Table:      existingInterface.GetRoutingTable(),
+		TableStr:   existingInterface.RoutingTable,
+		IsDeleted:  true,
+	})
+
 	now := time.Now()
 	existingInterface.Disabled = &now // simulate a disabled interface
 	existingInterface.DisabledReason = domain.DisabledReasonDeleted
 
-	physicalInterface, _ := m.wg.GetController(*existingInterface).GetInterface(ctx, id)
-
-	if err := m.handleInterfacePreSaveHooks(existingInterface, !existingInterface.IsDisabled(), false); err != nil {
+	if err := m.handleInterfacePreSaveHooks(ctx, existingInterface, !existingInterface.IsDisabled(),
+		false); err != nil {
 		return fmt.Errorf("pre-delete hooks failed: %w", err)
 	}
 
-	if err := m.handleInterfacePreSaveActions(existingInterface); err != nil {
+	if err := m.handleInterfacePreSaveActions(ctx, existingInterface); err != nil {
 		return fmt.Errorf("pre-delete actions failed: %w", err)
 	}
 
-	if err := m.deleteInterfacePeers(ctx, id); err != nil {
+	if err := m.deleteInterfacePeers(ctx, existingInterface, existingPeers); err != nil {
 		return fmt.Errorf("peer deletion failure: %w", err)
 	}
 
@@ -488,16 +496,12 @@ func (m Manager) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 		return fmt.Errorf("deletion failure: %w", err)
 	}
 
-	fwMark := existingInterface.FirewallMark
-	if physicalInterface != nil && fwMark == 0 {
-		fwMark = physicalInterface.FirewallMark
-	}
-	m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
-		FwMark: fwMark,
-		Table:  existingInterface.GetRoutingTable(),
-	})
-
-	if err := m.handleInterfacePostSaveHooks(existingInterface, !existingInterface.IsDisabled(), false); err != nil {
+	if err := m.handleInterfacePostSaveHooks(
+		ctx,
+		existingInterface,
+		!existingInterface.IsDisabled(),
+		false,
+	); err != nil {
 		return fmt.Errorf("post-delete hooks failed: %w", err)
 	}
 
@@ -516,17 +520,21 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 		return nil, fmt.Errorf("interface validation failed: %w", err)
 	}
 
-	oldEnabled, newEnabled := m.getInterfaceStateHistory(ctx, iface)
+	oldEnabled, newEnabled, routeTableChanged := false, !iface.IsDisabled(), false // if the interface did not exist, we assume it was not enabled
+	oldInterface, err := m.db.GetInterface(ctx, iface.Identifier)
+	if err == nil {
+		oldEnabled, newEnabled, routeTableChanged = m.getInterfaceStateHistory(oldInterface, iface)
+	}
 
-	if err := m.handleInterfacePreSaveHooks(iface, oldEnabled, newEnabled); err != nil {
+	if err := m.handleInterfacePreSaveHooks(ctx, iface, oldEnabled, newEnabled); err != nil {
 		return nil, fmt.Errorf("pre-save hooks failed: %w", err)
 	}
 
-	if err := m.handleInterfacePreSaveActions(iface); err != nil {
+	if err := m.handleInterfacePreSaveActions(ctx, iface); err != nil {
 		return nil, fmt.Errorf("pre-save actions failed: %w", err)
 	}
 
-	err := m.db.SaveInterface(ctx, iface.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
+	err = m.db.SaveInterface(ctx, iface.Identifier, func(i *domain.Interface) (*domain.Interface, error) {
 		iface.CopyCalculatedAttributes(i)
 
 		err := m.wg.GetController(*iface).SaveInterface(ctx, iface.Identifier,
@@ -569,20 +577,35 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 	}
 
 	if iface.IsDisabled() {
-		physicalInterface, _ := m.wg.GetController(*iface).GetInterface(ctx, iface.Identifier)
-		fwMark := iface.FirewallMark
-		if physicalInterface != nil && fwMark == 0 {
-			fwMark = physicalInterface.FirewallMark
-		}
 		m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
-			FwMark: fwMark,
-			Table:  iface.GetRoutingTable(),
+			Interface:  *iface,
+			AllowedIps: iface.GetAllowedIPs(peers),
+			FwMark:     iface.FirewallMark,
+			Table:      iface.GetRoutingTable(),
+			TableStr:   iface.RoutingTable,
 		})
 	} else {
-		m.bus.Publish(app.TopicRouteUpdate, "interface updated: "+string(iface.Identifier))
+		m.bus.Publish(app.TopicRouteUpdate, domain.RoutingTableInfo{
+			Interface:  *iface,
+			AllowedIps: iface.GetAllowedIPs(peers),
+			FwMark:     iface.FirewallMark,
+			Table:      iface.GetRoutingTable(),
+			TableStr:   iface.RoutingTable,
+		})
+		// if the route table changed, ensure that the old entries are remove
+		if routeTableChanged {
+			m.bus.Publish(app.TopicRouteRemove, domain.RoutingTableInfo{
+				Interface:  *oldInterface,
+				AllowedIps: oldInterface.GetAllowedIPs(peers),
+				FwMark:     oldInterface.FirewallMark,
+				Table:      oldInterface.GetRoutingTable(),
+				TableStr:   oldInterface.RoutingTable,
+				IsDeleted:  true, // mark the old entries as deleted
+			})
+		}
 	}
 
-	if err := m.handleInterfacePostSaveHooks(iface, oldEnabled, newEnabled); err != nil {
+	if err := m.handleInterfacePostSaveHooks(ctx, iface, oldEnabled, newEnabled); err != nil {
 		return nil, fmt.Errorf("post-save hooks failed: %w", err)
 	}
 
@@ -618,60 +641,90 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 	return iface, nil
 }
 
-func (m Manager) getInterfaceStateHistory(ctx context.Context, iface *domain.Interface) (oldEnabled, newEnabled bool) {
-	oldInterface, err := m.db.GetInterface(ctx, iface.Identifier)
-	if err != nil {
-		return false, !iface.IsDisabled() // if the interface did not exist, we assume it was not enabled
-	}
-
-	return !oldInterface.IsDisabled(), !iface.IsDisabled()
+func (m Manager) getInterfaceStateHistory(
+	oldInterface *domain.Interface,
+	iface *domain.Interface,
+) (oldEnabled, newEnabled, routeTableChanged bool) {
+	return !oldInterface.IsDisabled(), !iface.IsDisabled(), oldInterface.RoutingTable != iface.RoutingTable
 }
 
-func (m Manager) handleInterfacePreSaveActions(iface *domain.Interface) error {
-	if !iface.IsDisabled() {
-		if err := m.quick.SetDNS(iface.Identifier, iface.DnsStr, iface.DnsSearchStr); err != nil {
-			return fmt.Errorf("failed to update dns settings: %w", err)
-		}
-	} else {
-		if err := m.quick.UnsetDNS(iface.Identifier); err != nil {
-			return fmt.Errorf("failed to clear dns settings: %w", err)
+func (m Manager) handleInterfacePreSaveActions(ctx context.Context, iface *domain.Interface) error {
+	wgQuickController, ok := m.wg.GetController(*iface).(WgQuickController)
+	if !ok {
+		slog.Warn("failed to perform pre-save actions", "interface", iface.Identifier,
+			"error", "no capable controller found")
+		return nil
+	}
+
+	// update DNS settings only for client interfaces
+	if iface.Type == domain.InterfaceTypeClient || iface.Type == domain.InterfaceTypeAny {
+		if !iface.IsDisabled() {
+			if err := wgQuickController.SetDNS(ctx, iface.Identifier, iface.DnsStr, iface.DnsSearchStr); err != nil {
+				return fmt.Errorf("failed to update dns settings: %w", err)
+			}
+		} else {
+			if err := wgQuickController.UnsetDNS(ctx, iface.Identifier, iface.DnsStr, iface.DnsSearchStr); err != nil {
+				return fmt.Errorf("failed to clear dns settings: %w", err)
+			}
 		}
 	}
 	return nil
 }
 
-func (m Manager) handleInterfacePreSaveHooks(iface *domain.Interface, oldEnabled, newEnabled bool) error {
+func (m Manager) handleInterfacePreSaveHooks(
+	ctx context.Context,
+	iface *domain.Interface,
+	oldEnabled, newEnabled bool,
+) error {
 	if oldEnabled == newEnabled {
 		return nil // do nothing if state did not change
 	}
 
 	slog.Debug("executing pre-save hooks", "interface", iface.Identifier, "up", newEnabled)
 
+	wgQuickController, ok := m.wg.GetController(*iface).(WgQuickController)
+	if !ok {
+		slog.Warn("failed to execute pre-save hooks", "interface", iface.Identifier, "up", newEnabled,
+			"error", "no capable controller found")
+		return nil
+	}
+
 	if newEnabled {
-		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PreUp); err != nil {
+		if err := wgQuickController.ExecuteInterfaceHook(ctx, iface.Identifier, iface.PreUp); err != nil {
 			return fmt.Errorf("failed to execute pre-up hook: %w", err)
 		}
 	} else {
-		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PreDown); err != nil {
+		if err := wgQuickController.ExecuteInterfaceHook(ctx, iface.Identifier, iface.PreDown); err != nil {
 			return fmt.Errorf("failed to execute pre-down hook: %w", err)
 		}
 	}
 	return nil
 }
 
-func (m Manager) handleInterfacePostSaveHooks(iface *domain.Interface, oldEnabled, newEnabled bool) error {
+func (m Manager) handleInterfacePostSaveHooks(
+	ctx context.Context,
+	iface *domain.Interface,
+	oldEnabled, newEnabled bool,
+) error {
 	if oldEnabled == newEnabled {
 		return nil // do nothing if state did not change
 	}
 
 	slog.Debug("executing post-save hooks", "interface", iface.Identifier, "up", newEnabled)
 
+	wgQuickController, ok := m.wg.GetController(*iface).(WgQuickController)
+	if !ok {
+		slog.Warn("failed to execute post-save hooks", "interface", iface.Identifier, "up", newEnabled,
+			"error", "no capable controller found")
+		return nil
+	}
+
 	if newEnabled {
-		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PostUp); err != nil {
+		if err := wgQuickController.ExecuteInterfaceHook(ctx, iface.Identifier, iface.PostUp); err != nil {
 			return fmt.Errorf("failed to execute post-up hook: %w", err)
 		}
 	} else {
-		if err := m.quick.ExecuteInterfaceHook(iface.Identifier, iface.PostDown); err != nil {
+		if err := wgQuickController.ExecuteInterfaceHook(ctx, iface.Identifier, iface.PostDown); err != nil {
 			return fmt.Errorf("failed to execute post-down hook: %w", err)
 		}
 	}
@@ -799,7 +852,7 @@ func (m Manager) getFreshListenPort(ctx context.Context) (port int, err error) {
 
 func (m Manager) importInterface(
 	ctx context.Context,
-	backend InterfaceController,
+	backend domain.InterfaceController,
 	in *domain.PhysicalInterface,
 	peers []domain.PhysicalPeer,
 ) error {
@@ -901,13 +954,9 @@ func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain
 	return nil
 }
 
-func (m Manager) deleteInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) error {
-	iface, allPeers, err := m.db.GetInterfaceAndPeers(ctx, id)
-	if err != nil {
-		return err
-	}
+func (m Manager) deleteInterfacePeers(ctx context.Context, iface *domain.Interface, allPeers []domain.Peer) error {
 	for _, peer := range allPeers {
-		err = m.wg.GetController(*iface).DeletePeer(ctx, id, peer.Identifier)
+		err := m.wg.GetController(*iface).DeletePeer(ctx, iface.Identifier, peer.Identifier)
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("wireguard peer deletion failure for %s: %w", peer.Identifier, err)
 		}

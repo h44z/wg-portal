@@ -13,6 +13,7 @@ type Backend struct {
 	// Local Backend-specific configuration
 
 	IgnoredLocalInterfaces []string `yaml:"ignored_local_interfaces"` // A list of interface names that should be ignored by this backend (e.g., "wg0")
+	LocalResolvconfPrefix  string   `yaml:"local_resolvconf_prefix"`  // The prefix to use for interface names when passing them to resolvconf.
 
 	// External Backend-specific configuration
 

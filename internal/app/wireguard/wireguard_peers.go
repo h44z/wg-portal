@@ -388,9 +388,20 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 		return fmt.Errorf("failed to delete peer %s: %w", id, err)
 	}
 
+	peers, err := m.db.GetInterfacePeers(ctx, iface.Identifier)
+	if err != nil {
+		return fmt.Errorf("failed to load peers for interface %s: %w", iface.Identifier, err)
+	}
+
 	m.bus.Publish(app.TopicPeerDeleted, *peer)
 	// Update routes after peers have changed
-	m.bus.Publish(app.TopicRouteUpdate, "peers updated")
+	m.bus.Publish(app.TopicRouteUpdate, domain.RoutingTableInfo{
+		Interface:  *iface,
+		AllowedIps: iface.GetAllowedIPs(peers),
+		FwMark:     iface.FirewallMark,
+		Table:      iface.GetRoutingTable(),
+		TableStr:   iface.RoutingTable,
+	})
 	// Update interface after peers have changed
 	m.bus.Publish(app.TopicPeerInterfaceUpdated, peer.InterfaceIdentifier)
 
@@ -438,20 +449,26 @@ func (m Manager) GetUserPeerStats(ctx context.Context, id domain.UserIdentifier)
 // region helper-functions
 
 func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
-	interfaces := make(map[domain.InterfaceIdentifier]struct{})
+	interfaces := make(map[domain.InterfaceIdentifier]domain.Interface)
 
 	for _, peer := range peers {
-		iface, err := m.db.GetInterface(ctx, peer.InterfaceIdentifier)
-		if err != nil {
-			return fmt.Errorf("unable to find interface %s: %w", peer.InterfaceIdentifier, err)
+		// get interface from db if it is not yet in the map
+		if _, ok := interfaces[peer.InterfaceIdentifier]; !ok {
+			iface, err := m.db.GetInterface(ctx, peer.InterfaceIdentifier)
+			if err != nil {
+				return fmt.Errorf("unable to find interface %s: %w", peer.InterfaceIdentifier, err)
+			}
+			interfaces[peer.InterfaceIdentifier] = *iface
 		}
+
+		iface := interfaces[peer.InterfaceIdentifier]
 
 		// Always save the peer to the backend, regardless of disabled/expired state
 		// The backend will handle the disabled state appropriately
-		err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+		err := m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
 			peer.CopyCalculatedAttributes(p)
 
-			err := m.wg.GetController(*iface).SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
+			err := m.wg.GetController(iface).SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
 				func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
 					domain.MergeToPhysicalPeer(pp, peer)
 					return pp, nil
@@ -475,13 +492,22 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 				Peer:   *peer,
 			},
 		})
-
-		interfaces[peer.InterfaceIdentifier] = struct{}{}
 	}
 
 	// Update routes after peers have changed
-	if len(interfaces) != 0 {
-		m.bus.Publish(app.TopicRouteUpdate, "peers updated")
+	for id, iface := range interfaces {
+		interfacePeers, err := m.db.GetInterfacePeers(ctx, id)
+		if err != nil {
+			return fmt.Errorf("failed to re-load peers for interface %s: %w", id, err)
+		}
+
+		m.bus.Publish(app.TopicRouteUpdate, domain.RoutingTableInfo{
+			Interface:  iface,
+			AllowedIps: iface.GetAllowedIPs(interfacePeers),
+			FwMark:     iface.FirewallMark,
+			Table:      iface.GetRoutingTable(),
+			TableStr:   iface.RoutingTable,
+		})
 	}
 
 	for iface := range interfaces {

@@ -1,7 +1,6 @@
 package wireguard
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -12,33 +11,9 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-type InterfaceController interface {
-	GetId() domain.InterfaceBackend
-	GetInterfaces(_ context.Context) ([]domain.PhysicalInterface, error)
-	GetInterface(_ context.Context, id domain.InterfaceIdentifier) (*domain.PhysicalInterface, error)
-	GetPeers(_ context.Context, deviceId domain.InterfaceIdentifier) ([]domain.PhysicalPeer, error)
-	SaveInterface(
-		_ context.Context,
-		id domain.InterfaceIdentifier,
-		updateFunc func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error),
-	) error
-	DeleteInterface(_ context.Context, id domain.InterfaceIdentifier) error
-	SavePeer(
-		_ context.Context,
-		deviceId domain.InterfaceIdentifier,
-		id domain.PeerIdentifier,
-		updateFunc func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error),
-	) error
-	DeletePeer(_ context.Context, deviceId domain.InterfaceIdentifier, id domain.PeerIdentifier) error
-	PingAddresses(
-		ctx context.Context,
-		addr string,
-	) (*domain.PingerResult, error)
-}
-
 type backendInstance struct {
 	Config         config.BackendBase // Config is the configuration for the backend instance.
-	Implementation InterfaceController
+	Implementation domain.InterfaceController
 }
 
 type ControllerManager struct {
@@ -118,11 +93,11 @@ func (c *ControllerManager) logRegisteredControllers() {
 	}
 }
 
-func (c *ControllerManager) GetControllerByName(backend domain.InterfaceBackend) InterfaceController {
+func (c *ControllerManager) GetControllerByName(backend domain.InterfaceBackend) domain.InterfaceController {
 	return c.getController(backend, "").Implementation
 }
 
-func (c *ControllerManager) GetController(iface domain.Interface) InterfaceController {
+func (c *ControllerManager) GetController(iface domain.Interface) domain.InterfaceController {
 	return c.getController(iface.Backend, iface.Identifier).Implementation
 }
 

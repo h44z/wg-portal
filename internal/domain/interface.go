@@ -13,6 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 
 	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/config"
 )
 
 const (
@@ -132,17 +133,30 @@ func (i *Interface) GetConfigFileName() string {
 	return filename
 }
 
+// GetAllowedIPs returns the allowed IPs for the interface depending on the interface type and peers.
+// For example, if the interface type is Server, the allowed IPs are the IPs of the peers.
+// If the interface type is Client, the allowed IPs correspond to the AllowedIPsStr of the peers.
 func (i *Interface) GetAllowedIPs(peers []Peer) []Cidr {
 	var allowedCidrs []Cidr
 
-	for _, peer := range peers {
-		for _, ip := range peer.Interface.Addresses {
-			allowedCidrs = append(allowedCidrs, ip.HostAddr())
+	switch i.Type {
+	case InterfaceTypeServer, InterfaceTypeAny:
+		for _, peer := range peers {
+			for _, ip := range peer.Interface.Addresses {
+				allowedCidrs = append(allowedCidrs, ip.HostAddr())
+			}
+			if peer.ExtraAllowedIPsStr != "" {
+				extraIPs, err := CidrsFromString(peer.ExtraAllowedIPsStr)
+				if err == nil {
+					allowedCidrs = append(allowedCidrs, extraIPs...)
+				}
+			}
 		}
-		if peer.ExtraAllowedIPsStr != "" {
-			extraIPs, err := CidrsFromString(peer.ExtraAllowedIPsStr)
+	case InterfaceTypeClient:
+		for _, peer := range peers {
+			allowedIPs, err := CidrsFromString(peer.AllowedIPsStr.GetValue())
 			if err == nil {
-				allowedCidrs = append(allowedCidrs, extraIPs...)
+				allowedCidrs = append(allowedCidrs, allowedIPs...)
 			}
 		}
 	}
@@ -159,6 +173,7 @@ func (i *Interface) ManageRoutingTable() bool {
 //
 //	-1 if RoutingTable was set to "off" or an error occurred
 func (i *Interface) GetRoutingTable() int {
+
 	routingTableStr := strings.ToLower(i.RoutingTable)
 	switch {
 	case routingTableStr == "":
@@ -166,6 +181,9 @@ func (i *Interface) GetRoutingTable() int {
 	case routingTableStr == "off":
 		return -1
 	case strings.HasPrefix(routingTableStr, "0x"):
+		if i.Backend != config.LocalBackendName {
+			return 0 // ignore numeric routing table numbers for non-local controllers
+		}
 		numberStr := strings.ReplaceAll(routingTableStr, "0x", "")
 		routingTable, err := strconv.ParseUint(numberStr, 16, 64)
 		if err != nil {
@@ -178,6 +196,9 @@ func (i *Interface) GetRoutingTable() int {
 		}
 		return int(routingTable)
 	default:
+		if i.Backend != config.LocalBackendName {
+			return 0 // ignore numeric routing table numbers for non-local controllers
+		}
 		routingTable, err := strconv.Atoi(routingTableStr)
 		if err != nil {
 			slog.Error("failed to parse routing table number", "table", routingTableStr, "error", err)
@@ -308,12 +329,18 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 }
 
 type RoutingTableInfo struct {
-	FwMark uint32
-	Table  int
+	Interface  Interface
+	AllowedIps []Cidr
+	FwMark     uint32
+	Table      int
+	TableStr   string // the routing table number as string (used by mikrotik, linux uses the numeric value)
+	IsDeleted  bool   // true if the interface was deleted, false otherwise
 }
 
 func (r RoutingTableInfo) String() string {
-	return fmt.Sprintf("%d -> %d", r.FwMark, r.Table)
+	v4, v6 := CidrsPerFamily(r.AllowedIps)
+	return fmt.Sprintf("%s: fwmark=%d; table=%d; routes_4=%d; routes_6=%d", r.Interface.Identifier, r.FwMark, r.Table,
+		len(v4), len(v6))
 }
 
 func (r RoutingTableInfo) ManagementEnabled() bool {

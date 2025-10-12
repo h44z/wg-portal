@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/h44z/wg-portal/internal/config"
 )
 
 func TestInterface_IsDisabledReturnsTrueWhenDisabled(t *testing.T) {
@@ -37,8 +39,9 @@ func TestInterface_GetConfigFileNameReturnsCorrectFileName(t *testing.T) {
 	assert.Equal(t, expected, iface.GetConfigFileName())
 }
 
-func TestInterface_GetAllowedIPsReturnsCorrectCidrs(t *testing.T) {
+func TestInterface_GetAllowedIPsReturnsCorrectCidrsServerMode(t *testing.T) {
 	peer1 := Peer{
+		AllowedIPsStr: ConfigOption[string]{Value: "192.168.2.2/32"},
 		Interface: PeerInterfaceConfig{
 			Addresses: []Cidr{
 				{Cidr: "192.168.1.2/32", Addr: "192.168.1.2", NetLength: 32},
@@ -46,16 +49,45 @@ func TestInterface_GetAllowedIPsReturnsCorrectCidrs(t *testing.T) {
 		},
 	}
 	peer2 := Peer{
+		AllowedIPsStr:      ConfigOption[string]{Value: "10.0.2.2/32"},
+		ExtraAllowedIPsStr: "10.20.2.2/32",
 		Interface: PeerInterfaceConfig{
 			Addresses: []Cidr{
 				{Cidr: "10.0.0.2/32", Addr: "10.0.0.2", NetLength: 32},
 			},
 		},
 	}
-	iface := &Interface{}
+	iface := &Interface{Type: InterfaceTypeServer}
 	expected := []Cidr{
 		{Cidr: "192.168.1.2/32", Addr: "192.168.1.2", NetLength: 32},
 		{Cidr: "10.0.0.2/32", Addr: "10.0.0.2", NetLength: 32},
+		{Cidr: "10.20.2.2/32", Addr: "10.20.2.2", NetLength: 32},
+	}
+	assert.Equal(t, expected, iface.GetAllowedIPs([]Peer{peer1, peer2}))
+}
+
+func TestInterface_GetAllowedIPsReturnsCorrectCidrsClientMode(t *testing.T) {
+	peer1 := Peer{
+		AllowedIPsStr: ConfigOption[string]{Value: "192.168.2.2/32"},
+		Interface: PeerInterfaceConfig{
+			Addresses: []Cidr{
+				{Cidr: "192.168.1.2/32", Addr: "192.168.1.2", NetLength: 32},
+			},
+		},
+	}
+	peer2 := Peer{
+		AllowedIPsStr:      ConfigOption[string]{Value: "10.0.2.2/32"},
+		ExtraAllowedIPsStr: "10.20.2.2/32",
+		Interface: PeerInterfaceConfig{
+			Addresses: []Cidr{
+				{Cidr: "10.0.0.2/32", Addr: "10.0.0.2", NetLength: 32},
+			},
+		},
+	}
+	iface := &Interface{Type: InterfaceTypeClient}
+	expected := []Cidr{
+		{Cidr: "192.168.2.2/32", Addr: "192.168.2.2", NetLength: 32},
+		{Cidr: "10.0.2.2/32", Addr: "10.0.2.2", NetLength: 32},
 	}
 	assert.Equal(t, expected, iface.GetAllowedIPs([]Peer{peer1, peer2}))
 }
@@ -66,10 +98,22 @@ func TestInterface_ManageRoutingTableReturnsCorrectValue(t *testing.T) {
 
 	iface.RoutingTable = "100"
 	assert.True(t, iface.ManageRoutingTable())
+
+	iface = &Interface{RoutingTable: "off", Backend: config.LocalBackendName}
+	assert.False(t, iface.ManageRoutingTable())
+
+	iface.RoutingTable = "100"
+	assert.True(t, iface.ManageRoutingTable())
+
+	iface = &Interface{RoutingTable: "off", Backend: "mikrotik-xxx"}
+	assert.False(t, iface.ManageRoutingTable())
+
+	iface.RoutingTable = "100"
+	assert.True(t, iface.ManageRoutingTable())
 }
 
 func TestInterface_GetRoutingTableReturnsCorrectValue(t *testing.T) {
-	iface := &Interface{RoutingTable: ""}
+	iface := &Interface{RoutingTable: "", Backend: config.LocalBackendName}
 	assert.Equal(t, 0, iface.GetRoutingTable())
 
 	iface.RoutingTable = "off"
@@ -80,4 +124,18 @@ func TestInterface_GetRoutingTableReturnsCorrectValue(t *testing.T) {
 
 	iface.RoutingTable = "200"
 	assert.Equal(t, 200, iface.GetRoutingTable())
+}
+
+func TestInterface_GetRoutingTableNonLocal(t *testing.T) {
+	iface := &Interface{RoutingTable: "off", Backend: "something different"}
+	assert.Equal(t, -1, iface.GetRoutingTable())
+
+	iface.RoutingTable = "0"
+	assert.Equal(t, 0, iface.GetRoutingTable())
+
+	iface.RoutingTable = "100"
+	assert.Equal(t, 0, iface.GetRoutingTable())
+
+	iface.RoutingTable = "abc"
+	assert.Equal(t, 0, iface.GetRoutingTable())
 }

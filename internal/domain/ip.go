@@ -26,6 +26,10 @@ func (c Cidr) IsValid() bool {
 	return c.Prefix().IsValid()
 }
 
+func (c Cidr) EqualPrefix(other Cidr) bool {
+	return c.Addr == other.Addr && c.NetLength == other.NetLength
+}
+
 func CidrFromString(str string) (Cidr, error) {
 	prefix, err := netip.ParsePrefix(strings.TrimSpace(str))
 	if err != nil {
@@ -198,4 +202,27 @@ func (c Cidr) Contains(other Cidr) bool {
 	otherIP, _, _ := net.ParseCIDR(other.String())
 
 	return subnet.Contains(otherIP)
+}
+
+// ContainsDefaultRoute returns true if the given CIDRs contain a default route.
+func ContainsDefaultRoute(cidrs []Cidr) bool {
+	for _, allowedIP := range cidrs {
+		if allowedIP.Prefix().Bits() == 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+// CidrsPerFamily returns a slice of CIDRs, one for each family (IPv4 and IPv6).
+func CidrsPerFamily(cidrs []Cidr) (ipv4, ipv6 []Cidr) {
+	for _, cidr := range cidrs {
+		if cidr.IsV4() {
+			ipv4 = append(ipv4, cidr)
+		} else {
+			ipv6 = append(ipv6, cidr)
+		}
+	}
+	return
 }

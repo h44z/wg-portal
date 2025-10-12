@@ -15,6 +15,9 @@ backend:
   # default backend decides where new interfaces are created
   default: mikrotik
 
+  # A prefix for resolvconf. Usually it is "tun.". If you are using systemd, the prefix should be empty.
+  local_resolvconf_prefix: "tun."
+
   mikrotik:
     - id: mikrotik                   # unique id, not "local"
       display_name: RouterOS RB5009  # optional nice name
