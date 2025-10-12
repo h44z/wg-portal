@@ -211,6 +211,10 @@ type OpenIDConnectProvider struct {
 
 	// If LogUserInfo is set to true, the user info retrieved from the OIDC provider will be logged in trace level.
 	LogUserInfo bool `yaml:"log_user_info"`
+
+	// If LogSensitiveInfo is set to true, sensitive information retrieved from the OIDC provider will be logged in trace level.
+	// This also includes OAuth tokens! Keep this disabled in production!
+	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
 }
 
 // OAuthProvider contains the configuration for the OAuth provider.
@@ -252,6 +256,10 @@ type OAuthProvider struct {
 
 	// If LogUserInfo is set to true, the user info retrieved from the OAuth provider will be logged in trace level.
 	LogUserInfo bool `yaml:"log_user_info"`
+
+	// If LogSensitiveInfo is set to true, sensitive information retrieved from the OAuth provider will be logged in trace level.
+	// This also includes OAuth tokens! Keep this disabled in production!
+	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
 }
 
 // WebauthnConfig contains the configuration for the WebAuthn authenticator.

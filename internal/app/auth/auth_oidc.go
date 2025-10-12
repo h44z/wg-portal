@@ -16,15 +16,16 @@ import (
 
 // OidcAuthenticator is an authenticator for OpenID Connect providers.
 type OidcAuthenticator struct {
-	name                string
-	provider            *oidc.Provider
-	verifier            *oidc.IDTokenVerifier
-	cfg                 *oauth2.Config
-	userInfoMapping     config.OauthFields
-	userAdminMapping    *config.OauthAdminMapping
-	registrationEnabled bool
-	userInfoLogging     bool
-	allowedDomains      []string
+	name                 string
+	provider             *oidc.Provider
+	verifier             *oidc.IDTokenVerifier
+	cfg                  *oauth2.Config
+	userInfoMapping      config.OauthFields
+	userAdminMapping     *config.OauthAdminMapping
+	registrationEnabled  bool
+	userInfoLogging      bool
+	sensitiveInfoLogging bool
+	allowedDomains       []string
 }
 
 func newOidcAuthenticator(
@@ -58,6 +59,7 @@ func newOidcAuthenticator(
 	provider.userAdminMapping = &cfg.AdminMapping
 	provider.registrationEnabled = cfg.RegistrationEnabled
 	provider.userInfoLogging = cfg.LogUserInfo
+	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
 
 	return provider, nil
@@ -102,24 +104,40 @@ func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 ) {
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
+		if o.sensitiveInfoLogging {
+			slog.Debug("OIDC: token does not contain id_token", "token", token, "nonce", nonce)
+		}
 		return nil, errors.New("token does not contain id_token")
 	}
 	idToken, err := o.verifier.Verify(ctx, rawIDToken)
 	if err != nil {
+		if o.sensitiveInfoLogging {
+			slog.Debug("OIDC: failed to validate id_token", "token", token, "id_token", rawIDToken, "nonce", nonce,
+				"error",
+				err)
+		}
 		return nil, fmt.Errorf("failed to validate id_token: %w", err)
 	}
 	if idToken.Nonce != nonce {
+		if o.sensitiveInfoLogging {
+			slog.Debug("OIDC: id_token nonce mismatch", "token", token, "id_token", idToken, "nonce", nonce)
+		}
 		return nil, errors.New("nonce mismatch")
 	}
 
 	var tokenFields map[string]any
 	if err = idToken.Claims(&tokenFields); err != nil {
+		if o.sensitiveInfoLogging {
+			slog.Debug("OIDC: failed to parse extra claims", "token", token, "id_token", idToken, "nonce", nonce,
+				"error",
+				err)
+		}
 		return nil, fmt.Errorf("failed to parse extra claims: %w", err)
 	}
 
 	if o.userInfoLogging {
 		contents, _ := json.Marshal(tokenFields)
-		slog.Debug("OIDC user info",
+		slog.Debug("OIDC: user info debug",
 			"source", o.name,
 			"info", string(contents))
 	}

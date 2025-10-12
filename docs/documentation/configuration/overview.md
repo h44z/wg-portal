@@ -512,12 +512,17 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
     - `admin_group_regex`: A regular expression to match the `user_groups` claim. Each entry in the `user_groups` claim is checked against this regex.
 
 #### `registration_enabled`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, a new user will be created in WireGuard Portal if not already present.
 
 #### `log_user_info`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, OIDC user data is logged at the trace level upon login (for debugging).
+
+#### `log_sensitive_info`
+- **Default:** `false`
+- **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
+- **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
 
 ---
 
@@ -585,12 +590,17 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
   - `admin_group_regex`: A regular expression to match the `user_groups` claim. Each entry in the `user_groups` claim is checked against this regex.
 
 #### `registration_enabled`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, new users are created automatically on successful login.
 
 #### `log_user_info`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, logs user info at the trace level upon login.
+
+#### `log_sensitive_info`
+- **Default:** `false`
+- **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
+- **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
 
 ---
 
@@ -608,11 +618,11 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 - **Description:** The LDAP server URL (e.g., `ldap://srv-ad01.company.local:389`).
 
 #### `start_tls`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, use STARTTLS to secure the LDAP connection.
 
 #### `cert_validation`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, validate the LDAP server’s TLS certificate.
 
 #### `tls_certificate_path`
@@ -682,19 +692,19 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
   ```
 
 #### `disable_missing`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, any user **not** found in LDAP (during sync) is disabled in WireGuard Portal.
 
 #### `auto_re_enable`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, users that where disabled because they were missing (see `disable_missing`) will be re-enabled once they are found again.
 
 #### `registration_enabled`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, new user accounts are created in WireGuard Portal upon first login.
 
 #### `log_user_info`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, logs LDAP user data at the trace level upon login.
 
 ---
