@@ -221,6 +221,16 @@
       "button-delete-text": "Delete the passkey. You will not be able to log in with this passkey anymore.",
       "button-register-title": "Register Passkey",
       "button-register-text": "Register a new Passkey to secure your account."
+    },
+    "password": {
+      "headline": "Password Settings",
+      "abstract": "Here you can change your password.",
+      "current-label": "Current Password",
+      "new-label": "New Password",
+      "new-confirm-label": "Confirm New Password",
+      "change-button-text": "Change Password",
+      "invalid-confirm-label": "Passwords do not match",
+      "weak-label": "Password is too weak"
     }
   },
   "audit": {

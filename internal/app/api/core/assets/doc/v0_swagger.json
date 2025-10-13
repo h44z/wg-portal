@@ -1550,6 +1550,38 @@
                 }
             }
         },
+        "/user/{id}/change-password": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Change the password for the given user.",
+                "operationId": "users_handleChangePasswordPost",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/{id}/interfaces": {
             "get": {
                 "produces": [
@@ -2158,6 +2190,10 @@
                             "$ref": "#/definitions/model.ConfigOption-string"
                         }
                     ]
+                },
+                "UserDisplayName": {
+                    "description": "the owner display name",
+                    "type": "string"
                 },
                 "UserIdentifier": {
                     "description": "the owner",

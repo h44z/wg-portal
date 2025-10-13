@@ -1,8 +1,9 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import { profileStore } from "@/stores/profile";
 import { settingsStore } from "@/stores/settings";
 import { authStore } from "../stores/auth";
+import {notify} from "@kyvg/vue3-notification";
 
 const profile = profileStore()
 const settings = settingsStore()
@@ -34,6 +35,45 @@ async function saveRename(credential) {
     console.error("Failed to rename credential:", error);
   }
 }
+
+const pwFormData = ref({
+  OldPassword: '',
+  Password: '',
+  PasswordRepeat: '',
+})
+
+const passwordWeak = computed(() => {
+  return pwFormData.value.Password && pwFormData.value.Password.length > 0 && pwFormData.value.Password.length < settings.Setting('MinPasswordLength')
+})
+
+const passwordChangeAllowed = computed(() => {
+  return pwFormData.value.Password && pwFormData.value.Password.length >= settings.Setting('MinPasswordLength') &&
+      pwFormData.value.Password === pwFormData.value.PasswordRepeat &&
+      pwFormData.value.OldPassword && pwFormData.value.OldPassword.length > 0 && pwFormData.value.OldPassword !== pwFormData.value.Password;
+})
+
+const updatePassword = async () => {
+  try {
+    await profile.changePassword(pwFormData.value);
+
+    pwFormData.value.OldPassword = '';
+    pwFormData.value.Password = '';
+    pwFormData.value.PasswordRepeat = '';
+    notify({
+      title: "Password changed!",
+      text: "Your password has been changed successfully.",
+      type: 'success',
+    });
+  } catch (e) {
+    notify({
+      title: "Failed to update password!",
+      text: e.toString(),
+      type: 'error',
+    })
+  }
+}
+
+
 </script>
 
 <template>
@@ -43,52 +83,45 @@ async function saveRename(credential) {
 
   <p class="lead">{{ $t('settings.abstract') }}</p>
 
-  <div v-if="auth.IsAdmin || !settings.Setting('ApiAdminOnly')">
-    <div class="card border-secondary p-5" v-if="profile.user.ApiToken">
-      <h2 class="display-7">{{ $t('settings.api.headline') }}</h2>
-      <p class="lead">{{ $t('settings.api.abstract') }}</p>
-      <hr class="my-4">
-      <p>{{ $t('settings.api.active-description') }}</p>
-      <div class="row">
-        <div class="col-6">
-          <div class="form-group">
-            <label class="form-label mt-4">{{ $t('settings.api.user-label') }}</label>
-            <input v-model="profile.user.Identifier" class="form-control" :placeholder="$t('settings.api.user-placeholder')" type="text" readonly>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="form-group">
-            <label class="form-label mt-4">{{ $t('settings.api.token-label') }}</label>
-            <input v-model="profile.user.ApiToken" class="form-control" :placeholder="$t('settings.api.token-placeholder')" type="text" readonly>
-          </div>
+  <div class="card border-secondary p-5 mt-5" v-if="profile.user.Source === 'db'">
+    <h2 class="display-7">{{ $t('settings.password.headline') }}</h2>
+    <p class="lead">{{ $t('settings.password.abstract') }}</p>
+    <hr class="my-4">
+
+    <div class="row">
+      <div class="col-6">
+        <div class="form-group">
+          <label class="form-label mt-4" for="oldpw">{{ $t('settings.password.current-label') }}</label>
+          <input id="oldpw" v-model="pwFormData.OldPassword" class="form-control" :class="{ 'is-invalid': pwFormData.Password && !pwFormData.OldPassword }" type="password">
         </div>
       </div>
-      <div class="row">
-        <div class="col-12">
-          <div class="form-group">
-            <p class="form-label mt-4">{{ $t('settings.api.token-created-label') }} {{profile.user.ApiTokenCreated}}</p>
-          </div>
+      <div class="col-6">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-6">
+        <div class="form-group has-success">
+          <label class="form-label mt-4" for="newpw">{{ $t('settings.password.new-label') }}</label>
+          <input id="newpw" v-model="pwFormData.Password" class="form-control" :class="{ 'is-invalid': passwordWeak,  'is-valid': pwFormData.Password !== '' && !passwordWeak }" type="password">
+          <div class="invalid-feedback" v-if="passwordWeak">{{ $t('settings.password.weak-label') }}</div>
         </div>
       </div>
-      <div class="row mt-5">
-        <div class="col-6">
-          <button class="btn btn-primary" :title="$t('settings.api.button-disable-title')" @click.prevent="profile.disableApi()" :disabled="profile.isFetching">
-            <i class="fa-solid fa-minus-circle"></i> {{ $t('settings.api.button-disable-text') }}
-          </button>
-        </div>
-        <div class="col-6">
-          <a href="/api/v1/doc.html" target="_blank" :alt="$t('settings.api.api-link')">{{ $t('settings.api.api-link') }}</a>
+      <div class="col-6">
+        <div class="form-group">
+          <label class="form-label mt-4" for="confirmnewpw">{{ $t('settings.password.new-confirm-label') }}</label>
+          <input id="confirmnewpw" v-model="pwFormData.PasswordRepeat" class="form-control" :class="{ 'is-invalid': pwFormData.PasswordRepeat !== ''&& pwFormData.Password !== pwFormData.PasswordRepeat,  'is-valid': pwFormData.PasswordRepeat !== '' && pwFormData.Password === pwFormData.PasswordRepeat && !passwordWeak }" type="password">
+          <div class="invalid-feedback" v-if="pwFormData.PasswordRepeat !== ''&& pwFormData.Password !== pwFormData.PasswordRepeat">{{ $t('settings.password.invalid-confirm-label') }}</div>
         </div>
       </div>
     </div>
-    <div class="card border-secondary p-5" v-else>
-      <h2 class="display-7">{{ $t('settings.api.headline') }}</h2>
-      <p class="lead">{{ $t('settings.api.abstract') }}</p>
-      <hr class="my-4">
-      <p>{{ $t('settings.api.inactive-description') }}</p>
-      <button class="btn btn-primary" :title="$t('settings.api.button-enable-title')" @click.prevent="profile.enableApi()" :disabled="profile.isFetching">
-        <i class="fa-solid fa-plus-circle"></i> {{ $t('settings.api.button-enable-text') }}
-      </button>
+    <div class="row mt-5">
+      <div class="col-6">
+        <button class="btn btn-primary" :title="$t('settings.api.button-disable-title')" @click.prevent="updatePassword" :disabled="profile.isFetching || !passwordChangeAllowed">
+          <i class="fa-solid fa-floppy-disk"></i> {{ $t('settings.password.change-button-text') }}
+        </button>
+      </div>
+      <div class="col-6">
+      </div>
     </div>
   </div>
 
@@ -172,5 +205,54 @@ async function saveRename(credential) {
       </div>
     </div>
 
+  </div>
+
+  <div class="mt-5" v-if="auth.IsAdmin || !settings.Setting('ApiAdminOnly')">
+    <div class="card border-secondary p-5" v-if="profile.user.ApiToken">
+      <h2 class="display-7">{{ $t('settings.api.headline') }}</h2>
+      <p class="lead">{{ $t('settings.api.abstract') }}</p>
+      <hr class="my-4">
+      <p>{{ $t('settings.api.active-description') }}</p>
+      <div class="row">
+        <div class="col-6">
+          <div class="form-group">
+            <label class="form-label mt-4">{{ $t('settings.api.user-label') }}</label>
+            <input v-model="profile.user.Identifier" class="form-control" :placeholder="$t('settings.api.user-placeholder')" type="text" readonly>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="form-group">
+            <label class="form-label mt-4">{{ $t('settings.api.token-label') }}</label>
+            <input v-model="profile.user.ApiToken" class="form-control" :placeholder="$t('settings.api.token-placeholder')" type="text" readonly>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <div class="form-group">
+            <p class="form-label mt-4">{{ $t('settings.api.token-created-label') }} {{profile.user.ApiTokenCreated}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-5">
+        <div class="col-6">
+          <button class="btn btn-primary" :title="$t('settings.api.button-disable-title')" @click.prevent="profile.disableApi()" :disabled="profile.isFetching">
+            <i class="fa-solid fa-minus-circle"></i> {{ $t('settings.api.button-disable-text') }}
+          </button>
+        </div>
+        <div class="col-6">
+          <a href="/api/v1/doc.html" target="_blank" :alt="$t('settings.api.api-link')">{{ $t('settings.api.api-link') }}</a>
+        </div>
+      </div>
+    </div>
+    <div class="card border-secondary p-5" v-else>
+      <h2 class="display-7">{{ $t('settings.api.headline') }}</h2>
+      <p class="lead">{{ $t('settings.api.abstract') }}</p>
+      <hr class="my-4">
+      <p>{{ $t('settings.api.inactive-description') }}</p>
+      <button class="btn btn-primary" :title="$t('settings.api.button-enable-title')" @click.prevent="profile.enableApi()" :disabled="profile.isFetching">
+        <i class="fa-solid fa-plus-circle"></i> {{ $t('settings.api.button-enable-text') }}
+      </button>
+    </div>
   </div>
 </template>
