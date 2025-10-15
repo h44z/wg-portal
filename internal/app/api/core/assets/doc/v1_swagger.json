@@ -17,11 +17,6 @@
     "paths": {
         "/interface/all": {
             "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -52,16 +47,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/interface/by-id/{id}": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/interface/by-id/{id}": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
@@ -110,14 +105,14 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            },
-            "put": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            },
+            "put": {
                 "description": "This endpoint updates an existing interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).",
                 "produces": [
                     "application/json"
@@ -182,14 +177,14 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            },
-            "delete": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            },
+            "delete": {
                 "produces": [
                     "application/json"
                 ],
@@ -241,16 +236,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/interface/new": {
-            "post": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/interface/new": {
+            "post": {
                 "description": "This endpoint creates a new interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).",
                 "produces": [
                     "application/json"
@@ -308,16 +303,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/interface/prepare": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/interface/prepare": {
+            "get": {
                 "description": "This endpoint returns a new interface with default values (fresh key pair, valid name, new IP address pool, ...).",
                 "produces": [
                     "application/json"
@@ -352,16 +347,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/metrics/by-interface/{id}": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/metrics/by-interface/{id}": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
@@ -410,16 +405,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/metrics/by-peer/{id}": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/metrics/by-peer/{id}": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
@@ -468,16 +463,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/metrics/by-user/{id}": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/metrics/by-user/{id}": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
@@ -526,16 +521,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/peer/by-id/{id}": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/peer/by-id/{id}": {
+            "get": {
                 "description": "Normal users can only access their own records. Admins can access all records.",
                 "produces": [
                     "application/json"
@@ -585,14 +580,14 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            },
-            "put": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            },
+            "put": {
                 "description": "Only admins can update existing records. The peer record must contain all required fields (e.g., public key, allowed IPs).",
                 "produces": [
                     "application/json"
@@ -657,14 +652,14 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            },
-            "delete": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            },
+            "delete": {
                 "produces": [
                     "application/json"
                 ],
@@ -716,16 +711,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/peer/by-interface/{id}": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/peer/by-interface/{id}": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
@@ -765,16 +760,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/peer/by-user/{id}": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/peer/by-user/{id}": {
+            "get": {
                 "description": "Normal users can only access their own records. Admins can access all records.",
                 "produces": [
                     "application/json"
@@ -815,16 +810,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/peer/new": {
-            "post": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/peer/new": {
+            "post": {
                 "description": "Only admins can create new records. The peer record must contain all required fields (e.g., public key, allowed IPs).",
                 "produces": [
                     "application/json"
@@ -882,16 +877,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/peer/prepare/{id}": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/peer/prepare/{id}": {
+            "get": {
                 "description": "This endpoint is used to prepare a new peer record. The returned data contains a fresh key pair and valid ip address.",
                 "produces": [
                     "application/json"
@@ -947,16 +942,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/provisioning/data/peer-config": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/provisioning/data/peer-config": {
+            "get": {
                 "description": "Normal users can only access their own record. Admins can access all records.",
                 "produces": [
                     "text/plain",
@@ -1013,16 +1008,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/provisioning/data/peer-qr": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/provisioning/data/peer-qr": {
+            "get": {
                 "description": "Normal users can only access their own record. Admins can access all records.",
                 "produces": [
                     "image/png",
@@ -1079,16 +1074,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/provisioning/data/user-info": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/provisioning/data/user-info": {
+            "get": {
                 "description": "Normal users can only access their own record. Admins can access all records.",
                 "produces": [
                     "application/json"
@@ -1149,16 +1144,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/provisioning/new-peer": {
-            "post": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/provisioning/new-peer": {
+            "post": {
                 "description": "Normal users can only create new peers if self provisioning is allowed. Admins can always add new peers.",
                 "produces": [
                     "application/json"
@@ -1216,16 +1211,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/user/all": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/user/all": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
@@ -1256,16 +1251,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/user/by-id/{id}": {
-            "get": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/user/by-id/{id}": {
+            "get": {
                 "description": "Normal users can only access their own record. Admins can access all records.",
                 "produces": [
                     "application/json"
@@ -1315,14 +1310,14 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            },
-            "put": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            },
+            "put": {
                 "description": "Only admins can update existing records.",
                 "produces": [
                     "application/json"
@@ -1387,14 +1382,14 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            },
-            "delete": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            },
+            "delete": {
                 "produces": [
                     "application/json"
                 ],
@@ -1446,16 +1441,16 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
-            }
-        },
-        "/user/new": {
-            "post": {
+                },
                 "security": [
                     {
                         "BasicAuth": []
                     }
-                ],
+                ]
+            }
+        },
+        "/user/new": {
+            "post": {
                 "description": "Only admins can create new records.",
                 "produces": [
                     "application/json"
@@ -1513,7 +1508,12 @@
                             "$ref": "#/definitions/models.Error"
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ]
             }
         }
     },

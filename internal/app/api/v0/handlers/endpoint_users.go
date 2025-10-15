@@ -28,6 +28,8 @@ type UserService interface {
 	ActivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
 	// DeactivateApi disables the API for the user with the given id.
 	DeactivateApi(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
+	// ChangePassword changes the password for the user with the given id.
+	ChangePassword(ctx context.Context, id domain.UserIdentifier, oldPassword, newPassword string) (*domain.User, error)
 	// GetUserPeers returns all peers for the given user.
 	GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error)
 	// GetUserPeerStats returns all peer stats for the given user.
@@ -75,6 +77,7 @@ func (e UserEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("GET /{id}/interfaces", e.handleInterfacesGet())
 	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/api/enable", e.handleApiEnablePost())
 	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/api/disable", e.handleApiDisablePost())
+	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/change-password", e.handleChangePasswordPost())
 }
 
 // handleAllGet returns a gorm Handler function.
@@ -382,6 +385,71 @@ func (e UserEndpoint) handleApiDisablePost() http.HandlerFunc {
 		}
 
 		user, err := e.userService.DeactivateApi(r.Context(), domain.UserIdentifier(userId))
+		if err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		respond.JSON(w, http.StatusOK, model.NewUser(user, false))
+	}
+}
+
+// handleChangePasswordPost returns a gorm Handler function.
+//
+// @ID users_handleChangePasswordPost
+// @Tags Users
+// @Summary Change the password for the given user.
+// @Produce json
+// @Success 200 {object} model.User
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/{id}/change-password [post]
+func (e UserEndpoint) handleChangePasswordPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userId := Base64UrlDecode(request.Path(r, "id"))
+		if userId == "" {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
+			return
+		}
+
+		var passwordData struct {
+			OldPassword    string `json:"OldPassword"`
+			Password       string `json:"Password"`
+			PasswordRepeat string `json:"PasswordRepeat"`
+		}
+		if err := request.BodyJson(r, &passwordData); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		if passwordData.OldPassword == "" {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "old password missing"})
+			return
+		}
+
+		if passwordData.Password == "" {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "new password missing"})
+			return
+		}
+
+		if passwordData.OldPassword == passwordData.Password {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "password did not change"})
+			return
+		}
+
+		if passwordData.Password != passwordData.PasswordRepeat {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "password mismatch"})
+			return
+		}
+
+		user, err := e.userService.ChangePassword(r.Context(), domain.UserIdentifier(userId),
+			passwordData.OldPassword, passwordData.Password)
 		if err != nil {
 			respond.JSON(w, http.StatusInternalServerError,
 				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})

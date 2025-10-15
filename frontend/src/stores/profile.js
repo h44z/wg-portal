@@ -151,6 +151,17 @@ export const profileStore = defineStore('profile', {
             })
           })
     },
+    async changePassword(formData) {
+      this.fetching = true
+      let currentUser = authStore().user.Identifier
+      return apiWrapper.post(`${baseUrl}/${base64_url_encode(currentUser)}/change-password`, formData)
+          .then(this.fetching = false)
+          .catch(error => {
+            this.fetching = false;
+            console.log("Failed to change password for ", currentUser, ": ", error);
+            throw new Error(error);
+          });
+    },
     async LoadPeers() {
       this.fetching = true
       let currentUser = authStore().user.Identifier

@@ -221,6 +221,16 @@
       "button-delete-text": "Passkey löschen. Sie können sich anschließend nicht mehr mit diesem Passkey anmelden.",
       "button-register-title": "Passkey registrieren",
       "button-register-text": "Einen neuen Passkey registrieren, um Ihr Konto zu sichern."
+    },
+    "password": {
+      "headline": "Passwort-Einstellungen",
+      "abstract": "Hier können Sie Ihr Passwort ändern.",
+      "current-label": "Aktuelles Passwort",
+      "new-label": "Neues Passwort",
+      "new-confirm-label": "Neues Passwort bestätigen",
+      "change-button-text": "Passwort ändern",
+      "invalid-confirm-label": "Passwörter stimmen nicht überein",
+      "weak-label": "Passwort ist zu schwach"
     }
   },
   "audit": {

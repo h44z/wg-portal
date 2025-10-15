@@ -322,6 +322,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/model.ConfigOption-string'
         description: the routing table
+      UserDisplayName:
+        description: the owner display name
+        type: string
       UserIdentifier:
         description: the owner
         type: string
@@ -1440,6 +1443,27 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Enable the REST API for the given user.
+      tags:
+      - Users
+  /user/{id}/change-password:
+    post:
+      operationId: users_handleChangePasswordPost
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Change the password for the given user.
       tags:
       - Users
   /user/{id}/interfaces:
