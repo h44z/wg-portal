@@ -14,8 +14,9 @@ Configuration examples are available on the [Examples](./examples.md) page.
 ```yaml
 core:
   admin_user: admin@wgportal.local
-  admin_password: wgportal
+  admin_password: wgportal-default
   admin_api_token: ""
+  disable_admin_user: false
   editable_keys: true
   create_default_peer: false
   create_default_peer_on_creation: false
@@ -24,6 +25,10 @@ core:
   self_provisioning_allowed: false
   import_existing: true
   restore_state: true
+  
+backend:
+  default: local
+  local_resolvconf_prefix: tun.
 
 advanced:
   log_level: info
@@ -38,6 +43,7 @@ advanced:
   rule_prio_offset: 20000
   route_table_offset: 20000
   api_admin_only: true
+  limit_additional_user_peers: 0
 
 database:
   debug: false
@@ -67,11 +73,16 @@ mail:
   auth_type: plain
   from: Wireguard Portal <noreply@wireguard.local>
   link_only: false
+  allow_peer_email: false
 
 auth:
   oidc: []
   oauth: []
   ldap: []
+  webauthn:
+    enabled: true
+  min_password_length: 16
+  hide_login_form: false
 
 web:
   listening_address: :8888
@@ -97,6 +108,7 @@ webhook:
 
 Below you will find sections like
 [`core`](#core),
+[`backend`](#backend),
 [`advanced`](#advanced),
 [`database`](#database),
 [`statistics`](#statistics),
@@ -118,8 +130,13 @@ More advanced options are found in the subsequent `Advanced` section.
 - **Description:** The administrator user. This user will be created as a default admin if it does not yet exist.
 
 ### `admin_password`
-- **Default:** `wgportal`
-- **Description:** The administrator password. The default password of `wgportal` should be changed immediately.
+- **Default:** `wgportal-default`
+- **Description:** The administrator password. The default password should be changed immediately!
+- **Important:** The password should be strong and secure. The minimum password length is specified in [auth.min_password_length](#min_password_length). By default, it is 16 characters.
+
+### `disable_admin_user`
+- **Default:** `false`
+- **Description:** If `true`, no admin user is created. This is useful if you plan to manage users exclusively through external authentication providers such as LDAP or OAuth.
 
 ### `admin_api_token`
 - **Default:** *(empty)*
@@ -156,6 +173,80 @@ More advanced options are found in the subsequent `Advanced` section.
 ### `restore_state`
 - **Default:** `true`
 - **Description:** Restore the WireGuard interface states (up/down) that existed before WireGuard Portal started.
+
+---
+
+## Backend
+
+Configuration options for the WireGuard backend, which manages the WireGuard interfaces and peers.
+The current MikroTik backend is in **BETA** and may not support all features.
+
+### `default`
+- **Default:** `local`
+- **Description:** The default backend to use for managing WireGuard interfaces. 
+  Valid options are: `local`, or other backend id's configured in the `mikrotik` section.
+
+### `local_resolvconf_prefix`
+- **Default:** `tun.`
+- **Description:** Interface name prefix for WireGuard interfaces on the local system which is used to configure DNS servers with *resolvconf*. 
+  It depends on the *resolvconf* implementation you are using, most use a prefix of `tun.`, but some have an empty prefix (e.g., systemd).
+
+### `ignored_local_interfaces`
+- **Default:** *(empty)*
+- **Description:** A list of interface names to exclude when enumerating local interfaces.
+  This is useful if you want to prevent certain interfaces from being imported from the local system.
+
+### Mikrotik
+
+The `mikrotik` array contains a list of MikroTik backend definitions. Each entry describes how to connect to a MikroTik RouterOS instance that hosts WireGuard interfaces.
+
+Below are the properties for each entry inside `backend.mikrotik`:
+
+#### `id`
+- **Default:** *(empty)*
+- **Description:** A unique identifier for this backend. 
+  This value can be referenced by `backend.default` to use this backend as default.
+  The identifier must be unique across all backends and must not use the reserved keyword `local`.
+
+#### `display_name`
+- **Default:** *(empty)*
+- **Description:** A human-friendly display name for this backend. If omitted, the `id` will be used as the display name.
+
+#### `api_url`
+- **Default:** *(empty)*
+- **Description:** Base URL of the MikroTik REST API, including scheme and path, e.g., `https://10.10.10.10:8729/rest`.
+
+#### `api_user`
+- **Default:** *(empty)*
+- **Description:** Username for authenticating against the MikroTik API.
+  Ensure that the user has sufficient permissions to manage WireGuard interfaces and peers.
+
+#### `api_password`
+- **Default:** *(empty)*
+- **Description:** Password for the specified API user.
+
+#### `api_verify_tls`
+- **Default:** `false`
+- **Description:** Whether to verify the TLS certificate of the MikroTik API endpoint. Set to `false` to allow self-signed certificates (not recommended for production).
+
+#### `api_timeout`
+- **Default:** `30s`
+- **Description:** Timeout for API requests to the MikroTik device. Uses Go duration format (e.g., `10s`, `1m`). If omitted, a default of 30 seconds is used.
+
+#### `concurrency`
+- **Default:** `5`
+- **Description:** Maximum number of concurrent API requests the backend will issue when enumerating interfaces and their details. If `0` or negative, a sane default of `5` is used.
+
+#### `ignored_interfaces`
+- **Default:** *(empty)*
+- **Description:** A list of interface names to exclude during interface enumeration.
+  This is useful if you want to prevent specific interfaces from being imported from the MikroTik device.
+
+#### `debug`
+- **Default:** `false`
+- **Description:** Enable verbose debug logging for the MikroTik backend.
+
+For more details on configuring the MikroTik backend, see the [Backends](../usage/backends.md) documentation.
 
 ---
 
@@ -210,6 +301,10 @@ Additional or more specialized configuration options for logging and interface c
 ### `api_admin_only`
 - **Default:** `true`
 - **Description:** If `true`, the public REST API is accessible only to admin users. The API docs live at [`/api/v1/doc.html`](../rest-api/api-doc.md).
+
+### `limit_additional_user_peers`
+- **Default:** `0`
+- **Description:** Limit additional peers a normal user can create. `0` means unlimited.
 
 ---
 
@@ -292,7 +387,9 @@ Controls how WireGuard Portal collects and reports usage statistics, including p
 
 ## Mail
 
-Options for configuring email notifications or sending peer configurations via email.
+Options for configuring email notifications or sending peer configurations via email. 
+By default, emails will only be sent to peers that have a valid user record linked. 
+To send emails to all peers that have a valid email-address as user-identifier, set `allow_peer_email` to `true`.
 
 ### `host`
 - **Default:** `127.0.0.1`
@@ -330,12 +427,32 @@ Options for configuring email notifications or sending peer configurations via e
 - **Default:** `false`
 - **Description:** If `true`, emails only contain a link to WireGuard Portal, rather than attaching the full configuration.
 
+### `allow_peer_email`
+- **Default:** `false`
+  - **Description:** If `true`, and a peer has no valid user record linked, but the user-identifier of the peer is a valid email address, emails will be sent to that email address.
+    If false, and the peer has no valid user record linked, emails will not be sent.
+    If a peer has linked a valid user, the email address is always taken from the user record.
+
 ---
 
 ## Auth
 
-WireGuard Portal supports multiple authentication strategies, including **OpenID Connect** (`oidc`), **OAuth** (`oauth`), and **LDAP** (`ldap`).
+WireGuard Portal supports multiple authentication strategies, including **OpenID Connect** (`oidc`), **OAuth** (`oauth`), **Passkeys** (`webauthn`) and **LDAP** (`ldap`).
 Each can have multiple providers configured. Below are the relevant keys.
+
+Some core authentication options are shared across all providers, while others are specific to each provider type.
+
+### `min_password_length`
+- **Default:** `16`
+- **Description:** Minimum password length for local authentication. This is not enforced for LDAP authentication.
+  The default admin password strength is also enforced by this setting.
+- **Important:** The password should be strong and secure. It is recommended to use a password with at least 16 characters, including uppercase and lowercase letters, numbers, and special characters.
+
+### `hide_login_form`
+- **Default:** `false`
+- **Description:** If `true`, the login form is hidden and only the OIDC, OAuth, LDAP, or WebAuthn providers are shown. This is useful if you want to enforce a specific authentication method.
+  If no social login providers are configured, the login form is always shown, regardless of this setting.
+- **Important:** You can still access the login form by adding the `?all` query parameter to the login URL (e.g. https://wg.portal/#/login?all). 
 
 ---
 
@@ -395,12 +512,17 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
     - `admin_group_regex`: A regular expression to match the `user_groups` claim. Each entry in the `user_groups` claim is checked against this regex.
 
 #### `registration_enabled`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, a new user will be created in WireGuard Portal if not already present.
 
 #### `log_user_info`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, OIDC user data is logged at the trace level upon login (for debugging).
+
+#### `log_sensitive_info`
+- **Default:** `false`
+- **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
+- **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
 
 ---
 
@@ -468,12 +590,17 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
   - `admin_group_regex`: A regular expression to match the `user_groups` claim. Each entry in the `user_groups` claim is checked against this regex.
 
 #### `registration_enabled`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, new users are created automatically on successful login.
 
 #### `log_user_info`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, logs user info at the trace level upon login.
+
+#### `log_sensitive_info`
+- **Default:** `false`
+- **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
+- **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
 
 ---
 
@@ -491,11 +618,11 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 - **Description:** The LDAP server URL (e.g., `ldap://srv-ad01.company.local:389`).
 
 #### `start_tls`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, use STARTTLS to secure the LDAP connection.
 
 #### `cert_validation`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, validate the LDAP server’s TLS certificate.
 
 #### `tls_certificate_path`
@@ -540,6 +667,8 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
   ```text
   (&(objectClass=organizationalPerson)(mail={{login_identifier}})(!userAccountControl:1.2.840.113556.1.4.803:=2))
   ```
+- **Important**: The `login_filter` must always be a valid LDAP filter. It should at most return one user. 
+  If the filter returns multiple or no users, the login will fail.
 
 #### `admin_group`
 - **Default:** *(empty)*
@@ -563,22 +692,32 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
   ```
 
 #### `disable_missing`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, any user **not** found in LDAP (during sync) is disabled in WireGuard Portal.
 
 #### `auto_re_enable`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, users that where disabled because they were missing (see `disable_missing`) will be re-enabled once they are found again.
 
 #### `registration_enabled`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, new user accounts are created in WireGuard Portal upon first login.
 
 #### `log_user_info`
-- **Default:** *(empty)*
+- **Default:** `false`
 - **Description:** If `true`, logs LDAP user data at the trace level upon login.
 
 ---
+
+### WebAuthn (Passkeys)
+
+The `webauthn` section contains configuration options for WebAuthn authentication (passkeys).
+
+#### `enabled`
+- **Default:** `true`
+- **Description:** If `true`, Passkey authentication is enabled. If `false`, WebAuthn is disabled.
+  Users are encouraged to use Passkeys for secure authentication instead of passwords. 
+  If a passkey is registered, the password login is still available as a fallback. Ensure that the password is strong and secure.
 
 ## Web
 
@@ -637,18 +776,7 @@ Without a valid `external_url`, the login process may fail due to CSRF protectio
 ## Webhook
 
 The webhook section allows you to configure a webhook that is called on certain events in WireGuard Portal.
-A JSON object is sent in a POST request to the webhook URL with the following structure:
-```json
-{
-  "event": "peer_created",
-  "entity": "peer",
-  "identifier": "the-peer-identifier",
-  "payload": {
-    // The payload of the event, e.g. peer data.
-    // Check the API documentation for the exact structure.
-  }
-}
-```
+Further details can be found in the [usage documentation](../usage/webhooks.md).
 
 ### `url`
 - **Default:** *(empty)*

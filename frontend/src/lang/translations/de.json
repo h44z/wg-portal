@@ -29,7 +29,8 @@
       "label": "Passwort",
       "placeholder": "Bitte geben Sie Ihr Passwort ein"
     },
-    "button": "Anmelden"
+    "button": "Anmelden",
+    "button-webauthn": "Passkey verwenden"
   },
   "menu": {
     "home": "Home",
@@ -101,7 +102,9 @@
     },
     "interface": {
       "headline": "Schnittstellenstatus für",
-      "mode": "Modus",
+      "backend": "Backend",
+      "unknown-backend": "Unbekannt",
+      "wrong-backend": "Ungültiges Backend, das lokale WireGuard Backend wird stattdessen verwendet!",
       "key": "Öffentlicher Schlüssel",
       "endpoint": "Öffentlicher Endpunkt",
       "port": "Port",
@@ -114,6 +117,7 @@
       "dns": "DNS-Server",
       "mtu": "MTU",
       "default-keep-alive": "Standard Keepalive-Intervall",
+      "default-dns": "Standard DNS-Server",
       "button-show-config": "Konfiguration anzeigen",
       "button-download-config": "Konfiguration herunterladen",
       "button-store-config": "Konfiguration für wg-quick speichern",
@@ -188,6 +192,45 @@
       "button-enable-title": "Aktivieren Sie die API, dadurch wird ein neuer Token generiert.",
       "button-enable-text": "API aktivieren",
       "api-link": "API Dokumentation"
+    },
+    "webauthn": {
+      "headline": "Passkey-Einstellungen",
+      "abstract": "Passkeys sind eine moderne Möglichkeit, Benutzer ohne Passwort zu authentifizieren. Sie werden sicher in Ihrem Browser gespeichert und können verwendet werden, um sich im WireGuard-Portal anzumelden.",
+      "active-description": "Mindestens ein Passkey ist derzeit für Ihr Benutzerkonto aktiv.",
+      "inactive-description": "Für Ihr Benutzerkonto sind derzeit keine Passkeys registriert. Drücken Sie die Schaltfläche unten, um einen neuen Passkey zu registrieren.",
+      "table": {
+        "name": "Name",
+        "created": "Erstellt",
+        "actions": ""
+      },
+      "credentials-list": "Derzeit registrierte Passkeys",
+      "modal-delete": {
+        "headline": "Passkey löschen",
+        "abstract": "Sind Sie sicher, dass Sie diesen Passkey löschen möchten? Sie können sich anschließend nicht mehr mit diesem Passkey anmelden.",
+        "created": "Erstellt:",
+        "button-delete": "Löschen",
+        "button-cancel": "Abbrechen"
+      },
+      "button-rename-title": "Umbenennen",
+      "button-rename-text": "Passkey umbenennen.",
+      "button-save-title": "Speichern",
+      "button-save-text": "Neuen Namen des Passkeys speichern.",
+      "button-cancel-title": "Abbrechen",
+      "button-cancel-text": "Umbenennung des Passkeys abbrechen.",
+      "button-delete-title": "Löschen",
+      "button-delete-text": "Passkey löschen. Sie können sich anschließend nicht mehr mit diesem Passkey anmelden.",
+      "button-register-title": "Passkey registrieren",
+      "button-register-text": "Einen neuen Passkey registrieren, um Ihr Konto zu sichern."
+    },
+    "password": {
+      "headline": "Passwort-Einstellungen",
+      "abstract": "Hier können Sie Ihr Passwort ändern.",
+      "current-label": "Aktuelles Passwort",
+      "new-label": "Neues Passwort",
+      "new-confirm-label": "Neues Passwort bestätigen",
+      "change-button-text": "Passwort ändern",
+      "invalid-confirm-label": "Passwörter stimmen nicht überein",
+      "weak-label": "Passwort ist zu schwach"
     }
   },
   "audit": {
@@ -266,7 +309,8 @@
       "password": {
         "label": "Passwort",
         "placeholder": "Ein super geheimes Passwort",
-        "description": "Lassen Sie dieses Feld leer, um das aktuelle Passwort beizubehalten."
+        "description": "Lassen Sie dieses Feld leer, um das aktuelle Passwort beizubehalten.",
+        "too-weak": "Das Passwort entspricht nicht den Sicherheitsanforderungen."
       },
       "email": {
         "label": "E-Mail",
@@ -325,6 +369,11 @@
         "server": "Server-Modus",
         "client": "Client-Modus",
         "any": "Unbekannter Modus"
+      },
+      "backend": {
+        "label": "Schnittstellenbackend",
+        "invalid-label": "Ursprüngliches Backend ist ungültig, das lokale WireGuard Backend wird stattdessen verwendet!",
+        "local": "Lokales WireGuard Backend"
       },
       "display-name": {
         "label": "Anzeigename",
@@ -423,6 +472,8 @@
       "section-config": "Konfiguration",
       "identifier": "Kennung",
       "ip": "IP-Adressen",
+      "allowed-ip": "Erlaubte IP-Adressen",
+      "extra-allowed-ip": "Serverseitig erlaubte IP-Adressen",
       "user": "Zugeordneter Benutzer",
       "notes": "Notizen",
       "expiry-status": "Läuft ab am",
@@ -435,8 +486,11 @@
       "handshake": "Letzter Handshake",
       "connected-since": "Verbunden seit",
       "endpoint": "Endpunkt",
+      "endpoint-key": "Öffentlicher Endpunkt-Schlüssel",
+      "keepalive": "Persistentes Keepalive",
       "button-download": "Konfiguration herunterladen",
-      "button-email": "Konfiguration per E-Mail senden"
+      "button-email": "Konfiguration per E-Mail senden",
+      "style-label": "Konfigurationsformat"
     },
     "peer-edit": {
       "headline-edit-peer": "Peer bearbeiten:",

@@ -188,6 +188,32 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 
 	sessionUser := domain.GetUserInfo(ctx)
 
+	peer.Identifier = domain.PeerIdentifier(peer.Interface.PublicKey) // ensure that identifier corresponds to the public key
+
+	// Enforce peer limit for non-admin users if LimitAdditionalUserPeers is set
+	if m.cfg.Core.SelfProvisioningAllowed && !sessionUser.IsAdmin && m.cfg.Advanced.LimitAdditionalUserPeers > 0 {
+		peers, err := m.db.GetUserPeers(ctx, peer.UserIdentifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch peers for user %s: %w", peer.UserIdentifier, err)
+		}
+		// Count enabled peers (disabled IS NULL)
+		peerCount := 0
+		for _, p := range peers {
+			if !p.IsDisabled() {
+				peerCount++
+			}
+		}
+		totalAllowedPeers := 1 + m.cfg.Advanced.LimitAdditionalUserPeers // 1 default peer + x additional peers
+		if peerCount >= totalAllowedPeers {
+			slog.WarnContext(ctx, "peer creation blocked due to limit",
+				"user", peer.UserIdentifier,
+				"current_count", peerCount,
+				"allowed_count", totalAllowedPeers)
+			return nil, fmt.Errorf("peer limit reached (%d peers allowed): %w", totalAllowedPeers,
+				domain.ErrNoPermission)
+		}
+	}
+
 	existingPeer, err := m.db.GetPeer(ctx, peer.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return nil, fmt.Errorf("unable to load existing peer %s: %w", peer.Identifier, err)
@@ -347,7 +373,12 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 		return fmt.Errorf("delete not allowed: %w", err)
 	}
 
-	err = m.wg.DeletePeer(ctx, peer.InterfaceIdentifier, id)
+	iface, err := m.db.GetInterface(ctx, peer.InterfaceIdentifier)
+	if err != nil {
+		return fmt.Errorf("unable to find interface %s: %w", peer.InterfaceIdentifier, err)
+	}
+
+	err = m.wg.GetController(*iface).DeletePeer(ctx, peer.InterfaceIdentifier, id)
 	if err != nil {
 		return fmt.Errorf("wireguard failed to delete peer %s: %w", id, err)
 	}
@@ -357,9 +388,20 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 		return fmt.Errorf("failed to delete peer %s: %w", id, err)
 	}
 
+	peers, err := m.db.GetInterfacePeers(ctx, iface.Identifier)
+	if err != nil {
+		return fmt.Errorf("failed to load peers for interface %s: %w", iface.Identifier, err)
+	}
+
 	m.bus.Publish(app.TopicPeerDeleted, *peer)
 	// Update routes after peers have changed
-	m.bus.Publish(app.TopicRouteUpdate, "peers updated")
+	m.bus.Publish(app.TopicRouteUpdate, domain.RoutingTableInfo{
+		Interface:  *iface,
+		AllowedIps: iface.GetAllowedIPs(peers),
+		FwMark:     iface.FirewallMark,
+		Table:      iface.GetRoutingTable(),
+		TableStr:   iface.RoutingTable,
+	})
 	// Update interface after peers have changed
 	m.bus.Publish(app.TopicPeerInterfaceUpdated, peer.InterfaceIdentifier)
 
@@ -407,37 +449,36 @@ func (m Manager) GetUserPeerStats(ctx context.Context, id domain.UserIdentifier)
 // region helper-functions
 
 func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
-	interfaces := make(map[domain.InterfaceIdentifier]struct{})
+	interfaces := make(map[domain.InterfaceIdentifier]domain.Interface)
 
-	for i := range peers {
-		peer := peers[i]
-		var err error
-		if peer.IsDisabled() || peer.IsExpired() {
-			err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
-				peer.CopyCalculatedAttributes(p)
-
-				if err := m.wg.DeletePeer(ctx, peer.InterfaceIdentifier, peer.Identifier); err != nil {
-					return nil, fmt.Errorf("failed to delete wireguard peer %s: %w", peer.Identifier, err)
-				}
-
-				return peer, nil
-			})
-		} else {
-			err = m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
-				peer.CopyCalculatedAttributes(p)
-
-				err := m.wg.SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
-					func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
-						domain.MergeToPhysicalPeer(pp, peer)
-						return pp, nil
-					})
-				if err != nil {
-					return nil, fmt.Errorf("failed to save wireguard peer %s: %w", peer.Identifier, err)
-				}
-
-				return peer, nil
-			})
+	for _, peer := range peers {
+		// get interface from db if it is not yet in the map
+		if _, ok := interfaces[peer.InterfaceIdentifier]; !ok {
+			iface, err := m.db.GetInterface(ctx, peer.InterfaceIdentifier)
+			if err != nil {
+				return fmt.Errorf("unable to find interface %s: %w", peer.InterfaceIdentifier, err)
+			}
+			interfaces[peer.InterfaceIdentifier] = *iface
 		}
+
+		iface := interfaces[peer.InterfaceIdentifier]
+
+		// Always save the peer to the backend, regardless of disabled/expired state
+		// The backend will handle the disabled state appropriately
+		err := m.db.SavePeer(ctx, peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+			peer.CopyCalculatedAttributes(p)
+
+			err := m.wg.GetController(iface).SavePeer(ctx, peer.InterfaceIdentifier, peer.Identifier,
+				func(pp *domain.PhysicalPeer) (*domain.PhysicalPeer, error) {
+					domain.MergeToPhysicalPeer(pp, peer)
+					return pp, nil
+				})
+			if err != nil {
+				return nil, fmt.Errorf("failed to save wireguard peer %s: %w", peer.Identifier, err)
+			}
+
+			return peer, nil
+		})
 		if err != nil {
 			return fmt.Errorf("save failure for peer %s: %w", peer.Identifier, err)
 		}
@@ -451,13 +492,22 @@ func (m Manager) savePeers(ctx context.Context, peers ...*domain.Peer) error {
 				Peer:   *peer,
 			},
 		})
-
-		interfaces[peer.InterfaceIdentifier] = struct{}{}
 	}
 
 	// Update routes after peers have changed
-	if len(interfaces) != 0 {
-		m.bus.Publish(app.TopicRouteUpdate, "peers updated")
+	for id, iface := range interfaces {
+		interfacePeers, err := m.db.GetInterfacePeers(ctx, id)
+		if err != nil {
+			return fmt.Errorf("failed to re-load peers for interface %s: %w", id, err)
+		}
+
+		m.bus.Publish(app.TopicRouteUpdate, domain.RoutingTableInfo{
+			Interface:  iface,
+			AllowedIps: iface.GetAllowedIPs(interfacePeers),
+			FwMark:     iface.FirewallMark,
+			Table:      iface.GetRoutingTable(),
+			TableStr:   iface.RoutingTable,
+		})
 	}
 
 	for iface := range interfaces {

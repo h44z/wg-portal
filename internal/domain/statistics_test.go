@@ -66,8 +66,9 @@ func TestPeerStatus_IsConnected(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.status.IsConnected(); got != tt.want {
-				t.Errorf("IsConnected() = %v, want %v", got, tt.want)
+			tt.status.CalcConnected()
+			if got := tt.status.IsConnected; got != tt.want {
+				t.Errorf("IsConnected = %v, want %v", got, tt.want)
 			}
 		})
 	}

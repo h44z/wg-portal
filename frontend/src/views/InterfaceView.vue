@@ -5,16 +5,19 @@ import PeerMultiCreateModal from "../components/PeerMultiCreateModal.vue";
 import InterfaceEditModal from "../components/InterfaceEditModal.vue";
 import InterfaceViewModal from "../components/InterfaceViewModal.vue";
 
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import {peerStore} from "@/stores/peers";
 import {interfaceStore} from "@/stores/interfaces";
 import {notify} from "@kyvg/vue3-notification";
 import {settingsStore} from "@/stores/settings";
 import {humanFileSize} from '@/helpers/utils';
+import {useI18n} from "vue-i18n";
 
 const settings = settingsStore()
 const interfaces = interfaceStore()
 const peers = peerStore()
+
+const { t } = useI18n()
 
 const viewedPeerId = ref("")
 const editPeerId = ref("")
@@ -44,6 +47,33 @@ function calculateInterfaceName(id, name) {
   }
   return result
 }
+
+const calculateBackendName = computed(() => {
+  let backendId = interfaces.GetSelected.Backend
+
+  let backendName = t('interfaces.interface.unknown-backend')
+  let availableBackends = settings.Setting('AvailableBackends') || []
+  availableBackends.forEach(backend => {
+    if (backend.Id === backendId) {
+      backendName = backend.Id === 'local' ? t(backend.Name) : backend.Name
+    }
+  })
+  return backendName
+})
+
+const isBackendValid = computed(() => {
+  let backendId = interfaces.GetSelected.Backend
+
+  let valid = false
+  let availableBackends = settings.Setting('AvailableBackends') || []
+  availableBackends.forEach(backend => {
+    if (backend.Id === backendId) {
+      valid = true
+    }
+  })
+  return valid
+})
+
 
 async function download() {
   await interfaces.LoadInterfaceConfig(interfaces.GetSelected.Identifier)
@@ -112,7 +142,7 @@ onMounted(async () => {
       </div>
       <div class="form-group">
         <div class="input-group mb-3">
-          <button class="input-group-text btn btn-primary" :title="$t('interfaces.button-add-interface')" @click.prevent="editInterfaceId='#NEW#'">
+          <button class="btn btn-primary" :title="$t('interfaces.button-add-interface')" @click.prevent="editInterfaceId='#NEW#'">
             <i class="fa-solid fa-plus-circle"></i>
           </button>
           <select v-model="interfaces.selected" :disabled="interfaces.Count===0" class="form-select" @change="() => { peers.LoadPeers(); peers.LoadStats() }">
@@ -141,7 +171,7 @@ onMounted(async () => {
         <div class="card-header">
           <div class="row">
             <div class="col-12 col-lg-8">
-              {{ $t('interfaces.interface.headline') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{interfaces.GetSelected.Mode}} {{ $t('interfaces.interface.mode') }})
+              {{ $t('interfaces.interface.headline') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{ $t('modals.interface-edit.mode.' + interfaces.GetSelected.Mode )}} | {{ $t('interfaces.interface.backend') + ": " + calculateBackendName }}<span v-if="!isBackendValid" :title="t('interfaces.interface.wrong-backend')" class="ms-1 me-1"><i class="fa-solid fa-triangle-exclamation"></i></span>)
               <span v-if="interfaces.GetSelected.Disabled" class="text-danger"><i class="fa fa-circle-xmark" :title="interfaces.GetSelected.DisabledReason"></i></span>
             </div>
             <div class="col-12 col-lg-4 text-lg-end">
@@ -188,12 +218,12 @@ onMounted(async () => {
                   <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.Addresses" :key="addr">{{addr}}</span></td>
                 </tr>
                 <tr>
-                  <td>{{ $t('interfaces.interface.dns') }}:</td>
-                  <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.Dns" :key="addr">{{addr}}</span></td>
-                </tr>
-                <tr>
                   <td>{{ $t('interfaces.interface.mtu') }}:</td>
                   <td>{{interfaces.GetSelected.Mtu}}</td>
+                </tr>
+                <tr>
+                  <td>{{ $t('interfaces.interface.default-dns') }}:</td>
+                  <td><span class="badge bg-light me-1" v-for="addr in interfaces.GetSelected.PeerDefDns" :key="addr">{{addr}}</span></td>
                 </tr>
                 <tr>
                   <td>{{ $t('interfaces.interface.default-keep-alive') }}:</td>
@@ -314,7 +344,7 @@ onMounted(async () => {
       <div class="form-group d-inline">
         <div class="input-group mb-3">
           <input v-model="peers.filter" class="form-control" :placeholder="$t('general.search.placeholder')" type="text" @keyup="peers.afterPageSizeChange">
-          <button class="input-group-text btn btn-primary" :title="$t('general.search.button')"><i class="fa-solid fa-search"></i></button>
+          <button class="btn btn-primary" :title="$t('general.search.button')"><i class="fa-solid fa-search"></i></button>
         </div>
       </div>
     </div>
@@ -370,7 +400,7 @@ onMounted(async () => {
             <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning" :title="$t('interfaces.peer-expiring') + ' ' +  peer.ExpiresAt"><i class="fas fa-hourglass-end expiring-peer"></i></span>
           </td>
           <td><span v-if="peer.DisplayName" :title="peer.Identifier">{{peer.DisplayName}}</span><span v-else :title="peer.Identifier">{{ $filters.truncate(peer.Identifier, 10)}}</span></td>
-          <td>{{peer.UserIdentifier}}</td>
+          <td><span :title="peer.UserDisplayName">{{peer.UserIdentifier}}</span></td>
           <td>
             <span v-for="ip in peer.Addresses" :key="ip" class="badge bg-light me-1">{{ ip }}</span>
           </td>
@@ -429,3 +459,5 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+<style>
+</style>

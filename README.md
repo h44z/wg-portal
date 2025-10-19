@@ -21,17 +21,18 @@ The configuration portal supports using a database (SQLite, MySQL, MsSQL, or Pos
 ## Features
 
 * Self-hosted - the whole application is a single binary
-* Responsive multi-language web UI written in Vue.js
+* Responsive multi-language web UI with dark-mode written in Vue.js
 * Automatically selects IP from the network pool assigned to the client
 * QR-Code for convenient mobile client configuration
 * Sends email to the client with QR-code and client config
 * Enable / Disable clients seamlessly
 * Generation of wg-quick configuration file (`wgX.conf`) if required
-* User authentication (database, OAuth, or LDAP)
+* User authentication (database, OAuth, or LDAP), Passkey support
 * IPv6 ready
 * Docker ready
 * Can be used with existing WireGuard setups
 * Support for multiple WireGuard interfaces
+* Supports multiple WireGuard backends (wgctrl or MikroTik)
 * Peer Expiry Feature
 * Handles route and DNS settings like wg-quick does
 * Exposes Prometheus metrics for monitoring and alerting
@@ -60,6 +61,17 @@ For the complete documentation visit [wgportal.org](https://wgportal.org).
 ## License
 
 * MIT License. [MIT](LICENSE.txt) or <https://opensource.org/licenses/MIT>
+
+## Contributors and Sponsors
+
+Thanks so much for all your contributions! They’re truly appreciated and help keep WireGuard Portal moving ahead.
+
+<a href="https://github.com/h44z/wg-portal/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=h44z/wg-portal" />
+</a>
+
+Want to support the project? You can buy me a coffee or join as a contributor - every bit of support helps! 
+[Become a sponsor!](https://github.com/sponsors/h44z)
 
 
 > [!IMPORTANT]

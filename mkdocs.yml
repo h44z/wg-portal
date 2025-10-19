@@ -6,8 +6,12 @@ repo_name: h44z/wg-portal
 repo_url: https://github.com/h44z/wg-portal
 copyright: Copyright &copy; 2023-2025 WireGuard Portal Project
 
+extra_javascript:
+  - javascript/img-comparison-slider.js
+
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/img-comparison-slider.css
 
 theme:
   name: material
@@ -78,6 +82,12 @@ nav:
       - Configuration:
           - Overview: documentation/configuration/overview.md
           - Examples: documentation/configuration/examples.md
+      - Usage:
+          - General: documentation/usage/general.md
+          - Backends: documentation/usage/backends.md
+          - LDAP: documentation/usage/ldap.md
+          - Security: documentation/usage/security.md
+          - Webhooks: documentation/usage/webhooks.md
+          - REST API: documentation/rest-api/api-doc.md
       - Upgrade: documentation/upgrade/v1.md
       - Monitoring: documentation/monitoring/prometheus.md
-      - REST API: documentation/rest-api/api-doc.md

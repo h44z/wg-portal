@@ -12,9 +12,10 @@
     "@fortawesome/fontawesome-free": "^6.7.2",
     "@kyvg/vue3-notification": "^3.4.1",
     "@popperjs/core": "^2.11.8",
+    "@simplewebauthn/browser": "^13.1.0",
     "@vojtechlanka/vue-tags-input": "^3.1.1",
-    "bootstrap": "^5.3.5",
-    "bootswatch": "^5.3.5",
+    "bootstrap": "^5.3.7",
+    "bootswatch": "^5.3.7",
     "flag-icons": "^7.3.2",
     "ip-address": "^10.0.1",
     "is-cidr": "^5.1.1",
@@ -29,6 +30,6 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
     "sass-embedded": "^1.86.3",
-    "vite": "6.3.4"
+    "vite": "^6.3.6"
   }
 }

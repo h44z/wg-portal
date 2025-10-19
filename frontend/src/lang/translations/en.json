@@ -29,7 +29,8 @@
       "label": "Password",
       "placeholder": "Please enter your password"
     },
-    "button": "Sign in"
+    "button": "Sign in",
+    "button-webauthn": "Use Passkey"
   },
   "menu": {
     "home": "Home",
@@ -101,7 +102,9 @@
     },
     "interface": {
       "headline": "Interface status for",
-      "mode": "mode",
+      "backend": "Backend",
+      "unknown-backend": "Unknown",
+      "wrong-backend": "Invalid backend, using local WireGuard backend instead!",
       "key": "Public Key",
       "endpoint": "Public Endpoint",
       "port": "Listening Port",
@@ -114,6 +117,7 @@
       "dns": "DNS Servers",
       "mtu": "MTU",
       "default-keep-alive": "Default Keepalive Interval",
+      "default-dns": "Default DNS Servers",
       "button-show-config": "Show configuration",
       "button-download-config": "Download configuration",
       "button-store-config": "Store configuration for wg-quick",
@@ -188,6 +192,45 @@
       "button-enable-title": "Enable API, this will generate a new token.",
       "button-enable-text": "Enable API",
       "api-link": "API Documentation"
+    },
+    "webauthn": {
+      "headline": "Passkey Settings",
+      "abstract": "Passkeys are a modern way to authenticate users without the need for passwords. They are stored securely in your browser and can be used to log in to the WireGuard Portal.",
+      "active-description": "At least one passkey is currently active for your user account.",
+      "inactive-description": "No passkeys are currently registered for your user account. Press the button below to register a new passkey.",
+      "table": {
+        "name": "Name",
+        "created": "Created",
+        "actions": ""
+      },
+      "credentials-list": "Currently registered Passkeys",
+      "modal-delete": {
+        "headline": "Delete Passkey",
+        "abstract": "Are you sure you want to delete this passkey? You will not be able to log in with this passkey anymore.",
+        "created": "Created:",
+        "button-delete": "Delete",
+        "button-cancel": "Cancel"
+      },
+      "button-rename-title": "Rename",
+      "button-rename-text": "Rename the passkey.",
+      "button-save-title": "Save",
+      "button-save-text": "Save the new name of the passkey.",
+      "button-cancel-title": "Cancel",
+      "button-cancel-text": "Cancel the renaming of the passkey.",
+      "button-delete-title": "Delete",
+      "button-delete-text": "Delete the passkey. You will not be able to log in with this passkey anymore.",
+      "button-register-title": "Register Passkey",
+      "button-register-text": "Register a new Passkey to secure your account."
+    },
+    "password": {
+      "headline": "Password Settings",
+      "abstract": "Here you can change your password.",
+      "current-label": "Current Password",
+      "new-label": "New Password",
+      "new-confirm-label": "Confirm New Password",
+      "change-button-text": "Change Password",
+      "invalid-confirm-label": "Passwords do not match",
+      "weak-label": "Password is too weak"
     }
   },
   "audit": {
@@ -266,7 +309,8 @@
       "password": {
         "label": "Password",
         "placeholder": "A super secret password",
-        "description": "Leave this field blank to keep current password."
+        "description": "Leave this field blank to keep current password.",
+        "too-weak": "The password is too weak. Please use a stronger password."
       },
       "email": {
         "label": "Email",
@@ -325,6 +369,11 @@
         "server": "Server Mode",
         "client": "Client Mode",
         "any": "Unknown Mode"
+      },
+      "backend": {
+        "label": "Interface Backend",
+        "invalid-label": "Original backend is no longer available, using local WireGuard backend instead!",
+        "local": "Local WireGuard Backend"
       },
       "display-name": {
         "label": "Display Name",
@@ -424,6 +473,8 @@
       "section-config": "Configuration",
       "identifier": "Identifier",
       "ip": "IP Addresses",
+      "allowed-ip": "Allowed IP Addresses",
+      "extra-allowed-ip": "Server Side Allowed IP Addresses",
       "user": "Associated User",
       "notes": "Notes",
       "expiry-status": "Expires At",
@@ -436,8 +487,11 @@
       "handshake": "Last Handshake",
       "connected-since": "Connected since",
       "endpoint": "Endpoint",
+      "endpoint-key": "Endpoint Public Key",
+      "keepalive": "Persistent Keepalive",
       "button-download": "Download configuration",
-      "button-email": "Send configuration via E-Mail"
+      "button-email": "Send configuration via E-Mail",
+      "style-label": "Configuration Style"
     },
     "peer-edit": {
       "headline-edit-peer": "Edit peer:",

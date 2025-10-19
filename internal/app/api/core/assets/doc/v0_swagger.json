@@ -175,30 +175,78 @@
                 }
             }
         },
-        "/auth/{provider}/callback": {
-            "get": {
+        "/auth/webauthn/credential/{id}": {
+            "put": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Handle the OAuth callback.",
-                "operationId": "auth_handleOauthCallbackGet",
+                "summary": "Update a WebAuthn credential.",
+                "operationId": "auth_handleWebAuthnCredentialsPut",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Base64 encoded Credential ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Credential name",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WebAuthnCredentialRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.LoginProviderInfo"
+                                "$ref": "#/definitions/model.WebAuthnCredentialResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Delete a WebAuthn credential.",
+                "operationId": "auth_handleWebAuthnCredentialsDelete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Base64 encoded Credential ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.WebAuthnCredentialResponse"
                             }
                         }
                     }
                 }
             }
         },
-        "/auth/{provider}/init": {
+        "/auth/webauthn/credentials": {
             "get": {
                 "produces": [
                     "application/json"
@@ -206,15 +254,67 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Initiate the OAuth login flow.",
-                "operationId": "auth_handleOauthInitiateGet",
+                "summary": "Get all available external login providers.",
+                "operationId": "auth_handleWebAuthnCredentialsGet",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.LoginProviderInfo"
+                                "$ref": "#/definitions/model.WebAuthnCredentialResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/webauthn/login/finish": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Finish the WebAuthn login process.",
+                "operationId": "auth_handleWebAuthnLoginFinish",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/webauthn/register/finish": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Finish the WebAuthn registration process.",
+                "operationId": "auth_handleWebAuthnRegisterFinish",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "\"\"",
+                        "description": "Credential name",
+                        "name": "credential_name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.WebAuthnCredentialResponse"
                             }
                         }
                     }
@@ -719,6 +819,12 @@
                         "schema": {
                             "$ref": "#/definitions/model.PeerMailRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "The configuration style",
+                        "name": "style",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -758,6 +864,12 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The configuration style",
+                        "name": "style",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -799,6 +911,12 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The configuration style",
+                        "name": "style",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1432,6 +1550,38 @@
                 }
             }
         },
+        "/user/{id}/change-password": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Change the password for the given user.",
+                "operationId": "users_handleChangePasswordPost",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/{id}/interfaces": {
             "get": {
                 "produces": [
@@ -1662,6 +1812,11 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "Backend": {
+                    "description": "the backend used for this interface e.g., local, mikrotik, ...",
+                    "type": "string",
+                    "example": "local"
                 },
                 "Disabled": {
                     "description": "flag that specifies if the interface is enabled (up) or not (down)",
@@ -2036,6 +2191,10 @@
                         }
                     ]
                 },
+                "UserDisplayName": {
+                    "description": "the owner display name",
+                    "type": "string"
+                },
                 "UserIdentifier": {
                     "description": "the owner",
                     "type": "string"
@@ -2131,14 +2290,40 @@
                 "ApiAdminOnly": {
                     "type": "boolean"
                 },
+                "AvailableBackends": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SettingsBackendNames"
+                    }
+                },
+                "LoginFormVisible": {
+                    "type": "boolean"
+                },
                 "MailLinkOnly": {
                     "type": "boolean"
+                },
+                "MinPasswordLength": {
+                    "type": "integer"
                 },
                 "PersistentConfigSupported": {
                     "type": "boolean"
                 },
                 "SelfProvisioning": {
                     "type": "boolean"
+                },
+                "WebAuthnEnabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.SettingsBackendNames": {
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
                 }
             }
         },
@@ -2204,6 +2389,28 @@
                     "type": "string"
                 },
                 "Source": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.WebAuthnCredentialRequest": {
+            "type": "object",
+            "properties": {
+                "Name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.WebAuthnCredentialResponse": {
+            "type": "object",
+            "properties": {
+                "CreatedAt": {
+                    "type": "string"
+                },
+                "ID": {
+                    "type": "string"
+                },
+                "Name": {
                     "type": "string"
                 }
             }

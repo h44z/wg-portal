@@ -68,6 +68,10 @@ type ProvisioningRequest struct {
 	// If no user identifier is set, the authenticated user is used.
 	UserIdentifier string `json:"UserIdentifier" example:"uid-1234567"`
 
+	// DisplayName is an optional name for the new peer.
+	// If unset, a default template value (e.g., "API Peer ...") will be assigned.
+	DisplayName string `json:"DisplayName" example:"API Peer xyz" binding:"omitempty"`
+
 	// PublicKey is the optional public key of the peer. If no public key is set, a new key pair is generated.
 	PublicKey string `json:"PublicKey" example:"xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=" binding:"omitempty,len=44"`
 	// PresharedKey is the optional pre-shared key of the peer. If no pre-shared key is set, a new key is generated.

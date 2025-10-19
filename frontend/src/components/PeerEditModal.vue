@@ -73,6 +73,8 @@ const currentTags = ref({
   DnsSearch: ""
 })
 const formData = ref(freshPeer())
+const isSaving = ref(false)
+const isDeleting = ref(false)
 
 // functions
 
@@ -270,6 +272,8 @@ function handleChangeDnsSearch(tags) {
 }
 
 async function save() {
+  if (isSaving.value) return
+  isSaving.value = true
   try {
     if (props.peerId !== '#NEW#') {
       await peers.UpdatePeer(selectedPeer.value.Identifier, formData.value)
@@ -278,26 +282,30 @@ async function save() {
     }
     close()
   } catch (e) {
-    // console.log(e)
     notify({
       title: "Failed to save peer!",
       text: e.toString(),
       type: 'error',
     })
+  } finally {
+    isSaving.value = false
   }
 }
 
 async function del() {
+  if (isDeleting.value) return
+  isDeleting.value = true
   try {
     await peers.DeletePeer(selectedPeer.value.Identifier)
     close()
   } catch (e) {
-    // console.log(e)
     notify({
       title: "Failed to delete peer!",
       text: e.toString(),
       type: 'error',
     })
+  } finally {
+    isDeleting.value = false
   }
 }
 
@@ -350,7 +358,7 @@ async function del() {
           <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.endpoint.placeholder')"
             v-model="formData.Endpoint.Value">
         </div>
-        <div class="form-group">
+        <div class="form-group" v-if="selectedInterface.Mode !== 'client'">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.ip.label') }}</label>
           <vue-tags-input class="form-control" v-model="currentTags.Addresses"
                            :tags="formData.Addresses.map(str => ({ text: str }))"
@@ -470,10 +478,15 @@ async function del() {
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button v-if="props.peerId !== '#NEW#'" class="btn btn-danger me-1" type="button" @click.prevent="del">{{
-          $t('general.delete') }}</button>
+        <button v-if="props.peerId !== '#NEW#'" class="btn btn-danger me-1" type="button" @click.prevent="del" :disabled="isDeleting">
+          <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          {{ $t('general.delete') }}
+        </button>
       </div>
-      <button class="btn btn-primary me-1" type="button" @click.prevent="save">{{ $t('general.save') }}</button>
+      <button class="btn btn-primary me-1" type="button" @click.prevent="save" :disabled="isSaving">
+        <span v-if="isSaving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        {{ $t('general.save') }}
+      </button>
       <button class="btn btn-secondary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
     </template>
   </Modal>

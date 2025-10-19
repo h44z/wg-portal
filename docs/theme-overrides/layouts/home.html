@@ -68,7 +68,7 @@
 }
 .tx-hero__image {
   max-width: 1000px;
-  min-width: 600px;
+  min-width: 0;
   width: 100%;
   height: auto;
   margin: 0 auto;
@@ -218,7 +218,7 @@
 
 .secondary-section .g .section .component-wrapper .responsive-grid .card {
   position: relative;
-  background-color:  #fff none repeat scroll 0% 0%;
+  background-color:  #fff;
   padding: 1.5rem;
   display: flex;
   flex-direction: row;
@@ -300,6 +300,59 @@
   background: var(--md-accent-fg-color--transparent);
 }
 
+.before,
+.after {
+    margin: 0;
+}
+
+.after figcaption {
+    background: #fff;
+    font-weight: bold;
+    border: 1px solid #c0c0c0;
+    color: #000000;
+    opacity: 0.9;
+    padding: 9px;
+    position: absolute;
+    top: 100%;
+    transform: translateY(-100%);
+    line-height: 100%;
+}
+
+.before figcaption {
+    background: #000;
+    font-weight: bold;
+    border: 1px solid #c0c0c0;
+    color: #ffffff;
+    opacity: 0.9;
+    padding: 9px;
+    position: absolute;
+    top: 100%;
+    transform: translateY(-100%);
+    line-height: 100%;
+}
+
+.before figcaption {
+    left: 0px;
+}
+.after figcaption {
+    right: 0px;
+}
+.custom-animated-handle {
+    transition: transform 0.2s;
+}
+
+.slider-with-animated-handle:hover .custom-animated-handle {
+    transform: scale(1.2);
+}
+.md-typeset img-comparison-slider figure {
+    margin: initial;
+}
+
+.first-overlay {
+    color: #000;
+}
+
+
 </style>
 
   <!-- Hero for landing page -->
@@ -310,7 +363,6 @@
           <h1>A beautiful and simple UI to manage your WireGuard peers and interfaces</h1>
           <p>WireGuard Portal is an open source web-based user interface that makes it easy to setup and manage
             WireGuard VPN connections. It's built on top of WireGuard's official <span class="em">wgctrl</span> library.</p>
-          </p>
           <a
             href="documentation/overview/"
             title="Get Started"
@@ -326,11 +378,34 @@
 
   <div class="md-container">
     <div class="tx-hero__image">
-      <img
-        src="{{config.site_url}}/assets/images/screenshot.png"
-        alt=""
-        draggable="false"
-      >
+      <div>
+        <img-comparison-slider hover="hover">
+          <figure slot="first" class="before">
+            <img src="{{config.site_url}}/assets/images/wgportal_light.png" alt="Light Mode"/>
+            <figcaption>Light Mode</figcaption>
+          </figure>
+          <figure slot="second" class="after">
+            <img src="{{config.site_url}}/assets/images/wgportal_dark.png" alt="Dark Mode"/>
+            <figcaption>Dark Mode</figcaption>
+          </figure>
+          <svg slot="handle" class="custom-animated-handle" xmlns="http://www.w3.org/2000/svg" width="100" viewBox="-8 -3 16 6">
+                <!-- Left arrow (dark) -->
+                <path d="M -5 -2 L -7 0 L -5 2 M -5 -2 L -5 2"
+                      stroke="#1a1a1a"
+                      fill="#1a1a1a"
+                      stroke-width="1"
+                      vector-effect="non-scaling-stroke">
+                </path>
+                <!-- Right arrow (white) -->
+                <path d="M 5 -2 L 7 0 L 5 2 M 5 -2 L 5 2"
+                      stroke="#fff"
+                      fill="#fff"
+                      stroke-width="1"
+                      vector-effect="non-scaling-stroke">
+                </path>
+          </svg>
+        </img-comparison-slider>
+      </div>
     </div>
   </div>
 

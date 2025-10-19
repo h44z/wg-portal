@@ -41,4 +41,6 @@ type MailConfig struct {
 	From string `yaml:"from"`
 	// LinkOnly specifies whether emails should only contain a link to WireGuard Portal or attach the full configuration
 	LinkOnly bool `yaml:"link_only"`
+	// AllowPeerEmail specifies whether emails should be sent to peers which have no valid user account linked, but an email address is set as "user".
+	AllowPeerEmail bool `yaml:"allow_peer_email"`
 }

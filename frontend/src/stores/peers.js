@@ -126,9 +126,14 @@ export const peerStore = defineStore('peers', {
       if (!statsResponse) {
         this.stats = {}
         this.statsEnabled = false
+      } else {
+          this.stats = statsResponse.Stats
+          this.statsEnabled = statsResponse.Enabled
       }
-      this.stats = statsResponse.Stats
-      this.statsEnabled = statsResponse.Enabled
+    },
+    async Reset() {
+      this.setPeers([])
+      this.setStats(undefined)
     },
     async PreparePeer(interfaceId) {
       return apiWrapper.get(`${baseUrl}/iface/${base64_url_encode(interfaceId)}/prepare`)
@@ -142,8 +147,8 @@ export const peerStore = defineStore('peers', {
           })
         })
     },
-    async MailPeerConfig(linkOnly, ids) {
-      return apiWrapper.post(`${baseUrl}/config-mail`, {
+    async MailPeerConfig(linkOnly, style, ids) {
+      return apiWrapper.post(`${baseUrl}/config-mail?style=${style}`, {
           Identifiers: ids,
           LinkOnly: linkOnly
         })
@@ -158,8 +163,8 @@ export const peerStore = defineStore('peers', {
           throw new Error(error)
         })
     },
-    async LoadPeerConfig(id) {
-      return apiWrapper.get(`${baseUrl}/config/${base64_url_encode(id)}`)
+    async LoadPeerConfig(id, style) {
+      return apiWrapper.get(`${baseUrl}/config/${base64_url_encode(id)}?style=${style}`)
         .then(this.setPeerConfig)
         .catch(error => {
           this.configuration = ""
@@ -186,10 +191,10 @@ export const peerStore = defineStore('peers', {
     async LoadStats(interfaceId) {
       // if no interfaceId is given, use the currently selected interface
       if (!interfaceId) {
-        interfaceId = interfaceStore().GetSelected.Identifier
-        if (!interfaceId) {
-          return // no interface, nothing to load
+        if (!interfaceStore().GetSelected || !interfaceStore().GetSelected.Identifier) {
+            return // no interface, nothing to load
         }
+        interfaceId = interfaceStore().GetSelected.Identifier
       }
       this.fetching = true
 
@@ -260,10 +265,10 @@ export const peerStore = defineStore('peers', {
     async LoadPeers(interfaceId) {
       // if no interfaceId is given, use the currently selected interface
       if (!interfaceId) {
-        interfaceId = interfaceStore().GetSelected.Identifier
-        if (!interfaceId) {
+        if (!interfaceStore().GetSelected || !interfaceStore().GetSelected.Identifier) {
           return // no interface, nothing to load
         }
+        interfaceId = interfaceStore().GetSelected.Identifier
       }
       this.fetching = true
 

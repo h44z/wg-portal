@@ -10,7 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sys/unix"
+
 	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/config"
 )
 
 const (
@@ -23,6 +26,7 @@ var allowedFileNameRegex = regexp.MustCompile("[^a-zA-Z0-9-_]+")
 
 type InterfaceIdentifier string
 type InterfaceType string
+type InterfaceBackend string
 
 type Interface struct {
 	BaseModel
@@ -49,11 +53,12 @@ type Interface struct {
 	SaveConfig bool // automatically persist config changes to the wgX.conf file
 
 	// WG Portal specific
-	DisplayName    string        // a nice display name/ description for the interface
-	Type           InterfaceType // the interface type, either InterfaceTypeServer or InterfaceTypeClient
-	DriverType     string        // the interface driver type (linux, software, ...)
-	Disabled       *time.Time    `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
-	DisabledReason string        // the reason why the interface has been disabled
+	DisplayName    string           // a nice display name/ description for the interface
+	Type           InterfaceType    // the interface type, either InterfaceTypeServer or InterfaceTypeClient
+	Backend        InterfaceBackend // the backend that is used to manage the interface (wgctrl, mikrotik, ...)
+	DriverType     string           // the interface driver type (linux, software, ...)
+	Disabled       *time.Time       `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
+	DisabledReason string           // the reason why the interface has been disabled
 
 	// Default settings for the peer, used for new peers, those settings will be published to ConfigOption options of
 	// the peer config
@@ -128,17 +133,30 @@ func (i *Interface) GetConfigFileName() string {
 	return filename
 }
 
+// GetAllowedIPs returns the allowed IPs for the interface depending on the interface type and peers.
+// For example, if the interface type is Server, the allowed IPs are the IPs of the peers.
+// If the interface type is Client, the allowed IPs correspond to the AllowedIPsStr of the peers.
 func (i *Interface) GetAllowedIPs(peers []Peer) []Cidr {
 	var allowedCidrs []Cidr
 
-	for _, peer := range peers {
-		for _, ip := range peer.Interface.Addresses {
-			allowedCidrs = append(allowedCidrs, ip.HostAddr())
+	switch i.Type {
+	case InterfaceTypeServer, InterfaceTypeAny:
+		for _, peer := range peers {
+			for _, ip := range peer.Interface.Addresses {
+				allowedCidrs = append(allowedCidrs, ip.HostAddr())
+			}
+			if peer.ExtraAllowedIPsStr != "" {
+				extraIPs, err := CidrsFromString(peer.ExtraAllowedIPsStr)
+				if err == nil {
+					allowedCidrs = append(allowedCidrs, extraIPs...)
+				}
+			}
 		}
-		if peer.ExtraAllowedIPsStr != "" {
-			extraIPs, err := CidrsFromString(peer.ExtraAllowedIPsStr)
+	case InterfaceTypeClient:
+		for _, peer := range peers {
+			allowedIPs, err := CidrsFromString(peer.AllowedIPsStr.GetValue())
 			if err == nil {
-				allowedCidrs = append(allowedCidrs, extraIPs...)
+				allowedCidrs = append(allowedCidrs, allowedIPs...)
 			}
 		}
 	}
@@ -155,6 +173,7 @@ func (i *Interface) ManageRoutingTable() bool {
 //
 //	-1 if RoutingTable was set to "off" or an error occurred
 func (i *Interface) GetRoutingTable() int {
+
 	routingTableStr := strings.ToLower(i.RoutingTable)
 	switch {
 	case routingTableStr == "":
@@ -162,6 +181,9 @@ func (i *Interface) GetRoutingTable() int {
 	case routingTableStr == "off":
 		return -1
 	case strings.HasPrefix(routingTableStr, "0x"):
+		if i.Backend != config.LocalBackendName {
+			return 0 // ignore numeric routing table numbers for non-local controllers
+		}
 		numberStr := strings.ReplaceAll(routingTableStr, "0x", "")
 		routingTable, err := strconv.ParseUint(numberStr, 16, 64)
 		if err != nil {
@@ -174,6 +196,9 @@ func (i *Interface) GetRoutingTable() int {
 		}
 		return int(routingTable)
 	default:
+		if i.Backend != config.LocalBackendName {
+			return 0 // ignore numeric routing table numbers for non-local controllers
+		}
 		routingTable, err := strconv.Atoi(routingTableStr)
 		if err != nil {
 			slog.Error("failed to parse routing table number", "table", routingTableStr, "error", err)
@@ -204,9 +229,31 @@ type PhysicalInterface struct {
 
 	BytesUpload   uint64
 	BytesDownload uint64
+
+	backendExtras any // additional backend-specific extras, e.g., domain.MikrotikInterfaceExtras
+}
+
+func (p *PhysicalInterface) GetExtras() any {
+	return p.backendExtras
+}
+
+func (p *PhysicalInterface) SetExtras(extras any) {
+	switch extras.(type) {
+	case MikrotikInterfaceExtras: // OK
+	default: // we only support MikrotikInterfaceExtras for now
+		panic(fmt.Sprintf("unsupported interface backend extras type %T", extras))
+	}
+
+	p.backendExtras = extras
 }
 
 func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
+	networks := make([]Cidr, 0, len(pi.Addresses))
+	for _, addr := range pi.Addresses {
+		networks = append(networks, addr.NetworkAddr())
+	}
+
+	// create a new basic interface with the data from the physical interface
 	iface := &Interface{
 		Identifier:                 pi.Identifier,
 		KeyPair:                    pi.KeyPair,
@@ -226,11 +273,11 @@ func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
 		Type:                       InterfaceTypeAny,
 		DriverType:                 pi.DeviceType,
 		Disabled:                   nil,
-		PeerDefNetworkStr:          "",
+		PeerDefNetworkStr:          CidrsToString(networks),
 		PeerDefDnsStr:              "",
 		PeerDefDnsSearchStr:        "",
 		PeerDefEndpoint:            "",
-		PeerDefAllowedIPsStr:       "",
+		PeerDefAllowedIPsStr:       CidrsToString(networks),
 		PeerDefMtu:                 pi.Mtu,
 		PeerDefPersistentKeepalive: 0,
 		PeerDefFirewallMark:        0,
@@ -239,6 +286,23 @@ func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
 		PeerDefPostUp:              "",
 		PeerDefPreDown:             "",
 		PeerDefPostDown:            "",
+	}
+
+	if pi.GetExtras() == nil {
+		return iface
+	}
+
+	// enrich the data with controller-specific extras
+	now := time.Now()
+	switch pi.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := pi.GetExtras().(MikrotikInterfaceExtras)
+		iface.DisplayName = extras.Comment
+		if extras.Disabled {
+			iface.Disabled = &now
+		} else {
+			iface.Disabled = nil
+		}
 	}
 
 	return iface
@@ -253,15 +317,30 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 	pi.FirewallMark = i.FirewallMark
 	pi.DeviceUp = !i.IsDisabled()
 	pi.Addresses = i.Addresses
+
+	switch pi.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := MikrotikInterfaceExtras{
+			Comment:  i.DisplayName,
+			Disabled: i.IsDisabled(),
+		}
+		pi.SetExtras(extras)
+	}
 }
 
 type RoutingTableInfo struct {
-	FwMark uint32
-	Table  int
+	Interface  Interface
+	AllowedIps []Cidr
+	FwMark     uint32
+	Table      int
+	TableStr   string // the routing table number as string (used by mikrotik, linux uses the numeric value)
+	IsDeleted  bool   // true if the interface was deleted, false otherwise
 }
 
 func (r RoutingTableInfo) String() string {
-	return fmt.Sprintf("%d -> %d", r.FwMark, r.Table)
+	v4, v6 := CidrsPerFamily(r.AllowedIps)
+	return fmt.Sprintf("%s: fwmark=%d; table=%d; routes_4=%d; routes_6=%d", r.Interface.Identifier, r.FwMark, r.Table,
+		len(v4), len(v6))
 }
 
 func (r RoutingTableInfo) ManagementEnabled() bool {
@@ -278,4 +357,31 @@ func (r RoutingTableInfo) GetRoutingTable() int {
 	}
 
 	return r.Table
+}
+
+type IpFamily int
+
+const (
+	IpFamilyIPv4 IpFamily = unix.AF_INET
+	IpFamilyIPv6 IpFamily = unix.AF_INET6
+)
+
+func (f IpFamily) String() string {
+	switch f {
+	case IpFamilyIPv4:
+		return "IPv4"
+	case IpFamilyIPv6:
+		return "IPv6"
+	default:
+		return "unknown"
+	}
+}
+
+// RouteRule represents a routing table rule.
+type RouteRule struct {
+	InterfaceId InterfaceIdentifier
+	IpFamily    IpFamily
+	FwMark      uint32
+	Table       int
+	HasDefault  bool
 }

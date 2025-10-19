@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/mail"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -21,9 +22,9 @@ type ConfigFileManager interface {
 	// GetInterfaceConfig returns the configuration for the given interface.
 	GetInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) (io.Reader, error)
 	// GetPeerConfig returns the configuration for the given peer.
-	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	GetPeerConfig(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
 	// GetPeerConfigQrCode returns the QR code for the given peer.
-	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier) (io.Reader, error)
+	GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifier, style string) (io.Reader, error)
 }
 
 type UserDatabaseRepo interface {
@@ -71,7 +72,7 @@ func NewMailManager(
 	users UserDatabaseRepo,
 	wg WireguardDatabaseRepo,
 ) (*Manager, error) {
-	tplHandler, err := newTemplateHandler(cfg.Web.ExternalUrl)
+	tplHandler, err := newTemplateHandler(cfg.Web.ExternalUrl, cfg.Web.SiteTitle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template handler: %w", err)
 	}
@@ -89,7 +90,7 @@ func NewMailManager(
 }
 
 // SendPeerEmail sends an email to the user linked to the given peers.
-func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...domain.PeerIdentifier) error {
+func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, style string, peers ...domain.PeerIdentifier) error {
 	for _, peerId := range peers {
 		peer, err := m.wg.GetPeer(ctx, peerId)
 		if err != nil {
@@ -101,29 +102,15 @@ func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...doma
 		}
 
 		if peer.UserIdentifier == "" {
-			slog.Debug("skipping peer email",
-				"peer", peerId,
-				"reason", "no user linked")
-			continue
+			return fmt.Errorf("peer %s has no user linked, no email is sent", peerId)
 		}
 
-		user, err := m.users.GetUser(ctx, peer.UserIdentifier)
-		if err != nil {
-			slog.Debug("skipping peer email",
-				"peer", peerId,
-				"reason", "unable to fetch user",
-				"error", err)
-			continue
+		email, user := m.resolveEmail(ctx, peer)
+		if email == "" {
+			return fmt.Errorf("peer %s has no valid email address, no email is sent", peerId)
 		}
 
-		if user.Email == "" {
-			slog.Debug("skipping peer email",
-				"peer", peerId,
-				"reason", "user has no mail address")
-			continue
-		}
-
-		err = m.sendPeerEmail(ctx, linkOnly, user, peer)
+		err = m.sendPeerEmail(ctx, linkOnly, style, &user, peer)
 		if err != nil {
 			return fmt.Errorf("failed to send peer email for %s: %w", peerId, err)
 		}
@@ -132,7 +119,13 @@ func (m Manager) SendPeerEmail(ctx context.Context, linkOnly bool, peers ...doma
 	return nil
 }
 
-func (m Manager) sendPeerEmail(ctx context.Context, linkOnly bool, user *domain.User, peer *domain.Peer) error {
+func (m Manager) sendPeerEmail(
+	ctx context.Context,
+	linkOnly bool,
+	style string,
+	user *domain.User,
+	peer *domain.Peer,
+) error {
 	qrName := "WireGuardQRCode.png"
 	configName := peer.GetConfigFileName()
 
@@ -148,12 +141,12 @@ func (m Manager) sendPeerEmail(ctx context.Context, linkOnly bool, user *domain.
 		}
 
 	} else {
-		peerConfig, err := m.configFiles.GetPeerConfig(ctx, peer.Identifier)
+		peerConfig, err := m.configFiles.GetPeerConfig(ctx, peer.Identifier, style)
 		if err != nil {
 			return fmt.Errorf("failed to fetch peer config for %s: %w", peer.Identifier, err)
 		}
 
-		peerConfigQr, err := m.configFiles.GetPeerConfigQrCode(ctx, peer.Identifier)
+		peerConfigQr, err := m.configFiles.GetPeerConfigQrCode(ctx, peer.Identifier, style)
 		if err != nil {
 			return fmt.Errorf("failed to fetch peer config QR code for %s: %w", peer.Identifier, err)
 		}
@@ -187,4 +180,38 @@ func (m Manager) sendPeerEmail(ctx context.Context, linkOnly bool, user *domain.
 	}
 
 	return nil
+}
+
+func (m Manager) resolveEmail(ctx context.Context, peer *domain.Peer) (string, domain.User) {
+	user, err := m.users.GetUser(ctx, peer.UserIdentifier)
+	if err != nil {
+		if m.cfg.Mail.AllowPeerEmail {
+			_, err := mail.ParseAddress(string(peer.UserIdentifier)) // test if the user identifier is a valid email address
+			if err == nil {
+				slog.Debug("peer email: using user-identifier as email",
+					"peer", peer.Identifier, "email", peer.UserIdentifier)
+				return string(peer.UserIdentifier), domain.User{}
+			} else {
+				slog.Debug("peer email: skipping peer email",
+					"peer", peer.Identifier,
+					"reason", "peer has no user linked and user-identifier is not a valid email address")
+				return "", domain.User{}
+			}
+		} else {
+			slog.Debug("peer email: skipping peer email",
+				"peer", peer.Identifier,
+				"reason", "user has no user linked")
+			return "", domain.User{}
+		}
+	}
+
+	if user.Email == "" {
+		slog.Debug("peer email: skipping peer email",
+			"peer", peer.Identifier,
+			"reason", "user has no mail address")
+		return "", domain.User{}
+	}
+
+	slog.Debug("peer email: using user email", "peer", peer.Identifier, "email", user.Email)
+	return user.Email, *user
 }

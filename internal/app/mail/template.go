@@ -17,11 +17,12 @@ var TemplateFiles embed.FS
 // TemplateHandler is a struct that holds the html and text templates.
 type TemplateHandler struct {
 	portalUrl     string
+	portalName    string
 	htmlTemplates *htmlTemplate.Template
 	textTemplates *template.Template
 }
 
-func newTemplateHandler(portalUrl string) (*TemplateHandler, error) {
+func newTemplateHandler(portalUrl, portalName string) (*TemplateHandler, error) {
 	htmlTemplateCache, err := htmlTemplate.New("Html").ParseFS(TemplateFiles, "tpl_files/*.gohtml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse html template files: %w", err)
@@ -34,6 +35,7 @@ func newTemplateHandler(portalUrl string) (*TemplateHandler, error) {
 
 	handler := &TemplateHandler{
 		portalUrl:     portalUrl,
+		portalName:    portalName,
 		htmlTemplates: htmlTemplateCache,
 		textTemplates: txtTemplateCache,
 	}
@@ -81,6 +83,7 @@ func (c TemplateHandler) GetConfigMailWithAttachment(user *domain.User, cfgName,
 		"ConfigFileName": cfgName,
 		"QrcodePngName":  qrName,
 		"PortalUrl":      c.portalUrl,
+		"PortalName":     c.portalName,
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to execute template mail_with_attachment.gotpl: %w", err)
@@ -91,6 +94,7 @@ func (c TemplateHandler) GetConfigMailWithAttachment(user *domain.User, cfgName,
 		"ConfigFileName": cfgName,
 		"QrcodePngName":  qrName,
 		"PortalUrl":      c.portalUrl,
+		"PortalName":     c.portalName,
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to execute template mail_with_attachment.gohtml: %w", err)

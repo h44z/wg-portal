@@ -1,12 +1,14 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
 	"time"
 
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"gorm.io/gorm"
 
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
@@ -44,6 +46,7 @@ type Peer struct {
 	DisplayName          string              // a nice display name/ description for the peer
 	Identifier           PeerIdentifier      `gorm:"primaryKey;column:identifier"`      // peer unique identifier
 	UserIdentifier       UserIdentifier      `gorm:"index;column:user_identifier"`      // the owner
+	User                 *User               `gorm:"-"`                                 // the owner user object; loaded automatically after fetch
 	InterfaceIdentifier  InterfaceIdentifier `gorm:"index;column:interface_identifier"` // the interface id
 	Disabled             *time.Time          `gorm:"column:disabled"`                   // if this field is set, the peer is disabled
 	DisabledReason       string              // the reason why the peer has been disabled
@@ -129,7 +132,7 @@ func (p *Peer) GenerateDisplayName(prefix string) {
 	p.DisplayName = fmt.Sprintf("%sPeer %s", prefix, internal.TruncateString(string(p.Identifier), 8))
 }
 
-// OverwriteUserEditableFields overwrites the user editable fields of the peer with the values from the userPeer
+// OverwriteUserEditableFields overwrites the user-editable fields of the peer with the values from the userPeer
 func (p *Peer) OverwriteUserEditableFields(userPeer *Peer, cfg *config.Config) {
 	p.DisplayName = userPeer.DisplayName
 	if cfg.Core.EditableKeys {
@@ -182,9 +185,12 @@ type PhysicalPeer struct {
 
 	BytesUpload   uint64 // upload bytes are the number of bytes that the remote peer has sent to the server
 	BytesDownload uint64 // upload bytes are the number of bytes that the remote peer has received from the server
+
+	ImportSource  string // import source (wgctrl, file, ...)
+	backendExtras any    // additional backend-specific extras, e.g., domain.MikrotikPeerExtras
 }
 
-func (p PhysicalPeer) GetPresharedKey() *wgtypes.Key {
+func (p *PhysicalPeer) GetPresharedKey() *wgtypes.Key {
 	if p.PresharedKey == "" {
 		return nil
 	}
@@ -196,7 +202,7 @@ func (p PhysicalPeer) GetPresharedKey() *wgtypes.Key {
 	return &key
 }
 
-func (p PhysicalPeer) GetEndpointAddress() *net.UDPAddr {
+func (p *PhysicalPeer) GetEndpointAddress() *net.UDPAddr {
 	if p.Endpoint == "" {
 		return nil
 	}
@@ -208,7 +214,7 @@ func (p PhysicalPeer) GetEndpointAddress() *net.UDPAddr {
 	return addr
 }
 
-func (p PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
+func (p *PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
 	if p.PersistentKeepalive == 0 {
 		return nil
 	}
@@ -217,13 +223,28 @@ func (p PhysicalPeer) GetPersistentKeepaliveTime() *time.Duration {
 	return &keepAliveDuration
 }
 
-func (p PhysicalPeer) GetAllowedIPs() []net.IPNet {
+func (p *PhysicalPeer) GetAllowedIPs() []net.IPNet {
 	allowedIPs := make([]net.IPNet, len(p.AllowedIPs))
 	for i, ip := range p.AllowedIPs {
 		allowedIPs[i] = *ip.IpNet()
 	}
 
 	return allowedIPs
+}
+
+func (p *PhysicalPeer) GetExtras() any {
+	return p.backendExtras
+}
+
+func (p *PhysicalPeer) SetExtras(extras any) {
+	switch extras.(type) {
+	case MikrotikPeerExtras: // OK
+	case LocalPeerExtras: // OK
+	default: // we only support MikrotikPeerExtras and LocalPeerExtras for now
+		panic(fmt.Sprintf("unsupported peer backend extras type %T", extras))
+	}
+
+	p.backendExtras = extras
 }
 
 func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
@@ -244,30 +265,123 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 		},
 	}
 
+	if pp.GetExtras() == nil {
+		return peer
+	}
+
+	// enrich the data with controller-specific extras
+	now := time.Now()
+	switch pp.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := pp.GetExtras().(MikrotikPeerExtras)
+		peer.Notes = extras.Comment
+		peer.DisplayName = extras.Name
+		if extras.ClientEndpoint != "" { // if the client endpoint is set, we assume that this is a client peer
+			peer.Endpoint = NewConfigOption(extras.ClientEndpoint, true)
+			peer.Interface.Type = InterfaceTypeClient
+			peer.Interface.Addresses, _ = CidrsFromString(extras.ClientAddress)
+			peer.Interface.DnsStr = NewConfigOption(extras.ClientDns, true)
+			peer.PersistentKeepalive = NewConfigOption(extras.ClientKeepalive, true)
+		} else {
+			peer.Interface.Type = InterfaceTypeServer
+		}
+		if extras.Disabled {
+			peer.Disabled = &now
+			peer.DisabledReason = "Disabled by Mikrotik controller"
+		} else {
+			peer.Disabled = nil
+			peer.DisabledReason = ""
+		}
+	case ControllerTypeLocal:
+		extras := pp.GetExtras().(LocalPeerExtras)
+		if extras.Disabled {
+			peer.Disabled = &now
+			peer.DisabledReason = "Disabled by Local controller"
+		} else {
+			peer.Disabled = nil
+			peer.DisabledReason = ""
+		}
+	}
+
 	return peer
 }
 
 func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 	pp.Identifier = p.Identifier
-	pp.Endpoint = p.Endpoint.GetValue()
-	if p.Interface.Type == InterfaceTypeServer {
-		allowedIPs, _ := CidrsFromString(p.AllowedIPsStr.GetValue())
-		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
-		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
-	} else {
+	pp.PresharedKey = p.PresharedKey
+	pp.PublicKey = p.Interface.PublicKey
+
+	switch p.Interface.Type {
+	case InterfaceTypeClient: // this means that the corresponding interface in wgportal is a server interface
 		allowedIPs := make([]Cidr, len(p.Interface.Addresses))
 		for i, ip := range p.Interface.Addresses {
-			allowedIPs[i] = ip.HostAddr()
+			allowedIPs[i] = ip.HostAddr() // add the peer's host address to the allowed IPs
 		}
 		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
 		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
+	case InterfaceTypeServer: // this means that the corresponding interface in wgportal is a client interface
+		allowedIPs, _ := CidrsFromString(p.AllowedIPsStr.GetValue())
+		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
+		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
+		pp.Endpoint = p.Endpoint.GetValue()
+		pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()
+	case InterfaceTypeAny: // this means that the corresponding interface in wgportal has no specific type
+		allowedIPs := make([]Cidr, len(p.Interface.Addresses))
+		for i, ip := range p.Interface.Addresses {
+			allowedIPs[i] = ip.HostAddr() // add the peer's host address to the allowed IPs
+		}
+		extraAllowedIPs, _ := CidrsFromString(p.ExtraAllowedIPsStr)
+		pp.AllowedIPs = append(allowedIPs, extraAllowedIPs...)
+		pp.Endpoint = p.Endpoint.GetValue()
+		pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()
 	}
-	pp.PresharedKey = p.PresharedKey
-	pp.PublicKey = p.Interface.PublicKey
-	pp.PersistentKeepalive = p.PersistentKeepalive.GetValue()
+
+	switch pp.ImportSource {
+	case ControllerTypeMikrotik:
+		extras := MikrotikPeerExtras{
+			Id:              "",
+			Name:            p.DisplayName,
+			Comment:         p.Notes,
+			IsResponder:     p.Interface.Type == InterfaceTypeClient,
+			Disabled:        p.IsDisabled(),
+			ClientEndpoint:  p.Endpoint.GetValue(),
+			ClientAddress:   CidrsToString(p.Interface.Addresses),
+			ClientDns:       p.Interface.DnsStr.GetValue(),
+			ClientKeepalive: p.PersistentKeepalive.GetValue(),
+		}
+		pp.SetExtras(extras)
+	case ControllerTypeLocal:
+		extras := LocalPeerExtras{
+			Disabled: p.IsDisabled(),
+		}
+		pp.SetExtras(extras)
+	}
 }
 
 type PeerCreationRequest struct {
 	UserIdentifiers []string
 	Prefix          string
+}
+
+// AfterFind is a GORM hook that automatically loads the associated User object
+// based on the UserIdentifier field. If the identifier is empty or no user is
+// found, the User field is set to nil.
+func (p *Peer) AfterFind(tx *gorm.DB) error {
+	if p == nil {
+		return nil
+	}
+	if p.UserIdentifier == "" {
+		p.User = nil
+		return nil
+	}
+	var u User
+	if err := tx.Where("identifier = ?", p.UserIdentifier).First(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			p.User = nil
+			return nil
+		}
+		return err
+	}
+	p.User = &u
+	return nil
 }

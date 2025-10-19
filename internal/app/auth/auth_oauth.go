@@ -19,15 +19,16 @@ import (
 // PlainOauthAuthenticator is an authenticator that uses OAuth for authentication.
 // User information is retrieved from the specified user info endpoint.
 type PlainOauthAuthenticator struct {
-	name                string
-	cfg                 *oauth2.Config
-	userInfoEndpoint    string
-	client              *http.Client
-	userInfoMapping     config.OauthFields
-	userAdminMapping    *config.OauthAdminMapping
-	registrationEnabled bool
-	userInfoLogging     bool
-	allowedDomains      []string
+	name                 string
+	cfg                  *oauth2.Config
+	userInfoEndpoint     string
+	client               *http.Client
+	userInfoMapping      config.OauthFields
+	userAdminMapping     *config.OauthAdminMapping
+	registrationEnabled  bool
+	userInfoLogging      bool
+	sensitiveInfoLogging bool
+	allowedDomains       []string
 }
 
 func newPlainOauthAuthenticator(
@@ -57,6 +58,7 @@ func newPlainOauthAuthenticator(
 	provider.userAdminMapping = &cfg.AdminMapping
 	provider.registrationEnabled = cfg.RegistrationEnabled
 	provider.userInfoLogging = cfg.LogUserInfo
+	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
 
 	return provider, nil
@@ -110,6 +112,10 @@ func (p PlainOauthAuthenticator) GetUserInfo(
 
 	response, err := p.client.Do(req)
 	if err != nil {
+		if p.sensitiveInfoLogging {
+			slog.Debug("OAuth: failed to get user info", "endpoint", p.userInfoEndpoint,
+				"token", token, "error", err)
+		}
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 	defer internal.LogClose(response.Body)
@@ -121,11 +127,15 @@ func (p PlainOauthAuthenticator) GetUserInfo(
 	var userFields map[string]any
 	err = json.Unmarshal(contents, &userFields)
 	if err != nil {
+		if p.sensitiveInfoLogging {
+			slog.Debug("OAuth: failed to parse user info", "endpoint", p.userInfoEndpoint,
+				"token", token, "contents", contents, "error", err)
+		}
 		return nil, fmt.Errorf("failed to parse user info: %w", err)
 	}
 
 	if p.userInfoLogging {
-		slog.Debug("OAuth user info",
+		slog.Debug("OAuth: user info debug",
 			"source", p.name,
 			"info", string(contents))
 	}

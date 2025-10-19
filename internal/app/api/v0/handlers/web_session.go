@@ -31,6 +31,8 @@ type SessionData struct {
 	OauthProvider string
 	OauthReturnTo string
 
+	WebAuthnData string
+
 	CsrfToken string
 }
 

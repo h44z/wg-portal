@@ -65,6 +65,10 @@ definitions:
         items:
           type: string
         type: array
+      Backend:
+        description: the backend used for this interface e.g., local, mikrotik, ...
+        example: local
+        type: string
       Disabled:
         description: flag that specifies if the interface is enabled (up) or not (down)
         type: boolean
@@ -318,6 +322,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/model.ConfigOption-string'
         description: the routing table
+      UserDisplayName:
+        description: the owner display name
+        type: string
       UserIdentifier:
         description: the owner
         type: string
@@ -381,6 +388,12 @@ definitions:
     properties:
       ApiAdminOnly:
         type: boolean
+      AvailableBackends:
+        items:
+          $ref: '#/definitions/model.SettingsBackendNames'
+        type: array
+      LoginFormVisible:
+        type: boolean
       MailLinkOnly:
         type: boolean
       MinPasswordLength:
@@ -389,6 +402,15 @@ definitions:
         type: boolean
       SelfProvisioning:
         type: boolean
+      WebAuthnEnabled:
+        type: boolean
+    type: object
+  model.SettingsBackendNames:
+    properties:
+      Id:
+        type: string
+      Name:
+        type: string
     type: object
   model.User:
     properties:
@@ -433,6 +455,20 @@ definitions:
       ProviderName:
         type: string
       Source:
+        type: string
+    type: object
+  model.WebAuthnCredentialRequest:
+    properties:
+      Name:
+        type: string
+    type: object
+  model.WebAuthnCredentialResponse:
+    properties:
+      CreatedAt:
+        type: string
+      ID:
+        type: string
+      Name:
         type: string
     type: object
 info:
@@ -548,6 +584,102 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Get information about the currently logged-in user.
+      tags:
+      - Authentication
+  /auth/webauthn/credential/{id}:
+    delete:
+      operationId: auth_handleWebAuthnCredentialsDelete
+      parameters:
+      - description: Base64 encoded Credential ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.WebAuthnCredentialResponse'
+            type: array
+      summary: Delete a WebAuthn credential.
+      tags:
+      - Authentication
+    put:
+      operationId: auth_handleWebAuthnCredentialsPut
+      parameters:
+      - description: Base64 encoded Credential ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Credential name
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.WebAuthnCredentialRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.WebAuthnCredentialResponse'
+            type: array
+      summary: Update a WebAuthn credential.
+      tags:
+      - Authentication
+  /auth/webauthn/credentials:
+    get:
+      operationId: auth_handleWebAuthnCredentialsGet
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.WebAuthnCredentialResponse'
+            type: array
+      summary: Get all available external login providers.
+      tags:
+      - Authentication
+  /auth/webauthn/login/finish:
+    post:
+      operationId: auth_handleWebAuthnLoginFinish
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+      summary: Finish the WebAuthn login process.
+      tags:
+      - Authentication
+  /auth/webauthn/register/finish:
+    post:
+      operationId: auth_handleWebAuthnRegisterFinish
+      parameters:
+      - default: '""'
+        description: Credential name
+        in: query
+        name: credential_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.WebAuthnCredentialResponse'
+            type: array
+      summary: Finish the WebAuthn registration process.
       tags:
       - Authentication
   /config/frontend.js:
@@ -958,6 +1090,10 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/model.PeerMailRequest'
+      - description: The configuration style
+        in: query
+        name: style
+        type: string
       produces:
       - application/json
       responses:
@@ -982,6 +1118,10 @@ paths:
         in: path
         name: id
         required: true
+        type: string
+      - description: The configuration style
+        in: query
+        name: style
         type: string
       produces:
       - image/png
@@ -1010,6 +1150,10 @@ paths:
         in: path
         name: id
         required: true
+        type: string
+      - description: The configuration style
+        in: query
+        name: style
         type: string
       produces:
       - application/json
@@ -1299,6 +1443,27 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Enable the REST API for the given user.
+      tags:
+      - Users
+  /user/{id}/change-password:
+    post:
+      operationId: users_handleChangePasswordPost
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Change the password for the given user.
       tags:
       - Users
   /user/{id}/interfaces:

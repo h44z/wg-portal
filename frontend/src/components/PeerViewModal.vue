@@ -50,7 +50,7 @@ const selectedStats = computed(() => {
 
   if (!s) {
     if (!!props.peerId || props.peerId.length) {
-      p = profile.Statistics(props.peerId)
+      s = profile.Statistics(props.peerId)
     } else {
       s = freshStats() // dummy stats to avoid 'undefined' exceptions
     }
@@ -79,13 +79,19 @@ const title = computed(() => {
   }
 })
 
+const configStyle = ref("wgquick")
+
 watch(() => props.visible, async (newValue, oldValue) => {
   if (oldValue === false && newValue === true) { // if modal is shown
-    await peers.LoadPeerConfig(selectedPeer.value.Identifier)
+    await peers.LoadPeerConfig(selectedPeer.value.Identifier, configStyle.value)
     configString.value = peers.configuration
   }
-}
-)
+})
+
+watch(() => configStyle.value, async () => {
+  await peers.LoadPeerConfig(selectedPeer.value.Identifier, configStyle.value)
+  configString.value = peers.configuration
+})
 
 function download() {
   // credit: https://www.bitdegree.org/learn/javascript-download
@@ -103,7 +109,7 @@ function download() {
 }
 
 function email() {
-  peers.MailPeerConfig(settings.Setting("MailLinkOnly"), [selectedPeer.value.Identifier]).catch(e => {
+  peers.MailPeerConfig(settings.Setting("MailLinkOnly"), configStyle.value, [selectedPeer.value.Identifier]).catch(e => {
     notify({
       title: "Failed to send mail with peer configuration!",
       text: e.toString(),
@@ -114,7 +120,7 @@ function email() {
 
 function ConfigQrUrl() {
   if (props.peerId.length) {
-    return apiWrapper.url(`/peer/config-qr/${base64_url_encode(props.peerId)}`)
+    return apiWrapper.url(`/peer/config-qr/${base64_url_encode(props.peerId)}?style=${configStyle.value}`)
   }
   return ''
 }
@@ -124,6 +130,15 @@ function ConfigQrUrl() {
 <template>
   <Modal :title="title" :visible="visible" @close="close">
     <template #default>
+      <div class="d-flex justify-content-end align-items-center mb-1" v-if="selectedInterface.Mode !== 'client'">
+        <span class="me-2">{{ $t('modals.peer-view.style-label') }}: </span>
+        <div class="btn-group btn-switch-group" role="group" aria-label="Configuration Style">
+          <input type="radio" class="btn-check" name="configstyle" id="raw" value="raw" autocomplete="off" checked="" v-model="configStyle">
+          <label class="btn btn-outline-dark btn-sm" for="raw">Raw</label>
+          <input type="radio" class="btn-check" name="configstyle" id="wgquick" value="wgquick" autocomplete="off" checked="" v-model="configStyle">
+          <label class="btn btn-outline-dark btn-sm" for="wgquick">WG-Quick</label>
+        </div>
+      </div>
       <div class="accordion" id="peerInformation">
         <div class="accordion-item">
           <h2 class="accordion-header">
@@ -136,20 +151,28 @@ function ConfigQrUrl() {
             data-bs-parent="#peerInformation" style="">
             <div class="accordion-body">
               <div class="row">
-                <div class="col-md-8">
+                <div :class="{ 'col-md-8': selectedInterface.Mode !== 'client',  'col-md-12': selectedInterface.Mode !== 'server' }" class="col-md-8">
                   <ul>
-                    <li>{{ $t('modals.peer-view.identifier') }}: {{ selectedPeer.PublicKey }}</li>
-                    <li>{{ $t('modals.peer-view.ip') }}: <span v-for="ip in selectedPeer.Addresses" :key="ip"
+                    <li v-if="selectedInterface.Mode !== 'client'"><strong>{{ $t('modals.peer-view.identifier') }}</strong>: {{ selectedPeer.PublicKey }}</li>
+                    <li v-if="selectedInterface.Mode !== 'server'"><strong>{{ $t('modals.peer-view.endpoint-key') }}</strong>: {{ selectedPeer.PublicKey }}</li>
+                    <li v-if="selectedInterface.Mode !== 'server'"><strong>{{ $t('modals.peer-view.endpoint') }}</strong>: {{ selectedPeer.Endpoint.Value }}</li>
+                    <li v-if="selectedInterface.Mode !== 'client'"><strong>{{ $t('modals.peer-view.ip') }}</strong>: <span v-for="ip in selectedPeer.Addresses" :key="ip"
                         class="badge rounded-pill bg-light">{{ ip }}</span></li>
-                    <li>{{ $t('modals.peer-view.user') }}: {{ selectedPeer.UserIdentifier }}</li>
-                    <li v-if="selectedPeer.Notes">{{ $t('modals.peer-view.notes') }}: {{ selectedPeer.Notes }}</li>
-                    <li v-if="selectedPeer.ExpiresAt">{{ $t('modals.peer-view.expiry-status') }}: {{
+                    <li v-if="selectedInterface.Mode === 'server'"><strong>{{ $t('modals.peer-view.extra-allowed-ip') }}</strong>: <span v-for="ip in selectedPeer.ExtraAllowedIPs" :key="ip"
+                                                                                                                        class="badge rounded-pill bg-light">{{ ip }}</span></li>
+                    <li v-if="selectedInterface.Mode !== 'server' && selectedPeer.AllowedIPs.Value"><strong>{{ $t('modals.peer-view.allowed-ip') }}</strong>: <span v-for="ip in selectedPeer.AllowedIPs.Value" :key="ip"
+                                                                                                          class="badge rounded-pill bg-light">{{ ip }}</span></li>
+                    <li v-if="selectedInterface.Mode !== 'server'"><strong>{{ $t('modals.peer-view.keepalive') }}</strong>: {{ selectedPeer.PersistentKeepalive.Value }}</li>
+                    <li v-if="selectedPeer.UserDisplayName"><strong>{{ $t('modals.peer-view.user') }}</strong>: {{ selectedPeer.UserDisplayName }} ({{ selectedPeer.UserIdentifier }})</li>
+                    <li v-else><strong>{{ $t('modals.peer-view.user') }}</strong>: {{ selectedPeer.UserIdentifier }}</li>
+                    <li v-if="selectedPeer.Notes"><strong>{{ $t('modals.peer-view.notes') }}</strong>: {{ selectedPeer.Notes }}</li>
+                    <li v-if="selectedPeer.ExpiresAt"><strong>{{ $t('modals.peer-view.expiry-status') }}</strong>: {{
                       selectedPeer.ExpiresAt }}</li>
-                    <li v-if="selectedPeer.Disabled">{{ $t('modals.peer-view.disabled-status') }}: {{
+                    <li v-if="selectedPeer.Disabled"><strong>{{ $t('modals.peer-view.disabled-status') }}</strong>: {{
                       selectedPeer.DisabledReason }}</li>
                   </ul>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4" v-if="selectedInterface.Mode !== 'client'">
                   <img class="config-qr-img" :src="ConfigQrUrl()" loading="lazy" alt="Configuration QR Code">
                 </div>
               </div>
@@ -184,7 +207,7 @@ function ConfigQrUrl() {
             </div>
           </div>
         </div>
-        <div v-if="selectedInterface.Mode === 'server'" class="accordion-item">
+        <div v-if="selectedInterface.Mode !== 'client'" class="accordion-item">
           <h2 class="accordion-header" id="headingConfig">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
               data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig">
@@ -202,9 +225,9 @@ function ConfigQrUrl() {
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button @click.prevent="download" type="button" class="btn btn-primary me-1">{{
+        <button v-if="selectedInterface.Mode !== 'client'" @click.prevent="download" type="button" class="btn btn-primary me-1">{{
           $t('modals.peer-view.button-download') }}</button>
-        <button @click.prevent="email" type="button" class="btn btn-primary me-1">{{
+        <button v-if="selectedInterface.Mode !== 'client'" @click.prevent="email" type="button" class="btn btn-primary me-1">{{
           $t('modals.peer-view.button-email') }}</button>
       </div>
       <button @click.prevent="close" type="button" class="btn btn-secondary">{{ $t('general.close') }}</button>
@@ -213,6 +236,14 @@ function ConfigQrUrl() {
   </template>
 </Modal></template>
 
-<style>.config-qr-img {
+<style>
+.config-qr-img {
   max-width: 100%;
-}</style>
+}
+
+.btn-switch-group .btn {
+  border-width: 1px;
+  padding: 5px;
+  line-height: 1;
+}
+</style>

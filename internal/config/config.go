@@ -14,9 +14,10 @@ import (
 type Config struct {
 	Core struct {
 		// AdminUser defines the default administrator account that will be created
-		AdminUser     string `yaml:"admin_user"`
-		AdminPassword string `yaml:"admin_password"`
-		AdminApiToken string `yaml:"admin_api_token"` // if set, the API access is enabled automatically
+		AdminUserDisabled bool   `yaml:"disable_admin_user"`
+		AdminUser         string `yaml:"admin_user"`
+		AdminPassword     string `yaml:"admin_password"`
+		AdminApiToken     string `yaml:"admin_api_token"` // if set, the API access is enabled automatically
 
 		EditableKeys                bool `yaml:"editable_keys"`
 		CreateDefaultPeer           bool `yaml:"create_default_peer"`
@@ -29,19 +30,22 @@ type Config struct {
 	} `yaml:"core"`
 
 	Advanced struct {
-		LogLevel            string        `yaml:"log_level"`
-		LogPretty           bool          `yaml:"log_pretty"`
-		LogJson             bool          `yaml:"log_json"`
-		StartListenPort     int           `yaml:"start_listen_port"`
-		StartCidrV4         string        `yaml:"start_cidr_v4"`
-		StartCidrV6         string        `yaml:"start_cidr_v6"`
-		UseIpV6             bool          `yaml:"use_ip_v6"`
-		ConfigStoragePath   string        `yaml:"config_storage_path"` // keep empty to disable config export to file
-		ExpiryCheckInterval time.Duration `yaml:"expiry_check_interval"`
-		RulePrioOffset      int           `yaml:"rule_prio_offset"`
-		RouteTableOffset    int           `yaml:"route_table_offset"`
-		ApiAdminOnly        bool          `yaml:"api_admin_only"` // if true, only admin users can access the API
+		LogLevel                 string        `yaml:"log_level"`
+		LogPretty                bool          `yaml:"log_pretty"`
+		LogJson                  bool          `yaml:"log_json"`
+		StartListenPort          int           `yaml:"start_listen_port"`
+		StartCidrV4              string        `yaml:"start_cidr_v4"`
+		StartCidrV6              string        `yaml:"start_cidr_v6"`
+		UseIpV6                  bool          `yaml:"use_ip_v6"`
+		ConfigStoragePath        string        `yaml:"config_storage_path"` // keep empty to disable config export to file
+		ExpiryCheckInterval      time.Duration `yaml:"expiry_check_interval"`
+		RulePrioOffset           int           `yaml:"rule_prio_offset"`
+		RouteTableOffset         int           `yaml:"route_table_offset"`
+		ApiAdminOnly             bool          `yaml:"api_admin_only"` // if true, only admin users can access the API
+		LimitAdditionalUserPeers int           `yaml:"limit_additional_user_peers"`
 	} `yaml:"advanced"`
+
+	Backend Backend `yaml:"backend"`
 
 	Statistics struct {
 		UsePingChecks          bool          `yaml:"use_ping_checks"`
@@ -76,6 +80,7 @@ func (c *Config) LogStartupValues() {
 		"reEnablePeerAfterUserEnable", c.Core.ReEnablePeerAfterUserEnable,
 		"deletePeerAfterUserDeleted", c.Core.DeletePeerAfterUserDeleted,
 		"selfProvisioningAllowed", c.Core.SelfProvisioningAllowed,
+		"limitAdditionalUserPeers", c.Advanced.LimitAdditionalUserPeers,
 		"importExisting", c.Core.ImportExisting,
 		"restoreState", c.Core.RestoreState,
 		"useIpV6", c.Advanced.UseIpV6,
@@ -93,15 +98,25 @@ func (c *Config) LogStartupValues() {
 		"oidcProviders", len(c.Auth.OpenIDConnect),
 		"oauthProviders", len(c.Auth.OAuth),
 		"ldapProviders", len(c.Auth.Ldap),
+		"webauthnEnabled", c.Auth.WebAuthn.Enabled,
+		"minPasswordLength", c.Auth.MinPasswordLength,
+		"hideLoginForm", c.Auth.HideLoginForm,
 	)
+
+	slog.Debug("Config Backend",
+		"defaultBackend", c.Backend.Default,
+		"extraBackends", len(c.Backend.Mikrotik),
+	)
+
 }
 
 // defaultConfig returns the default configuration
 func defaultConfig() *Config {
 	cfg := &Config{}
 
+	cfg.Core.AdminUserDisabled = false
 	cfg.Core.AdminUser = "admin@wgportal.local"
-	cfg.Core.AdminPassword = "wgportal"
+	cfg.Core.AdminPassword = "wgportal-default"
 	cfg.Core.AdminApiToken = "" // by default, the API access is disabled
 	cfg.Core.ImportExisting = true
 	cfg.Core.RestoreState = true
@@ -115,6 +130,13 @@ func defaultConfig() *Config {
 	cfg.Database = DatabaseConfig{
 		Type: "sqlite",
 		DSN:  "data/sqlite.db",
+	}
+
+	cfg.Backend = Backend{
+		Default: LocalBackendName, // local backend is the default (using wgcrtl)
+		// Most resolconf implementations use "tun." as a prefix for interface names.
+		// But systemd's implementation uses no prefix, for example.
+		LocalResolvconfPrefix: "tun.",
 	}
 
 	cfg.Web = WebConfig{
@@ -137,6 +159,7 @@ func defaultConfig() *Config {
 	cfg.Advanced.RulePrioOffset = 20000
 	cfg.Advanced.RouteTableOffset = 20000
 	cfg.Advanced.ApiAdminOnly = true
+	cfg.Advanced.LimitAdditionalUserPeers = 0
 
 	cfg.Statistics.UsePingChecks = true
 	cfg.Statistics.PingCheckWorkers = 10
@@ -163,6 +186,10 @@ func defaultConfig() *Config {
 	cfg.Webhook.Url = "" // no webhook by default
 	cfg.Webhook.Authentication = ""
 	cfg.Webhook.Timeout = 10 * time.Second
+
+	cfg.Auth.WebAuthn.Enabled = true
+	cfg.Auth.MinPasswordLength = 16
+	cfg.Auth.HideLoginForm = false
 
 	return cfg
 }
@@ -191,6 +218,10 @@ func GetConfig() (*Config, error) {
 	}
 
 	cfg.Web.Sanitize()
+	err := cfg.Backend.Validate()
+	if err != nil {
+		return nil, err
+	}
 
 	return cfg, nil
 }

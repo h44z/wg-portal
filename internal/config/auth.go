@@ -16,6 +16,14 @@ type Auth struct {
 	OAuth []OAuthProvider `yaml:"oauth"`
 	// Ldap contains a list of LDAP providers.
 	Ldap []LdapProvider `yaml:"ldap"`
+	// Webauthn contains the configuration for the WebAuthn authenticator.
+	WebAuthn WebauthnConfig `yaml:"webauthn"`
+	// MinPasswordLength is the minimum password length for user accounts. This also applies to the admin user.
+	// It is encouraged to set this value to at least 16 characters.
+	MinPasswordLength int `yaml:"min_password_length"`
+	// HideLoginForm specifies whether the login form should be hidden. If no social login providers are configured,
+	// the login form will be shown regardless of this setting.
+	HideLoginForm bool `yaml:"hide_login_form"`
 }
 
 // BaseFields contains the basic fields that are used to map user information from the authentication providers.
@@ -203,6 +211,10 @@ type OpenIDConnectProvider struct {
 
 	// If LogUserInfo is set to true, the user info retrieved from the OIDC provider will be logged in trace level.
 	LogUserInfo bool `yaml:"log_user_info"`
+
+	// If LogSensitiveInfo is set to true, sensitive information retrieved from the OIDC provider will be logged in trace level.
+	// This also includes OAuth tokens! Keep this disabled in production!
+	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
 }
 
 // OAuthProvider contains the configuration for the OAuth provider.
@@ -244,4 +256,14 @@ type OAuthProvider struct {
 
 	// If LogUserInfo is set to true, the user info retrieved from the OAuth provider will be logged in trace level.
 	LogUserInfo bool `yaml:"log_user_info"`
+
+	// If LogSensitiveInfo is set to true, sensitive information retrieved from the OAuth provider will be logged in trace level.
+	// This also includes OAuth tokens! Keep this disabled in production!
+	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
+}
+
+// WebauthnConfig contains the configuration for the WebAuthn authenticator.
+type WebauthnConfig struct {
+	// Enabled specifies whether WebAuthn is enabled.
+	Enabled bool `yaml:"enabled"`
 }

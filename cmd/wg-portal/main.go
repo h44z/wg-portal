@@ -50,9 +50,8 @@ func main() {
 	database, err := adapters.NewSqlRepository(rawDb)
 	internal.AssertNoError(err)
 
-	wireGuard := adapters.NewWireGuardRepository()
-
-	wgQuick := adapters.NewWgQuickRepo()
+	wireGuard, err := wireguard.NewControllerManager(cfg)
+	internal.AssertNoError(err)
 
 	mailer := adapters.NewSmtpMailRepo(cfg.Mail)
 
@@ -87,8 +86,12 @@ func main() {
 
 	authenticator, err := auth.NewAuthenticator(&cfg.Auth, cfg.Web.ExternalUrl, eventBus, userManager)
 	internal.AssertNoError(err)
+	authenticator.StartBackgroundJobs(ctx)
 
-	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, wgQuick, database)
+	webAuthn, err := auth.NewWebAuthnAuthenticator(cfg, eventBus, userManager)
+	internal.AssertNoError(err)
+
+	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, database)
 	internal.AssertNoError(err)
 	wireGuardManager.StartBackgroundJobs(ctx)
 
@@ -102,7 +105,7 @@ func main() {
 	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)
 	internal.AssertNoError(err)
 
-	routeManager, err := route.NewRouteManager(cfg, eventBus, database)
+	routeManager, err := route.NewRouteManager(cfg, eventBus, database, wireGuard)
 	internal.AssertNoError(err)
 	routeManager.StartBackgroundJobs(ctx)
 
@@ -124,12 +127,13 @@ func main() {
 	apiV0BackendInterfaces := backendV0.NewInterfaceService(cfg, wireGuardManager, cfgFileManager)
 	apiV0BackendPeers := backendV0.NewPeerService(cfg, wireGuardManager, cfgFileManager, mailManager)
 
-	apiV0EndpointAuth := handlersV0.NewAuthEndpoint(cfg, apiV0Auth, apiV0Session, validatorManager, authenticator)
+	apiV0EndpointAuth := handlersV0.NewAuthEndpoint(cfg, apiV0Auth, apiV0Session, validatorManager, authenticator,
+		webAuthn)
 	apiV0EndpointAudit := handlersV0.NewAuditEndpoint(cfg, apiV0Auth, auditManager)
 	apiV0EndpointUsers := handlersV0.NewUserEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendUsers)
 	apiV0EndpointInterfaces := handlersV0.NewInterfaceEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendInterfaces)
 	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendPeers)
-	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth)
+	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth, wireGuard)
 	apiV0EndpointTest := handlersV0.NewTestEndpoint(apiV0Auth)
 
 	apiFrontend := handlersV0.NewRestApi(apiV0Session,

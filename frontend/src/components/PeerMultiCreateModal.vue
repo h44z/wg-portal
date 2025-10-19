@@ -38,6 +38,7 @@ function freshForm() {
 
 const currentTag = ref("")
 const formData = ref(freshForm())
+const isSaving = ref(false)
 
 const title = computed(() => {
   if (!props.visible) {
@@ -60,12 +61,15 @@ function handleChangeUserIdentifiers(tags) {
 }
 
 async function save() {
+  if (isSaving.value) return
+  isSaving.value = true
   if (formData.value.Identifiers.length === 0) {
     notify({
       title: "Missing Identifiers",
       text: "At least one identifier is required to create a new peer.",
       type: 'error',
     })
+    isSaving.value = false
     return
   }
 
@@ -79,6 +83,8 @@ async function save() {
       text: e.toString(),
       type: 'error',
     })
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -108,7 +114,10 @@ async function save() {
       </fieldset>
     </template>
     <template #footer>
-      <button class="btn btn-primary me-1" type="button" @click.prevent="save">{{ $t('general.save') }}</button>
+      <button class="btn btn-primary me-1" type="button" @click.prevent="save" :disabled="isSaving">
+        <span v-if="isSaving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        {{ $t('general.save') }}
+      </button>
       <button class="btn btn-secondary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
     </template>
   </Modal>
