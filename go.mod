@@ -8,7 +8,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.12
-	github.com/go-pkgz/routegroup v1.5.3
+	github.com/go-pkgz/routegroup v1.6.0
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/go-webauthn/webauthn v0.14.0
 	github.com/google/uuid v1.6.0
