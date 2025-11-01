@@ -133,6 +133,9 @@ const userDisplayName = computed(() => {
           <li class="nav-item">
             <RouterLink :to="{ name: 'key-generator' }" class="nav-link">{{ $t('menu.keygen') }}</RouterLink>
           </li>
+          <li class="nav-item">
+            <RouterLink :to="{ name: 'ip-calculator' }" class="nav-link">{{ $t('menu.calculator') }}</RouterLink>
+          </li>
         </ul>
 
         <div class="navbar-nav d-flex justify-content-end">
