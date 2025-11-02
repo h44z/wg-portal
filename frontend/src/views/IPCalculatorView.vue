@@ -4,10 +4,13 @@ import {ref, watch, computed} from "vue";
 import isCidr from "is-cidr";
 import {isIP} from "is-ip";
 import {excludeCidr} from "cidr-tools";
+import {useI18n} from 'vue-i18n';
 
-const allowedIp = ref("0.0.0.0/0")
+const allowedIp = ref("")
 const dissallowedIp = ref("")
 const privateIP = ref("10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16")
+
+const {t} = useI18n()
 
 const errorAllowed = ref("")
 const errorDissallowed = ref("")
@@ -21,12 +24,12 @@ const errorDissallowed = ref("")
 function validateIpAndCidrList(value) {
   const list = value.split(",").map(v => v.trim()).filter(Boolean);
   if (list.length === 0) { 
-    return "Value cannot be empty";
+    return t('calculator.allowed-ip.empty');
   }
   
   for (const addr of list) {
     if (!isIP(addr) && !isCidr(addr)) {
-      return `Invalid address: ${addr}`;
+      return t('calculator.dissallowed-ip.invalid', {addr});
     }
   }
   return true;
@@ -46,6 +49,9 @@ watch(allowedIp, (newValue) => {
  * Updates `errorDissallowed` whenever `dissallowedIp` changes.
  */
 watch(dissallowedIp, (newValue) => {
+  if (!allowedIp.value || allowedIp.value.trim() === "") {
+    allowedIp.value = "0.0.0.0/0";
+  }
   const result = validateIpAndCidrList(newValue);
   errorDissallowed.value = result === true ? "" : result;
 });
