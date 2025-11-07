@@ -42,7 +42,8 @@
     "audit": "Event Protokoll",
     "login": "Anmelden",
     "logout": "Abmelden",
-    "keygen": "Schlüsselgenerator"
+    "keygen": "Schlüsselgenerator",
+    "calculator": "IP-Rechner"
   },
   "home": {
     "headline": "WireGuard® VPN Portal",
@@ -267,6 +268,26 @@
     "preshared-key": {
       "label": "Pre-Shared Key",
       "placeholder": "Der geteilte Schlüssel"
+    }
+  },
+  "calculator": {
+    "headline": "WireGuard IP-Rechner",
+    "abstract": "Erzeuge erlaubte IPs für WireGuard. Die IP-Subnetze werden lokal in Ihrem Browser generiert und niemals an den Server gesendet.",
+    "headline-allowed-ip": "Neue erlaubte IPs",
+    "button-exclude-private": "Private IP-Bereiche ausschließen",
+    "allowed-ip": {
+      "label": "Erlaubte IPs",
+      "placeholder": "0.0.0.0/0, ::/0",
+      "empty": "Wert darf nicht leer sein"
+    },
+    "dissallowed-ip": {
+      "label": "Nicht erlaubte IPs",
+      "placeholder": "10.0.0.0/8, 192.168.0.0/16",
+      "invalid": "Ungültige Adresse: {addr}"
+    },
+    "new-allowed-ip": {
+      "label": "Erlaubte IPs",
+      "placeholder": ""
     }
   },
   "modals": {
