@@ -47,15 +47,15 @@ func (e PeerEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/peer")
 	apiGroup.Use(e.authenticator.LoggedIn())
 
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /by-interface/{id}",
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /by-interface/{id...}",
 		e.handleAllForInterfaceGet())
-	apiGroup.HandleFunc("GET /by-user/{id}", e.handleAllForUserGet())
-	apiGroup.HandleFunc("GET /by-id/{id}", e.handleByIdGet())
+	apiGroup.HandleFunc("GET /by-user/{id...}", e.handleAllForUserGet())
+	apiGroup.HandleFunc("GET /by-id/{id...}", e.handleByIdGet())
 
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /prepare/{id}", e.handlePrepareGet())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /prepare/{id...}", e.handlePrepareGet())
 	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /new", e.handleCreatePost())
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("PUT /by-id/{id}", e.handleUpdatePut())
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("DELETE /by-id/{id}", e.handleDelete())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("PUT /by-id/{id...}", e.handleUpdatePut())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("DELETE /by-id/{id...}", e.handleDelete())
 }
 
 // handleAllForInterfaceGet returns a gorm Handler function.
