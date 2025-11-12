@@ -493,6 +493,8 @@
       "section-config": "Configuración",
       "identifier": "Identificador",
       "ip": "Direcciones IP",
+      "allowed-ip": "Direcciones IP permitidas",
+      "extra-allowed-ip": "Direcciones IP permitidas del lado del servidor",
       "user": "Usuario Asociado",
       "notes": "Notas",
       "expiry-status": "Expira en",
