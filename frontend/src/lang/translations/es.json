@@ -242,6 +242,16 @@
       "button-delete-text": "Eliminar la llave de acceso. Ya no podrás iniciar sesión con ella.",
       "button-register-title": "Registrar llave de acceso",
       "button-register-text": "Registrar una nueva llave de acceso para proteger tu cuenta."
+    },
+    "password": {
+      "headline": "Configuración de contraseña",
+      "abstract": "Aquí puedes cambiar tu contraseña.",
+      "current-label": "Contraseña actual",
+      "new-label": "Nueva contraseña",
+      "new-confirm-label": "Confirmar nueva contraseña",
+      "change-button-text": "Cambiar contraseña",
+      "invalid-confirm-label": "Las contraseñas no coinciden",
+      "weak-label": "La contraseña es demasiado débil"
     }
   },
   "audit": {
