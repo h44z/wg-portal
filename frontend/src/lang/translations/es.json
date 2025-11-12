@@ -2,6 +2,26 @@
   "languages": {
     "es": "Español"
   },
+  "calculator": {
+    "abstract": "Genera direcciones IP permitidas de WireGuard. Las subredes IP se generan en tu navegador local y nunca se envían al servidor.",
+    "allowed-ip": {
+      "empty": "El valor no puede estar vacío",
+      "label": "IPs permitidas",
+      "placeholder": "0.0.0.0/0, ::/0"
+    },
+    "button-exclude-private": "Excluir rangos de IP privadas",
+    "dissallowed-ip": {
+      "invalid": "Dirección inválida: {addr}",
+      "label": "IPs no permitidas",
+      "placeholder": "10.0.0.0/8, 192.168.0.0/16"
+    },
+    "headline": "Calculadora de IPs de WireGuard",
+    "headline-allowed-ip": "Nuevas IPs permitidas",
+    "new-allowed-ip": {
+      "label": "IPs permitidas",
+      "placeholder": ""
+    }
+  },
   "general": {
     "pagination": {
       "size": "Numero de elementos",
@@ -33,6 +53,7 @@
     "button-webauthn": "Usar clave de acceso"
   },
   "menu": {
+    "calculator": "Calculadora IP",
     "home": "Inicio",
     "interfaces": "Interfaces",
     "users": "Usuarios",
@@ -69,7 +90,7 @@
     "profiles": {
       "headline": "Perfiles VPN",
       "abstract": "Puedes acceder y descargar tus configuraciones personales de VPN desde tu perfil de usuario.",
-      "content": "para ver todos tus perfiles configurados, haz clic en el botón de abajo.",
+      "content": "Para ver todos tus perfiles configurados, haz clic en el botón de abajo.",
       "button": "Abrir mi perfil"
     },
     "admin": {
@@ -96,7 +117,7 @@
     "table-heading": {
       "name": "Nombre",
       "user": "Usuario",
-      "ip": "IP's",
+      "ip": "IPs",
       "endpoint": "Endpoint",
       "status": "Estado"
     },
@@ -114,6 +135,7 @@
       "total-endpoints": "Endpoints totales",
       "ip": "Dirección IP",
       "default-allowed-ip": "IPs permitidas por defecto",
+      "default-dns": "Servidores DNS por defecto",
       "dns": "Servidores DNS",
       "mtu": "MTU",
       "default-keep-alive": "Intervalo Keepalive por defecto",
@@ -160,7 +182,7 @@
     "headline": "Mis peers VPN",
     "table-heading": {
       "name": "Nombre",
-      "ip": "IP's",
+      "ip": "IPs",
       "stats": "Estado",
       "interface": "Interfaz del servidor"
     },
@@ -269,7 +291,7 @@
       "firstname": "Nombre",
       "lastname": "Apellido",
       "phone": "Número de Teléfono",
-      "depeertment": "Departamento",
+      "department": "Departamento",
       "api-enabled": "Acceso API",
       "disabled": "Cuenta Deshabilitada",
       "locked": "Cuenta Bloqueada",
@@ -277,7 +299,7 @@
       "peers": {
         "name": "Nombre",
         "interface": "Interfaz",
-        "ip": "IP's"
+        "ip": "IPs"
       }
     },
     "user-edit": {
@@ -309,7 +331,7 @@
         "label": "Teléfono",
         "placeholder": "El número de teléfono"
       },
-      "depeertment": {
+      "department": {
         "label": "Departamento",
         "placeholder": "El departamento"
       },
@@ -337,6 +359,16 @@
     },
     "interface-view": {
       "headline": "Configuración de la interfaz:"
+    },
+    "password": {
+      "abstract": "Aquí puedes cambiar tu contraseña.",
+      "change-button-text": "Cambiar contraseña",
+      "current-label": "Contraseña actual",
+      "headline": "Configuración de contraseña",
+      "invalid-confirm-label": "Las contraseñas no coinciden",
+      "new-confirm-label": "Confirmar nueva contraseña",
+      "new-label": "Nueva contraseña",
+      "weak-label": "La contraseña es demasiado débil"
     },
     "interface-edit": {
       "headline-edit": "Editar interfaz:",
@@ -469,10 +501,10 @@
       "connection-status": "Estadísticas de Conexión",
       "upload": "Bytes Subidos (del Servidor al peer)",
       "download": "Bytes Descargados (del peer al Servidor)",
-      "pingable": "Es Alcanzable (Ping)",
-      "handshake": "Último Handshake",
+      "pingable": "Alcanzable (ping)",
+      "handshake": "Último handshake",
       "connected-since": "Conectado desde",
-      "endpoint": "Endpoint",
+      "endpoint": "Dirección del host remoto",
       "button-download": "Descargar configuración",
       "button-email": "Enviar configuración por Correo Electrónico",
       "style-label": "Estilo de Configuración"
@@ -488,7 +520,7 @@
       "header-hooks": "Hooks (Ejecutados en el peer)",
       "header-state": "Estado",
       "display-name": {
-        "label": "Nombre para Mostrar",
+        "label": "Nombre para mostrar",
         "placeholder": "El nombre descriptivo para el peer"
       },
       "linked-user": {
@@ -501,7 +533,7 @@
         "help": "La clave privada se almacena de forma segura en el servidor. Si el usuario ya posee una copia, puedes omitir este campo. El servidor sigue funcionando exclusivamente con la clave pública del peer."
       },
       "public-key": {
-        "label": "Cave Pública",
+        "label": "Clave Pública",
         "placeholder": "La Clave pública"
       },
       "preshared-key": {
@@ -511,6 +543,10 @@
       "endpoint": {
         "label": "Dirección del endpoint",
         "placeholder": "La dirección del endpoint remoto"
+      },
+      "endpoint-public-key": {
+        "label": "Clave pública del punto del endpoint",
+        "placeholder": "La clave pública del endpoint remoto"
       },
       "ip": {
         "label": "Direcciones IP",
@@ -576,11 +612,11 @@
         "description": "Un identificador de usuario (el nombre de usuario) para el cual debe crearse un peer."
       },
       "prefix": {
-        "headline-peer": "peer:",
+        "headline-peer": "Peer:",
         "headline-endpoint": "Endpoint:",
-        "label": "Prefijo del Nombre peera Mostrar",
-        "placeholder": "El prefijo",
-        "description": "Un prefijo que se agregará al nombre mostrado de los peers."
+        "label": "Prefijo del nombre del peer a mostrar",
+        "placeholder": "Prefijo",
+        "description": "Un prefijo que se agregará al nombre visible de los peers."
       }
     }
   }
