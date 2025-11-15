@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/a8m/envsubst"
@@ -114,82 +116,93 @@ func (c *Config) LogStartupValues() {
 func defaultConfig() *Config {
 	cfg := &Config{}
 
-	cfg.Core.AdminUserDisabled = false
-	cfg.Core.AdminUser = "admin@wgportal.local"
-	cfg.Core.AdminPassword = "wgportal-default"
-	cfg.Core.AdminApiToken = "" // by default, the API access is disabled
-	cfg.Core.ImportExisting = true
-	cfg.Core.RestoreState = true
-	cfg.Core.CreateDefaultPeer = false
-	cfg.Core.CreateDefaultPeerOnCreation = false
-	cfg.Core.EditableKeys = true
-	cfg.Core.SelfProvisioningAllowed = false
-	cfg.Core.ReEnablePeerAfterUserEnable = true
-	cfg.Core.DeletePeerAfterUserDeleted = false
+	cfg.Core.AdminUserDisabled = getEnvBool("WG_PORTAL_CORE_DISABLE_ADMIN_USER", false)
+	cfg.Core.AdminUser = getEnvStr("WG_PORTAL_CORE_ADMIN_USER", "admin@wgportal.local")
+	cfg.Core.AdminPassword = getEnvStr("WG_PORTAL_CORE_ADMIN_PASSWORD", "wgportal-default")
+	cfg.Core.AdminApiToken = getEnvStr("WG_PORTAL_CORE_ADMIN_API_TOKEN", "") // by default, the API access is disabled
+	cfg.Core.ImportExisting = getEnvBool("WG_PORTAL_CORE_IMPORT_EXISTING", true)
+	cfg.Core.RestoreState = getEnvBool("WG_PORTAL_CORE_RESTORE_STATE", true)
+	cfg.Core.CreateDefaultPeer = getEnvBool("WG_PORTAL_CORE_CREATE_DEFAULT_PEER", false)
+	cfg.Core.CreateDefaultPeerOnCreation = getEnvBool("WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION", false)
+	cfg.Core.EditableKeys = getEnvBool("WG_PORTAL_CORE_EDITABLE_KEYS", true)
+	cfg.Core.SelfProvisioningAllowed = getEnvBool("WG_PORTAL_CORE_SELF_PROVISIONING_ALLOWED", false)
+	cfg.Core.ReEnablePeerAfterUserEnable = getEnvBool("WG_PORTAL_CORE_RE_ENABLE_PEER_AFTER_USER_ENABLE", true)
+	cfg.Core.DeletePeerAfterUserDeleted = getEnvBool("WG_PORTAL_CORE_DELETE_PEER_AFTER_USER_DELETED", false)
 
 	cfg.Database = DatabaseConfig{
-		Type: "sqlite",
-		DSN:  "data/sqlite.db",
+		Debug:                getEnvBool("WG_PORTAL_DATABASE_DEBUG", false),
+		SlowQueryThreshold:   getEnvDuration("WG_PORTAL_DATABASE_SLOW_QUERY_THRESHOLD", 0),
+		Type:                 SupportedDatabase(getEnvStr("WG_PORTAL_DATABASE_TYPE", "sqlite")),
+		DSN:                  getEnvStr("WG_PORTAL_DATABASE_DSN", "data/sqlite.db"),
+		EncryptionPassphrase: getEnvStr("WG_PORTAL_DATABASE_ENCRYPTION_PASSPHRASE", ""),
 	}
 
 	cfg.Backend = Backend{
-		Default: LocalBackendName, // local backend is the default (using wgcrtl)
+		Default:                LocalBackendName, // local backend is the default (using wgcrtl)
+		IgnoredLocalInterfaces: getEnvStrSlice("WG_PORTAL_BACKEND_IGNORED_LOCAL_INTERFACES", nil),
 		// Most resolconf implementations use "tun." as a prefix for interface names.
 		// But systemd's implementation uses no prefix, for example.
-		LocalResolvconfPrefix: "tun.",
+		LocalResolvconfPrefix: getEnvStr("WG_PORTAL_BACKEND_LOCAL_RESOLVCONF_PREFIX", "tun."),
 	}
 
 	cfg.Web = WebConfig{
-		RequestLogging:    false,
-		ExternalUrl:       "http://localhost:8888",
-		ListeningAddress:  ":8888",
-		SessionIdentifier: "wgPortalSession",
-		SessionSecret:     "very_secret",
-		CsrfSecret:        "extremely_secret",
-		SiteTitle:         "WireGuard Portal",
-		SiteCompanyName:   "WireGuard Portal",
+		RequestLogging:    getEnvBool("WG_PORTAL_WEB_REQUEST_LOGGING", false),
+		ExposeHostInfo:    getEnvBool("WG_PORTAL_WEB_EXPOSE_HOST_INFO", false),
+		ExternalUrl:       getEnvStr("WG_PORTAL_WEB_EXTERNAL_URL", "http://localhost:8888"),
+		ListeningAddress:  getEnvStr("WG_PORTAL_WEB_LISTENING_ADDRESS", ":8888"),
+		SessionIdentifier: getEnvStr("WG_PORTAL_WEB_SESSION_IDENTIFIER", "wgPortalSession"),
+		SessionSecret:     getEnvStr("WG_PORTAL_WEB_SESSION_SECRET", "very_secret"),
+		CsrfSecret:        getEnvStr("WG_PORTAL_WEB_CSRF_SECRET", "extremely_secret"),
+		SiteTitle:         getEnvStr("WG_PORTAL_WEB_SITE_TITLE", "WireGuard Portal"),
+		SiteCompanyName:   getEnvStr("WG_PORTAL_WEB_SITE_COMPANY_NAME", "WireGuard Portal"),
+		CertFile:          getEnvStr("WG_PORTAL_WEB_CERT_FILE", ""),
+		KeyFile:           getEnvStr("WG_PORTAL_WEB_KEY_FILE", ""),
 	}
 
-	cfg.Advanced.LogLevel = "info"
-	cfg.Advanced.StartListenPort = 51820
-	cfg.Advanced.StartCidrV4 = "10.11.12.0/24"
-	cfg.Advanced.StartCidrV6 = "fdfd:d3ad:c0de:1234::0/64"
-	cfg.Advanced.UseIpV6 = true
-	cfg.Advanced.ExpiryCheckInterval = 15 * time.Minute
-	cfg.Advanced.RulePrioOffset = 20000
-	cfg.Advanced.RouteTableOffset = 20000
-	cfg.Advanced.ApiAdminOnly = true
-	cfg.Advanced.LimitAdditionalUserPeers = 0
+	cfg.Advanced.LogLevel = getEnvStr("WG_PORTAL_ADVANCED_LOG_LEVEL", "info")
+	cfg.Advanced.LogPretty = getEnvBool("WG_PORTAL_ADVANCED_LOG_PRETTY", false)
+	cfg.Advanced.LogJson = getEnvBool("WG_PORTAL_ADVANCED_LOG_JSON", false)
+	cfg.Advanced.StartListenPort = getEnvInt("WG_PORTAL_ADVANCED_START_LISTEN_PORT", 51820)
+	cfg.Advanced.StartCidrV4 = getEnvStr("WG_PORTAL_ADVANCED_START_CIDR_V4", "10.11.12.0/24")
+	cfg.Advanced.StartCidrV6 = getEnvStr("WG_PORTAL_ADVANCED_START_CIDR_V6", "fdfd:d3ad:c0de:1234::0/64")
+	cfg.Advanced.UseIpV6 = getEnvBool("WG_PORTAL_ADVANCED_USE_IP_V6", true)
+	cfg.Advanced.ConfigStoragePath = getEnvStr("WG_PORTAL_ADVANCED_CONFIG_STORAGE_PATH", "")
+	cfg.Advanced.ExpiryCheckInterval = getEnvDuration("WG_PORTAL_ADVANCED_EXPIRY_CHECK_INTERVAL", 15*time.Minute)
+	cfg.Advanced.RulePrioOffset = getEnvInt("WG_PORTAL_ADVANCED_RULE_PRIO_OFFSET", 20000)
+	cfg.Advanced.RouteTableOffset = getEnvInt("WG_PORTAL_ADVANCED_ROUTE_TABLE_OFFSET", 20000)
+	cfg.Advanced.ApiAdminOnly = getEnvBool("WG_PORTAL_ADVANCED_API_ADMIN_ONLY", true)
+	cfg.Advanced.LimitAdditionalUserPeers = getEnvInt("WG_PORTAL_ADVANCED_LIMIT_ADDITIONAL_USER_PEERS", 0)
 
-	cfg.Statistics.UsePingChecks = true
-	cfg.Statistics.PingCheckWorkers = 10
-	cfg.Statistics.PingUnprivileged = false
-	cfg.Statistics.PingCheckInterval = 1 * time.Minute
-	cfg.Statistics.DataCollectionInterval = 1 * time.Minute
-	cfg.Statistics.CollectInterfaceData = true
-	cfg.Statistics.CollectPeerData = true
-	cfg.Statistics.CollectAuditData = true
-	cfg.Statistics.ListeningAddress = ":8787"
+	cfg.Statistics.UsePingChecks = getEnvBool("WG_PORTAL_STATISTICS_USE_PING_CHECKS", true)
+	cfg.Statistics.PingCheckWorkers = getEnvInt("WG_PORTAL_STATISTICS_PING_CHECK_WORKERS", 10)
+	cfg.Statistics.PingUnprivileged = getEnvBool("WG_PORTAL_STATISTICS_PING_UNPRIVILEGED", false)
+	cfg.Statistics.PingCheckInterval = getEnvDuration("WG_PORTAL_STATISTICS_PING_CHECK_INTERVAL", 1*time.Minute)
+	cfg.Statistics.DataCollectionInterval = getEnvDuration("WG_PORTAL_STATISTICS_DATA_COLLECTION_INTERVAL", 1*time.Minute)
+	cfg.Statistics.CollectInterfaceData = getEnvBool("WG_PORTAL_STATISTICS_COLLECT_INTERFACE_DATA", true)
+	cfg.Statistics.CollectPeerData = getEnvBool("WG_PORTAL_STATISTICS_COLLECT_PEER_DATA", true)
+	cfg.Statistics.CollectAuditData = getEnvBool("WG_PORTAL_STATISTICS_COLLECT_AUDIT_DATA", true)
+	cfg.Statistics.ListeningAddress = getEnvStr("WG_PORTAL_STATISTICS_LISTENING_ADDRESS", ":8787")
 
 	cfg.Mail = MailConfig{
-		Host:           "127.0.0.1",
-		Port:           25,
-		Encryption:     MailEncryptionNone,
-		CertValidation: true,
-		Username:       "",
-		Password:       "",
-		AuthType:       MailAuthPlain,
-		From:           "Wireguard Portal <noreply@wireguard.local>",
-		LinkOnly:       false,
+		Host:           getEnvStr("WG_PORTAL_MAIL_HOST", "127.0.0.1"),
+		Port:           getEnvInt("WG_PORTAL_MAIL_PORT", 25),
+		Encryption:     MailEncryption(getEnvStr("WG_PORTAL_MAIL_ENCRYPTION", string(MailEncryptionNone))),
+		CertValidation: getEnvBool("WG_PORTAL_MAIL_CERT_VALIDATION", true),
+		Username:       getEnvStr("WG_PORTAL_MAIL_USERNAME", ""),
+		Password:       getEnvStr("WG_PORTAL_MAIL_PASSWORD", ""),
+		AuthType:       MailAuthType(getEnvStr("WG_PORTAL_MAIL_AUTH_TYPE", string(MailAuthPlain))),
+		From:           getEnvStr("WG_PORTAL_MAIL_FROM", "Wireguard Portal <noreply@wireguard.local>"),
+		LinkOnly:       getEnvBool("WG_PORTAL_MAIL_LINK_ONLY", false),
+		AllowPeerEmail: getEnvBool("WG_PORTAL_MAIL_ALLOW_PEER_EMAIL", false),
 	}
 
-	cfg.Webhook.Url = "" // no webhook by default
-	cfg.Webhook.Authentication = ""
-	cfg.Webhook.Timeout = 10 * time.Second
+	cfg.Webhook.Url = getEnvStr("WG_PORTAL_WEBHOOK_URL", "") // no webhook by default
+	cfg.Webhook.Authentication = getEnvStr("WG_PORTAL_WEBHOOK_AUTHENTICATION", "")
+	cfg.Webhook.Timeout = getEnvDuration("WG_PORTAL_WEBHOOK_TIMEOUT", 10*time.Second)
 
-	cfg.Auth.WebAuthn.Enabled = true
-	cfg.Auth.MinPasswordLength = 16
-	cfg.Auth.HideLoginForm = false
+	cfg.Auth.WebAuthn.Enabled = getEnvBool("WG_PORTAL_AUTH_WEBAUTHN_ENABLED", true)
+	cfg.Auth.MinPasswordLength = getEnvInt("WG_PORTAL_AUTH_MIN_PASSWORD_LENGTH", 16)
+	cfg.Auth.HideLoginForm = getEnvBool("WG_PORTAL_AUTH_HIDE_LOGIN_FORM", false)
 
 	return cfg
 }
@@ -243,4 +256,76 @@ func loadConfigFile(cfg any, filename string) error {
 	}
 
 	return nil
+}
+
+func getEnvStr(name, fallback string) string {
+	if v, ok := os.LookupEnv(name); ok {
+		return v
+	}
+
+	return fallback
+}
+
+func getEnvStrSlice(name string, fallback []string) []string {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+
+	strParts := strings.Split(v, ",")
+	stringSlice := make([]string, 0, len(strParts))
+
+	for _, s := range strParts {
+		trimmed := strings.TrimSpace(s)
+		if trimmed != "" {
+			stringSlice = append(stringSlice, trimmed)
+		}
+	}
+
+	return stringSlice
+}
+
+func getEnvBool(name string, fallback bool) bool {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		slog.Warn("invalid bool env, using fallback", "env", name, "value", v, "fallback", fallback)
+		return fallback
+	}
+
+	return b
+}
+
+func getEnvInt(name string, fallback int) int {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+
+	i, err := strconv.Atoi(v)
+	if err != nil {
+		slog.Warn("invalid int env, using fallback", "env", name, "value", v, "fallback", fallback)
+		return fallback
+	}
+
+	return i
+}
+
+func getEnvDuration(name string, fallback time.Duration) time.Duration {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		slog.Warn("invalid duration env, using fallback", "env", name, "value", v, "fallback", fallback)
+		return fallback
+	}
+
+	return d
 }
