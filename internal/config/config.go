@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/a8m/envsubst"
@@ -137,7 +138,8 @@ func defaultConfig() *Config {
 	}
 
 	cfg.Backend = Backend{
-		Default: LocalBackendName, // local backend is the default (using wgcrtl)
+		Default:                LocalBackendName, // local backend is the default (using wgcrtl)
+		IgnoredLocalInterfaces: getEnvStrSlice("WG_PORTAL_BACKEND_IGNORED_LOCAL_INTERFACES", nil),
 		// Most resolconf implementations use "tun." as a prefix for interface names.
 		// But systemd's implementation uses no prefix, for example.
 		LocalResolvconfPrefix: getEnvStr("WG_PORTAL_BACKEND_LOCAL_RESOLVCONF_PREFIX", "tun."),
@@ -262,6 +264,25 @@ func getEnvStr(name, fallback string) string {
 	}
 
 	return fallback
+}
+
+func getEnvStrSlice(name string, fallback []string) []string {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+
+	strParts := strings.Split(v, ",")
+	stringSlice := make([]string, 0, len(strParts))
+
+	for _, s := range strParts {
+		trimmed := strings.TrimSpace(s)
+		if trimmed != "" {
+			stringSlice = append(stringSlice, trimmed)
+		}
+	}
+
+	return stringSlice
 }
 
 func getEnvBool(name string, fallback bool) bool {

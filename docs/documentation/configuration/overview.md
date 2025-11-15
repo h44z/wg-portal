@@ -206,6 +206,8 @@ The current MikroTik backend is in **BETA** and may not support all features.
 
 ### `ignored_local_interfaces`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_BACKEND_IGNORED_LOCAL_INTERFACES`
+  (comma-separated values)
 - **Description:** A list of interface names to exclude when enumerating local interfaces.
   This is useful if you want to prevent certain interfaces from being imported from the local system.
 
