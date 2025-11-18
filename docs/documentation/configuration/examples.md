@@ -67,8 +67,7 @@ auth:
 auth:
   ldap:
     # a sample LDAP provider with user sync enabled
-    - id: ldap
-      provider_name: Active Directory
+    - provider_name: ldap
       url: ldap://srv-ad1.company.local:389
       bind_user: ldap_wireguard@company.local
       bind_pass: super-s3cr3t-ldap
@@ -99,8 +98,7 @@ auth:
   oidc:
     # A sample Entra ID provider with environment variable substitution.
     # Only users with an @outlook.com email address are allowed to register or login.
-    - id: azure
-      provider_name: azure
+    - provider_name: azure
       display_name: Login with</br>Entra ID
       registration_enabled: true
       base_url: "https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0"
@@ -113,8 +111,7 @@ auth:
         - email
 
     # a sample provider where users with the attribute `wg_admin` set to `true` are considered as admins
-    - id: oidc-with-admin-attribute
-      provider_name: google
+    - provider_name: google
       display_name: Login with</br>Google
       base_url: https://accounts.google.com
       client_id: the-client-id-1234.apps.googleusercontent.com
@@ -136,8 +133,7 @@ auth:
       log_user_info: true
 
     # a sample provider where users in the group `the-admin-group` are considered as admins
-    - id: oidc-with-admin-group
-      provider_name: google2
+    - provider_name: google2
       display_name: Login with</br>Google2
       base_url: https://accounts.google.com
       client_id: another-client-id-1234.apps.googleusercontent.com
@@ -168,8 +164,7 @@ auth:
   oauth:
     # a sample provider where users with the attribute `this-attribute-must-be-true` set to `true` or `True`
     # are considered as admins
-    - id: google_plain_oauth-with-admin-attribute
-      provider_name: google3
+    - provider_name: google3
       display_name: Login with</br>Google3
       client_id: another-client-id-1234.apps.googleusercontent.com
       client_secret: A_CLIENT_SECRET
@@ -191,8 +186,7 @@ auth:
     
     # a sample provider where either users with the attribute `this-attribute-must-be-true` set to `true` or 
     # users in the group `admin-group-name` are considered as admins
-    - id: google_plain_oauth_with_groups
-      provider_name: google4
+    - provider_name: google4
       display_name: Login with</br>Google4
       client_id: another-client-id-1234.apps.googleusercontent.com
       client_secret: A_CLIENT_SECRET
