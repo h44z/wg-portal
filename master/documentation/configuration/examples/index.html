@@ -57,8 +57,7 @@
 <span class=nt>auth</span><span class=p>:</span>
 <span class=w>  </span><span class=nt>ldap</span><span class=p>:</span>
 <span class=w>    </span><span class=c1># a sample LDAP provider with user sync enabled</span>
-<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">ldap</span>
-<span class=w>      </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">Active Directory</span>
+<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">ldap</span>
 <span class=w>      </span><span class=nt>url</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">ldap://srv-ad1.company.local:389</span>
 <span class=w>      </span><span class=nt>bind_user</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">ldap_wireguard@company.local</span>
 <span class=w>      </span><span class=nt>bind_pass</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">super-s3cr3t-ldap</span>
@@ -84,8 +83,7 @@
 <span class=w>  </span><span class=nt>oidc</span><span class=p>:</span>
 <span class=w>    </span><span class=c1># A sample Entra ID provider with environment variable substitution.</span>
 <span class=w>    </span><span class=c1># Only users with an @outlook.com email address are allowed to register or login.</span>
-<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">azure</span>
-<span class=w>      </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">azure</span>
+<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">azure</span>
 <span class=w>      </span><span class=nt>display_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">Login with&lt;/br&gt;Entra ID</span>
 <span class=w>      </span><span class=nt>registration_enabled</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class=w>      </span><span class=nt>base_url</span><span class=p>:</span><span class=w> </span><span class=s>&quot;https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0&quot;</span>
@@ -98,8 +96,7 @@
 <span class=w>        </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">email</span>
 
 <span class=w>    </span><span class=c1># a sample provider where users with the attribute `wg_admin` set to `true` are considered as admins</span>
-<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">oidc-with-admin-attribute</span>
-<span class=w>      </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google</span>
+<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google</span>
 <span class=w>      </span><span class=nt>display_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">Login with&lt;/br&gt;Google</span>
 <span class=w>      </span><span class=nt>base_url</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">https://accounts.google.com</span>
 <span class=w>      </span><span class=nt>client_id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">the-client-id-1234.apps.googleusercontent.com</span>
@@ -121,8 +118,7 @@
 <span class=w>      </span><span class=nt>log_user_info</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 
 <span class=w>    </span><span class=c1># a sample provider where users in the group `the-admin-group` are considered as admins</span>
-<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">oidc-with-admin-group</span>
-<span class=w>      </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google2</span>
+<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google2</span>
 <span class=w>      </span><span class=nt>display_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">Login with&lt;/br&gt;Google2</span>
 <span class=w>      </span><span class=nt>base_url</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">https://accounts.google.com</span>
 <span class=w>      </span><span class=nt>client_id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">another-client-id-1234.apps.googleusercontent.com</span>
@@ -148,8 +144,7 @@
 <span class=w>  </span><span class=nt>oauth</span><span class=p>:</span>
 <span class=w>    </span><span class=c1># a sample provider where users with the attribute `this-attribute-must-be-true` set to `true` or `True`</span>
 <span class=w>    </span><span class=c1># are considered as admins</span>
-<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google_plain_oauth-with-admin-attribute</span>
-<span class=w>      </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google3</span>
+<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google3</span>
 <span class=w>      </span><span class=nt>display_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">Login with&lt;/br&gt;Google3</span>
 <span class=w>      </span><span class=nt>client_id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">another-client-id-1234.apps.googleusercontent.com</span>
 <span class=w>      </span><span class=nt>client_secret</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">A_CLIENT_SECRET</span>
@@ -171,8 +166,7 @@
 
 <span class=w>    </span><span class=c1># a sample provider where either users with the attribute `this-attribute-must-be-true` set to `true` or </span>
 <span class=w>    </span><span class=c1># users in the group `admin-group-name` are considered as admins</span>
-<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google_plain_oauth_with_groups</span>
-<span class=w>      </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google4</span>
+<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">google4</span>
 <span class=w>      </span><span class=nt>display_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">Login with&lt;/br&gt;Google4</span>
 <span class=w>      </span><span class=nt>client_id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">another-client-id-1234.apps.googleusercontent.com</span>
 <span class=w>      </span><span class=nt>client_secret</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">A_CLIENT_SECRET</span>
