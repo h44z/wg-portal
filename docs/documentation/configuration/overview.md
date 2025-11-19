@@ -745,6 +745,10 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
   (&(objectClass=organizationalPerson)(!userAccountControl:1.2.840.113556.1.4.803:=2)(mail=*))
   ```
 
+#### `sync_log_user_info`
+- **Default:** `false`
+- **Description:** If `true`, logs LDAP user data at the trace level during synchronization.
+
 #### `disable_missing`
 - **Default:** `false`
 - **Description:** If `true`, any user **not** found in LDAP (during sync) is disabled in WireGuard Portal.

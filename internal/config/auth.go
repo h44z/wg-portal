@@ -168,6 +168,8 @@ type LdapProvider struct {
 	SyncFilter string `yaml:"sync_filter"`
 	// SyncInterval is the interval between consecutive LDAP user syncs. If it is 0, sync is disabled.
 	SyncInterval time.Duration `yaml:"sync_interval"`
+	// If SyncLogUserInfo is set to true, the user info retrieved from the LDAP provider during a sync-run will be logged in trace level.
+	SyncLogUserInfo bool `yaml:"sync_log_user_info"`
 
 	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.
 	RegistrationEnabled bool `yaml:"registration_enabled"`
