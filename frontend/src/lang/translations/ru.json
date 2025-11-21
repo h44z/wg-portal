@@ -29,7 +29,8 @@
       "label": "Пароль",
       "placeholder": "Пожалуйста, введите ваш пароль"
     },
-    "button": "Войти"
+    "button": "Войти",
+    "button-webauthn": "Использовать Passkey"
   },
   "menu": {
     "home": "Главная",
@@ -37,8 +38,12 @@
     "users": "Пользователи",
     "lang": "Сменить язык",
     "profile": "Мой профиль",
+    "settings": "Настройки",
+    "audit": "Журнал аудита",
     "login": "Вход",
-    "logout": "Выход"
+    "logout": "Выход",
+    "keygen": "Генератор ключей",
+    "calculator": "Калькулятор IP-адресов"
   },
   "home": {
     "headline": "Портал VPN WireGuard®",
@@ -100,6 +105,8 @@
     "interface": {
       "headline": "Статус интерфейса для",
       "backend": "бэкэнд",
+      "unknown-backend": "Неизвестно",
+      "wrong-backend": "Неверный бэкэнд, вместо него используется локальный сервер WireGuard!",
       "key": "Публичный ключ",
       "endpoint": "Публичная конечная точка",
       "port": "Порт прослушивания",
@@ -112,6 +119,7 @@
       "dns": "DNS-серверы",
       "mtu": "MTU",
       "default-keep-alive": "Интервал поддержания активности по умолчанию",
+      "default-dns": "DNS-сервера по-умолчанию",
       "button-show-config": "Показать конфигурацию",
       "button-download-config": "Скачать конфигурацию",
       "button-store-config": "Сохранить конфигурацию для wg-quick",
@@ -168,6 +176,121 @@
     "button-show-peer": "Показать пира",
     "button-edit-peer": "Редактировать пира"
   },
+  "settings": {
+    "headline": "Настройки",
+    "abstract": "Здесь вы можете изменить персональные настройки.",
+    "api": {
+      "headline": "Настройки API",
+      "abstract": "Здесь можете настроить RESTful API.",
+      "active-description": "В данный момент API активен для вашей учетной записи. Все запросы API проверяются с помощью Basic Auth. Для проверки подлинности используйте следующие учетные данные.",
+      "inactive-description": "В данный момент API неактивен. Нажмите кнопку ниже, чтобы активировать его.",
+      "user-label": "Имя пользователя API:",
+      "user-placeholder": "Имя пользователя API",
+      "token-label": "API-пароль:",
+      "token-placeholder": "API-токен",
+      "token-created-label": "Доступ к API предоставлен с: ",
+      "button-disable-title": "Отключение API приведет к аннулированию текущего токена.",
+      "button-disable-text": "Отключить API",
+      "button-enable-title": "Включение API приведет к созданию нового токена.",
+      "button-enable-text": "Включить API",
+      "api-link": "Документация API"
+    },
+    "webauthn": {
+      "headline": "Настройки Passkey",
+      "abstract": "Passkey - это современный способ аутентификации пользователей без использования паролей. Он надежно хранятся в вашем браузере и могут быть использованы для входа в WireGuard Portal.",
+      "active-description": "В данный момент для вашей учетной записи пользователя активен по крайней мере один Passkey.",
+      "inactive-description": "В настоящее время для вашей учетной записи пользователя не зарегистрировано ни одного Passkey. Нажмите кнопку ниже, чтобы зарегистрировать новый Passkey.",
+      "table": {
+        "name": "Название",
+        "created": "Создано",
+        "actions": ""
+      },
+      "credentials-list": "Зарегистрированные Passkeys",
+      "modal-delete": {
+        "headline": "Удалить Passkey",
+        "abstract": "Вы уверены, что хотите удалить этот Passkey? Вы больше не сможете войти в систему с помощью этого Passkey.",
+        "created": "Создано:",
+        "button-delete": "Удалить",
+        "button-cancel": "Отмена"
+      },
+      "button-rename-title": "Переименновать",
+      "button-rename-text": "Переименновать Passkey.",
+      "button-save-title": "Сохранить",
+      "button-save-text": "Сохранить новое название Passkey.",
+      "button-cancel-title": "Отмена",
+      "button-cancel-text": "Отмена переименования Passkey.",
+      "button-delete-title": "Удалить",
+      "button-delete-text": "Удалить Passkey. Вы больше не сможете войти в систему с помощью этого Passkey.",
+      "button-register-title": "Зарегистрировать Passkey",
+      "button-register-text": "Зарегистрировать Passkey, чтобы защитить свою учетную запись."
+    },
+    "password": {
+      "headline": "Настройки пароля",
+      "abstract": "Здесь можете изменить свой пароль.",
+      "current-label": "Текущий пароль",
+      "new-label": "Новый пароль",
+      "new-confirm-label": "Повторно новый пароль",
+      "change-button-text": "Изменить пароль",
+      "invalid-confirm-label": "Пароли не совпадают",
+      "weak-label": "Пароль слишком простой"
+    }
+  },
+  "audit": {
+    "headline": "Журнал аудита",
+    "abstract": "Здесь вы можете ознакомиться с журналом аудита всех действий, выполненных на WireGuard Portal.",
+    "no-entries": {
+      "headline": "Нет доступных записей в журнале",
+      "abstract": "В данный момент, журнал аудита пуст."
+    },
+    "entries-headline": "Записи журнала",
+    "table-heading": {
+      "id": "#",
+      "time": "Время",
+      "user": "Пользователь",
+      "severity": "Серьезность",
+      "origin": "Источник",
+      "message": "Сообщение"
+    }
+  },
+  "keygen": {
+    "headline": "Генератор WireGuard-ключей",
+    "abstract": "Генерация WireGuard-ключей. Ключи генерируются в вашем локальном браузере и никогда не отправляются на сервер.",
+    "headline-keypair": "Новая пара ключей",
+    "headline-preshared-key": "Новый общий ключ",
+    "button-generate": "Генерировать",
+    "private-key": {
+        "label": "Приватный ключ",
+        "placeholder": "Приватный ключ"
+    },
+    "public-key": {
+        "label": "Публичный ключ",
+        "placeholder": "Публичный ключ"
+    },
+    "preshared-key": {
+        "label": "Общий ключ",
+        "placeholder": "Общий ключ"
+    }
+  },
+  "calculator": {
+    "headline": "Калькулятор IP-адресов",
+    "abstract": "Генерация разрешенных IP-адресов. IP-подсети генерируются в вашем локальном браузере и никогда не отправляются на сервер.",
+    "headline-allowed-ip": "Новые разрешенные IP-адреса",
+    "button-exclude-private": "Исключить частные диапазоны IP-адресов",
+    "allowed-ip": {
+        "label": "Разрешенные IP-адреса",
+        "placeholder": "0.0.0.0/0, ::/0",
+        "empty": "Поле ввода не должно быть пустым"
+    },
+    "dissallowed-ip": {
+        "label": "Запрещенные IP-адреса",
+        "placeholder": "10.0.0.0/8, 192.168.0.0/16",
+        "invalid": "Некорректный адрес: {addr}"
+    },
+    "new-allowed-ip": {
+        "label": "Разрешенные IP-адреса",
+        "placeholder": ""
+    }
+  },
   "modals": {
     "user-view": {
       "headline": "Учетная запись пользователя:",
@@ -180,6 +303,7 @@
       "lastname": "Фамилия",
       "phone": "Номер телефона",
       "department": "Отдел",
+      "api-enabled": "API",
       "disabled": "Учетная запись отключена",
       "locked": "Учетная запись заблокирована",
       "no-peers": "У пользователя нет связанных пиров.",
@@ -207,7 +331,8 @@
       "password": {
         "label": "Пароль",
         "placeholder": "Надежный пароль",
-        "description": "Оставьте это поле пустым, чтобы сохранить текущий пароль."
+        "description": "Оставьте это поле пустым, чтобы сохранить текущий пароль.",
+        "too-weak": "Пароль слишком простой. Используйте более сложный пароль."
       },
       "email": {
         "label": "Электронная почта",
@@ -266,6 +391,11 @@
         "server": "Режим сервера",
         "client": "Режим клиента",
         "any": "Неизвестный режим"
+      },
+      "backend": {
+        "label": "Бэкэнд интерфейса",
+        "invalid-label": "Оригинальный бэкэнд больше недоступн, вместо нее используется локальная WireGuard-бэкэнд!",
+        "local": "Локальный WireGuard-бэкэнд"
       },
       "display-name": {
         "label": "Отображаемое имя",
@@ -364,6 +494,8 @@
       "section-config": "Конфигурация",
       "identifier": "Идентификатор",
       "ip": "IP-адреса",
+      "allowed-ip": "Разрешённые IP-адреса",
+      "extra-allowed-ip": "Разрешённые IP-адреса на стороне сервера",
       "user": "Связанный пользователь",
       "notes": "Заметки",
       "expiry-status": "Истекает в",
@@ -376,8 +508,10 @@
       "handshake": "Последнее рукопожатие",
       "connected-since": "Подключен с",
       "endpoint": "Конечная точка",
+      "endpoint-key": "Публичный ключ конечной точки",
       "button-download": "Скачать конфигурацию",
-      "button-email": "Отправить конфигурацию по электронной почте"
+      "button-email": "Отправить конфигурацию по электронной почте",
+      "style-label": "Вид конфигурации"
     },
     "peer-edit": {
       "headline-edit-peer": "Редактировать пира:",
@@ -399,7 +533,8 @@
       },
       "private-key": {
         "label": "Приватный ключ",
-        "placeholder": "Приватный ключ"
+        "placeholder": "Приватный ключ",
+        "help": "Закрытый ключ надежно хранится на сервере. Если у пользователя уже есть копия, вы можете не указывать это поле. Сервер работает исключительно с открытым ключом клиента."
       },
       "public-key": {
         "label": "Публичный ключ",
@@ -431,61 +566,61 @@
         "description": "Эти IP-адреса будут добавлены в удаленный интерфейс WireGuard как разрешенные IP-адреса."
       },
       "dns": {
-        "label": "DNS Server",
-        "placeholder": "The DNS servers that should be used"
+        "label": "DNS-сервер",
+        "placeholder": "Используемые DNS-серверы"
       },
       "dns-search": {
-        "label": "DNS Search Domains",
-        "placeholder": "DNS search prefixes"
+        "label": "Поисковые домены DNS",
+        "placeholder": "Префиксы поиска DNS"
       },
       "keep-alive": {
-        "label": "Keep Alive Interval",
-        "placeholder": "Persistent Keepalive (0 = default)"
+        "label": "Интервал поддержания активности",
+        "placeholder": "Постоянное поддержание активности (0 = значение по умолчанию)"
       },
       "mtu": {
         "label": "MTU",
-        "placeholder": "The client MTU (0 = keep default)"
+        "placeholder": "MTU клиента (0 = использовать значение по умолчанию)"
       },
       "pre-up": {
         "label": "Pre-Up",
-        "placeholder": "One or multiple bash commands separated by ;"
+        "placeholder": "Одна или несколько команд bash, разделенных ;"
       },
       "post-up": {
         "label": "Post-Up",
-        "placeholder": "One or multiple bash commands separated by ;"
+        "placeholder": "Одна или несколько команд bash, разделенных ;"
       },
       "pre-down": {
         "label": "Pre-Down",
-        "placeholder": "One or multiple bash commands separated by ;"
+        "placeholder": "Одна или несколько команд bash, разделенных ;"
       },
       "post-down": {
         "label": "Post-Down",
-        "placeholder": "One or multiple bash commands separated by ;"
+        "placeholder": "Одна или несколько команд bash, разделенных ;"
       },
       "disabled": {
-        "label": "Peer Disabled"
+        "label": "Узел отключен"
       },
       "ignore-global": {
-        "label": "Ignore global settings"
+        "label": "Игнорировать глобальные настройки"
       },
       "expires-at": {
-        "label": "Expiry date"
+        "label": "Дата истечения срока действия"
       }
     },
     "peer-multi-create": {
-      "headline-peer": "Create multiple peers",
-      "headline-endpoint": "Create multiple endpoints",
+      "headline-peer": "Создать несколько узлов",
+      "headline-endpoint": "Создать несколько конечных точек",
       "identifiers": {
-        "label": "User Identifiers",
-        "placeholder": "User Identifiers",
-        "description": "A user identifier (the username) for which a peer should be created."
+        "label": "Идентификаторы пользователей",
+        "placeholder": "Идентификаторы пользователей",
+        "description": "Идентификатор пользователя (имя пользователя), для которого узел будет создан."
       },
       "prefix": {
-        "headline-peer": "Peer:",
-        "headline-endpoint": "Endpoint:",
-        "label": "Display Name Prefix",
-        "placeholder": "The prefix",
-        "description": "A prefix that is added to the peers display name."
+        "headline-peer": "Узел:",
+        "headline-endpoint": "Конечная точка:",
+        "label": "Префикс отображаемого имени",
+        "placeholder": "Префикс",
+        "description": "Префикс будет добавлен к отображаемому имени узла."
       }
     }
   }
