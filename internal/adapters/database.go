@@ -166,6 +166,9 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to open sqlite database: %w", err)
 		}
+		if err := os.Chmod(cfg.DSN, 0600); err != nil {
+			return nil, fmt.Errorf("failed to set permissions on sqlite database: %w", err)
+		}
 		sqlDB, _ := gormDb.DB()
 		sqlDB.SetMaxOpenConns(1)
 	}
