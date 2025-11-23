@@ -2216,7 +2216,9 @@
                     "description": "The source of the user. This field is optional.",
                     "type": "string",
                     "enum": [
-                        "db"
+                        "db",
+                        "ldap",
+                        "oauth"
                     ],
                     "example": "db"
                 }

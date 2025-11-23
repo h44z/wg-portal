@@ -561,6 +561,8 @@ definitions:
         description: The source of the user. This field is optional.
         enum:
         - db
+        - ldap
+        - oauth
         example: db
         type: string
     required:

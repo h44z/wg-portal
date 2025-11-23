@@ -44,10 +44,10 @@ func (e MetricsEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/metrics")
 	apiGroup.Use(e.authenticator.LoggedIn())
 
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /by-interface/{id}",
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /by-interface/{id...}",
 		e.handleMetricsForInterfaceGet())
-	apiGroup.HandleFunc("GET /by-user/{id}", e.handleMetricsForUserGet())
-	apiGroup.HandleFunc("GET /by-peer/{id}", e.handleMetricsForPeerGet())
+	apiGroup.HandleFunc("GET /by-user/{id...}", e.handleMetricsForUserGet())
+	apiGroup.HandleFunc("GET /by-peer/{id...}", e.handleMetricsForPeerGet())
 }
 
 // handleMetricsForInterfaceGet returns a gorm Handler function.

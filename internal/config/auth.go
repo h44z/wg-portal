@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
 	"regexp"
 	"time"
@@ -125,6 +126,45 @@ type LdapFields struct {
 	GroupMembership string `yaml:"memberof"`
 }
 
+// getMappingWithDefaults returns a full field mapping for the LDAP provider.
+// If specific fields are not set, the default values are used.
+func (f LdapFields) getMappingWithDefaults() LdapFields {
+	defaultMap := LdapFields{
+		BaseFields: BaseFields{
+			UserIdentifier: "mail",
+			Email:          "mail",
+			Firstname:      "givenName",
+			Lastname:       "sn",
+			Phone:          "telephoneNumber",
+			Department:     "department",
+		},
+		GroupMembership: "memberOf",
+	}
+	if f.UserIdentifier != "" {
+		defaultMap.UserIdentifier = f.UserIdentifier
+	}
+	if f.Email != "" {
+		defaultMap.Email = f.Email
+	}
+	if f.Firstname != "" {
+		defaultMap.Firstname = f.Firstname
+	}
+	if f.Lastname != "" {
+		defaultMap.Lastname = f.Lastname
+	}
+	if f.Phone != "" {
+		defaultMap.Phone = f.Phone
+	}
+	if f.Department != "" {
+		defaultMap.Department = f.Department
+	}
+	if f.GroupMembership != "" {
+		defaultMap.GroupMembership = f.GroupMembership
+	}
+
+	return defaultMap
+}
+
 // LdapProvider contains the configuration for the LDAP connection.
 type LdapProvider struct {
 	// ProviderName is an internal name that is used to distinguish LDAP servers. It must not contain spaces or special characters.
@@ -168,12 +208,27 @@ type LdapProvider struct {
 	SyncFilter string `yaml:"sync_filter"`
 	// SyncInterval is the interval between consecutive LDAP user syncs. If it is 0, sync is disabled.
 	SyncInterval time.Duration `yaml:"sync_interval"`
+	// If SyncLogUserInfo is set to true, the user info retrieved from the LDAP provider during a sync-run will be logged in trace level.
+	SyncLogUserInfo bool `yaml:"sync_log_user_info"`
 
 	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.
 	RegistrationEnabled bool `yaml:"registration_enabled"`
 
 	// If LogUserInfo is set to true, the user info retrieved from the LDAP provider will be logged in trace level.
 	LogUserInfo bool `yaml:"log_user_info"`
+}
+
+// Sanitize checks the LDAP configuration and sets default values for missing fields.
+func (l *LdapProvider) Sanitize() error {
+	l.FieldMap = l.FieldMap.getMappingWithDefaults()
+
+	dn, err := ldap.ParseDN(l.AdminGroupDN)
+	if err != nil {
+		return fmt.Errorf("failed to parse admin group DN: %w", err)
+	}
+	l.ParsedAdminGroupDN = dn
+
+	return nil
 }
 
 // OpenIDConnectProvider contains the configuration for the OpenID Connect provider.

@@ -2,7 +2,7 @@ apiVersion: v2
 name: wg-portal
 description: WireGuard Configuration Portal with LDAP, OAuth, OIDC authentication
 # Version is set to ensure compatibility with the chart's Ingress resource.
-kubeVersion: ">=1.19.0"
+kubeVersion: ">=1.19.0-0"
 type: application
 home: https://wgportal.org
 icon: https://wgportal.org/latest/assets/images/logo.svg
@@ -16,7 +16,7 @@ annotations:
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.7.1
+version: 0.7.2
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to

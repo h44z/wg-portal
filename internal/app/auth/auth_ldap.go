@@ -20,18 +20,7 @@ type LdapAuthenticator struct {
 }
 
 func newLdapAuthenticator(_ context.Context, cfg *config.LdapProvider) (*LdapAuthenticator, error) {
-	var provider = &LdapAuthenticator{}
-
-	provider.cfg = cfg
-
-	dn, err := ldap.ParseDN(cfg.AdminGroupDN)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse admin group DN: %w", err)
-	}
-	provider.cfg.FieldMap = provider.getLdapFieldMapping(cfg.FieldMap)
-	provider.cfg.ParsedAdminGroupDN = dn
-
-	return provider, nil
+	return &LdapAuthenticator{cfg: cfg}, nil
 }
 
 // GetName returns the name of the LDAP authenticator.
@@ -153,41 +142,4 @@ func (l LdapAuthenticator) ParseUserInfo(raw map[string]any) (*domain.Authentica
 	}
 
 	return userInfo, nil
-}
-
-func (l LdapAuthenticator) getLdapFieldMapping(f config.LdapFields) config.LdapFields {
-	defaultMap := config.LdapFields{
-		BaseFields: config.BaseFields{
-			UserIdentifier: "mail",
-			Email:          "mail",
-			Firstname:      "givenName",
-			Lastname:       "sn",
-			Phone:          "telephoneNumber",
-			Department:     "department",
-		},
-		GroupMembership: "memberOf",
-	}
-	if f.UserIdentifier != "" {
-		defaultMap.UserIdentifier = f.UserIdentifier
-	}
-	if f.Email != "" {
-		defaultMap.Email = f.Email
-	}
-	if f.Firstname != "" {
-		defaultMap.Firstname = f.Firstname
-	}
-	if f.Lastname != "" {
-		defaultMap.Lastname = f.Lastname
-	}
-	if f.Phone != "" {
-		defaultMap.Phone = f.Phone
-	}
-	if f.Department != "" {
-		defaultMap.Department = f.Department
-	}
-	if f.GroupMembership != "" {
-		defaultMap.GroupMembership = f.GroupMembership
-	}
-
-	return defaultMap
 }

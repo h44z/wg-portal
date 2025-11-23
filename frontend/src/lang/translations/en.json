@@ -42,7 +42,8 @@
     "audit": "Audit Log",
     "login": "Login",
     "logout": "Logout",
-    "keygen": "Key Generator"
+    "keygen": "Key Generator",
+    "calculator": "IP Calculator"
   },
   "home": {
     "headline": "WireGuard® VPN Portal",
@@ -267,6 +268,26 @@
     "preshared-key": {
         "label": "Preshared Key",
         "placeholder": "The pre-shared key"
+    }
+  },
+  "calculator": {
+    "headline": "WireGuard IP Calculator",
+    "abstract": "Generate a WireGuard Allowed IPs. The IP subnets are generated in your local browser and are never sent to the server.",
+    "headline-allowed-ip": "New Allowed IPs",
+    "button-exclude-private": "Exclude Private IP Ranges",
+    "allowed-ip": {
+        "label": "Allowed IPs",
+        "placeholder": "0.0.0.0/0, ::/0",
+        "empty": "Value cannot be empty"
+    },
+    "dissallowed-ip": {
+        "label": "Disallowed IPs",
+        "placeholder": "10.0.0.0/8, 192.168.0.0/16",
+        "invalid": "Invalid address: {addr}"
+    },
+    "new-allowed-ip": {
+        "label": "Allowed IPs",
+        "placeholder": ""
     }
   },
   "modals": {

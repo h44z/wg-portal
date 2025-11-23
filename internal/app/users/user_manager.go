@@ -551,6 +551,12 @@ func (m Manager) updateLdapUsers(
 			return fmt.Errorf("failed to convert LDAP data for %v: %w", rawUser["dn"], err)
 		}
 
+		if provider.SyncLogUserInfo {
+			slog.Debug("ldap user data",
+				"raw-user", rawUser, "user", user.Identifier,
+				"is-admin", user.IsAdmin, "provider", provider.ProviderName)
+		}
+
 		existingUser, err := m.users.GetUser(ctx, user.Identifier)
 		if err != nil && !errors.Is(err, domain.ErrNotFound) {
 			return fmt.Errorf("find error for user id %s: %w", user.Identifier, err)

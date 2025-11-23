@@ -127,51 +127,63 @@ More advanced options are found in the subsequent `Advanced` section.
 
 ### `admin_user`
 - **Default:** `admin@wgportal.local`
+- **Environment Variable:** `WG_PORTAL_CORE_ADMIN_USER`
 - **Description:** The administrator user. This user will be created as a default admin if it does not yet exist.
 
 ### `admin_password`
 - **Default:** `wgportal-default`
+- **Environment Variable:** `WG_PORTAL_CORE_ADMIN_PASSWORD`
 - **Description:** The administrator password. The default password should be changed immediately!
 - **Important:** The password should be strong and secure. The minimum password length is specified in [auth.min_password_length](#min_password_length). By default, it is 16 characters.
 
 ### `disable_admin_user`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_DISABLE_ADMIN_USER`
 - **Description:** If `true`, no admin user is created. This is useful if you plan to manage users exclusively through external authentication providers such as LDAP or OAuth.
 
 ### `admin_api_token`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_CORE_ADMIN_API_TOKEN`
 - **Description:** An API token for the admin user. If a token is provided, the REST API can be accessed using this token. If empty, the API is initially disabled for the admin user.
 
 ### `editable_keys`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_CORE_EDITABLE_KEYS`
 - **Description:** Allow editing of WireGuard key-pairs directly in the UI.
 
 ### `create_default_peer`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER`
 - **Description:** If a user logs in for the first time with no existing peers, automatically create a new WireGuard peer for **all** server interfaces.
 
 ### `create_default_peer_on_creation`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION`
 - **Description:** If an LDAP user is created (e.g., through LDAP sync) and has no peers, automatically create a new WireGuard peer for **all** server interfaces.
 
 ### `re_enable_peer_after_user_enable`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_CORE_RE_ENABLE_PEER_AFTER_USER_ENABLE`
 - **Description:** Re-enable all peers that were previously disabled if the associated user is re-enabled.
 
 ### `delete_peer_after_user_deleted`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_DELETE_PEER_AFTER_USER_DELETED`
 - **Description:** If a user is deleted, remove all linked peers. Otherwise, peers remain but are disabled.
 
 ### `self_provisioning_allowed`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_SELF_PROVISIONING_ALLOWED`
 - **Description:** Allow registered (non-admin) users to self-provision peers from their profile page.
 
 ### `import_existing`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_CORE_IMPORT_EXISTING`
 - **Description:** On startup, import existing WireGuard interfaces and peers into WireGuard Portal.
 
 ### `restore_state`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_CORE_RESTORE_STATE`
 - **Description:** Restore the WireGuard interface states (up/down) that existed before WireGuard Portal started.
 
 ---
@@ -188,11 +200,14 @@ The current MikroTik backend is in **BETA** and may not support all features.
 
 ### `local_resolvconf_prefix`
 - **Default:** `tun.`
+- **Environment Variable:** `WG_PORTAL_BACKEND_LOCAL_RESOLVCONF_PREFIX`
 - **Description:** Interface name prefix for WireGuard interfaces on the local system which is used to configure DNS servers with *resolvconf*. 
   It depends on the *resolvconf* implementation you are using, most use a prefix of `tun.`, but some have an empty prefix (e.g., systemd).
 
 ### `ignored_local_interfaces`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_BACKEND_IGNORED_LOCAL_INTERFACES`
+  (comma-separated values)
 - **Description:** A list of interface names to exclude when enumerating local interfaces.
   This is useful if you want to prevent certain interfaces from being imported from the local system.
 
@@ -256,54 +271,67 @@ Additional or more specialized configuration options for logging and interface c
 
 ### `log_level`
 - **Default:** `info`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_LOG_LEVEL`
 - **Description:** The log level used by the application. Valid options are: `trace`, `debug`, `info`, `warn`, `error`.
 
 ### `log_pretty`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_LOG_PRETTY`
 - **Description:** If `true`, log messages are colorized and formatted for readability (pretty-print).
 
 ### `log_json`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_LOG_JSON`
 - **Description:** If `true`, log messages are structured in JSON format.
 
 ### `start_listen_port`
 - **Default:** `51820`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_START_LISTEN_PORT`
 - **Description:** The first port to use when automatically creating new WireGuard interfaces.
 
 ### `start_cidr_v4`
 - **Default:** `10.11.12.0/24`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_START_CIDR_V4`
 - **Description:** The initial IPv4 subnet to use when automatically creating new WireGuard interfaces.
 
 ### `start_cidr_v6`
 - **Default:** `fdfd:d3ad:c0de:1234::0/64`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_START_CIDR_V6`
 - **Description:** The initial IPv6 subnet to use when automatically creating new WireGuard interfaces.
 
 ### `use_ip_v6`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_USE_IP_V6`
 - **Description:** Enable or disable IPv6 support.
 
 ### `config_storage_path`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_ADVANCED_CONFIG_STORAGE_PATH`
 - **Description:** Path to a directory where `wg-quick` style configuration files will be stored (if you need local filesystem configs).
 
 ### `expiry_check_interval`
 - **Default:** `15m`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_EXPIRY_CHECK_INTERVAL`
 - **Description:** Interval after which existing peers are checked if they are expired. Format uses `s`, `m`, `h`, `d` for seconds, minutes, hours, days, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
 
 ### `rule_prio_offset`
 - **Default:** `20000`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_RULE_PRIO_OFFSET`
 - **Description:** Offset for IP route rule priorities when configuring routing.
 
 ### `route_table_offset`
 - **Default:** `20000`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_ROUTE_TABLE_OFFSET`
 - **Description:** Offset for IP route table IDs when configuring routing.
 
 ### `api_admin_only`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_API_ADMIN_ONLY`
 - **Description:** If `true`, the public REST API is accessible only to admin users. The API docs live at [`/api/v1/doc.html`](../rest-api/api-doc.md).
 
 ### `limit_additional_user_peers`
 - **Default:** `0`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_LIMIT_ADDITIONAL_USER_PEERS`
 - **Description:** Limit additional peers a normal user can create. `0` means unlimited.
 
 ---
@@ -317,18 +345,22 @@ If sensitive values (like private keys) should be stored in an encrypted format,
 
 ### `debug`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_DATABASE_DEBUG`
 - **Description:** If `true`, logs all database statements (verbose).
 
 ### `slow_query_threshold`
 - **Default:** "0"
+- **Environment Variable:** `WG_PORTAL_DATABASE_SLOW_QUERY_THRESHOLD`
 - **Description:** A time threshold (e.g., `100ms`) above which queries are considered slow and logged as warnings. If zero, slow query logging is disabled. Format uses `s`, `ms` for seconds, milliseconds, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration). The value must be a string.
 
 ### `type`
 - **Default:** `sqlite`
+- **Environment Variable:** `WG_PORTAL_DATABASE_TYPE`
 - **Description:** The database type. Valid options: `sqlite`, `mssql`, `mysql`, `postgres`.
 
 ### `dsn`
 - **Default:** `data/sqlite.db`
+- **Environment Variable:** `WG_PORTAL_DATABASE_DSN`
 - **Description:** The Data Source Name (DSN) for connecting to the database.  
   For example:
   ```text
@@ -337,6 +369,7 @@ If sensitive values (like private keys) should be stored in an encrypted format,
 
 ### `encryption_passphrase`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_DATABASE_ENCRYPTION_PASSPHRASE`
 - **Description:** Passphrase for encrypting sensitive values such as private keys in the database. Encryption is only applied if this passphrase is set.
   **Important:** Once you enable encryption by setting this passphrase, you cannot disable it or change it afterward. 
   New or updated records will be encrypted; existing data remains in plaintext until it’s next modified.
@@ -349,38 +382,47 @@ Controls how WireGuard Portal collects and reports usage statistics, including p
 
 ### `use_ping_checks`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_STATISTICS_USE_PING_CHECKS`
 - **Description:** Enable periodic ping checks to verify that peers remain responsive.
 
 ### `ping_check_workers`
 - **Default:** `10`
+- **Environment Variable:** `WG_PORTAL_STATISTICS_PING_CHECK_WORKERS`
 - **Description:** Number of parallel worker processes for ping checks.
 
 ### `ping_unprivileged`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_STATISTICS_PING_UNPRIVILEGED`
 - **Description:** If `false`, ping checks run without root privileges. This is currently considered BETA.
 
 ### `ping_check_interval`
 - **Default:** `1m`
+- **Environment Variable:** `WG_PORTAL_STATISTICS_PING_CHECK_INTERVAL`
 - **Description:** Interval between consecutive ping checks for all peers. Format uses `s`, `m`, `h`, `d` for seconds, minutes, hours, days, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
 
 ### `data_collection_interval`
 - **Default:** `1m`
+- **Environment Variable:** `WG_PORTAL_STATISTICS_DATA_COLLECTION_INTERVAL`
 - **Description:** Interval between data collection cycles (bytes sent/received, handshake times, etc.). Format uses `s`, `m`, `h`, `d` for seconds, minutes, hours, days, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
 
 ### `collect_interface_data`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_STATISTICS_COLLECT_INTERFACE_DATA`
 - **Description:** If `true`, collects interface-level data (bytes in/out) for monitoring and statistics.
 
 ### `collect_peer_data`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_STATISTICS_COLLECT_PEER_DATA`
 - **Description:** If `true`, collects peer-level data (bytes, last handshake, endpoint, etc.).
 
 ### `collect_audit_data`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_STATISTICS_COLLECT_AUDIT_DATA`
 - **Description:** If `true`, logs certain portal events (such as user logins) to the database.
 
 ### `listening_address`
 - **Default:** `:8787`
+- **Environment Variable:** `WG_PORTAL_STATISTICS_LISTENING_ADDRESS`
 - **Description:** Address and port for the integrated Prometheus metric server (e.g., `:8787` or `127.0.0.1:8787`).
 
 ---
@@ -393,45 +435,55 @@ To send emails to all peers that have a valid email-address as user-identifier, 
 
 ### `host`
 - **Default:** `127.0.0.1`
+- **Environment Variable:** `WG_PORTAL_MAIL_HOST`
 - **Description:** Hostname or IP of the SMTP server.
 
 ### `port`
 - **Default:** `25`
+- **Environment Variable:** `WG_PORTAL_MAIL_PORT`
 - **Description:** Port number for the SMTP server.
 
 ### `encryption`
 - **Default:** `none`
+- **Environment Variable:** `WG_PORTAL_MAIL_ENCRYPTION`
 - **Description:** SMTP encryption type. Valid values: `none`, `tls`, `starttls`.
 
 ### `cert_validation`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_MAIL_CERT_VALIDATION`
 - **Description:** If `true`, validate the SMTP server certificate (relevant if `encryption` = `tls`).
 
 ### `username`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_MAIL_USERNAME`
 - **Description:** Optional SMTP username for authentication.
 
 ### `password`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_MAIL_PASSWORD`
 - **Description:** Optional SMTP password for authentication.
 
 ### `auth_type`
 - **Default:** `plain`
+- **Environment Variable:** `WG_PORTAL_MAIL_AUTH_TYPE`
 - **Description:** SMTP authentication type. Valid values: `plain`, `login`, `crammd5`.
 
 ### `from`
 - **Default:** `Wireguard Portal <noreply@wireguard.local>`
+- **Environment Variable:** `WG_PORTAL_MAIL_FROM`
 - **Description:** The default "From" address when sending emails.
 
 ### `link_only`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_MAIL_LINK_ONLY`
 - **Description:** If `true`, emails only contain a link to WireGuard Portal, rather than attaching the full configuration.
 
 ### `allow_peer_email`
 - **Default:** `false`
-  - **Description:** If `true`, and a peer has no valid user record linked, but the user-identifier of the peer is a valid email address, emails will be sent to that email address.
-    If false, and the peer has no valid user record linked, emails will not be sent.
-    If a peer has linked a valid user, the email address is always taken from the user record.
+- **Environment Variable:** `WG_PORTAL_MAIL_ALLOW_PEER_EMAIL`
+- **Description:** If `true`, and a peer has no valid user record linked, but the user-identifier of the peer is a valid email address, emails will be sent to that email address.
+  If false, and the peer has no valid user record linked, emails will not be sent.
+  If a peer has linked a valid user, the email address is always taken from the user record.
 
 ---
 
@@ -444,12 +496,14 @@ Some core authentication options are shared across all providers, while others a
 
 ### `min_password_length`
 - **Default:** `16`
+- **Environment Variable:** `WG_PORTAL_AUTH_MIN_PASSWORD_LENGTH`
 - **Description:** Minimum password length for local authentication. This is not enforced for LDAP authentication.
   The default admin password strength is also enforced by this setting.
 - **Important:** The password should be strong and secure. It is recommended to use a password with at least 16 characters, including uppercase and lowercase letters, numbers, and special characters.
 
 ### `hide_login_form`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_AUTH_HIDE_LOGIN_FORM`
 - **Description:** If `true`, the login form is hidden and only the OIDC, OAuth, LDAP, or WebAuthn providers are shown. This is useful if you want to enforce a specific authentication method.
   If no social login providers are configured, the login form is always shown, regardless of this setting.
 - **Important:** You can still access the login form by adding the `?all` query parameter to the login URL (e.g. https://wg.portal/#/login?all). 
@@ -691,6 +745,10 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
   (&(objectClass=organizationalPerson)(!userAccountControl:1.2.840.113556.1.4.803:=2)(mail=*))
   ```
 
+#### `sync_log_user_info`
+- **Default:** `false`
+- **Description:** If `true`, logs LDAP user data at the trace level during synchronization.
+
 #### `disable_missing`
 - **Default:** `false`
 - **Description:** If `true`, any user **not** found in LDAP (during sync) is disabled in WireGuard Portal.
@@ -715,6 +773,7 @@ The `webauthn` section contains configuration options for WebAuthn authenticatio
 
 #### `enabled`
 - **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_AUTH_WEBAUTHN_ENABLED`
 - **Description:** If `true`, Passkey authentication is enabled. If `false`, WebAuthn is disabled.
   Users are encouraged to use Passkeys for secure authentication instead of passwords. 
   If a passkey is registered, the password login is still available as a fallback. Ensure that the password is strong and secure.
@@ -727,48 +786,59 @@ Without a valid `external_url`, the login process may fail due to CSRF protectio
 
 ### `listening_address`
 - **Default:** `:8888`
+- **Environment Variable:** `WG_PORTAL_WEB_LISTENING_ADDRESS`
 - **Description:** The listening address and port for the web server (e.g., `:8888` to bind on all interfaces or `127.0.0.1:8888` to bind only on the loopback interface).
   Ensure that access to WireGuard Portal is protected against unauthorized access, especially if binding to all interfaces.
 
 ### `external_url`
 - **Default:** `http://localhost:8888`
+- **Environment Variable:** `WG_PORTAL_WEB_EXTERNAL_URL`
 - **Description:** The URL where a client can access WireGuard Portal. This URL is used for generating links in emails and for performing OAUTH redirects.  
   **Important:** If you are using a reverse proxy, set this to the external URL of the reverse proxy, otherwise login will fail. If you access the portal via IP address, set this to the IP address of the server.
 
 ### `site_company_name`
 - **Default:** `WireGuard Portal`
+- **Environment Variable:** `WG_PORTAL_WEB_SITE_COMPANY_NAME`
 - **Description:** The company name that is shown at the bottom of the web frontend.
 
 ### `site_title`
 - **Default:** `WireGuard Portal`
+- **Environment Variable:** `WG_PORTAL_WEB_SITE_TITLE`
 - **Description:** The title that is shown in the web frontend.
 
 ### `session_identifier`
 - **Default:** `wgPortalSession`
+- **Environment Variable:** `WG_PORTAL_WEB_SESSION_IDENTIFIER`
 - **Description:** The session identifier for the web frontend.
 
 ### `session_secret`
 - **Default:** `very_secret`
+- **Environment Variable:** `WG_PORTAL_WEB_SESSION_SECRET`
 - **Description:** The session secret for the web frontend.
 
 ### `csrf_secret`
 - **Default:** `extremely_secret`
+- **Environment Variable:** `WG_PORTAL_WEB_CSRF_SECRET`
 - **Description:** The CSRF secret.
 
 ### `request_logging`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_WEB_REQUEST_LOGGING`
 - **Description:** Log all HTTP requests.
 
 ### `expose_host_info`
 - **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_WEB_EXPOSE_HOST_INFO`
 - **Description:** Expose the hostname and version of the WireGuard Portal server in an HTTP header. This is useful for debugging but may expose sensitive information.
 
 ### `cert_file`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_WEB_CERT_FILE`
 - **Description:** (Optional) Path to the TLS certificate file.
 
 ### `key_file`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_WEB_KEY_FILE`
 - **Description:** (Optional) Path to the TLS certificate key file.
 
 ---
@@ -780,12 +850,15 @@ Further details can be found in the [usage documentation](../usage/webhooks.md).
 
 ### `url`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_WEBHOOK_URL`
 - **Description:** The POST endpoint to which the webhook is sent. The URL must be reachable from the WireGuard Portal server. If the URL is empty, the webhook is disabled.
 
 ### `authentication`
 - **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_WEBHOOK_AUTHENTICATION`
 - **Description:** The Authorization header for the webhook endpoint. The value is send as-is in the header. For example: `Bearer <token>`.
 
 ### `timeout`
 - **Default:** `10s`
+- **Environment Variable:** `WG_PORTAL_WEBHOOK_TIMEOUT`
 - **Description:** The timeout for the webhook request. If the request takes longer than this, it is aborted.

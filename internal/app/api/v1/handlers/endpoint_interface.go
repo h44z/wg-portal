@@ -48,12 +48,12 @@ func (e InterfaceEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup.Use(e.authenticator.LoggedIn(ScopeAdmin))
 
 	apiGroup.HandleFunc("GET /all", e.handleAllGet())
-	apiGroup.HandleFunc("GET /by-id/{id}", e.handleByIdGet())
+	apiGroup.HandleFunc("GET /by-id/{id...}", e.handleByIdGet())
 
 	apiGroup.HandleFunc("GET /prepare", e.handlePrepareGet())
 	apiGroup.HandleFunc("POST /new", e.handleCreatePost())
-	apiGroup.HandleFunc("PUT /by-id/{id}", e.handleUpdatePut())
-	apiGroup.HandleFunc("DELETE /by-id/{id}", e.handleDelete())
+	apiGroup.HandleFunc("PUT /by-id/{id...}", e.handleUpdatePut())
+	apiGroup.HandleFunc("DELETE /by-id/{id...}", e.handleDelete())
 }
 
 // handleAllGet returns a gorm Handler function.

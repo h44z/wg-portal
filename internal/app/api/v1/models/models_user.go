@@ -13,7 +13,7 @@ type User struct {
 	// The email address of the user. This field is optional.
 	Email string `json:"Email" binding:"omitempty,email" example:"test@test.com"`
 	// The source of the user. This field is optional.
-	Source string `json:"Source" binding:"oneof=db" example:"db"`
+	Source string `json:"Source" binding:"oneof=db ldap oauth" example:"db"`
 	// The name of the authentication provider. This field is read-only.
 	ProviderName string `json:"ProviderName,omitempty" readonly:"true" example:""`
 	// If this field is set, the user is an admin.
