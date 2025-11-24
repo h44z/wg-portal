@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/a8m/envsubst v1.4.3
 	github.com/alexedwards/scs/v2 v2.9.0
-	github.com/coreos/go-oidc/v3 v3.16.0
+	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.12
 	github.com/go-pkgz/routegroup v1.6.0
