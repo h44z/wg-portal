@@ -304,7 +304,11 @@ func (c *PfsenseController) convertWireGuardInterface(
 		BytesDownload: rxBytes,
 	}
 
-	description := wg.GetString("description")
+	// Extract description - pfSense API uses "descr" field
+	description := wg.GetString("descr")
+	if description == "" {
+		description = wg.GetString("description")
+	}
 	if description == "" {
 		description = wg.GetString("comment")
 	}
