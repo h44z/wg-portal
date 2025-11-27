@@ -152,42 +152,13 @@ func (c *PfsenseController) loadInterfaceData(
 	deviceId := wireGuardObj.GetString("id")
 	deviceName := wireGuardObj.GetString("name")
 
-	// Get tunnel statistics and addresses
-	// Using pfSense REST API v2 endpoints (https://pfrest.org/)
-	// Try to get detailed tunnel info (may not work for all pfSense versions)
-	var ifaceObj lowlevel.GenericJsonObject
-	ifaceReply := c.client.Get(ctx, "/api/v2/vpn/wireguard/tunnel/"+deviceId, &lowlevel.PfsenseRequestOptions{})
-	if ifaceReply.Status == lowlevel.PfsenseApiStatusOk {
-		ifaceObj = ifaceReply.Data
-	} else {
-		// If detailed query fails, use basic data from wireGuardObj
-		slog.Debug("failed to query detailed interface data, using basic data", "interface", deviceName)
-	}
+	// Extract addresses from the basic tunnel data
+	// Note: The tunnel detail endpoint (/api/v2/vpn/wireguard/tunnel/{id}) doesn't work,
+	// and the address endpoint (/api/v2/vpn/wireguard/tunnel/{id}/address) also doesn't work,
+	// so we only use data from the tunnel list response
+	addresses := c.extractAddresses(wireGuardObj, nil)
 
-	// Get tunnel addresses from the address endpoint
-	// Endpoint: GET /api/v2/vpn/wireguard/tunnel/{id}/address
-	// See: https://pfrest.org/api-docs/#/VPN/getVPNWireGuardTunnelAddressEndpoint
-	// Note: This endpoint may not be available in all pfSense versions
-	addresses := c.extractAddresses(wireGuardObj, ifaceObj)
-	addrReply := c.client.Query(ctx, "/api/v2/vpn/wireguard/tunnel/"+deviceId+"/address", &lowlevel.PfsenseRequestOptions{})
-	if addrReply.Status == lowlevel.PfsenseApiStatusOk && len(addrReply.Data) > 0 {
-		// Parse addresses from the address endpoint response
-		parsedAddrs := c.parseAddressArray(addrReply.Data)
-		if len(parsedAddrs) > 0 {
-			addresses = parsedAddrs
-			if c.cfg.Debug {
-				slog.Debug("loaded addresses from address endpoint", "interface", deviceName, "count", len(addresses))
-			}
-		}
-	} else if c.cfg.Debug {
-		if addrReply.Status != lowlevel.PfsenseApiStatusOk {
-			slog.Debug("address endpoint not available or failed", "interface", deviceName, "status", addrReply.Status, "error", addrReply.Error)
-		} else {
-			slog.Debug("address endpoint returned no addresses", "interface", deviceName)
-		}
-	}
-
-	interfaceModel, err := c.convertWireGuardInterface(wireGuardObj, ifaceObj, addresses)
+	interfaceModel, err := c.convertWireGuardInterface(wireGuardObj, nil, addresses)
 	if err != nil {
 		return nil, fmt.Errorf("interface convert failed for %s: %w", deviceName, err)
 	}
@@ -365,6 +336,9 @@ func (c *PfsenseController) GetPeers(ctx context.Context, deviceId domain.Interf
 			continue
 		}
 
+		// Use peer data directly from the list response
+		// Note: The peer detail endpoint (/api/v2/vpn/wireguard/peer/{id}) may not work
+		// or may not provide additional statistics, so we use the list response data
 		peerModel, err := c.convertWireGuardPeer(peer)
 		if err != nil {
 			return nil, fmt.Errorf("peer convert failed for %v: %w", peer.GetString("name"), err)
