@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/h44z/wg-portal/internal/app"
@@ -867,6 +868,17 @@ func (m Manager) importInterface(
 	iface.Backend = backend.GetId()
 	iface.PeerDefAllowedIPsStr = iface.AddressStr()
 
+	// For pfSense backends, extract endpoint and DNS from peers
+	if backend.GetId() == domain.ControllerTypePfsense {
+		endpoint, dns := extractPfsenseDefaultsFromPeers(peers, iface.ListenPort)
+		if endpoint != "" {
+			iface.PeerDefEndpoint = endpoint
+		}
+		if dns != "" {
+			iface.PeerDefDnsStr = dns
+		}
+	}
+
 	// try to predict the interface type based on the number of peers
 	switch len(peers) {
 	case 0:
@@ -902,6 +914,61 @@ func (m Manager) importInterface(
 	}
 
 	return nil
+}
+
+// extractPfsenseDefaultsFromPeers extracts common endpoint and DNS information from peers
+// For server interfaces, peers typically have endpoints pointing to the server, so we use the most common one
+func extractPfsenseDefaultsFromPeers(peers []domain.PhysicalPeer, listenPort int) (endpoint, dns string) {
+	if len(peers) == 0 {
+		return "", ""
+	}
+
+	// Count endpoint occurrences to find the most common one
+	endpointCounts := make(map[string]int)
+	dnsValues := make(map[string]int)
+
+	for _, peer := range peers {
+		// Extract endpoint from peer
+		if peer.Endpoint != "" {
+			endpointCounts[peer.Endpoint]++
+		}
+
+		// Extract DNS from peer extras if available
+		if extras := peer.GetExtras(); extras != nil {
+			if pfsenseExtras, ok := extras.(domain.PfsensePeerExtras); ok {
+				if pfsenseExtras.ClientDns != "" {
+					dnsValues[pfsenseExtras.ClientDns]++
+				}
+			}
+		}
+	}
+
+	// Find the most common endpoint
+	maxCount := 0
+	for ep, count := range endpointCounts {
+		if count > maxCount {
+			maxCount = count
+			endpoint = ep
+		}
+	}
+
+	// If endpoint doesn't have a port and we have a listenPort, add it
+	if endpoint != "" && listenPort > 0 {
+		if !strings.Contains(endpoint, ":") {
+			endpoint = fmt.Sprintf("%s:%d", endpoint, listenPort)
+		}
+	}
+
+	// Find the most common DNS
+	maxDnsCount := 0
+	for dnsVal, count := range dnsValues {
+		if count > maxDnsCount {
+			maxDnsCount = count
+			dns = dnsVal
+		}
+	}
+
+	return endpoint, dns
 }
 
 func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain.PhysicalPeer) error {

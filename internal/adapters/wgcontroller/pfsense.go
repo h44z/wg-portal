@@ -457,6 +457,18 @@ func (c *PfsenseController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 	}
 
 	endpoint := peer.GetString("endpoint")
+	port := peer.GetString("port")
+	
+	// Combine endpoint and port if both are available
+	if endpoint != "" && port != "" {
+		// Check if endpoint already contains a port
+		if !strings.Contains(endpoint, ":") {
+			endpoint = fmt.Sprintf("%s:%s", endpoint, port)
+		}
+	} else if endpoint == "" && port != "" {
+		// If only port is available, we can't construct a full endpoint
+		// This might be used with the interface's listenport
+	}
 
 	keepAliveSeconds := 0
 	keepAliveStr := peer.GetString("persistentkeepalive")
@@ -515,14 +527,27 @@ func (c *PfsenseController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 		ImportSource:        domain.ControllerTypePfsense,
 	}
 
-	description := peer.GetString("description")
+	// Extract description/name - pfSense API uses "descr" field
+	description := peer.GetString("descr")
+	if description == "" {
+		description = peer.GetString("description")
+	}
 	if description == "" {
 		description = peer.GetString("comment")
 	}
 
+	// Extract name - pfSense API may use "name" or "descr"
+	name := peer.GetString("name")
+	if name == "" {
+		name = peer.GetString("descr")
+	}
+	if name == "" {
+		name = description // fallback to description if name is not available
+	}
+
 	peerModel.SetExtras(domain.PfsensePeerExtras{
 		Id:              peer.GetString("id"),
-		Name:            peer.GetString("name"),
+		Name:            name,
 		Comment:         description,
 		Disabled:        peer.GetBool("disabled"),
 		ClientEndpoint:  "", // pfSense may handle this differently
