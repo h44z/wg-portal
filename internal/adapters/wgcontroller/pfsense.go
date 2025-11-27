@@ -149,7 +149,6 @@ func (c *PfsenseController) loadInterfaceData(
 	ctx context.Context,
 	wireGuardObj lowlevel.GenericJsonObject,
 ) (*domain.PhysicalInterface, error) {
-	deviceId := wireGuardObj.GetString("id")
 	deviceName := wireGuardObj.GetString("name")
 
 	// Extract addresses from the basic tunnel data
