@@ -69,13 +69,9 @@ func (c *PfsenseController) getPeerMutex(id domain.PeerIdentifier) *sync.Mutex {
 
 func (c *PfsenseController) GetInterfaces(ctx context.Context) ([]domain.PhysicalInterface, error) {
 	// Query WireGuard tunnels from pfSense API
-	// Using pfSense REST API v2 endpoints
-	// Actual endpoints: GET /api/v2/vpn/wireguard/tunnels
-	// pfSense REST API returns all fields by default, PropList may not be needed
+	// Using pfSense REST API v2 endpoints: GET /api/v2/vpn/wireguard/tunnels
 	// Field names should be verified against Swagger docs: https://pfrest.org/api-docs/
-	wgReply := c.client.Query(ctx, "/api/v2/vpn/wireguard/tunnels", &lowlevel.PfsenseRequestOptions{
-		// PropList: []string{}, // pfSense may not support field selection like Mikrotik
-	})
+	wgReply := c.client.Query(ctx, "/api/v2/vpn/wireguard/tunnels", &lowlevel.PfsenseRequestOptions{})
 	if wgReply.Status != lowlevel.PfsenseApiStatusOk {
 		return nil, fmt.Errorf("failed to query interfaces: %v", wgReply.Error)
 	}
@@ -129,6 +125,7 @@ func (c *PfsenseController) GetInterface(ctx context.Context, id domain.Interfac
 	*domain.PhysicalInterface,
 	error,
 ) {
+	// First, get the tunnel ID by querying by name
 	wgReply := c.client.Query(ctx, "/api/v2/vpn/wireguard/tunnels", &lowlevel.PfsenseRequestOptions{
 		Filters: map[string]string{
 			"name": string(id),
@@ -142,6 +139,22 @@ func (c *PfsenseController) GetInterface(ctx context.Context, id domain.Interfac
 		return nil, fmt.Errorf("interface %s not found", id)
 	}
 
+	tunnelId := wgReply.Data[0].GetString("id")
+	
+	// Query the specific tunnel endpoint to get full details including addresses
+	// Endpoint: GET /api/v2/vpn/wireguard/tunnel?id={id}
+	if tunnelId != "" {
+		tunnelReply := c.client.Get(ctx, "/api/v2/vpn/wireguard/tunnel?id="+tunnelId, &lowlevel.PfsenseRequestOptions{})
+		if tunnelReply.Status == lowlevel.PfsenseApiStatusOk && tunnelReply.Data != nil {
+			// Use the detailed tunnel response which includes addresses
+			return c.loadInterfaceData(ctx, tunnelReply.Data)
+		}
+		// Fall back to list response if detail query fails
+		if c.cfg.Debug {
+			slog.Debug("failed to query detailed tunnel info, using list response", "interface", id, "tunnel_id", tunnelId)
+		}
+	}
+
 	return c.loadInterfaceData(ctx, wgReply.Data[0])
 }
 
@@ -150,12 +163,28 @@ func (c *PfsenseController) loadInterfaceData(
 	wireGuardObj lowlevel.GenericJsonObject,
 ) (*domain.PhysicalInterface, error) {
 	deviceName := wireGuardObj.GetString("name")
+	deviceId := wireGuardObj.GetString("id")
 
-	// Extract addresses from the basic tunnel data
-	// Note: The tunnel detail endpoint (/api/v2/vpn/wireguard/tunnel/{id}) doesn't work,
-	// and the address endpoint (/api/v2/vpn/wireguard/tunnel/{id}/address) also doesn't work,
-	// so we only use data from the tunnel list response
+	// Extract addresses from the tunnel data
+	// The tunnel response may include an "addresses" array when queried via /tunnel?id={id}
 	addresses := c.extractAddresses(wireGuardObj, nil)
+
+	// If addresses weren't found in the tunnel object and we have a tunnel ID,
+	// query the specific tunnel endpoint to get full details including addresses
+	// Endpoint: GET /api/v2/vpn/wireguard/tunnel?id={id}
+	if len(addresses) == 0 && deviceId != "" {
+		tunnelReply := c.client.Get(ctx, "/api/v2/vpn/wireguard/tunnel?id="+deviceId, &lowlevel.PfsenseRequestOptions{})
+		if tunnelReply.Status == lowlevel.PfsenseApiStatusOk && tunnelReply.Data != nil {
+			// Extract addresses from the detailed tunnel response
+			parsedAddrs := c.extractAddresses(tunnelReply.Data, nil)
+			if len(parsedAddrs) > 0 {
+				addresses = parsedAddrs
+				if c.cfg.Debug {
+					slog.Debug("loaded addresses from detailed tunnel query", "interface", deviceName, "count", len(addresses))
+				}
+			}
+		}
+	}
 
 	interfaceModel, err := c.convertWireGuardInterface(wireGuardObj, nil, addresses)
 	if err != nil {
@@ -180,12 +209,65 @@ func (c *PfsenseController) extractAddresses(
 		}
 	}
 
-	// Fallback to wgObj
+	// Try to get addresses from wgObj - check if it's an array first
 	if len(addresses) == 0 {
-		addrStr := wgObj.GetString("addresses")
-		if addrStr != "" {
-			addrs, _ := domain.CidrsFromString(addrStr)
-			addresses = append(addresses, addrs...)
+		if addressesValue, ok := wgObj["addresses"]; ok && addressesValue != nil {
+			if addressesArray, ok := addressesValue.([]any); ok {
+				// Parse addresses array (from /tunnel?id={id} response)
+				// Each object has "address" and "mask" fields
+				for _, addrItem := range addressesArray {
+					if addrObj, ok := addrItem.(map[string]any); ok {
+						address := ""
+						mask := 0
+						
+						// Extract address
+						if addrVal, ok := addrObj["address"]; ok {
+							if addrStr, ok := addrVal.(string); ok {
+								address = addrStr
+							} else {
+								address = fmt.Sprintf("%v", addrVal)
+							}
+						}
+						
+						// Extract mask
+						if maskVal, ok := addrObj["mask"]; ok {
+							if maskInt, ok := maskVal.(int); ok {
+								mask = maskInt
+							} else if maskFloat, ok := maskVal.(float64); ok {
+								mask = int(maskFloat)
+							} else if maskStr, ok := maskVal.(string); ok {
+								if maskInt, err := strconv.Atoi(maskStr); err == nil {
+									mask = maskInt
+								}
+							}
+						}
+						
+						// Convert to CIDR format
+						if address != "" && mask > 0 {
+							cidrStr := fmt.Sprintf("%s/%d", address, mask)
+							if cidr, err := domain.CidrFromString(cidrStr); err == nil {
+								addresses = append(addresses, cidr)
+							}
+						} else if address != "" {
+							// Try parsing as CIDR string directly
+							if cidr, err := domain.CidrFromString(address); err == nil {
+								addresses = append(addresses, cidr)
+							}
+						}
+					}
+				}
+			} else if addrStr, ok := addressesValue.(string); ok {
+				// Fallback: try parsing as comma-separated string
+				addrs, _ := domain.CidrsFromString(addrStr)
+				addresses = append(addresses, addrs...)
+			}
+		} else {
+			// Try as string field
+			addrStr := wgObj.GetString("addresses")
+			if addrStr != "" {
+				addrs, _ := domain.CidrsFromString(addrStr)
+				addresses = append(addresses, addrs...)
+			}
 		}
 	}
 
@@ -245,17 +327,9 @@ func (c *PfsenseController) convertWireGuardInterface(
 	running := wg.GetBool("running")
 	disabled := wg.GetBool("disabled")
 
+	// TODO: Interface statistics (rx/tx bytes) are not currently supported
+	// by the pfSense REST API. This functionality is reserved for future implementation.
 	var rxBytes, txBytes uint64
-	if iface != nil {
-		rxBytes = uint64(iface.GetInt("rxbytes"))
-		if rxBytes == 0 {
-			rxBytes = uint64(iface.GetInt("rx-bytes"))
-		}
-		txBytes = uint64(iface.GetInt("txbytes"))
-		if txBytes == 0 {
-			txBytes = uint64(iface.GetInt("tx-bytes"))
-		}
-	}
 
 	pi := domain.PhysicalInterface{
 		Identifier: domain.InterfaceIdentifier(wg.GetString("name")),
@@ -296,9 +370,10 @@ func (c *PfsenseController) GetPeers(ctx context.Context, deviceId domain.Interf
 	[]domain.PhysicalPeer,
 	error,
 ) {
-	// Query all peers (pfSense API doesn't support filtering by interface)
+	// Query all peers and filter by interface client-side
 	// Using pfSense REST API v2 endpoints (https://pfrest.org/)
-	// The API returns all peers regardless of filter parameters, so we filter client-side
+	// The API uses query parameters like ?id=0 for specific items, but we need to filter
+	// by interface (tun field), so we fetch all peers and filter client-side
 	wgReply := c.client.Query(ctx, "/api/v2/vpn/wireguard/peers", &lowlevel.PfsenseRequestOptions{})
 	if wgReply.Status != lowlevel.PfsenseApiStatusOk {
 		return nil, fmt.Errorf("failed to query peers for %s: %v", deviceId, wgReply.Error)
@@ -336,8 +411,6 @@ func (c *PfsenseController) GetPeers(ctx context.Context, deviceId domain.Interf
 		}
 
 		// Use peer data directly from the list response
-		// Note: The peer detail endpoint (/api/v2/vpn/wireguard/peer/{id}) may not work
-		// or may not provide additional statistics, so we use the list response data
 		peerModel, err := c.convertWireGuardPeer(peer)
 		if err != nil {
 			return nil, fmt.Errorf("peer convert failed for %v: %w", peer.GetString("name"), err)
@@ -464,28 +537,18 @@ func (c *PfsenseController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 		}
 	}
 
+	// TODO: Peer statistics (last handshake, rx/tx bytes) are not currently supported
+	// by the pfSense REST API. This functionality is reserved for future implementation
+	// when the API adds support for these fields.
+	// See: https://github.com/jaredhendrickson13/pfsense-api/issues (issue opened by user)
+	//
+	// When supported, extract fields like:
+	// - lastHandshake: peer.GetString("lasthandshake") or peer.GetString("last-handshake")
+	// - rxBytes: peer.GetInt("rxbytes") or peer.GetInt("rx-bytes")
+	// - txBytes: peer.GetInt("txbytes") or peer.GetInt("tx-bytes")
 	lastHandshakeTime := time.Time{}
-	lastHandshakeStr := peer.GetString("lasthandshake")
-	if lastHandshakeStr == "" {
-		lastHandshakeStr = peer.GetString("last-handshake")
-	}
-	if lastHandshakeStr != "" {
-		// Try parsing as duration or timestamp
-		if relDuration, err := time.ParseDuration(lastHandshakeStr); err == nil {
-			lastHandshakeTime = time.Now().Add(-relDuration)
-		} else if timestamp, err := time.Parse(time.RFC3339, lastHandshakeStr); err == nil {
-			lastHandshakeTime = timestamp
-		}
-	}
-
-	rxBytes := uint64(peer.GetInt("rxbytes"))
-	if rxBytes == 0 {
-		rxBytes = uint64(peer.GetInt("rx-bytes"))
-	}
-	txBytes := uint64(peer.GetInt("txbytes"))
-	if txBytes == 0 {
-		txBytes = uint64(peer.GetInt("tx-bytes"))
-	}
+	rxBytes := uint64(0)
+	txBytes := uint64(0)
 
 	peerModel := domain.PhysicalPeer{
 		Identifier: domain.PeerIdentifier(publicKey),
@@ -626,8 +689,8 @@ func (c *PfsenseController) updateInterface(ctx context.Context, pi *domain.Phys
 		payload["addresses"] = strings.Join(addresses, ",")
 	}
 
-	// Actual endpoint: PATCH /api/v2/vpn/wireguard/tunnel/{id}
-	wgReply := c.client.Update(ctx, "/api/v2/vpn/wireguard/tunnel/"+interfaceId, payload)
+	// Actual endpoint: PATCH /api/v2/vpn/wireguard/tunnel?id={id}
+	wgReply := c.client.Update(ctx, "/api/v2/vpn/wireguard/tunnel?id="+interfaceId, payload)
 	if wgReply.Status != lowlevel.PfsenseApiStatusOk {
 		return fmt.Errorf("failed to update interface %s: %v", pi.Identifier, wgReply.Error)
 	}
@@ -655,8 +718,8 @@ func (c *PfsenseController) DeleteInterface(ctx context.Context, id domain.Inter
 	}
 
 	interfaceId := wgReply.Data[0].GetString("id")
-	// Actual endpoint: DELETE /api/v2/vpn/wireguard/tunnel/{id}
-	deleteReply := c.client.Delete(ctx, "/api/v2/vpn/wireguard/tunnel/"+interfaceId)
+	// Actual endpoint: DELETE /api/v2/vpn/wireguard/tunnel?id={id}
+	deleteReply := c.client.Delete(ctx, "/api/v2/vpn/wireguard/tunnel?id="+interfaceId)
 	if deleteReply.Status != lowlevel.PfsenseApiStatusOk {
 		return fmt.Errorf("failed to delete WireGuard interface %s: %v", id, deleteReply.Error)
 	}
@@ -711,10 +774,12 @@ func (c *PfsenseController) getOrCreatePeer(
 	deviceId domain.InterfaceIdentifier,
 	id domain.PeerIdentifier,
 ) (*domain.PhysicalPeer, error) {
+	// Query for peer by publickey and interface (tun field)
+	// The API uses query parameters like ?publickey=...&tun=...
 	wgReply := c.client.Query(ctx, "/api/v2/vpn/wireguard/peers", &lowlevel.PfsenseRequestOptions{
 		Filters: map[string]string{
 			"publickey": string(id),
-			"interface": string(deviceId),
+			"tun":        string(deviceId), // Use "tun" field name as that's what the API uses
 		},
 	})
 	if wgReply.Status == lowlevel.PfsenseApiStatusOk && len(wgReply.Data) > 0 {
@@ -779,8 +844,8 @@ func (c *PfsenseController) updatePeer(
 		payload["endpoint"] = pp.Endpoint
 	}
 
-	// Actual endpoint: PATCH /api/v2/vpn/wireguard/peer/{id}
-	wgReply := c.client.Update(ctx, "/api/v2/vpn/wireguard/peer/"+peerId, payload)
+	// Actual endpoint: PATCH /api/v2/vpn/wireguard/peer?id={id}
+	wgReply := c.client.Update(ctx, "/api/v2/vpn/wireguard/peer?id="+peerId, payload)
 	if wgReply.Status != lowlevel.PfsenseApiStatusOk {
 		return fmt.Errorf("failed to update peer %s on interface %s: %v", pp.Identifier, deviceId, wgReply.Error)
 	}
@@ -804,10 +869,12 @@ func (c *PfsenseController) DeletePeer(
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	// Query for peer by publickey and interface (tun field)
+	// The API uses query parameters like ?publickey=...&tun=...
 	wgReply := c.client.Query(ctx, "/api/v2/vpn/wireguard/peers", &lowlevel.PfsenseRequestOptions{
 		Filters: map[string]string{
 			"publickey": string(id),
-			"interface": string(deviceId),
+			"tun":        string(deviceId), // Use "tun" field name as that's what the API uses
 		},
 	})
 	if wgReply.Status != lowlevel.PfsenseApiStatusOk {
@@ -818,8 +885,8 @@ func (c *PfsenseController) DeletePeer(
 	}
 
 	peerId := wgReply.Data[0].GetString("id")
-	// Actual endpoint: DELETE /api/v2/vpn/wireguard/peer/{id}
-	deleteReply := c.client.Delete(ctx, "/api/v2/vpn/wireguard/peer/"+peerId)
+	// Actual endpoint: DELETE /api/v2/vpn/wireguard/peer?id={id}
+	deleteReply := c.client.Delete(ctx, "/api/v2/vpn/wireguard/peer?id="+peerId)
 	if deleteReply.Status != lowlevel.PfsenseApiStatusOk {
 		return fmt.Errorf("failed to delete WireGuard peer %s for interface %s: %v", id, deviceId, deleteReply.Error)
 	}
