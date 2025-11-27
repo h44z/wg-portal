@@ -144,7 +144,11 @@ func (c *PfsenseController) GetInterface(ctx context.Context, id domain.Interfac
 	// Query the specific tunnel endpoint to get full details including addresses
 	// Endpoint: GET /api/v2/vpn/wireguard/tunnel?id={id}
 	if tunnelId != "" {
-		tunnelReply := c.client.Get(ctx, "/api/v2/vpn/wireguard/tunnel?id="+tunnelId, &lowlevel.PfsenseRequestOptions{})
+		tunnelReply := c.client.Get(ctx, "/api/v2/vpn/wireguard/tunnel", &lowlevel.PfsenseRequestOptions{
+			Filters: map[string]string{
+				"id": tunnelId,
+			},
+		})
 		if tunnelReply.Status == lowlevel.PfsenseApiStatusOk && tunnelReply.Data != nil {
 			// Use the detailed tunnel response which includes addresses
 			return c.loadInterfaceData(ctx, tunnelReply.Data)
@@ -173,7 +177,11 @@ func (c *PfsenseController) loadInterfaceData(
 	// query the specific tunnel endpoint to get full details including addresses
 	// Endpoint: GET /api/v2/vpn/wireguard/tunnel?id={id}
 	if len(addresses) == 0 && deviceId != "" {
-		tunnelReply := c.client.Get(ctx, "/api/v2/vpn/wireguard/tunnel?id="+deviceId, &lowlevel.PfsenseRequestOptions{})
+		tunnelReply := c.client.Get(ctx, "/api/v2/vpn/wireguard/tunnel", &lowlevel.PfsenseRequestOptions{
+			Filters: map[string]string{
+				"id": deviceId,
+			},
+		})
 		if tunnelReply.Status == lowlevel.PfsenseApiStatusOk && tunnelReply.Data != nil {
 			// Extract addresses from the detailed tunnel response
 			parsedAddrs := c.extractAddresses(tunnelReply.Data, nil)
