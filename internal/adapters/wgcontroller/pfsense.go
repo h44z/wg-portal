@@ -154,16 +154,40 @@ func (c *PfsenseController) loadInterfaceData(
 
 	// Get tunnel statistics and addresses
 	// Using pfSense REST API v2 endpoints (https://pfrest.org/)
-	// Actual endpoint: GET /api/v2/vpn/wireguard/tunnel/{id}
+	// Try to get detailed tunnel info (may not work for all pfSense versions)
+	var ifaceObj lowlevel.GenericJsonObject
 	ifaceReply := c.client.Get(ctx, "/api/v2/vpn/wireguard/tunnel/"+deviceId, &lowlevel.PfsenseRequestOptions{})
-	if ifaceReply.Status != lowlevel.PfsenseApiStatusOk {
+	if ifaceReply.Status == lowlevel.PfsenseApiStatusOk {
+		ifaceObj = ifaceReply.Data
+	} else {
 		// If detailed query fails, use basic data from wireGuardObj
 		slog.Debug("failed to query detailed interface data, using basic data", "interface", deviceName)
 	}
 
-	addresses := c.extractAddresses(wireGuardObj, ifaceReply.Data)
+	// Get tunnel addresses from the address endpoint
+	// Endpoint: GET /api/v2/vpn/wireguard/tunnel/{id}/address
+	// See: https://pfrest.org/api-docs/#/VPN/getVPNWireGuardTunnelAddressEndpoint
+	// Note: This endpoint may not be available in all pfSense versions
+	addresses := c.extractAddresses(wireGuardObj, ifaceObj)
+	addrReply := c.client.Query(ctx, "/api/v2/vpn/wireguard/tunnel/"+deviceId+"/address", &lowlevel.PfsenseRequestOptions{})
+	if addrReply.Status == lowlevel.PfsenseApiStatusOk && len(addrReply.Data) > 0 {
+		// Parse addresses from the address endpoint response
+		parsedAddrs := c.parseAddressArray(addrReply.Data)
+		if len(parsedAddrs) > 0 {
+			addresses = parsedAddrs
+			if c.cfg.Debug {
+				slog.Debug("loaded addresses from address endpoint", "interface", deviceName, "count", len(addresses))
+			}
+		}
+	} else if c.cfg.Debug {
+		if addrReply.Status != lowlevel.PfsenseApiStatusOk {
+			slog.Debug("address endpoint not available or failed", "interface", deviceName, "status", addrReply.Status, "error", addrReply.Error)
+		} else {
+			slog.Debug("address endpoint returned no addresses", "interface", deviceName)
+		}
+	}
 
-	interfaceModel, err := c.convertWireGuardInterface(wireGuardObj, ifaceReply.Data, addresses)
+	interfaceModel, err := c.convertWireGuardInterface(wireGuardObj, ifaceObj, addresses)
 	if err != nil {
 		return nil, fmt.Errorf("interface convert failed for %s: %w", deviceName, err)
 	}
@@ -195,6 +219,31 @@ func (c *PfsenseController) extractAddresses(
 		}
 	}
 
+	return addresses
+}
+
+// parseAddressArray parses an array of address objects from the pfSense API
+// Each object has "address" and "mask" fields (similar to allowedips structure)
+func (c *PfsenseController) parseAddressArray(addressArray []lowlevel.GenericJsonObject) []domain.Cidr {
+	addresses := make([]domain.Cidr, 0, len(addressArray))
+	
+	for _, addrObj := range addressArray {
+		address := addrObj.GetString("address")
+		mask := addrObj.GetInt("mask")
+		
+		if address != "" && mask > 0 {
+			cidrStr := fmt.Sprintf("%s/%d", address, mask)
+			if cidr, err := domain.CidrFromString(cidrStr); err == nil {
+				addresses = append(addresses, cidr)
+			}
+		} else if address != "" {
+			// Try parsing as CIDR string directly
+			if cidr, err := domain.CidrFromString(address); err == nil {
+				addresses = append(addresses, cidr)
+			}
+		}
+	}
+	
 	return addresses
 }
 
