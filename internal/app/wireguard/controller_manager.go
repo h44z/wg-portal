@@ -44,6 +44,10 @@ func (c *ControllerManager) init() error {
 		return err
 	}
 
+	if err := c.registerPfsenseControllers(); err != nil {
+		return err
+	}
+
 	c.logRegisteredControllers()
 
 	return nil
@@ -76,6 +80,26 @@ func (c *ControllerManager) registerMikrotikControllers() error {
 		controller, err := wgcontroller.NewMikrotikController(c.cfg, &backendConfig)
 		if err != nil {
 			return fmt.Errorf("failed to create Mikrotik controller for backend %s: %w", backendConfig.Id, err)
+		}
+
+		c.controllers[domain.InterfaceBackend(backendConfig.Id)] = backendInstance{
+			Config:         backendConfig.BackendBase,
+			Implementation: controller,
+		}
+	}
+	return nil
+}
+
+func (c *ControllerManager) registerPfsenseControllers() error {
+	for _, backendConfig := range c.cfg.Backend.Pfsense {
+		if backendConfig.Id == config.LocalBackendName {
+			slog.Warn("skipping registration of pfSense controller with reserved ID", "id", config.LocalBackendName)
+			continue
+		}
+
+		controller, err := wgcontroller.NewPfsenseController(c.cfg, &backendConfig)
+		if err != nil {
+			return fmt.Errorf("failed to create pfSense controller for backend %s: %w", backendConfig.Id, err)
 		}
 
 		c.controllers[domain.InterfaceBackend(backendConfig.Id)] = backendInstance{

@@ -94,3 +94,15 @@ auth:
         admin_group_regex: ^admin-group-name$
       registration_enabled: true
       log_user_info: true
+
+backend:
+  default: local
+  pfsense:
+    - id: pfsense1
+      display_name: "Main pfSense Firewall"
+      api_url: "https://pfsense.example.com"  # Base URL without /api/v2 (endpoints already include it)
+      api_key: "your-api-key"  # Generate in pfSense under 'System' -> 'REST API' -> 'Keys'
+      api_verify_tls: true
+      api_timeout: 30s
+      concurrency: 5
+      debug: false

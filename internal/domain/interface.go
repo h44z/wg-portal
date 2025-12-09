@@ -240,7 +240,8 @@ func (p *PhysicalInterface) GetExtras() any {
 func (p *PhysicalInterface) SetExtras(extras any) {
 	switch extras.(type) {
 	case MikrotikInterfaceExtras: // OK
-	default: // we only support MikrotikInterfaceExtras for now
+	case PfsenseInterfaceExtras: // OK
+	default: // we only support MikrotikInterfaceExtras and PfsenseInterfaceExtras for now
 		panic(fmt.Sprintf("unsupported interface backend extras type %T", extras))
 	}
 
@@ -303,6 +304,14 @@ func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
 		} else {
 			iface.Disabled = nil
 		}
+	case ControllerTypePfsense:
+		extras := pi.GetExtras().(PfsenseInterfaceExtras)
+		iface.DisplayName = extras.Comment
+		if extras.Disabled {
+			iface.Disabled = &now
+		} else {
+			iface.Disabled = nil
+		}
 	}
 
 	return iface
@@ -321,6 +330,12 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 	switch pi.ImportSource {
 	case ControllerTypeMikrotik:
 		extras := MikrotikInterfaceExtras{
+			Comment:  i.DisplayName,
+			Disabled: i.IsDisabled(),
+		}
+		pi.SetExtras(extras)
+	case ControllerTypePfsense:
+		extras := PfsenseInterfaceExtras{
 			Comment:  i.DisplayName,
 			Disabled: i.IsDisabled(),
 		}
