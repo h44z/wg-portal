@@ -74,6 +74,7 @@ mail:
   from: Wireguard Portal <noreply@wireguard.local>
   link_only: false
   allow_peer_email: false
+  templates_path: ""
 
 auth:
   oidc: []
@@ -484,6 +485,11 @@ To send emails to all peers that have a valid email-address as user-identifier, 
 - **Description:** If `true`, and a peer has no valid user record linked, but the user-identifier of the peer is a valid email address, emails will be sent to that email address.
   If false, and the peer has no valid user record linked, emails will not be sent.
   If a peer has linked a valid user, the email address is always taken from the user record.
+
+### `templates_path`
+- **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_MAIL_TEMPLATES_PATH`
+- **Description:** Path to the email template files that override embedded templates. Check [usage documentation](../usage/mail-templates.md) for an example.`
 
 ---
 

@@ -13,6 +13,13 @@ web:
   external_url: http://localhost:8888
   request_logging: true
 
+mail:
+  # Path where custom email templates (.gotpl and .gohtml) are stored.
+  # If the directory is empty on startup, the default embedded templates
+  # will be written there so you can modify them.
+  # Leave empty to use embedded templates only.
+  templates_path: ""
+
 webhook:
   url: ""
   authentication: ""

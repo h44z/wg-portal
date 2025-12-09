@@ -72,7 +72,7 @@ func NewMailManager(
 	users UserDatabaseRepo,
 	wg WireguardDatabaseRepo,
 ) (*Manager, error) {
-	tplHandler, err := newTemplateHandler(cfg.Web.ExternalUrl, cfg.Web.SiteTitle)
+	tplHandler, err := newTemplateHandler(cfg.Web.ExternalUrl, cfg.Web.SiteTitle, cfg.Mail.TemplatesPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template handler: %w", err)
 	}

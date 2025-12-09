@@ -81,6 +81,7 @@ nav:
           - Reverse Proxy (HTTPS): documentation/getting-started/reverse-proxy.md
       - Configuration:
           - Overview: documentation/configuration/overview.md
+          - Mail templates: documentation/configuration/mail-templates.md
           - Examples: documentation/configuration/examples.md
       - Usage:
           - General: documentation/usage/general.md
@@ -88,6 +89,7 @@ nav:
           - LDAP: documentation/usage/ldap.md
           - Security: documentation/usage/security.md
           - Webhooks: documentation/usage/webhooks.md
+          - Mail Templates: documentation/usage/mail-templates.md
           - REST API: documentation/rest-api/api-doc.md
       - Upgrade: documentation/upgrade/v1.md
       - Monitoring: documentation/monitoring/prometheus.md
