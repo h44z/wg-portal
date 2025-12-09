@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/go-pkgz/routegroup"
@@ -155,6 +157,37 @@ func (s *Server) setupFrontendRoutes() {
 		respond.Redirect(w, r, http.StatusMovedPermanently, "/app/favicon.ico")
 	})
 
+	// If a custom frontend path is configured, serve files from there when it contains content.
+	// If the directory is empty or missing, populate it with the embedded frontend-dist content first.
+	if s.cfg.Web.FrontendFilePath != "" {
+		if err := os.MkdirAll(s.cfg.Web.FrontendFilePath, 0755); err != nil {
+			slog.Error("failed to create frontend base directory", "path", s.cfg.Web.FrontendFilePath, "error", err)
+		} else {
+			ok := true
+			hasFiles, err := dirHasFiles(s.cfg.Web.FrontendFilePath)
+			if err != nil {
+				slog.Error("failed to check frontend base directory", "path", s.cfg.Web.FrontendFilePath, "error", err)
+				ok = false
+			}
+			if !hasFiles && ok {
+				embeddedFS := fsMust(fs.Sub(frontendStatics, "frontend-dist"))
+				if err := copyEmbedDirToDisk(embeddedFS, s.cfg.Web.FrontendFilePath); err != nil {
+					slog.Error("failed to populate frontend base directory from embedded assets",
+						"path", s.cfg.Web.FrontendFilePath, "error", err)
+					ok = false
+				}
+			}
+
+			if ok {
+				// serve files from FS
+				slog.Debug("serving frontend files from custom path", "path", s.cfg.Web.FrontendFilePath)
+				s.server.HandleFiles("/app", http.Dir(s.cfg.Web.FrontendFilePath))
+				return
+			}
+		}
+	}
+
+	// Fallback: serve embedded frontend files
 	s.server.HandleFiles("/app", http.FS(fsMust(fs.Sub(frontendStatics, "frontend-dist"))))
 }
 
@@ -181,4 +214,68 @@ func fsMust(f fs.FS, err error) fs.FS {
 		panic(err)
 	}
 	return f
+}
+
+// dirHasFiles returns true if the directory contains at least one file (non-directory).
+func dirHasFiles(dir string) (bool, error) {
+	d, err := os.Open(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	defer d.Close()
+
+	// Read a few entries; if any entry exists, consider it having files/dirs.
+	// We want to know if there is at least one file; if only subdirs exist, still treat as content.
+	entries, err := d.Readdir(-1)
+	if err != nil {
+		return false, err
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			// check recursively
+			has, err := dirHasFiles(filepath.Join(dir, e.Name()))
+			if err == nil && has {
+				return true, nil
+			}
+			continue
+		}
+		// regular file
+		return true, nil
+	}
+	return false, nil
+}
+
+// copyEmbedDirToDisk copies the contents of srcFS into dstDir on disk.
+func copyEmbedDirToDisk(srcFS fs.FS, dstDir string) error {
+	return fs.WalkDir(srcFS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(dstDir, path)
+		if d.IsDir() {
+			return os.MkdirAll(target, 0755)
+		}
+		// ensure parent dir exists
+		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			return err
+		}
+		// open source file
+		f, err := srcFS.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		out, err := os.Create(target)
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(out, f); err != nil {
+			_ = out.Close()
+			return err
+		}
+		return out.Close()
+	})
 }
