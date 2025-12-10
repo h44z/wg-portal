@@ -74,6 +74,7 @@ mail:
   from: Wireguard Portal <noreply@wireguard.local>
   link_only: false
   allow_peer_email: false
+  templates_path: ""
 
 auth:
   oidc: []
@@ -96,6 +97,7 @@ web:
   expose_host_info: false
   cert_file: ""
   key_File: ""
+  frontend_filepath: ""
 
 webhook:
   url: ""
@@ -485,6 +487,11 @@ To send emails to all peers that have a valid email-address as user-identifier, 
   If false, and the peer has no valid user record linked, emails will not be sent.
   If a peer has linked a valid user, the email address is always taken from the user record.
 
+### `templates_path`
+- **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_MAIL_TEMPLATES_PATH`
+- **Description:** Path to the email template files that override embedded templates. Check [usage documentation](../usage/mail-templates.md) for an example.`
+
 ---
 
 ## Auth
@@ -840,6 +847,14 @@ Without a valid `external_url`, the login process may fail due to CSRF protectio
 - **Default:** *(empty)*
 - **Environment Variable:** `WG_PORTAL_WEB_KEY_FILE`
 - **Description:** (Optional) Path to the TLS certificate key file.
+
+### `frontend_filepath`
+- **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_WEB_FRONTEND_FILEPATH`
+- **Description:** Optional base directory from which the web frontend is served. Check out the [building](../getting-started/sources.md) documentation for more information on how to compile the frontend assets.
+  - If the directory contains at least one file (recursively), these files are served at `/app`, overriding the embedded frontend assets.
+  - If the directory is empty or does not exist on startup, the embedded frontend is copied into this directory automatically and then served.
+  - If left empty, the embedded frontend is served and no files are written to disk.
 
 ---
 

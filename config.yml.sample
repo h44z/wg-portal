@@ -12,6 +12,18 @@ core:
 web:
   external_url: http://localhost:8888
   request_logging: true
+  # Optional path where custom frontend files are stored.
+  # If this folder contains at least one file, it will override the embedded frontend.
+  # If the folder is empty or does not exist on startup, the embedded frontend will be
+  # written into it. Leave empty to use the embedded frontend only.
+  frontend_filepath: ""
+
+mail:
+  # Path where custom email templates (.gotpl and .gohtml) are stored.
+  # If the directory is empty on startup, the default embedded templates
+  # will be written there so you can modify them.
+  # Leave empty to use embedded templates only.
+  templates_path: ""
 
 webhook:
   url: ""

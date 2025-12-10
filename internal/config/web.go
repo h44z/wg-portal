@@ -27,6 +27,10 @@ type WebConfig struct {
 	CertFile string `yaml:"cert_file"`
 	// KeyFile is the path to the TLS certificate key file.
 	KeyFile string `yaml:"key_file"`
+	// FrontendFilePath is an optional path to a folder that contains the frontend files.
+	// If set and the folder contains at least one file, it overrides the embedded frontend.
+	// If set and the folder is empty or does not exist, the embedded frontend will be written into it on startup.
+	FrontendFilePath string `yaml:"frontend_filepath"`
 }
 
 func (c *WebConfig) Sanitize() {
