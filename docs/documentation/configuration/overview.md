@@ -88,6 +88,7 @@ auth:
 web:
   listening_address: :8888
   external_url: http://localhost:8888
+  base_path: ""
   site_company_name: WireGuard Portal
   site_title: WireGuard Portal
   session_identifier: wgPortalSession
@@ -800,8 +801,15 @@ Without a valid `external_url`, the login process may fail due to CSRF protectio
 ### `external_url`
 - **Default:** `http://localhost:8888`
 - **Environment Variable:** `WG_PORTAL_WEB_EXTERNAL_URL`
-- **Description:** The URL where a client can access WireGuard Portal. This URL is used for generating links in emails and for performing OAUTH redirects.  
+- **Description:** The URL where a client can access WireGuard Portal. This URL is used for generating links in emails and for performing OAUTH redirects.
+  The external URL must not contain a path component or trailing slash. If you want to serve WireGuard Portal on a subpath, use the `base_path` setting.
   **Important:** If you are using a reverse proxy, set this to the external URL of the reverse proxy, otherwise login will fail. If you access the portal via IP address, set this to the IP address of the server.
+
+### `base_path`
+- **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_WEB_BASE_PATH`
+- **Description:** The base path for the web server (e.g., `/wgportal`). 
+  By default (meaning an empty value), the portal will be served from the root path `/`.
 
 ### `site_company_name`
 - **Default:** `WireGuard Portal`

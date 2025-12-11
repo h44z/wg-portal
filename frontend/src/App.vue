@@ -85,6 +85,7 @@ const languageFlag = computed(() => {
 const companyName = ref(WGPORTAL_SITE_COMPANY_NAME);
 const wgVersion = ref(WGPORTAL_VERSION);
 const currentYear = ref(new Date().getFullYear())
+const webBasePath = ref(WGPORTAL_BASE_PATH);
 
 const userDisplayName = computed(() => {
   let displayName = "Unknown";
@@ -113,7 +114,7 @@ const userDisplayName = computed(() => {
 
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/"><img :alt="companyName" src="/img/header-logo.png" /></a>
+      <RouterLink class="navbar-brand" :to="{ name: 'home' }"><img :alt="companyName" :src="webBasePath + '/img/header-logo.png'" /></RouterLink>
       <button aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
         data-bs-target="#navbarTop" data-bs-toggle="collapse" type="button">
         <span class="navbar-toggler-icon"></span>

@@ -99,7 +99,7 @@ type Authenticator struct {
 }
 
 // NewAuthenticator creates a new Authenticator instance.
-func NewAuthenticator(cfg *config.Auth, extUrl string, bus EventBus, users UserManager) (
+func NewAuthenticator(cfg *config.Auth, extUrl, basePath string, bus EventBus, users UserManager) (
 	*Authenticator,
 	error,
 ) {
@@ -107,7 +107,7 @@ func NewAuthenticator(cfg *config.Auth, extUrl string, bus EventBus, users UserM
 		cfg:                 cfg,
 		bus:                 bus,
 		users:               users,
-		callbackUrlPrefix:   fmt.Sprintf("%s/api/v0", extUrl),
+		callbackUrlPrefix:   fmt.Sprintf("%s%s/api/v0", extUrl, basePath),
 		oauthAuthenticators: make(map[string]AuthenticatorOauth, len(cfg.OpenIDConnect)+len(cfg.OAuth)),
 		ldapAuthenticators:  make(map[string]AuthenticatorLdap, len(cfg.Ldap)),
 	}

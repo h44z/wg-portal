@@ -9,6 +9,8 @@ const profile = profileStore()
 const settings = settingsStore()
 const auth = authStore()
 
+const webBasePath = ref(WGPORTAL_BASE_PATH);
+
 onMounted(async () => {
   await profile.LoadUser()
   await auth.LoadWebAuthnCredentials()
@@ -241,7 +243,7 @@ const updatePassword = async () => {
           </button>
         </div>
         <div class="col-6">
-          <a href="/api/v1/doc.html" target="_blank" :alt="$t('settings.api.api-link')">{{ $t('settings.api.api-link') }}</a>
+          <a :href="webBasePath + '/api/v1/doc.html'" target="_blank" :alt="$t('settings.api.api-link')">{{ $t('settings.api.api-link') }}</a>
         </div>
       </div>
     </div>

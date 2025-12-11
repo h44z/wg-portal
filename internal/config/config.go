@@ -149,6 +149,7 @@ func defaultConfig() *Config {
 		RequestLogging:    getEnvBool("WG_PORTAL_WEB_REQUEST_LOGGING", false),
 		ExposeHostInfo:    getEnvBool("WG_PORTAL_WEB_EXPOSE_HOST_INFO", false),
 		ExternalUrl:       getEnvStr("WG_PORTAL_WEB_EXTERNAL_URL", "http://localhost:8888"),
+		BasePath:          getEnvStr("WG_PORTAL_WEB_BASE_PATH", ""),
 		ListeningAddress:  getEnvStr("WG_PORTAL_WEB_LISTENING_ADDRESS", ":8888"),
 		SessionIdentifier: getEnvStr("WG_PORTAL_WEB_SESSION_IDENTIFIER", "wgPortalSession"),
 		SessionSecret:     getEnvStr("WG_PORTAL_WEB_SESSION_SECRET", "very_secret"),

@@ -67,7 +67,8 @@ func (e ConfigEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 // @Router /config/frontend.js [get]
 func (e ConfigEndpoint) handleConfigJsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		backendUrl := fmt.Sprintf("%s/api/v0", e.cfg.Web.ExternalUrl)
+		basePath := e.cfg.Web.BasePath
+		backendUrl := fmt.Sprintf("%s%s/api/v0", e.cfg.Web.ExternalUrl, basePath)
 		if request.Header(r, "x-wg-dev") != "" {
 			referer := request.Header(r, "Referer")
 			host := "localhost"
@@ -76,12 +77,13 @@ func (e ConfigEndpoint) handleConfigJsGet() http.HandlerFunc {
 			if err == nil {
 				host, port, _ = net.SplitHostPort(parsedReferer.Host)
 			}
-			backendUrl = fmt.Sprintf("http://%s:%s/api/v0", host,
-				port) // override if request comes from frontend started with npm run dev
+			backendUrl = fmt.Sprintf("http://%s:%s%s/api/v0", host,
+				port, basePath) // override if request comes from frontend started with npm run dev
 		}
 
 		e.tpl.Render(w, http.StatusOK, "frontend_config.js.gotpl", "text/javascript", map[string]any{
 			"BackendUrl":      backendUrl,
+			"BasePath":        basePath,
 			"Version":         internal.Version,
 			"SiteTitle":       e.cfg.Web.SiteTitle,
 			"SiteCompanyName": e.cfg.Web.SiteCompanyName,
