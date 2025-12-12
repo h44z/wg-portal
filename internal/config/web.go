@@ -11,6 +11,10 @@ type WebConfig struct {
 	// ExternalUrl is the URL where a client can access WireGuard Portal.
 	// This is used for the callback URL of the OAuth providers.
 	ExternalUrl string `yaml:"external_url"`
+	// BasePath is an optional URL path prefix under which the whole web UI and API are served.
+	// Example: "/wg" will make the UI available at /wg/app and the API at /wg/api.
+	// Empty string means no prefix (served from root path).
+	BasePath string `yaml:"base_path"`
 	// ListeningAddress is the address and port for the web server.
 	ListeningAddress string `yaml:"listening_address"`
 	// SessionIdentifier is the session identifier for the web frontend.
@@ -35,4 +39,12 @@ type WebConfig struct {
 
 func (c *WebConfig) Sanitize() {
 	c.ExternalUrl = strings.TrimRight(c.ExternalUrl, "/")
+
+	// normalize BasePath: allow empty, otherwise ensure leading slash, no trailing slash
+	p := strings.TrimSpace(c.BasePath)
+	p = strings.TrimRight(p, "/")
+	if p != "" && !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	c.BasePath = p
 }

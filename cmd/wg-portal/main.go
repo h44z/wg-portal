@@ -84,7 +84,7 @@ func main() {
 	internal.AssertNoError(err)
 	userManager.StartBackgroundJobs(ctx)
 
-	authenticator, err := auth.NewAuthenticator(&cfg.Auth, cfg.Web.ExternalUrl, eventBus, userManager)
+	authenticator, err := auth.NewAuthenticator(&cfg.Auth, cfg.Web.ExternalUrl, cfg.Web.BasePath, eventBus, userManager)
 	internal.AssertNoError(err)
 	authenticator.StartBackgroundJobs(ctx)
 

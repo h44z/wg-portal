@@ -84,6 +84,16 @@ web:
   external_url: https://wg.domain.com
 ```
 
+If you want to serve the web interface on a different base-path, you can also set the `web.base_path` option:
+
+```yaml
+web:
+  external_url: https://wg.domain.com
+  base_path: /subpath
+```
+
+The WireGuard Portal will then be available at `https://wg.domain.com/subpath`.
+
 ### Built-in TLS
 
 If you prefer to let WireGuard Portal handle TLS itself, you can use the built-in TLS support.

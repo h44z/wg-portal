@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>WireGuard Portal API</title>
     <meta name="description" content="WireGuard Portal API">
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/fonts/fontawesome-all.min.css">
-    <link rel="shortcut icon" type="image/x-icon" href="/app/favicon.ico">
+    <link rel="stylesheet" href="{{$.BasePath}}/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{$.BasePath}}/fonts/fontawesome-all.min.css">
+    <link rel="shortcut icon" type="image/x-icon" href="{{$.BasePath}}/app/favicon.ico">
 </head>
 
 <body id="page-top" class="d-flex flex-column min-vh-100">
@@ -25,7 +25,7 @@
                 <div class="card-header">SPA Api</div>
                 <div class="card-body">
                     <p class="card-text">This endpoint is used by the Single Page Application (the Frontend/UI).</p>
-                    <a href="/api/v0/doc.html" title="API version 0" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Open Documentation</a>
+                    <a href="{{$.BasePath}}/api/v0/doc.html" title="API version 0" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Open Documentation</a>
                 </div>
             </div>
         </div>
@@ -34,7 +34,7 @@
                 <div class="card-header"><b>Version 1</b></div>
                 <div class="card-body">
                     <p class="card-text">This is the current main API endpoint.</p>
-                    <a href="/api/v1/doc.html" title="API version 1" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Open Documentation</a>
+                    <a href="{{$.BasePath}}/api/v1/doc.html" title="API version 1" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Open Documentation</a>
                 </div>
             </div>
         </div>
@@ -43,17 +43,17 @@
                 <div class="card-header">Version 2</div>
                 <div class="card-body">
                     <p class="card-text">This will be a future API version, it is currently work in progress.</p>
-                    <a href="/api/v2/doc.html" title="API version 2" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Open Documentation</a>
+                    <a href="{{$.BasePath}}/api/v2/doc.html" title="API version 2" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Open Documentation</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {{template "prt_footer.gohtml" .}}
-<script src="/js/jquery.min.js"></script>
-<script src="/js/jquery.easing.js"></script>
-<script src="/js/popper.min.js"></script>
-<script src="/js/bootstrap.bundle.min.js"></script>
+<script src="{{$.BasePath}}/js/jquery.min.js"></script>
+<script src="{{$.BasePath}}/js/jquery.easing.js"></script>
+<script src="{{$.BasePath}}/js/popper.min.js"></script>
+<script src="{{$.BasePath}}/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
