@@ -222,6 +222,73 @@ export const peerStore = defineStore('peers', {
           throw new Error(error)
         })
     },
+    async BulkDelete(ids) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-delete`, { Identifiers: ids })
+        .then(() => {
+          this.peers = this.peers.filter(p => !ids.includes(p.Identifier))
+          this.fetching = false
+          notify({
+            title: "Peers deleted",
+            text: "Selected peers have been deleted!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to delete peers: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to delete selected peers!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
+    async BulkEnable(ids) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-enable`, { Identifiers: ids })
+        .then(async () => {
+          await this.LoadPeers()
+          notify({
+            title: "Peers enabled",
+            text: "Selected peers have been enabled!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to enable peers: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to enable selected peers!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
+    async BulkDisable(ids, reason) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-disable`, { Identifiers: ids, Reason: reason })
+        .then(async () => {
+          await this.LoadPeers()
+          notify({
+            title: "Peers disabled",
+            text: "Selected peers have been disabled!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to disable peers: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to disable selected peers!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
     async UpdatePeer(id, formData) {
       this.fetching = true
       return apiWrapper.put(`${baseUrl}/${base64_url_encode(id)}`, formData)

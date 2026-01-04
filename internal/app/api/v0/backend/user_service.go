@@ -72,7 +72,11 @@ func (u UserService) DeactivateApi(ctx context.Context, id domain.UserIdentifier
 	return u.users.DeactivateApi(ctx, id)
 }
 
-func (u UserService) ChangePassword(ctx context.Context, id domain.UserIdentifier, oldPassword, newPassword string) (*domain.User, error) {
+func (u UserService) ChangePassword(
+	ctx context.Context,
+	id domain.UserIdentifier,
+	oldPassword, newPassword string,
+) (*domain.User, error) {
 	oldPassword = strings.TrimSpace(oldPassword)
 	newPassword = strings.TrimSpace(newPassword)
 
@@ -120,4 +124,31 @@ func (u UserService) GetUserPeerStats(ctx context.Context, id domain.UserIdentif
 
 func (u UserService) GetUserInterfaces(ctx context.Context, id domain.UserIdentifier) ([]domain.Interface, error) {
 	return u.wg.GetUserInterfaces(ctx, id)
+}
+
+func (u UserService) BulkDelete(ctx context.Context, ids []domain.UserIdentifier) error {
+	for _, id := range ids {
+		if err := u.users.DeleteUser(ctx, id); err != nil {
+			return fmt.Errorf("failed to delete user %s: %w", id, err)
+		}
+	}
+
+	return nil
+}
+
+func (u UserService) BulkUpdate(ctx context.Context, ids []domain.UserIdentifier, updateFn func(*domain.User)) error {
+	for _, id := range ids {
+		user, err := u.users.GetUser(ctx, id)
+		if err != nil {
+			return fmt.Errorf("failed to get user %s: %w", id, err)
+		}
+
+		updateFn(user)
+
+		if _, err := u.users.UpdateUser(ctx, user); err != nil {
+			return fmt.Errorf("failed to update user %s: %w", id, err)
+		}
+	}
+
+	return nil
 }
