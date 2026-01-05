@@ -145,6 +145,7 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 				MinPasswordLength:         e.cfg.Auth.MinPasswordLength,
 				AvailableBackends:         controllerFn(),
 				LoginFormVisible:          !e.cfg.Auth.HideLoginForm || !hasSocialLogin,
+				CreateDefaultPeer:         e.cfg.Core.CreateDefaultPeer,
 			})
 		}
 	}

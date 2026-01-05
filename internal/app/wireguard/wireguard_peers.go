@@ -35,6 +35,10 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdenti
 			continue // only create default peers for server interfaces
 		}
 
+		if !iface.CreateDefaultPeer {
+			continue // only create default peers if the interface flag is set
+		}
+
 		peerAlreadyCreated := slices.ContainsFunc(userPeers, func(peer domain.Peer) bool {
 			return peer.InterfaceIdentifier == iface.Identifier
 		})

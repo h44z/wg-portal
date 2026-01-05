@@ -24,7 +24,7 @@ import (
 )
 
 // SchemaVersion describes the current database schema version. It must be incremented if a manual migration is needed.
-var SchemaVersion uint64 = 1
+var SchemaVersion uint64 = 2
 
 // SysStat stores the current database schema version and the timestamp when it was applied.
 type SysStat struct {
@@ -179,13 +179,15 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 // SqlRepo is a SQL database repository implementation.
 // Currently, it supports MySQL, SQLite, Microsoft SQL and Postgresql database systems.
 type SqlRepo struct {
-	db *gorm.DB
+	db  *gorm.DB
+	cfg *config.Config
 }
 
 // NewSqlRepository creates a new SqlRepo instance.
-func NewSqlRepository(db *gorm.DB) (*SqlRepo, error) {
+func NewSqlRepository(db *gorm.DB, cfg *config.Config) (*SqlRepo, error) {
 	repo := &SqlRepo{
-		db: db,
+		db:  db,
+		cfg: cfg,
 	}
 
 	if err := repo.preCheck(); err != nil {
@@ -232,7 +234,9 @@ func (r *SqlRepo) migrate() error {
 	slog.Debug("running migration: audit data", "result", r.db.AutoMigrate(&domain.AuditEntry{}))
 
 	existingSysStat := SysStat{}
-	r.db.Where("schema_version = ?", SchemaVersion).First(&existingSysStat)
+	r.db.Order("schema_version desc").First(&existingSysStat) // get latest version
+
+	// Migration: 0 --> 1
 	if existingSysStat.SchemaVersion == 0 {
 		sysStat := SysStat{
 			MigratedAt:    time.Now(),
@@ -242,6 +246,27 @@ func (r *SqlRepo) migrate() error {
 			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", SchemaVersion, err)
 		}
 		slog.Debug("sys-stat entry written", "schema_version", SchemaVersion)
+	}
+
+	// Migration: 1 --> 2
+	if existingSysStat.SchemaVersion == 1 {
+		// Preserve existing behavior for installations that had default-peer-creation enabled.
+		if r.cfg.Core.CreateDefaultPeer {
+			err := r.db.Model(&domain.Interface{}).
+				Where("type = ?", domain.InterfaceTypeServer).
+				Update("create_default_peer", true).Error
+			if err != nil {
+				return fmt.Errorf("failed to migrate interface flags for schema version %d: %w", SchemaVersion, err)
+			}
+			slog.Debug("migrated interface create_default_peer flags", "schema_version", SchemaVersion)
+		}
+		sysStat := SysStat{
+			MigratedAt:    time.Now(),
+			SchemaVersion: SchemaVersion,
+		}
+		if err := r.db.Create(&sysStat).Error; err != nil {
+			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", SchemaVersion, err)
+		}
 	}
 
 	return nil

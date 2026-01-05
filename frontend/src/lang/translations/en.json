@@ -469,6 +469,9 @@
       "disabled": {
         "label": "Interface Disabled"
       },
+      "create-default-peer": {
+        "label": "Create default peer for new users"
+      },
       "save-config": {
         "label": "Automatically save wg-quick config"
       },
