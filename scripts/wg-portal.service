@@ -7,11 +7,13 @@ After=network.target
 Type=simple
 User=root
 Group=root
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
 
 Restart=on-failure
 RestartSec=10
 
 WorkingDirectory=/opt/wg-portal
+Environment=WG_PORTAL_CONFIG=/opt/wg-portal/config.yml
 ExecStart=/opt/wg-portal/wg-portal-amd64
 
 [Install]

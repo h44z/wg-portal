@@ -81,7 +81,6 @@ nav:
           - Reverse Proxy (HTTPS): documentation/getting-started/reverse-proxy.md
       - Configuration:
           - Overview: documentation/configuration/overview.md
-          - Mail templates: documentation/configuration/mail-templates.md
           - Examples: documentation/configuration/examples.md
       - Usage:
           - General: documentation/usage/general.md
