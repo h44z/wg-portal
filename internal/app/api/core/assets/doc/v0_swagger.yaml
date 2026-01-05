@@ -16,6 +16,17 @@ definitions:
       Timestamp:
         type: string
     type: object
+  model.BulkPeerRequest:
+    properties:
+      Identifiers:
+        items:
+          type: string
+        type: array
+      Reason:
+        type: string
+    required:
+    - Identifiers
+    type: object
   model.ConfigOption-array_string:
     properties:
       Overridable:
@@ -1080,6 +1091,84 @@ paths:
       summary: Update the given peer record.
       tags:
       - Peer
+  /peer/bulk-delete:
+    post:
+      operationId: peers_handleBulkDelete
+      parameters:
+      - description: A list of peer identifiers to delete
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BulkPeerRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if deletion was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Bulk delete selected peers.
+      tags:
+      - Peer
+  /peer/bulk-disable:
+    post:
+      operationId: peers_handleBulkDisable
+      parameters:
+      - description: A list of peer identifiers to disable
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BulkPeerRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if action was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Bulk disable selected peers.
+      tags:
+      - Peer
+  /peer/bulk-enable:
+    post:
+      operationId: peers_handleBulkEnable
+      parameters:
+      - description: A list of peer identifiers to enable
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BulkPeerRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if action was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Bulk enable selected peers.
+      tags:
+      - Peer
   /peer/config-mail:
     post:
       operationId: peers_handleEmailPost
@@ -1569,6 +1658,136 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Get all user records.
+      tags:
+      - Users
+  /user/bulk-delete:
+    post:
+      operationId: users_handleBulkDelete
+      parameters:
+      - description: A list of user identifiers to delete
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BulkPeerRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if deletion was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Bulk delete selected users.
+      tags:
+      - Users
+  /user/bulk-disable:
+    post:
+      operationId: users_handleBulkDisable
+      parameters:
+      - description: A list of user identifiers to disable
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BulkPeerRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if action was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Bulk disable selected users.
+      tags:
+      - Users
+  /user/bulk-enable:
+    post:
+      operationId: users_handleBulkEnable
+      parameters:
+      - description: A list of user identifiers to enable
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BulkPeerRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if action was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Bulk enable selected users.
+      tags:
+      - Users
+  /user/bulk-lock:
+    post:
+      operationId: users_handleBulkLock
+      parameters:
+      - description: A list of user identifiers to lock
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BulkPeerRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if action was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Bulk lock selected users.
+      tags:
+      - Users
+  /user/bulk-unlock:
+    post:
+      operationId: users_handleBulkUnlock
+      parameters:
+      - description: A list of user identifiers to unlock
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.BulkPeerRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content if action was successful
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Bulk unlock selected users.
       tags:
       - Users
   /user/new:

@@ -1,14 +1,19 @@
 <script setup>
 import PeerViewModal from "../components/PeerViewModal.vue";
 
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { profileStore } from "@/stores/profile";
+import { peerStore } from "@/stores/peers";
 import UserPeerEditModal from "@/components/UserPeerEditModal.vue";
 import { settingsStore } from "@/stores/settings";
 import { humanFileSize } from "@/helpers/utils";
 
 const settings = settingsStore()
 const profile = profileStore()
+const peers = peerStore()
+
+const { t } = useI18n()
 
 const viewedPeerId = ref("")
 const editPeerId = ref("")
@@ -16,6 +21,10 @@ const editPeerId = ref("")
 const sortKey = ref("")
 const sortOrder = ref(1)
 const selectAll = ref(false)
+
+const selectedPeers = computed(() => {
+  return profile.Peers.filter(peer => peer.IsSelected).map(peer => peer.Identifier);
+})
 
 function sortBy(key) {
   if (sortKey.value === key) {
@@ -33,6 +42,17 @@ function friendlyInterfaceName(id, name) {
     return name
   }
   return id
+}
+
+async function bulkDelete() {
+  if (confirm(t('interfaces.confirm-bulk-delete', {count: selectedPeers.value.length}))) {
+    try {
+      await profile.BulkDelete(selectedPeers.value)
+      selectAll.value = false // reset selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
 }
 
 function toggleSelectAll() {
@@ -82,6 +102,13 @@ onMounted(async () => {
           </select>
         </div>
       </div>
+    </div>
+  </div>
+  <div class="row" v-if="selectedPeers.length > 0">
+    <div class="col-12 text-lg-end">
+      <button class="btn btn-outline-danger btn-sm" :title="$t('interfaces.button-bulk-delete')" @click.prevent="bulkDelete">
+        <i class="fa fa-trash-can"></i>
+      </button>
     </div>
   </div>
   <div class="mt-2 table-responsive">

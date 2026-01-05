@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import {apiWrapper} from "@/helpers/fetch-wrapper";
 import {notify} from "@kyvg/vue3-notification";
 import {authStore} from "@/stores/auth";
+import {peerStore} from "@/stores/peers";
 import { base64_url_encode } from '@/helpers/encoding';
 import {freshStats} from "@/helpers/models";
 import { ipToBigInt } from '@/helpers/utils';
@@ -217,6 +218,19 @@ export const profileStore = defineStore('profile', {
               text: "Failed to load interfaces!",
             })
           })
+    },
+    async BulkDelete(ids) {
+      this.fetching = true
+      const peers = peerStore()
+      return peers.BulkDelete(ids)
+        .then(() => {
+          this.peers = this.peers.filter(p => !ids.includes(p.Identifier))
+          this.fetching = false
+        })
+        .catch(error => {
+          this.fetching = false
+          throw new Error(error)
+        })
     },
   }
 })

@@ -29,6 +29,10 @@ const sortKey = ref("")
 const sortOrder = ref(1)
 const selectAll = ref(false)
 
+const selectedPeers = computed(() => {
+  return peers.All.filter(peer => peer.IsSelected).map(peer => peer.Identifier);
+})
+
 function sortBy(key) {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value * -1; // Toggle sort order
@@ -108,6 +112,39 @@ async function saveConfig() {
       text: e.toString(),
       type: 'error',
     })
+  }
+}
+
+async function bulkDelete() {
+  if (confirm(t('interfaces.confirm-bulk-delete', {count: selectedPeers.value.length}))) {
+    try {
+      await peers.BulkDelete(selectedPeers.value)
+      selectAll.value = false // reset selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
+}
+
+async function bulkEnable() {
+  try {
+    await peers.BulkEnable(selectedPeers.value)
+    selectAll.value = false
+    peers.All.forEach(p => p.IsSelected = false) // remove selection
+  } catch (e) {
+    // notification is handled in store
+  }
+}
+
+async function bulkDisable() {
+  if (confirm(t('interfaces.confirm-bulk-disable', {count: selectedPeers.value.length}))) {
+    try {
+      await peers.BulkDisable(selectedPeers.value)
+      selectAll.value = false
+      peers.All.forEach(p => p.IsSelected = false) // remove selection
+    } catch (e) {
+      // notification is handled in store
+    }
   }
 }
 
@@ -351,6 +388,13 @@ onMounted(async () => {
     <div class="col-12 col-lg-3 text-lg-end">
       <a class="btn btn-primary ms-2" href="#" :title="$t('interfaces.button-add-peers')" @click.prevent="multiCreatePeerId='#NEW#'"><i class="fa fa-plus me-1"></i><i class="fa fa-users"></i></a>
       <a class="btn btn-primary ms-2" href="#" :title="$t('interfaces.button-add-peer')" @click.prevent="editPeerId='#NEW#'"><i class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
+    </div>
+  </div>
+  <div class="row" v-if="selectedPeers.length > 0">
+    <div class="col-12 text-lg-end">
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('interfaces.button-bulk-enable')" @click.prevent="bulkEnable"><i class="fa-regular fa-circle-check"></i></a>
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('interfaces.button-bulk-disable')" @click.prevent="bulkDisable"><i class="fa fa-ban"></i></a>
+      <a class="btn btn-outline-danger btn-sm ms-2" href="#" :title="$t('interfaces.button-bulk-delete')" @click.prevent="bulkDelete"><i class="fa fa-trash-can"></i></a>
     </div>
   </div>
   <div v-if="interfaces.Count!==0" class="mt-2 table-responsive">

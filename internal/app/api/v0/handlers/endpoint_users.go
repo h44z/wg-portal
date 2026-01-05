@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/go-pkgz/routegroup"
 
@@ -36,6 +37,10 @@ type UserService interface {
 	GetUserPeerStats(ctx context.Context, id domain.UserIdentifier) ([]domain.PeerStatus, error)
 	// GetUserInterfaces returns all interfaces for the given user.
 	GetUserInterfaces(ctx context.Context, id domain.UserIdentifier) ([]domain.Interface, error)
+	// BulkDelete deletes multiple users.
+	BulkDelete(ctx context.Context, ids []domain.UserIdentifier) error
+	// BulkUpdate modifies multiple users.
+	BulkUpdate(ctx context.Context, ids []domain.UserIdentifier, updateFn func(*domain.User)) error
 }
 
 type UserEndpoint struct {
@@ -77,7 +82,13 @@ func (e UserEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("GET /{id}/interfaces", e.handleInterfacesGet())
 	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/api/enable", e.handleApiEnablePost())
 	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/api/disable", e.handleApiDisablePost())
-	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/change-password", e.handleChangePasswordPost())
+	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/change-password",
+		e.handleChangePasswordPost())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-delete", e.handleBulkDelete())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-enable", e.handleBulkEnable())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-disable", e.handleBulkDisable())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-lock", e.handleBulkLock())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-unlock", e.handleBulkUnlock())
 }
 
 // handleAllGet returns a gorm Handler function.
@@ -457,5 +468,192 @@ func (e UserEndpoint) handleChangePasswordPost() http.HandlerFunc {
 		}
 
 		respond.JSON(w, http.StatusOK, model.NewUser(user, false))
+	}
+}
+
+// handleBulkDelete returns a gorm Handler function.
+//
+// @ID users_handleBulkDelete
+// @Tags Users
+// @Summary Bulk delete selected users.
+// @Produce json
+// @Param request body model.BulkPeerRequest true "A list of user identifiers to delete"
+// @Success 204 "No content if deletion was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/bulk-delete [post]
+func (e UserEndpoint) handleBulkDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req model.BulkUserRequest
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		ids := make([]domain.UserIdentifier, len(req.Identifiers))
+		for i, id := range req.Identifiers {
+			ids[i] = domain.UserIdentifier(id)
+		}
+
+		err := e.userService.BulkDelete(r.Context(), ids)
+		if err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		respond.Status(w, http.StatusNoContent)
+	}
+}
+
+// handleBulkEnable returns a gorm Handler function.
+//
+// @ID users_handleBulkEnable
+// @Tags Users
+// @Summary Bulk enable selected users.
+// @Produce json
+// @Param request body model.BulkPeerRequest true "A list of user identifiers to enable"
+// @Success 204 "No content if action was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/bulk-enable [post]
+func (e UserEndpoint) handleBulkEnable() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req model.BulkUserRequest
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		ids := make([]domain.UserIdentifier, len(req.Identifiers))
+		for i, id := range req.Identifiers {
+			ids[i] = domain.UserIdentifier(id)
+		}
+
+		err := e.userService.BulkUpdate(r.Context(), ids, func(user *domain.User) {
+			user.Disabled = nil
+		})
+		if err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		respond.Status(w, http.StatusNoContent)
+	}
+}
+
+// handleBulkDisable returns a gorm Handler function.
+//
+// @ID users_handleBulkDisable
+// @Tags Users
+// @Summary Bulk disable selected users.
+// @Produce json
+// @Param request body model.BulkPeerRequest true "A list of user identifiers to disable"
+// @Success 204 "No content if action was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/bulk-disable [post]
+func (e UserEndpoint) handleBulkDisable() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req model.BulkUserRequest
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		ids := make([]domain.UserIdentifier, len(req.Identifiers))
+		for i, id := range req.Identifiers {
+			ids[i] = domain.UserIdentifier(id)
+		}
+
+		now := time.Now()
+		err := e.userService.BulkUpdate(r.Context(), ids, func(user *domain.User) {
+			user.Disabled = &now
+			user.DisabledReason = domain.DisabledReasonAdmin
+		})
+		if err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		respond.Status(w, http.StatusNoContent)
+	}
+}
+
+// handleBulkLock returns a gorm Handler function.
+//
+// @ID users_handleBulkLock
+// @Tags Users
+// @Summary Bulk lock selected users.
+// @Produce json
+// @Param request body model.BulkPeerRequest true "A list of user identifiers to lock"
+// @Success 204 "No content if action was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/bulk-lock [post]
+func (e UserEndpoint) handleBulkLock() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req model.BulkUserRequest
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		ids := make([]domain.UserIdentifier, len(req.Identifiers))
+		for i, id := range req.Identifiers {
+			ids[i] = domain.UserIdentifier(id)
+		}
+
+		now := time.Now()
+		err := e.userService.BulkUpdate(r.Context(), ids, func(user *domain.User) {
+			user.Locked = &now
+			user.LockedReason = domain.LockedReasonAdmin
+		})
+		if err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		respond.Status(w, http.StatusNoContent)
+	}
+}
+
+// handleBulkUnlock returns a gorm Handler function.
+//
+// @ID users_handleBulkUnlock
+// @Tags Users
+// @Summary Bulk unlock selected users.
+// @Produce json
+// @Param request body model.BulkPeerRequest true "A list of user identifiers to unlock"
+// @Success 204 "No content if action was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /user/bulk-unlock [post]
+func (e UserEndpoint) handleBulkUnlock() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req model.BulkUserRequest
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		ids := make([]domain.UserIdentifier, len(req.Identifiers))
+		for i, id := range req.Identifiers {
+			ids[i] = domain.UserIdentifier(id)
+		}
+
+		err := e.userService.BulkUpdate(r.Context(), ids, func(user *domain.User) {
+			user.Locked = nil
+		})
+		if err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		respond.Status(w, http.StatusNoContent)
 	}
 }

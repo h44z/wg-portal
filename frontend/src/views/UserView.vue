@@ -1,15 +1,76 @@
 <script setup>
 import {userStore} from "@/stores/users";
-import {ref,onMounted} from "vue";
+import {ref, onMounted, computed} from "vue";
 import UserEditModal from "../components/UserEditModal.vue";
 import UserViewModal from "../components/UserViewModal.vue";
+import {useI18n} from "vue-i18n";
 
 const users = userStore()
+const { t } = useI18n()
 
 const editUserId = ref("")
 const viewedUserId = ref("")
 
 const selectAll = ref(false)
+
+const selectedUsers = computed(() => {
+  return users.All.filter(user => user.IsSelected).map(user => user.Identifier);
+})
+
+async function bulkDelete() {
+  if (confirm(t('users.confirm-bulk-delete', {count: selectedUsers.value.length}))) {
+    try {
+      await users.BulkDelete(selectedUsers.value)
+      selectAll.value = false // reset selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
+}
+
+async function bulkEnable() {
+  try {
+    await users.BulkEnable(selectedUsers.value)
+    selectAll.value = false
+    users.All.forEach(u => u.IsSelected = false) // remove selection
+  } catch (e) {
+    // notification is handled in store
+  }
+}
+
+async function bulkDisable() {
+  if (confirm(t('users.confirm-bulk-disable', {count: selectedUsers.value.length}))) {
+    try {
+      await users.BulkDisable(selectedUsers.value)
+      selectAll.value = false
+      users.All.forEach(u => u.IsSelected = false) // remove selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
+}
+
+async function bulkLock() {
+  if (confirm(t('users.confirm-bulk-lock', {count: selectedUsers.value.length}))) {
+    try {
+      await users.BulkLock(selectedUsers.value)
+      selectAll.value = false
+      users.All.forEach(u => u.IsSelected = false) // remove selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
+}
+
+async function bulkUnlock() {
+  try {
+    await users.BulkUnlock(selectedUsers.value)
+    selectAll.value = false
+    users.All.forEach(u => u.IsSelected = false) // remove selection
+  } catch (e) {
+    // notification is handled in store
+  }
+}
 
 function toggleSelectAll() {
   users.FilteredAndPaged.forEach(user => {
@@ -43,6 +104,15 @@ onMounted(() => {
       <a class="btn btn-primary ms-2" href="#" :title="$t('users.button-add-user')" @click.prevent="editUserId='#NEW#'">
         <i class="fa fa-plus me-1"></i><i class="fa fa-user"></i>
       </a>
+    </div>
+  </div>
+  <div class="row" v-if="selectedUsers.length > 0">
+    <div class="col-12 text-lg-end">
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('users.button-bulk-enable')" @click.prevent="bulkEnable"><i class="fa-regular fa-circle-check"></i></a>
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('users.button-bulk-disable')" @click.prevent="bulkDisable"><i class="fa fa-ban"></i></a>
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('users.button-bulk-unlock')" @click.prevent="bulkUnlock"><i class="fa-solid fa-lock-open"></i></a>
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('users.button-bulk-lock')" @click.prevent="bulkLock"><i class="fa-solid fa-lock"></i></a>
+      <a class="btn btn-outline-danger btn-sm ms-2" href="#" :title="$t('users.button-bulk-delete')" @click.prevent="bulkDelete"><i class="fa fa-trash-can"></i></a>
     </div>
   </div>
   <div class="mt-2 table-responsive">
