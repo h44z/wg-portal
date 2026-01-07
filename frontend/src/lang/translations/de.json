@@ -469,6 +469,9 @@
       "disabled": {
         "label": "Schnittstelle deaktiviert"
       },
+      "create-default-peer": {
+        "label": "Peer für neue Benutzer automatisch erstellen"
+      },
       "save-config": {
         "label": "wg-quick Konfiguration automatisch speichern"
       },

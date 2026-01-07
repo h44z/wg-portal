@@ -4,6 +4,7 @@ export function freshInterface() {
     Disabled: false,
     DisplayName: "",
     Identifier: "",
+    CreateDefaultPeer: false,
     Mode: "server",
     Backend: "local",
 

@@ -83,6 +83,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.Identifier = interfaces.Prepared.Identifier
           formData.value.DisplayName = interfaces.Prepared.DisplayName
           formData.value.Mode = interfaces.Prepared.Mode
+          formData.value.CreateDefaultPeer = interfaces.Prepared.CreateDefaultPeer
           formData.value.Backend = interfaces.Prepared.Backend
 
           formData.value.PublicKey = interfaces.Prepared.PublicKey
@@ -122,6 +123,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.Identifier = selectedInterface.value.Identifier
           formData.value.DisplayName = selectedInterface.value.DisplayName
           formData.value.Mode = selectedInterface.value.Mode
+          formData.value.CreateDefaultPeer = selectedInterface.value.CreateDefaultPeer
           formData.value.Backend = selectedInterface.value.Backend
 
           formData.value.PublicKey = selectedInterface.value.PublicKey
@@ -486,6 +488,10 @@ async function del() {
             <div class="form-check form-switch">
               <input v-model="formData.Disabled" class="form-check-input" type="checkbox">
               <label class="form-check-label">{{ $t('modals.interface-edit.disabled.label') }}</label>
+            </div>
+            <div class="form-check form-switch" v-if="formData.Mode==='server' && settings.Setting('CreateDefaultPeer')">
+              <input v-model="formData.CreateDefaultPeer" class="form-check-input" type="checkbox">
+              <label class="form-check-label">{{ $t('modals.interface-edit.create-default-peer.label') }}</label>
             </div>
             <div class="form-check form-switch" v-if="formData.Backend==='local'">
               <input v-model="formData.SaveConfig" checked="" class="form-check-input" type="checkbox">

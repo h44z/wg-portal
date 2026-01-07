@@ -53,12 +53,13 @@ type Interface struct {
 	SaveConfig bool // automatically persist config changes to the wgX.conf file
 
 	// WG Portal specific
-	DisplayName    string           // a nice display name/ description for the interface
-	Type           InterfaceType    // the interface type, either InterfaceTypeServer or InterfaceTypeClient
-	Backend        InterfaceBackend // the backend that is used to manage the interface (wgctrl, mikrotik, ...)
-	DriverType     string           // the interface driver type (linux, software, ...)
-	Disabled       *time.Time       `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
-	DisabledReason string           // the reason why the interface has been disabled
+	DisplayName       string           // a nice display name/ description for the interface
+	Type              InterfaceType    // the interface type, either InterfaceTypeServer or InterfaceTypeClient
+	CreateDefaultPeer bool             // if true, default peers will be created for this interface
+	Backend           InterfaceBackend // the backend that is used to manage the interface (wgctrl, mikrotik, ...)
+	DriverType        string           // the interface driver type (linux, software, ...)
+	Disabled          *time.Time       `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
+	DisabledReason    string           // the reason why the interface has been disabled
 
 	// Default settings for the peer, used for new peers, those settings will be published to ConfigOption options of
 	// the peer config
