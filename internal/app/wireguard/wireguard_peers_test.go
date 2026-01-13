@@ -78,7 +78,12 @@ func (f *mockDB) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceId
 func (f *mockDB) GetPeersStats(ctx context.Context, ids ...domain.PeerIdentifier) ([]domain.PeerStatus, error) {
 	return nil, nil
 }
-func (f *mockDB) GetAllInterfaces(ctx context.Context) ([]domain.Interface, error) { return nil, nil }
+func (f *mockDB) GetAllInterfaces(ctx context.Context) ([]domain.Interface, error) {
+	if f.iface != nil {
+		return []domain.Interface{*f.iface}, nil
+	}
+	return nil, nil
+}
 func (f *mockDB) GetInterfaceIps(ctx context.Context) (map[domain.InterfaceIdentifier][]domain.Cidr, error) {
 	return nil, nil
 }
@@ -190,5 +195,60 @@ func TestCreatePeer_SetsIdentifier_FromPublicKey(t *testing.T) {
 	// Ensure the saved peer in DB also has the expected identifier
 	if db.savedPeers[expectedId] == nil {
 		t.Fatalf("expected peer with identifier %q to be saved in DB", expectedId)
+	}
+}
+
+func TestCreateDefaultPeer_RespectsInterfaceFlag(t *testing.T) {
+	// Arrange
+	cfg := &config.Config{}
+	cfg.Core.CreateDefaultPeer = true
+
+	bus := &mockBus{}
+	ctrlMgr := &ControllerManager{
+		controllers: map[domain.InterfaceBackend]backendInstance{
+			config.LocalBackendName: {Implementation: &mockController{}},
+		},
+	}
+
+	db := &mockDB{
+		iface: &domain.Interface{
+			Identifier:        "wg0",
+			Type:              domain.InterfaceTypeServer,
+			CreateDefaultPeer: false, // Flag is disabled!
+		},
+	}
+
+	m := Manager{
+		cfg: cfg,
+		bus: bus,
+		db:  db,
+		wg:  ctrlMgr,
+	}
+
+	userId := domain.UserIdentifier("user@example.com")
+	ctx := domain.SetUserInfo(context.Background(), &domain.ContextUserInfo{Id: userId, IsAdmin: true})
+
+	// Act
+	err := m.CreateDefaultPeer(ctx, userId)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("CreateDefaultPeer returned error: %v", err)
+	}
+
+	if len(db.savedPeers) != 0 {
+		t.Fatalf("expected no peers to be created because interface flag is false, but got %d", len(db.savedPeers))
+	}
+
+	// Now enable the flag and try again
+	db.iface.CreateDefaultPeer = true
+	err = m.CreateDefaultPeer(ctx, userId)
+
+	if err != nil {
+		t.Fatalf("CreateDefaultPeer returned error after enabling flag: %v", err)
+	}
+
+	if len(db.savedPeers) != 1 {
+		t.Fatalf("expected 1 peer to be created because interface flag is true, but got %d", len(db.savedPeers))
 	}
 }

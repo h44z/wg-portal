@@ -47,7 +47,7 @@ func main() {
 	rawDb, err := adapters.NewDatabase(cfg.Database)
 	internal.AssertNoError(err)
 
-	database, err := adapters.NewSqlRepository(rawDb)
+	database, err := adapters.NewSqlRepository(rawDb, cfg)
 	internal.AssertNoError(err)
 
 	wireGuard, err := wireguard.NewControllerManager(cfg)
