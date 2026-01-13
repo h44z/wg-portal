@@ -137,7 +137,7 @@
       "email": "E-Mail",
       "firstname": "Primeiro Nome",
       "lastname": "Último Nome",
-      "source": "Fonte",
+      "sources": "Fonte",
       "peers": "Peers",
       "admin": "Administrador"
     },

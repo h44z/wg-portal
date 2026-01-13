@@ -131,7 +131,7 @@ onMounted(() => {
           <th scope="col">{{ $t('users.table-heading.email') }}</th>
           <th scope="col">{{ $t('users.table-heading.firstname') }}</th>
           <th scope="col">{{ $t('users.table-heading.lastname') }}</th>
-          <th class="text-center" scope="col">{{ $t('users.table-heading.source') }}</th>
+          <th class="text-center" scope="col">{{ $t('users.table-heading.sources') }}</th>
           <th class="text-center" scope="col">{{ $t('users.table-heading.peers') }}</th>
           <th class="text-center" scope="col">{{ $t('users.table-heading.admin') }}</th>
           <th scope="col"></th><!-- Actions -->
@@ -150,7 +150,7 @@ onMounted(() => {
           <td>{{user.Email}}</td>
           <td>{{user.Firstname}}</td>
           <td>{{user.Lastname}}</td>
-          <td class="text-center"><span class="badge rounded-pill bg-light">{{user.Source}}</span></td>
+          <td><span class="badge bg-light me-1" v-for="src in user.AuthSources" :key="src">{{src}}</span></td>
           <td class="text-center">{{user.PeerCount}}</td>
           <td class="text-center">
             <span v-if="user.IsAdmin" class="text-danger" :title="$t('users.admin')"><i class="fa fa-check-circle"></i></span>

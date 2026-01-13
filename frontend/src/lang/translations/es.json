@@ -162,7 +162,7 @@
       "email": "Correo electrónico",
       "firstname": "Nombre",
       "lastname": "Apellido",
-      "source": "Origen",
+      "sources": "Origen",
       "peers": "Peers",
       "admin": "Administrador"
     },

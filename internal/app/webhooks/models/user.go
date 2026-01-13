@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -13,11 +14,10 @@ type User struct {
 	CreatedAt time.Time `json:"CreatedAt"`
 	UpdatedAt time.Time `json:"UpdatedAt"`
 
-	Identifier   string `json:"Identifier"`
-	Email        string `json:"Email"`
-	Source       string `json:"Source"`
-	ProviderName string `json:"ProviderName"`
-	IsAdmin      bool   `json:"IsAdmin"`
+	Identifier  string           `json:"Identifier"`
+	Email       string           `json:"Email"`
+	AuthSources []UserAuthSource `json:"AuthSources"`
+	IsAdmin     bool             `json:"IsAdmin"`
 
 	Firstname  string `json:"Firstname,omitempty"`
 	Lastname   string `json:"Lastname,omitempty"`
@@ -31,8 +31,22 @@ type User struct {
 	LockedReason   string     `json:"LockedReason,omitempty"`
 }
 
+// UserAuthSource represents a single authentication source for a user.
+// For details about the fields, see the domain.UserAuthentication struct.
+type UserAuthSource struct {
+	Source       string `json:"Source"`
+	ProviderName string `json:"ProviderName"`
+}
+
 // NewUser creates a new User model from a domain.User
 func NewUser(src domain.User) User {
+	authSources := internal.Map(src.Authentications, func(authentication domain.UserAuthentication) UserAuthSource {
+		return UserAuthSource{
+			Source:       string(authentication.Source),
+			ProviderName: authentication.ProviderName,
+		}
+	})
+
 	return User{
 		CreatedBy:      src.CreatedBy,
 		UpdatedBy:      src.UpdatedBy,
@@ -40,8 +54,7 @@ func NewUser(src domain.User) User {
 		UpdatedAt:      src.UpdatedAt,
 		Identifier:     string(src.Identifier),
 		Email:          src.Email,
-		Source:         string(src.Source),
-		ProviderName:   src.ProviderName,
+		AuthSources:    authSources,
 		IsAdmin:        src.IsAdmin,
 		Firstname:      src.Firstname,
 		Lastname:       src.Lastname,

@@ -443,6 +443,18 @@ definitions:
                 maxLength: 64
                 minLength: 32
                 type: string
+            AuthSources:
+                description: The source of the user. This field is optional.
+                example:
+                    - db
+                items:
+                    enum:
+                        - db
+                        - ldap
+                        - oauth
+                    type: string
+                readOnly: true
+                type: array
             Department:
                 description: The department of the user. This field is optional.
                 example: Software Development
@@ -502,19 +514,6 @@ definitions:
             Phone:
                 description: The phone number of the user. This field is optional.
                 example: "+1234546789"
-                type: string
-            ProviderName:
-                description: The name of the authentication provider. This field is read-only.
-                example: ""
-                readOnly: true
-                type: string
-            Source:
-                description: The source of the user. This field is optional.
-                enum:
-                    - db
-                    - ldap
-                    - oauth
-                example: db
                 type: string
         required:
             - Identifier

@@ -129,8 +129,6 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 		},
 		Identifier:      adminUserId,
 		Email:           "admin@wgportal.local",
-		Source:          domain.UserSourceDatabase,
-		ProviderName:    "",
 		IsAdmin:         true,
 		Firstname:       "WireGuard Portal",
 		Lastname:        "Admin",

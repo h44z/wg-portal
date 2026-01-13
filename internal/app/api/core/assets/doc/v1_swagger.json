@@ -2132,6 +2132,22 @@
                     "minLength": 32,
                     "example": ""
                 },
+                "AuthSources": {
+                    "description": "The source of the user. This field is optional.",
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "db",
+                            "ldap",
+                            "oauth"
+                        ]
+                    },
+                    "readOnly": true,
+                    "example": [
+                        "db"
+                    ]
+                },
                 "Department": {
                     "description": "The department of the user. This field is optional.",
                     "type": "string",
@@ -2205,22 +2221,6 @@
                     "description": "The phone number of the user. This field is optional.",
                     "type": "string",
                     "example": "+1234546789"
-                },
-                "ProviderName": {
-                    "description": "The name of the authentication provider. This field is read-only.",
-                    "type": "string",
-                    "readOnly": true,
-                    "example": ""
-                },
-                "Source": {
-                    "description": "The source of the user. This field is optional.",
-                    "type": "string",
-                    "enum": [
-                        "db",
-                        "ldap",
-                        "oauth"
-                    ],
-                    "example": "db"
                 }
             }
         },
