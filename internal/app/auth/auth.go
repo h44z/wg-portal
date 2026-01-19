@@ -605,7 +605,7 @@ func (a *Authenticator) registerNewUser(
 	user := &domain.User{
 		Identifier: userInfo.Identifier,
 		Email:      userInfo.Email,
-		IsAdmin:    userInfo.IsAdmin,
+		IsAdmin:    false,
 		Firstname:  userInfo.Firstname,
 		Lastname:   userInfo.Lastname,
 		Phone:      userInfo.Phone,
@@ -624,6 +624,9 @@ func (a *Authenticator) registerNewUser(
 			},
 		},
 	}
+	if userInfo.AdminInfoAvailable && userInfo.IsAdmin {
+		user.IsAdmin = true
+	}
 
 	err := a.users.RegisterUser(ctx, user)
 	if err != nil {
@@ -632,6 +635,7 @@ func (a *Authenticator) registerNewUser(
 
 	slog.Debug("registered user from external authentication provider",
 		"user", user.Identifier,
+		"adminInfoAvailable", userInfo.AdminInfoAvailable,
 		"isAdmin", user.IsAdmin,
 		"provider", source)
 
@@ -719,7 +723,7 @@ func (a *Authenticator) updateExternalUser(
 		existingUser.Department = userInfo.Department
 		isChanged = true
 	}
-	if existingUser.IsAdmin != userInfo.IsAdmin {
+	if userInfo.AdminInfoAvailable && existingUser.IsAdmin != userInfo.IsAdmin {
 		existingUser.IsAdmin = userInfo.IsAdmin
 		isChanged = true
 	}
@@ -732,6 +736,7 @@ func (a *Authenticator) updateExternalUser(
 
 		slog.Debug("updated user with data from external authentication provider",
 			"user", existingUser.Identifier,
+			"adminInfoAvailable", userInfo.AdminInfoAvailable,
 			"isAdmin", existingUser.IsAdmin,
 			"provider", source)
 	}

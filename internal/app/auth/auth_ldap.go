@@ -127,18 +127,26 @@ func (l LdapAuthenticator) GetUserInfo(_ context.Context, userId domain.UserIden
 
 // ParseUserInfo parses the user information from the LDAP server into a domain.AuthenticatorUserInfo struct.
 func (l LdapAuthenticator) ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error) {
-	isAdmin, err := internal.LdapIsMemberOf(raw[l.cfg.FieldMap.GroupMembership].([][]byte), l.cfg.ParsedAdminGroupDN)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check admin group: %w", err)
+	isAdmin := false
+	adminInfoAvailable := false
+	if l.cfg.FieldMap.GroupMembership != "" {
+		adminInfoAvailable = true
+		var err error
+		isAdmin, err = internal.LdapIsMemberOf(raw[l.cfg.FieldMap.GroupMembership].([][]byte), l.cfg.ParsedAdminGroupDN)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check admin group: %w", err)
+		}
 	}
+
 	userInfo := &domain.AuthenticatorUserInfo{
-		Identifier: domain.UserIdentifier(internal.MapDefaultString(raw, l.cfg.FieldMap.UserIdentifier, "")),
-		Email:      internal.MapDefaultString(raw, l.cfg.FieldMap.Email, ""),
-		Firstname:  internal.MapDefaultString(raw, l.cfg.FieldMap.Firstname, ""),
-		Lastname:   internal.MapDefaultString(raw, l.cfg.FieldMap.Lastname, ""),
-		Phone:      internal.MapDefaultString(raw, l.cfg.FieldMap.Phone, ""),
-		Department: internal.MapDefaultString(raw, l.cfg.FieldMap.Department, ""),
-		IsAdmin:    isAdmin,
+		Identifier:         domain.UserIdentifier(internal.MapDefaultString(raw, l.cfg.FieldMap.UserIdentifier, "")),
+		Email:              internal.MapDefaultString(raw, l.cfg.FieldMap.Email, ""),
+		Firstname:          internal.MapDefaultString(raw, l.cfg.FieldMap.Firstname, ""),
+		Lastname:           internal.MapDefaultString(raw, l.cfg.FieldMap.Lastname, ""),
+		Phone:              internal.MapDefaultString(raw, l.cfg.FieldMap.Phone, ""),
+		Department:         internal.MapDefaultString(raw, l.cfg.FieldMap.Department, ""),
+		IsAdmin:            isAdmin,
+		AdminInfoAvailable: adminInfoAvailable,
 	}
 
 	return userInfo, nil
