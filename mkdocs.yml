@@ -85,7 +85,8 @@ nav:
       - Usage:
           - General: documentation/usage/general.md
           - Backends: documentation/usage/backends.md
-          - LDAP: documentation/usage/ldap.md
+          - Authentication: documentation/usage/authentication.md
+          - User Management: documentation/usage/user-sync.md
           - Security: documentation/usage/security.md
           - Webhooks: documentation/usage/webhooks.md
           - Mail Templates: documentation/usage/mail-templates.md

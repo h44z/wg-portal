@@ -42,7 +42,7 @@ const passwordWeak = computed(() => {
 })
 
 const formValid = computed(() => {
-  if (formData.value.Source !== 'db') {
+  if (!formData.value.AuthSources.some(s => s === 'db')) {
     return true // nothing to validate
   }
   if (props.userId !== '#NEW#' && passwordWeak.value) {
@@ -70,7 +70,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
         } else { // fill existing userdata
           formData.value.Identifier = selectedUser.value.Identifier
           formData.value.Email = selectedUser.value.Email
-          formData.value.Source = selectedUser.value.Source
+          formData.value.AuthSources = selectedUser.value.AuthSources
           formData.value.IsAdmin = selectedUser.value.IsAdmin
           formData.value.Firstname = selectedUser.value.Firstname
           formData.value.Lastname = selectedUser.value.Lastname
@@ -80,6 +80,7 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.Password = ""
           formData.value.Disabled = selectedUser.value.Disabled
           formData.value.Locked = selectedUser.value.Locked
+          formData.value.PersistLocalChanges = selectedUser.value.PersistLocalChanges
         }
       }
     }
@@ -133,7 +134,7 @@ async function del() {
 <template>
   <Modal :title="title" :visible="visible" @close="close">
     <template #default>
-      <fieldset v-if="formData.Source==='db'">
+      <fieldset>
         <legend class="mt-4">{{ $t('modals.user-edit.header-general') }}</legend>
         <div v-if="props.userId==='#NEW#'" class="form-group">
           <label class="form-label mt-4">{{ $t('modals.user-edit.identifier.label') }}</label>
@@ -141,16 +142,22 @@ async function del() {
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.user-edit.source.label') }}</label>
-          <input v-model="formData.Source" class="form-control" disabled="disabled" :placeholder="$t('modals.user-edit.source.placeholder')" type="text">
+          <input v-model="formData.AuthSources" class="form-control" disabled="disabled" :placeholder="$t('modals.user-edit.source.placeholder')" type="text">
         </div>
-        <div v-if="formData.Source==='db'" class="form-group">
+        <div class="form-group" v-if="formData.AuthSources.some(s => s ==='db')">
           <label class="form-label mt-4">{{ $t('modals.user-edit.password.label') }}</label>
           <input v-model="formData.Password" aria-describedby="passwordHelp" class="form-control" :class="{ 'is-invalid': passwordWeak,  'is-valid': formData.Password !== '' && !passwordWeak }" :placeholder="$t('modals.user-edit.password.placeholder')" type="password">
           <div class="invalid-feedback">{{ $t('modals.user-edit.password.too-weak') }}</div>
           <small v-if="props.userId!=='#NEW#'" id="passwordHelp" class="form-text text-muted">{{ $t('modals.user-edit.password.description') }}</small>
         </div>
       </fieldset>
-      <fieldset v-if="formData.Source==='db'">
+      <fieldset v-if="formData.AuthSources.some(s => s !=='db') && !formData.PersistLocalChanges">
+        <legend class="mt-4">{{ $t('modals.user-edit.header-personal') }}</legend>
+        <div class="alert alert-warning mt-3">
+          {{ $t('modals.user-edit.sync-warning') }}
+        </div>
+      </fieldset>
+      <fieldset v-if="!formData.AuthSources.some(s => s !=='db') || formData.PersistLocalChanges">
         <legend class="mt-4">{{ $t('modals.user-edit.header-personal') }}</legend>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.user-edit.email.label') }}</label>
@@ -194,9 +201,13 @@ async function del() {
           <input v-model="formData.Locked" class="form-check-input" type="checkbox">
           <label class="form-check-label" >{{ $t('modals.user-edit.locked.label') }}</label>
         </div>
-        <div class="form-check form-switch" v-if="formData.Source==='db'">
+        <div class="form-check form-switch" v-if="!formData.AuthSources.some(s => s !=='db') || formData.PersistLocalChanges">
           <input v-model="formData.IsAdmin" checked="" class="form-check-input" type="checkbox">
           <label class="form-check-label">{{ $t('modals.user-edit.admin.label') }}</label>
+        </div>
+        <div class="form-check form-switch" v-if="formData.AuthSources.some(s => s !=='db')">
+          <input v-model="formData.PersistLocalChanges" class="form-check-input" type="checkbox">
+          <label class="form-check-label" >{{ $t('modals.user-edit.persist-local-changes.label') }}</label>
         </div>
       </fieldset>
 

@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/h44z/wg-portal/internal/config"
@@ -95,8 +96,10 @@ func (u UserService) ChangePassword(
 	}
 
 	// ensure that the user uses the database backend; otherwise we can't change the password
-	if user.Source != domain.UserSourceDatabase {
-		return nil, fmt.Errorf("user source %s does not support password changes", user.Source)
+	if !slices.ContainsFunc(user.Authentications, func(authentication domain.UserAuthentication) bool {
+		return authentication.Source == domain.UserSourceDatabase
+	}) {
+		return nil, fmt.Errorf("user has no linked authentication source that does support password changes")
 	}
 
 	// validate old password

@@ -3,15 +3,15 @@ package model
 import (
 	"time"
 
+	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type User struct {
-	Identifier   string `json:"Identifier"`
-	Email        string `json:"Email"`
-	Source       string `json:"Source"`
-	ProviderName string `json:"ProviderName"`
-	IsAdmin      bool   `json:"IsAdmin"`
+	Identifier  string   `json:"Identifier"`
+	Email       string   `json:"Email"`
+	AuthSources []string `json:"AuthSources"`
+	IsAdmin     bool     `json:"IsAdmin"`
 
 	Firstname  string `json:"Firstname"`
 	Lastname   string `json:"Lastname"`
@@ -29,6 +29,8 @@ type User struct {
 	ApiTokenCreated *time.Time `json:"ApiTokenCreated,omitempty"`
 	ApiEnabled      bool       `json:"ApiEnabled"`
 
+	PersistLocalChanges bool `json:"PersistLocalChanges"`
+
 	// Calculated
 
 	PeerCount int `json:"PeerCount"`
@@ -36,24 +38,26 @@ type User struct {
 
 func NewUser(src *domain.User, exposeCreds bool) *User {
 	u := &User{
-		Identifier:      string(src.Identifier),
-		Email:           src.Email,
-		Source:          string(src.Source),
-		ProviderName:    src.ProviderName,
-		IsAdmin:         src.IsAdmin,
-		Firstname:       src.Firstname,
-		Lastname:        src.Lastname,
-		Phone:           src.Phone,
-		Department:      src.Department,
-		Notes:           src.Notes,
-		Password:        "", // never fill password
-		Disabled:        src.IsDisabled(),
-		DisabledReason:  src.DisabledReason,
-		Locked:          src.IsLocked(),
-		LockedReason:    src.LockedReason,
-		ApiToken:        "", // by default, do not expose API token
-		ApiTokenCreated: src.ApiTokenCreated,
-		ApiEnabled:      src.IsApiEnabled(),
+		Identifier: string(src.Identifier),
+		Email:      src.Email,
+		AuthSources: internal.Map(src.Authentications, func(authentication domain.UserAuthentication) string {
+			return string(authentication.Source)
+		}),
+		IsAdmin:             src.IsAdmin,
+		Firstname:           src.Firstname,
+		Lastname:            src.Lastname,
+		Phone:               src.Phone,
+		Department:          src.Department,
+		Notes:               src.Notes,
+		Password:            "", // never fill password
+		Disabled:            src.IsDisabled(),
+		DisabledReason:      src.DisabledReason,
+		Locked:              src.IsLocked(),
+		LockedReason:        src.LockedReason,
+		ApiToken:            "", // by default, do not expose API token
+		ApiTokenCreated:     src.ApiTokenCreated,
+		ApiEnabled:          src.IsApiEnabled(),
+		PersistLocalChanges: src.PersistLocalChanges,
 
 		PeerCount: src.LinkedPeerCount,
 	}
@@ -77,22 +81,21 @@ func NewUsers(src []domain.User) []User {
 func NewDomainUser(src *User) *domain.User {
 	now := time.Now()
 	res := &domain.User{
-		Identifier:      domain.UserIdentifier(src.Identifier),
-		Email:           src.Email,
-		Source:          domain.UserSource(src.Source),
-		ProviderName:    src.ProviderName,
-		IsAdmin:         src.IsAdmin,
-		Firstname:       src.Firstname,
-		Lastname:        src.Lastname,
-		Phone:           src.Phone,
-		Department:      src.Department,
-		Notes:           src.Notes,
-		Password:        domain.PrivateString(src.Password),
-		Disabled:        nil, // set below
-		DisabledReason:  src.DisabledReason,
-		Locked:          nil, // set below
-		LockedReason:    src.LockedReason,
-		LinkedPeerCount: src.PeerCount,
+		Identifier:          domain.UserIdentifier(src.Identifier),
+		Email:               src.Email,
+		IsAdmin:             src.IsAdmin,
+		Firstname:           src.Firstname,
+		Lastname:            src.Lastname,
+		Phone:               src.Phone,
+		Department:          src.Department,
+		Notes:               src.Notes,
+		Password:            domain.PrivateString(src.Password),
+		Disabled:            nil, // set below
+		DisabledReason:      src.DisabledReason,
+		Locked:              nil, // set below
+		LockedReason:        src.LockedReason,
+		LinkedPeerCount:     src.PeerCount,
+		PersistLocalChanges: src.PersistLocalChanges,
 	}
 
 	if src.Disabled {

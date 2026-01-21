@@ -168,3 +168,12 @@ func BoolToFloat64(b bool) float64 {
 	}
 	return 0.0
 }
+
+// Map applies the given function to each element of the given slice and returns the resulting slice
+func Map[T, V any](ts []T, fn func(T) V) []V {
+	result := make([]V, len(ts))
+	for i, t := range ts {
+		result[i] = fn(t)
+	}
+	return result
+}

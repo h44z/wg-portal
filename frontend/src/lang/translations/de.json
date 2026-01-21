@@ -147,7 +147,7 @@
       "email": "E-Mail",
       "firstname": "Vorname",
       "lastname": "Nachname",
-      "source": "Quelle",
+      "sources": "Quellen",
       "peers": "Peers",
       "admin": "Admin"
     },
@@ -378,7 +378,11 @@
       },
       "admin": {
         "label": "Ist Administrator"
-      }
+      },
+      "persist-local-changes": {
+        "label": "Lokale Änderungen speichern"
+      },
+      "sync-warning": "Um diesen synchronisierten Benutzer zu bearbeiten, aktivieren Sie die lokale Änderungsspeicherung. Andernfalls werden Ihre Änderungen bei der nächsten Synchronisierung überschrieben."
     },
     "interface-view": {
       "headline": "Konfiguration für Schnittstelle:"

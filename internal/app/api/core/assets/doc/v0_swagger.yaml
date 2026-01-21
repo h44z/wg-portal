@@ -431,6 +431,10 @@ definitions:
         type: string
       ApiTokenCreated:
         type: string
+      AuthSources:
+        items:
+          type: string
+        type: array
       Department:
         type: string
       Disabled:
@@ -461,11 +465,9 @@ definitions:
         type: string
       PeerCount:
         type: integer
+      PersistLocalChanges:
+        type: boolean
       Phone:
-        type: string
-      ProviderName:
-        type: string
-      Source:
         type: string
     type: object
   model.WebAuthnCredentialRequest:

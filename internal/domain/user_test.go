@@ -35,19 +35,25 @@ func TestUser_IsApiEnabled(t *testing.T) {
 }
 
 func TestUser_CanChangePassword(t *testing.T) {
-	user := &User{Source: UserSourceDatabase}
+	user := &User{Authentications: []UserAuthentication{{Source: UserSourceDatabase}}}
 	assert.NoError(t, user.CanChangePassword())
 
-	user.Source = UserSourceLdap
+	user.Authentications = []UserAuthentication{{Source: UserSourceLdap}}
 	assert.Error(t, user.CanChangePassword())
 
-	user.Source = UserSourceOauth
+	user.Authentications = []UserAuthentication{{Source: UserSourceOauth}}
 	assert.Error(t, user.CanChangePassword())
+
+	user.Authentications = []UserAuthentication{{Source: UserSourceLdap}, {Source: UserSourceDatabase}}
+	assert.NoError(t, user.CanChangePassword())
+
+	user.Authentications = []UserAuthentication{{Source: UserSourceOauth}, {Source: UserSourceDatabase}}
+	assert.NoError(t, user.CanChangePassword())
 }
 
 func TestUser_EditAllowed(t *testing.T) {
-	user := &User{Source: UserSourceDatabase}
-	newUser := &User{Source: UserSourceDatabase}
+	user := &User{Authentications: []UserAuthentication{{Source: UserSourceDatabase}}}
+	newUser := &User{Authentications: []UserAuthentication{{Source: UserSourceDatabase}}}
 	assert.NoError(t, user.EditAllowed(newUser))
 
 	newUser.Notes = "notes can be changed"
@@ -59,8 +65,8 @@ func TestUser_EditAllowed(t *testing.T) {
 	newUser.Lastname = "lastname or other fields can be changed"
 	assert.NoError(t, user.EditAllowed(newUser))
 
-	user.Source = UserSourceLdap
-	newUser.Source = UserSourceLdap
+	user.Authentications = []UserAuthentication{{Source: UserSourceLdap}}
+	newUser.Authentications = []UserAuthentication{{Source: UserSourceLdap}}
 	newUser.Disabled = nil
 	newUser.Lastname = ""
 	newUser.Notes = "notes can be changed"
@@ -72,8 +78,8 @@ func TestUser_EditAllowed(t *testing.T) {
 	newUser.Lastname = "lastname or other fields can not be changed"
 	assert.Error(t, user.EditAllowed(newUser))
 
-	user.Source = UserSourceOauth
-	newUser.Source = UserSourceOauth
+	user.Authentications = []UserAuthentication{{Source: UserSourceOauth}}
+	newUser.Authentications = []UserAuthentication{{Source: UserSourceOauth}}
 	newUser.Disabled = nil
 	newUser.Lastname = ""
 	newUser.Notes = "notes can be changed"
@@ -84,6 +90,20 @@ func TestUser_EditAllowed(t *testing.T) {
 
 	newUser.Lastname = "lastname or other fields can not be changed"
 	assert.Error(t, user.EditAllowed(newUser))
+
+	user.Authentications = []UserAuthentication{{Source: UserSourceOauth}, {Source: UserSourceDatabase}}
+	newUser.Authentications = []UserAuthentication{{Source: UserSourceOauth}, {Source: UserSourceDatabase}}
+	newUser.PersistLocalChanges = true
+	newUser.Disabled = nil
+	newUser.Lastname = ""
+	newUser.Notes = "notes can be changed"
+	assert.NoError(t, user.EditAllowed(newUser))
+
+	newUser.Disabled = &time.Time{}
+	assert.NoError(t, user.EditAllowed(newUser))
+
+	newUser.Lastname = "lastname or other fields can be changed"
+	assert.NoError(t, user.EditAllowed(newUser))
 }
 
 func TestUser_DeleteAllowed(t *testing.T) {
@@ -95,13 +115,15 @@ func TestUser_CheckPassword(t *testing.T) {
 	password := "password"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
-	user := &User{Source: UserSourceDatabase, Password: PrivateString(hashedPassword)}
+	user := &User{
+		Authentications: []UserAuthentication{{Source: UserSourceDatabase}}, Password: PrivateString(hashedPassword),
+	}
 	assert.NoError(t, user.CheckPassword(password))
 
 	user.Password = ""
 	assert.Error(t, user.CheckPassword(password))
 
-	user.Source = UserSourceLdap
+	user.Authentications = []UserAuthentication{{Source: UserSourceLdap}}
 	assert.Error(t, user.CheckPassword(password))
 }
 

@@ -15,9 +15,11 @@ func parseOauthUserInfo(
 	raw map[string]any,
 ) (*domain.AuthenticatorUserInfo, error) {
 	var isAdmin bool
+	var adminInfoAvailable bool
 
 	// first try to match the is_admin field against the given regex
 	if mapping.IsAdmin != "" {
+		adminInfoAvailable = true
 		re := adminMapping.GetAdminValueRegex()
 		if re.MatchString(strings.TrimSpace(internal.MapDefaultString(raw, mapping.IsAdmin, ""))) {
 			isAdmin = true
@@ -26,6 +28,7 @@ func parseOauthUserInfo(
 
 	// next try to parse the user's groups
 	if !isAdmin && mapping.UserGroups != "" && adminMapping.AdminGroupRegex != "" {
+		adminInfoAvailable = true
 		userGroups := internal.MapDefaultStringSlice(raw, mapping.UserGroups, nil)
 		re := adminMapping.GetAdminGroupRegex()
 		for _, group := range userGroups {
@@ -37,13 +40,14 @@ func parseOauthUserInfo(
 	}
 
 	userInfo := &domain.AuthenticatorUserInfo{
-		Identifier: domain.UserIdentifier(internal.MapDefaultString(raw, mapping.UserIdentifier, "")),
-		Email:      internal.MapDefaultString(raw, mapping.Email, ""),
-		Firstname:  internal.MapDefaultString(raw, mapping.Firstname, ""),
-		Lastname:   internal.MapDefaultString(raw, mapping.Lastname, ""),
-		Phone:      internal.MapDefaultString(raw, mapping.Phone, ""),
-		Department: internal.MapDefaultString(raw, mapping.Department, ""),
-		IsAdmin:    isAdmin,
+		Identifier:         domain.UserIdentifier(internal.MapDefaultString(raw, mapping.UserIdentifier, "")),
+		Email:              internal.MapDefaultString(raw, mapping.Email, ""),
+		Firstname:          internal.MapDefaultString(raw, mapping.Firstname, ""),
+		Lastname:           internal.MapDefaultString(raw, mapping.Lastname, ""),
+		Phone:              internal.MapDefaultString(raw, mapping.Phone, ""),
+		Department:         internal.MapDefaultString(raw, mapping.Department, ""),
+		IsAdmin:            isAdmin,
+		AdminInfoAvailable: adminInfoAvailable,
 	}
 
 	return userInfo, nil

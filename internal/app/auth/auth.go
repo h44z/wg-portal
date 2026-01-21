@@ -29,8 +29,8 @@ type UserManager interface {
 	GetUser(context.Context, domain.UserIdentifier) (*domain.User, error)
 	// RegisterUser creates a new user in the database.
 	RegisterUser(ctx context.Context, user *domain.User) error
-	// UpdateUser updates an existing user in the database.
-	UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error)
+	// UpdateUserInternal updates an existing user in the database.
+	UpdateUserInternal(ctx context.Context, user *domain.User) (*domain.User, error)
 }
 
 type EventBus interface {
@@ -232,7 +232,7 @@ func (a *Authenticator) setupExternalAuthProviders(
 	}
 	for i := range ldap { // LDAP
 		providerCfg := &ldap[i]
-		providerId := strings.ToLower(providerCfg.URL)
+		providerId := strings.ToLower(providerCfg.ProviderName)
 
 		if _, exists := a.ldapAuthenticators[providerId]; exists {
 			// this is an unrecoverable error, we cannot register the same provider twice
@@ -354,21 +354,45 @@ func (a *Authenticator) passwordAuthentication(
 	var ldapProvider AuthenticatorLdap
 
 	var userInDatabase = false
-	var userSource domain.UserSource
 	existingUser, err := a.users.GetUser(ctx, identifier)
 	if err == nil {
 		userInDatabase = true
-		userSource = existingUser.Source
 	}
 	if userInDatabase && (existingUser.IsLocked() || existingUser.IsDisabled()) {
 		return nil, errors.New("user is locked")
 	}
 
-	if !userInDatabase || userSource == domain.UserSourceLdap {
-		// search user in ldap if registration is enabled
+	authOK := false
+	if userInDatabase {
+		// User is already in db, search for authentication sources which support password authentication and
+		// validate the password.
+		for _, authentication := range existingUser.Authentications {
+			if authentication.Source == domain.UserSourceDatabase {
+				err := existingUser.CheckPassword(password)
+				if err == nil {
+					authOK = true
+					break
+				}
+			}
+
+			if authentication.Source == domain.UserSourceLdap {
+				ldapProvider, ok := a.ldapAuthenticators[strings.ToLower(authentication.ProviderName)]
+				if !ok {
+					continue // ldap provider not found, skip further checks
+				}
+				err := ldapProvider.PlaintextAuthentication(identifier, password)
+				if err == nil {
+					authOK = true
+					break
+				}
+			}
+		}
+	} else {
+		// User is not yet in the db, check ldap providers which have registration enabled.
+		// If the user is found, check the password - on success, sync it to the db.
 		for _, ldapAuth := range a.ldapAuthenticators {
-			if !userInDatabase && !ldapAuth.RegistrationEnabled() {
-				continue
+			if !ldapAuth.RegistrationEnabled() {
+				continue // ldap provider does not support registration, skip further checks
 			}
 
 			rawUserInfo, err := ldapAuth.GetUserInfo(context.Background(), identifier)
@@ -379,55 +403,39 @@ func (a *Authenticator) passwordAuthentication(
 				}
 				continue // user not found / other ldap error
 			}
+
+			// user found, check if the password is correct
+			err = ldapAuth.PlaintextAuthentication(identifier, password)
+			if err != nil {
+				continue // password is incorrect, skip further checks
+			}
+
+			// create a new user in the db
 			ldapUserInfo, err = ldapAuth.ParseUserInfo(rawUserInfo)
 			if err != nil {
 				slog.Error("failed to parse ldap user info",
 					"source", ldapAuth.GetName(), "identifier", identifier, "error", err)
 				continue
 			}
+			user, err := a.processUserInfo(ctx, ldapUserInfo, domain.UserSourceLdap, ldapProvider.GetName(), true)
+			if err != nil {
+				return nil, fmt.Errorf("unable to process user information: %w", err)
+			}
 
-			// ldap user found
-			userSource = domain.UserSourceLdap
-			ldapProvider = ldapAuth
+			existingUser = user
+			slog.Debug("created new LDAP user in db",
+				"identifier", user.Identifier, "provider", ldapProvider.GetName())
 
+			authOK = true
 			break
 		}
 	}
 
-	if userSource == "" {
-		slog.Warn("no user source found for user",
-			"identifier", identifier, "ldapProviderCount", len(a.ldapAuthenticators), "inDb", userInDatabase)
-		return nil, errors.New("user not found")
+	if !authOK {
+		return nil, errors.New("failed to authenticate user")
 	}
 
-	if userSource == domain.UserSourceLdap && ldapProvider == nil {
-		slog.Warn("no ldap provider found for user",
-			"identifier", identifier, "ldapProviderCount", len(a.ldapAuthenticators), "inDb", userInDatabase)
-		return nil, errors.New("ldap provider not found")
-	}
-
-	switch userSource {
-	case domain.UserSourceDatabase:
-		err = existingUser.CheckPassword(password)
-	case domain.UserSourceLdap:
-		err = ldapProvider.PlaintextAuthentication(identifier, password)
-	default:
-		err = errors.New("no authentication backend available")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to authenticate: %w", err)
-	}
-
-	if !userInDatabase {
-		user, err := a.processUserInfo(ctx, ldapUserInfo, domain.UserSourceLdap, ldapProvider.GetName(),
-			ldapProvider.RegistrationEnabled())
-		if err != nil {
-			return nil, fmt.Errorf("unable to process user information: %w", err)
-		}
-		return user, nil
-	} else {
-		return existingUser, nil
-	}
+	return existingUser, nil
 }
 
 // endregion password authentication
@@ -590,17 +598,34 @@ func (a *Authenticator) registerNewUser(
 	source domain.UserSource,
 	provider string,
 ) (*domain.User, error) {
+	ctxUserInfo := domain.GetUserInfo(ctx)
+	now := time.Now()
+
 	// convert user info to domain.User
 	user := &domain.User{
-		Identifier:   userInfo.Identifier,
-		Email:        userInfo.Email,
-		Source:       source,
-		ProviderName: provider,
-		IsAdmin:      userInfo.IsAdmin,
-		Firstname:    userInfo.Firstname,
-		Lastname:     userInfo.Lastname,
-		Phone:        userInfo.Phone,
-		Department:   userInfo.Department,
+		Identifier: userInfo.Identifier,
+		Email:      userInfo.Email,
+		IsAdmin:    false,
+		Firstname:  userInfo.Firstname,
+		Lastname:   userInfo.Lastname,
+		Phone:      userInfo.Phone,
+		Department: userInfo.Department,
+		Authentications: []domain.UserAuthentication{
+			{
+				BaseModel: domain.BaseModel{
+					CreatedBy: ctxUserInfo.UserId(),
+					UpdatedBy: ctxUserInfo.UserId(),
+					CreatedAt: now,
+					UpdatedAt: now,
+				},
+				UserIdentifier: userInfo.Identifier,
+				Source:         source,
+				ProviderName:   provider,
+			},
+		},
+	}
+	if userInfo.AdminInfoAvailable && userInfo.IsAdmin {
+		user.IsAdmin = true
 	}
 
 	err := a.users.RegisterUser(ctx, user)
@@ -610,6 +635,7 @@ func (a *Authenticator) registerNewUser(
 
 	slog.Debug("registered user from external authentication provider",
 		"user", user.Identifier,
+		"adminInfoAvailable", userInfo.AdminInfoAvailable,
 		"isAdmin", user.IsAdmin,
 		"provider", source)
 
@@ -643,6 +669,39 @@ func (a *Authenticator) updateExternalUser(
 		return nil // user is locked or disabled, do not update
 	}
 
+	// Update authentication sources
+	foundAuthSource := false
+	for _, auth := range existingUser.Authentications {
+		if auth.Source == source && auth.ProviderName == provider {
+			foundAuthSource = true
+			break
+		}
+	}
+	if !foundAuthSource {
+		ctxUserInfo := domain.GetUserInfo(ctx)
+		now := time.Now()
+		existingUser.Authentications = append(existingUser.Authentications, domain.UserAuthentication{
+			BaseModel: domain.BaseModel{
+				CreatedBy: ctxUserInfo.UserId(),
+				UpdatedBy: ctxUserInfo.UserId(),
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			UserIdentifier: existingUser.Identifier,
+			Source:         source,
+			ProviderName:   provider,
+		})
+	}
+
+	if existingUser.PersistLocalChanges {
+		if !foundAuthSource {
+			// Even if local changes are persisted, we need to save the new authentication source
+			_, err := a.users.UpdateUserInternal(ctx, existingUser)
+			return err
+		}
+		return nil
+	}
+
 	isChanged := false
 	if existingUser.Email != userInfo.Email {
 		existingUser.Email = userInfo.Email
@@ -664,32 +723,23 @@ func (a *Authenticator) updateExternalUser(
 		existingUser.Department = userInfo.Department
 		isChanged = true
 	}
-	if existingUser.IsAdmin != userInfo.IsAdmin {
+	if userInfo.AdminInfoAvailable && existingUser.IsAdmin != userInfo.IsAdmin {
 		existingUser.IsAdmin = userInfo.IsAdmin
 		isChanged = true
 	}
-	if existingUser.Source != source {
-		existingUser.Source = source
-		isChanged = true
-	}
-	if existingUser.ProviderName != provider {
-		existingUser.ProviderName = provider
-		isChanged = true
-	}
 
-	if !isChanged {
-		return nil // nothing to update
-	}
+	if isChanged || !foundAuthSource {
+		_, err := a.users.UpdateUserInternal(ctx, existingUser)
+		if err != nil {
+			return fmt.Errorf("failed to update user: %w", err)
+		}
 
-	_, err := a.users.UpdateUser(ctx, existingUser)
-	if err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
+		slog.Debug("updated user with data from external authentication provider",
+			"user", existingUser.Identifier,
+			"adminInfoAvailable", userInfo.AdminInfoAvailable,
+			"isAdmin", existingUser.IsAdmin,
+			"provider", source)
 	}
-
-	slog.Debug("updated user with data from external authentication provider",
-		"user", existingUser.Identifier,
-		"isAdmin", existingUser.IsAdmin,
-		"provider", source)
 
 	return nil
 }

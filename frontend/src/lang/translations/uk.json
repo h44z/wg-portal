@@ -135,7 +135,7 @@
       "email": "E-Mail",
       "firstname": "Ім'я",
       "lastname": "Прізвище",
-      "source": "Джерело",
+      "sources": "Джерело",
       "peers": "Піри",
       "admin": "Адміністратор"
     },

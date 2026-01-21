@@ -68,26 +68,32 @@ All payload models are encoded as JSON objects. Fields with empty values might b
 
 #### User Payload (entity: `user`)
 
-| JSON Field     | Type        | Description                       |
-|----------------|-------------|-----------------------------------|
-| CreatedBy      | string      | Creator identifier                |
-| UpdatedBy      | string      | Last updater identifier           |
-| CreatedAt      | time.Time   | Time of creation                  |
-| UpdatedAt      | time.Time   | Time of last update               |
-| Identifier     | string      | Unique user identifier            |
-| Email          | string      | User email                        |
-| Source         | string      | Authentication source             |
-| ProviderName   | string      | Name of auth provider             |
-| IsAdmin        | bool        | Whether user has admin privileges |
-| Firstname      | string      | User's first name (optional)      |
-| Lastname       | string      | User's last name (optional)       |
-| Phone          | string      | Contact phone number (optional)   |
-| Department     | string      | User's department (optional)      |
-| Notes          | string      | Additional notes (optional)       |
-| Disabled       | *time.Time  | When user was disabled            |
-| DisabledReason | string      | Reason for deactivation           |
-| Locked         | *time.Time  | When user account was locked      |
-| LockedReason   | string      | Reason for being locked           |
+| JSON Field     | Type          | Description                       |
+|----------------|---------------|-----------------------------------|
+| CreatedBy      | string        | Creator identifier                |
+| UpdatedBy      | string        | Last updater identifier           |
+| CreatedAt      | time.Time     | Time of creation                  |
+| UpdatedAt      | time.Time     | Time of last update               |
+| Identifier     | string        | Unique user identifier            |
+| Email          | string        | User email                        |
+| AuthSources    | []AuthSource  | Authentication sources            |
+| IsAdmin        | bool          | Whether user has admin privileges |
+| Firstname      | string        | User's first name (optional)      |
+| Lastname       | string        | User's last name (optional)       |
+| Phone          | string        | Contact phone number (optional)   |
+| Department     | string        | User's department (optional)      |
+| Notes          | string        | Additional notes (optional)       |
+| Disabled       | *time.Time    | When user was disabled            |
+| DisabledReason | string        | Reason for deactivation           |
+| Locked         | *time.Time    | When user account was locked      |
+| LockedReason   | string        | Reason for being locked           |
+
+`AuthSource`:
+
+| JSON Field   | Type          | Description                                         |
+|--------------|---------------|-----------------------------------------------------|
+| Source       | string        | The authentication source (e.g. LDAP, OAuth, or DB) |
+| ProviderName | string        | The identifier of the authentication provider       |
 
 
 #### Peer Payload (entity: `peer`)

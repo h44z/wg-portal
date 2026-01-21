@@ -147,7 +147,7 @@
       "email": "E-Mail",
       "firstname": "Firstname",
       "lastname": "Lastname",
-      "source": "Source",
+      "sources": "Sources",
       "peers": "Peers",
       "admin": "Admin"
     },
@@ -378,7 +378,11 @@
       },
       "admin": {
         "label": "Is Admin"
-      }
+      },
+      "persist-local-changes": {
+        "label": "Persist local changes"
+      },
+      "sync-warning": "To modify this synchronized user, enable local change persistence. Otherwise, your changes will be overwritten during the next synchronization."
     },
     "interface-view": {
       "headline": "Config for Interface:"

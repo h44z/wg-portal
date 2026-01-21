@@ -14,6 +14,7 @@ const (
 	CtxSystemLdapSyncer = "_WG_SYS_LDAP_SYNCER_"
 	CtxSystemWgImporter = "_WG_SYS_WG_IMPORTER_"
 	CtxSystemV1Migrator = "_WG_SYS_V1_MIGRATOR_"
+	CtxSystemDBMigrator = "_WG_SYS_DB_MIGRATOR_"
 )
 
 type ContextUserInfo struct {

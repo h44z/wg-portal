@@ -23,8 +23,8 @@ type WebAuthnUserManager interface {
 	GetUser(context.Context, domain.UserIdentifier) (*domain.User, error)
 	// GetUserByWebAuthnCredential returns a user by its WebAuthn ID.
 	GetUserByWebAuthnCredential(ctx context.Context, credentialIdBase64 string) (*domain.User, error)
-	// UpdateUser updates an existing user in the database.
-	UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error)
+	// UpdateUserInternal updates an existing user in the database.
+	UpdateUserInternal(ctx context.Context, user *domain.User) (*domain.User, error)
 }
 
 type WebAuthnAuthenticator struct {
@@ -89,7 +89,7 @@ func (a *WebAuthnAuthenticator) StartWebAuthnRegistration(ctx context.Context, u
 
 	if user.WebAuthnId == "" {
 		user.GenerateWebAuthnId()
-		user, err = a.users.UpdateUser(ctx, user)
+		user, err = a.users.UpdateUserInternal(ctx, user)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to store webauthn id to user: %w", err)
 		}
@@ -150,7 +150,7 @@ func (a *WebAuthnAuthenticator) FinishWebAuthnRegistration(
 		return nil, err
 	}
 
-	user, err = a.users.UpdateUser(ctx, user)
+	user, err = a.users.UpdateUserInternal(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func (a *WebAuthnAuthenticator) RemoveCredential(
 	}
 
 	user.RemoveCredential(credentialIdBase64)
-	user, err = a.users.UpdateUser(ctx, user)
+	user, err = a.users.UpdateUserInternal(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func (a *WebAuthnAuthenticator) UpdateCredential(
 		return nil, err
 	}
 
-	user, err = a.users.UpdateUser(ctx, user)
+	user, err = a.users.UpdateUserInternal(ctx, user)
 	if err != nil {
 		return nil, err
 	}
