@@ -626,7 +626,7 @@ func (c LocalController) exec(command string, interfaceId domain.InterfaceIdenti
 	if err != nil {
 		slog.Warn("failed to executed shell command",
 			"command", commandWithInterfaceName, "stdin", stdin, "output", string(out), "error", err)
-		return fmt.Errorf("failed to exexute shell command %s: %w", commandWithInterfaceName, err)
+		return fmt.Errorf("failed to execute shell command %s: %w", commandWithInterfaceName, err)
 	}
 	slog.Debug("executed shell command",
 		"command", commandWithInterfaceName,
