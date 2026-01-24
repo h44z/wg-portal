@@ -985,7 +985,26 @@ func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain
 	peer.InterfaceIdentifier = in.Identifier
 	peer.EndpointPublicKey = domain.NewConfigOption(in.PublicKey, true)
 	peer.AllowedIPsStr = domain.NewConfigOption(in.PeerDefAllowedIPsStr, true)
-	peer.Interface.Addresses = p.AllowedIPs // use allowed IP's as the peer IP's TODO: Should this also match server interface address' prefix length?
+
+	// split allowed IP's into interface addresses and extra allowed IP's
+	var interfaceAddresses []domain.Cidr
+	var extraAllowedIPs []domain.Cidr
+	for _, allowedIP := range p.AllowedIPs {
+		isHost := (allowedIP.IsV4() && allowedIP.NetLength == 32) || (!allowedIP.IsV4() && allowedIP.NetLength == 128)
+		isNetworkAddr := allowedIP.Addr == allowedIP.NetworkAddr().Addr
+
+		// Network addresses (e.g. 10.0.0.0/24) will always be extra allowed IP's.
+		// For IP addresses, such as 10.0.0.1/24, it is challenging to tell whether it is an interface address or
+		// an extra allowed IP, therefore we treat such addresses as interface addresses.
+		if !isHost && isNetworkAddr {
+			extraAllowedIPs = append(extraAllowedIPs, allowedIP)
+		} else {
+			interfaceAddresses = append(interfaceAddresses, allowedIP)
+		}
+	}
+	peer.Interface.Addresses = interfaceAddresses
+	peer.ExtraAllowedIPsStr = domain.CidrsToString(extraAllowedIPs)
+
 	peer.Interface.DnsStr = domain.NewConfigOption(in.PeerDefDnsStr, true)
 	peer.Interface.DnsSearchStr = domain.NewConfigOption(in.PeerDefDnsSearchStr, true)
 	peer.Interface.Mtu = domain.NewConfigOption(in.PeerDefMtu, true)
