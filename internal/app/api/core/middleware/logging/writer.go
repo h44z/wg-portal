@@ -1,6 +1,8 @@
 package logging
 
 import (
+	"bufio"
+	"net"
 	"net/http"
 )
 
@@ -36,6 +38,12 @@ func (w *writerWrapper) Write(data []byte) (int, error) {
 	n, err := w.ResponseWriter.Write(data)
 	w.WrittenBytes += int64(n)
 	return n, err
+}
+
+// Hijack wraps the Hijack method of the ResponseWriter and returns the hijacked connection.
+// This is required for websockets to work.
+func (w *writerWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return http.NewResponseController(w.ResponseWriter).Hijack()
 }
 
 // newWriterWrapper returns a new writerWrapper that wraps the given http.ResponseWriter.

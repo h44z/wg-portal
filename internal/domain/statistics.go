@@ -61,3 +61,25 @@ func (r PingerResult) AverageRtt() time.Duration {
 	}
 	return total / time.Duration(len(r.Rtts))
 }
+
+type TrafficDelta struct {
+	EntityId                  string `json:"EntityId"` // Either peerId or interfaceId
+	BytesReceivedPerSecond    uint64 `json:"BytesReceived"`
+	BytesTransmittedPerSecond uint64 `json:"BytesTransmitted"`
+}
+
+func CalculateTrafficDelta(id string, oldTime, newTime time.Time, oldTx, newTx, oldRx, newRx uint64) TrafficDelta {
+	timeDiff := uint64(newTime.Sub(oldTime).Seconds())
+	if timeDiff == 0 {
+		return TrafficDelta{
+			EntityId:                  id,
+			BytesReceivedPerSecond:    0,
+			BytesTransmittedPerSecond: 0,
+		}
+	}
+	return TrafficDelta{
+		EntityId:                  id,
+		BytesReceivedPerSecond:    (newRx - oldRx) / timeDiff,
+		BytesTransmittedPerSecond: (newTx - oldTx) / timeDiff,
+	}
+}

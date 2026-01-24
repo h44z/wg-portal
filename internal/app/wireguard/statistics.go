@@ -121,14 +121,24 @@ func (c *StatisticsCollector) collectInterfaceData(ctx context.Context) {
 						"error", err)
 					continue
 				}
+				now := time.Now()
 				err = c.db.UpdateInterfaceStatus(ctx, in.Identifier,
 					func(i *domain.InterfaceStatus) (*domain.InterfaceStatus, error) {
-						i.UpdatedAt = time.Now()
+						td := domain.CalculateTrafficDelta(
+							string(in.Identifier),
+							i.UpdatedAt, now,
+							i.BytesTransmitted, physicalInterface.BytesUpload,
+							i.BytesReceived, physicalInterface.BytesDownload,
+						)
+						i.UpdatedAt = now
 						i.BytesReceived = physicalInterface.BytesDownload
 						i.BytesTransmitted = physicalInterface.BytesUpload
 
 						// Update prometheus metrics
 						go c.updateInterfaceMetrics(*i)
+
+						// Publish stats update event
+						c.bus.Publish(app.TopicInterfaceStatsUpdated, td)
 
 						return i, nil
 					})
@@ -172,6 +182,7 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 					slog.Warn("failed to fetch peers for data collection", "interface", in.Identifier, "error", err)
 					continue
 				}
+				now := time.Now()
 				for _, peer := range peers {
 					var connectionStateChanged bool
 					var newPeerStatus domain.PeerStatus
@@ -184,8 +195,15 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 								lastHandshake = &peer.LastHandshake
 							}
 
+							td := domain.CalculateTrafficDelta(
+								string(peer.Identifier),
+								p.UpdatedAt, now,
+								p.BytesTransmitted, peer.BytesDownload,
+								p.BytesReceived, peer.BytesUpload,
+							)
+
 							// calculate if session was restarted
-							p.UpdatedAt = time.Now()
+							p.UpdatedAt = now
 							p.LastSessionStart = getSessionStartTime(*p, peer.BytesUpload, peer.BytesDownload,
 								lastHandshake)
 							p.BytesReceived = peer.BytesUpload      // store bytes that where uploaded from the peer and received by the server
@@ -195,13 +213,17 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 							p.CalcConnected()
 
 							if wasConnected != p.IsConnected {
-								slog.Debug("peer connection state changed", "peer", peer.Identifier, "connected", p.IsConnected)
+								slog.Debug("peer connection state changed",
+									"peer", peer.Identifier, "connected", p.IsConnected)
 								connectionStateChanged = true
 								newPeerStatus = *p // store new status for event publishing
 							}
 
 							// Update prometheus metrics
 							go c.updatePeerMetrics(ctx, *p)
+
+							// Publish stats update event
+							c.bus.Publish(app.TopicPeerStatsUpdated, td)
 
 							return p, nil
 						})
