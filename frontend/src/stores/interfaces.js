@@ -14,6 +14,7 @@ export const interfaceStore = defineStore('interfaces', {
     configuration: "",
     selected: "",
     fetching: false,
+    trafficStats: {},
   }),
   getters: {
     Count: (state) => state.interfaces.length,
@@ -24,6 +25,9 @@ export const interfaceStore = defineStore('interfaces', {
     },
     GetSelected: (state) => state.interfaces.find((i) => i.Identifier === state.selected) || state.interfaces[0],
     isFetching: (state) => state.fetching,
+    TrafficStats: (state) => {
+      return (state.selected in state.trafficStats) ? state.trafficStats[state.selected] : { Received: 0, Transmitted: 0 }
+    },
   },
   actions: {
     setInterfaces(interfaces) {
@@ -34,6 +38,14 @@ export const interfaceStore = defineStore('interfaces', {
         this.selected = ""
       }
       this.fetching = false
+      this.trafficStats = {}
+    },
+    updateInterfaceTrafficStats(interfaceStats) {
+      const id = interfaceStats.EntityId;
+      this.trafficStats[id] = {
+        Received: interfaceStats.BytesReceived,
+        Transmitted: interfaceStats.BytesTransmitted,
+      };
     },
     async LoadInterfaces() {
       this.fetching = true

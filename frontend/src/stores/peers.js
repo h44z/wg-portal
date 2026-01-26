@@ -23,6 +23,7 @@ export const peerStore = defineStore('peers', {
     fetching: false,
     sortKey: 'IsConnected', // Default sort key
     sortOrder: -1, // 1 for ascending, -1 for descending
+    trafficStats: {},
   }),
   getters: {
     Find: (state) => {
@@ -76,6 +77,9 @@ export const peerStore = defineStore('peers', {
     Statistics: (state) => {
       return (id) => state.statsEnabled && (id in state.stats) ? state.stats[id] : freshStats()
     },
+    TrafficStats: (state) => {
+      return (id) => (id in state.trafficStats) ? state.trafficStats[id] : { Received: 0, Transmitted: 0 }
+    },
     hasStatistics: (state) => state.statsEnabled,
 
   },
@@ -111,6 +115,7 @@ export const peerStore = defineStore('peers', {
       this.peers = peers
       this.calculatePages()
       this.fetching = false
+      this.trafficStats = {}
     },
     setPeer(peer) {
       this.peer = peer
@@ -126,10 +131,18 @@ export const peerStore = defineStore('peers', {
       if (!statsResponse) {
         this.stats = {}
         this.statsEnabled = false
+        this.trafficStats = {}
       } else {
           this.stats = statsResponse.Stats
           this.statsEnabled = statsResponse.Enabled
       }
+    },
+    updatePeerTrafficStats(peerStats) {
+      const id = peerStats.EntityId;
+      this.trafficStats[id] = {
+        Received: peerStats.BytesReceived,
+        Transmitted: peerStats.BytesTransmitted,
+      };
     },
     async Reset() {
       this.setPeers([])

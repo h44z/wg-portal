@@ -26,6 +26,7 @@ const TopicUserEnabled = "user:enabled"
 const TopicInterfaceCreated = "interface:created"
 const TopicInterfaceUpdated = "interface:updated"
 const TopicInterfaceDeleted = "interface:deleted"
+const TopicInterfaceStatsUpdated = "interface:stats:updated"
 
 // endregion interface-events
 
@@ -37,6 +38,7 @@ const TopicPeerUpdated = "peer:updated"
 const TopicPeerInterfaceUpdated = "peer:interface:updated"
 const TopicPeerIdentifierUpdated = "peer:identifier:updated"
 const TopicPeerStateChanged = "peer:state:changed"
+const TopicPeerStatsUpdated = "peer:stats:updated"
 
 // endregion peer-events
 
