@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-pkgz/routegroup"
@@ -449,7 +448,17 @@ func (e AuthEndpoint) handleLogoutPost() http.HandlerFunc {
 
 // isValidReturnUrl checks if the given return URL matches the configured external URL of the application.
 func (e AuthEndpoint) isValidReturnUrl(returnUrl string) bool {
-	if !strings.HasPrefix(returnUrl, e.cfg.Web.ExternalUrl) {
+	expectedUrl, err := url.Parse(e.cfg.Web.ExternalUrl)
+	if err != nil {
+		return false
+	}
+
+	returnUrlParsed, err := url.Parse(returnUrl)
+	if err != nil {
+		return false
+	}
+
+	if returnUrlParsed.Scheme != expectedUrl.Scheme || returnUrlParsed.Host != expectedUrl.Host {
 		return false
 	}
 
