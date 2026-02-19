@@ -8,6 +8,9 @@ spec:
   {{- with .Values.revisionHistoryLimit }}
   revisionHistoryLimit: {{ . }}
   {{- end }}
+  {{- with .Values.replicas }}
+  replicas: {{ . }}
+  {{- end }}
   {{- with .Values.strategy }}
   strategy: {{- toYaml . | nindent 4 }}
   {{- end }}
