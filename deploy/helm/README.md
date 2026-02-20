@@ -42,7 +42,6 @@ The [Values](#values) section lists the parameters that can be configured during
 | revisionHistoryLimit | string | `10` | The number of old ReplicaSets to retain to allow rollback. |
 | workloadType | string | `"Deployment"` | Workload type - `Deployment` or `StatefulSet` |
 | strategy | object | `{"type":"RollingUpdate"}` | Update strategy for the workload Valid values are:  `RollingUpdate` or `Recreate` for Deployment,  `RollingUpdate` or `OnDelete` for StatefulSet |
-| replicas | int | `1` | Workload replicas to run |
 | image.repository | string | `"ghcr.io/h44z/wg-portal"` | Image repository |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion |
@@ -81,7 +80,6 @@ The [Values](#values) section lists the parameters that can be configured during
 | service.metrics.port | int | `8787` |  |
 | ingress.enabled | bool | `false` | Specifies whether an ingress resource should be created |
 | ingress.className | string | `""` | Ingress class name |
-| ingress.pathType | string | `"ImplementationSpecific"` | Ingress pathType override (`ImplementationSpecific`, `Exact`, `Prefix`) |
 | ingress.annotations | object | `{}` | Ingress annotations |
 | ingress.tls | bool | `false` | Ingress TLS configuration. Enable certificate resource or add ingress annotation to create required secret |
 | certificate.enabled | bool | `false` | Specifies whether a certificate resource should be created. If enabled, certificate will be used for the web. |
