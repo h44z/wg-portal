@@ -35,6 +35,9 @@ config:
 revisionHistoryLimit: ""
 # -- Workload type - `Deployment` or `StatefulSet`
 workloadType: Deployment
+# -- The replicas for the workload.
+# @default -- `1`
+replicas: 1
 # -- Update strategy for the workload
 # Valid values are:
 #  `RollingUpdate` or `Recreate` for Deployment,
@@ -124,6 +127,8 @@ service:
     port: 8888
     # -- Web service appProtocol. Will be auto set to `https` if certificate is enabled.
     appProtocol: http
+    # -- Extra labels to append to the selector labels.
+    extraSelectorLabels: {}
   wireguard:
     # -- Annotations for the WireGuard service
     annotations: {}
@@ -135,6 +140,8 @@ service:
     # Increment next port by 1 for each additional interface.
     ports:
       - 51820
+    # -- Extra labels to append to the selector labels.
+    extraSelectorLabels: {}
   metrics:
     port: 8787
 
@@ -143,6 +150,10 @@ ingress:
   enabled: false
   # -- Ingress class name
   className: ""
+  # -- Ingress pathType value.
+  # Valid values are `ImplementationSpecific`, `Exact` or `Prefix`.
+  # @default -- `"ImplementationSpecific"`
+  pathType: "ImplementationSpecific"
   # -- Ingress annotations
   annotations: {}
   # -- Ingress TLS configuration.

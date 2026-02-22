@@ -1,6 +1,6 @@
 # wg-portal
 
-![Version: 0.7.2](https://img.shields.io/badge/Version-0.7.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v2](https://img.shields.io/badge/AppVersion-v2-informational?style=flat-square)
+![Version: 0.7.3](https://img.shields.io/badge/Version-0.7.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v2](https://img.shields.io/badge/AppVersion-v2-informational?style=flat-square)
 
 WireGuard Configuration Portal with LDAP, OAuth, OIDC authentication
 
@@ -41,6 +41,7 @@ The [Values](#values) section lists the parameters that can be configured during
 | config.web | tpl/object | `{}` | [Web configuration](https://wgportal.org/latest/documentation/configuration/overview/#web) options.<br> `listening_address` will be set automatically from `service.web.port`. `external_url` is required to enable ingress and certificate resources. |
 | revisionHistoryLimit | string | `10` | The number of old ReplicaSets to retain to allow rollback. |
 | workloadType | string | `"Deployment"` | Workload type - `Deployment` or `StatefulSet` |
+| replicas | int | `1` | The replicas for the workload. |
 | strategy | object | `{"type":"RollingUpdate"}` | Update strategy for the workload Valid values are:  `RollingUpdate` or `Recreate` for Deployment,  `RollingUpdate` or `OnDelete` for StatefulSet |
 | image.repository | string | `"ghcr.io/h44z/wg-portal"` | Image repository |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
@@ -74,12 +75,15 @@ The [Values](#values) section lists the parameters that can be configured during
 | service.web.type | string | `"ClusterIP"` | Web service type |
 | service.web.port | int | `8888` | Web service port Used for the web interface listener |
 | service.web.appProtocol | string | `"http"` | Web service appProtocol. Will be auto set to `https` if certificate is enabled. |
+| service.web.extraSelectorLabels | object | `{}` | Extra labels to append to the selector labels. |
 | service.wireguard.annotations | object | `{}` | Annotations for the WireGuard service |
 | service.wireguard.type | string | `"LoadBalancer"` | Wireguard service type |
 | service.wireguard.ports | list | `[51820]` | Wireguard service ports. Exposes the WireGuard ports for created interfaces. Lowerest port is selected as start port for the first interface. Increment next port by 1 for each additional interface. |
+| service.wireguard.extraSelectorLabels | object | `{}` | Extra labels to append to the selector labels. |
 | service.metrics.port | int | `8787` |  |
 | ingress.enabled | bool | `false` | Specifies whether an ingress resource should be created |
 | ingress.className | string | `""` | Ingress class name |
+| ingress.pathType | string | `"ImplementationSpecific"` | Ingress pathType value. Valid values are `ImplementationSpecific`, `Exact` or `Prefix`. |
 | ingress.annotations | object | `{}` | Ingress annotations |
 | ingress.tls | bool | `false` | Ingress TLS configuration. Enable certificate resource or add ingress annotation to create required secret |
 | certificate.enabled | bool | `false` | Specifies whether a certificate resource should be created. If enabled, certificate will be used for the web. |

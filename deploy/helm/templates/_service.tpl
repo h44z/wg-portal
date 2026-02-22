@@ -49,7 +49,7 @@ spec:
   {{- with .scope.type }}
   type: {{ . }}
   {{- end }}
-  selector: {{- include "wg-portal.selectorLabels" .context | nindent 4 }}
+  selector: {{- include "wg-portal.util.merge" (list .context .scope.extraSelectorLabels "wg-portal.selectorLabels") | nindent 4 }}
 {{- end -}}
 
 {{/*

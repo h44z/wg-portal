@@ -15,7 +15,7 @@ spec:
       http:
         paths:
           - path: {{ default "/" (urlParse (tpl .Values.config.web.external_url .)).path }}
-            pathType: {{ default "ImplementationSpecific" .pathType }}
+            pathType: {{ default "ImplementationSpecific" .Values.ingress.pathType }}
             backend:
               service:
                 name: {{ include "wg-portal.fullname" . }}
