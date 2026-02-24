@@ -54,6 +54,17 @@ func (u UserService) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 }
 
 func (u UserService) UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
+	sessionUser := domain.GetUserInfo(ctx)
+	currentUser, err := u.users.GetUser(ctx, user.Identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	// if this endpoint is used by non-admins, make sure that the user can only modify a specific subset of attributes
+	if !sessionUser.IsAdmin {
+		user.CopyAdminAttributes(currentUser, u.cfg.Advanced.ApiAdminOnly)
+	}
+
 	return u.users.UpdateUser(ctx, user)
 }
 

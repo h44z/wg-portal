@@ -272,8 +272,9 @@ func (m Manager) DeactivateApi(ctx context.Context, id domain.UserIdentifier) (*
 func (m Manager) validateModifications(ctx context.Context, old, new *domain.User) error {
 	currentUser := domain.GetUserInfo(ctx)
 
-	if currentUser.Id != new.Identifier && !currentUser.IsAdmin {
-		return fmt.Errorf("insufficient permissions")
+	adminErrors := m.validateAdminModifications(ctx, old, new)
+	if adminErrors != nil {
+		return adminErrors
 	}
 
 	if err := old.EditAllowed(new); err != nil && currentUser.Id != domain.SystemAdminContextUserInfo().Id {
@@ -298,6 +299,46 @@ func (m Manager) validateModifications(ctx context.Context, old, new *domain.Use
 
 	if currentUser.Id == old.Identifier && new.IsLocked() {
 		return fmt.Errorf("cannot lock own user: %w", domain.ErrInvalidData)
+	}
+
+	return nil
+}
+
+func (m Manager) validateAdminModifications(ctx context.Context, old, new *domain.User) error {
+	currentUser := domain.GetUserInfo(ctx)
+
+	if currentUser.IsAdmin {
+		if currentUser.Id == old.Identifier && !new.IsAdmin {
+			return fmt.Errorf("cannot remove own admin rights: %w", domain.ErrInvalidData)
+		}
+
+		return nil // admins can do (almost) everything
+	}
+
+	// non-admins can only modify very their own profile data
+
+	if currentUser.Id != new.Identifier {
+		return fmt.Errorf("insufficient permissions: %w", domain.ErrInvalidData)
+	}
+
+	if new.IsAdmin {
+		return fmt.Errorf("cannot grant admin rights: %w", domain.ErrInvalidData)
+	}
+
+	if new.Notes != old.Notes {
+		return fmt.Errorf("cannot update notes: %w", domain.ErrInvalidData)
+	}
+
+	if old.Locked != new.Locked || old.LockedReason != new.LockedReason {
+		return fmt.Errorf("cannot change lock state: %w", domain.ErrInvalidData)
+	}
+
+	if old.Disabled != new.Disabled || old.DisabledReason != new.DisabledReason {
+		return fmt.Errorf("cannot change disabled state: %w", domain.ErrInvalidData)
+	}
+
+	if old.PersistLocalChanges != new.PersistLocalChanges {
+		return fmt.Errorf("cannot change disabled state: %w", domain.ErrInvalidData)
 	}
 
 	return nil
@@ -373,6 +414,10 @@ func (m Manager) validateDeletion(ctx context.Context, del *domain.User) error {
 
 func (m Manager) validateApiChange(ctx context.Context, user *domain.User) error {
 	currentUser := domain.GetUserInfo(ctx)
+
+	if !currentUser.IsAdmin && m.cfg.Advanced.ApiAdminOnly {
+		return fmt.Errorf("insufficient permissions to change API access: %w", domain.ErrNoPermission)
+	}
 
 	if currentUser.Id != user.Identifier {
 		return fmt.Errorf("cannot change API access of user: %w", domain.ErrNoPermission)

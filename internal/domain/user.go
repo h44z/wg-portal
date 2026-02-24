@@ -212,6 +212,33 @@ func (u *User) CopyCalculatedAttributes(src *User, withAuthentications bool) {
 	}
 }
 
+// CopyAdminAttributes copies all attributes from the given user except password, passkey and
+// api-token if apiAdminOnly is false.
+func (u *User) CopyAdminAttributes(src *User, apiAdminOnly bool) {
+	u.BaseModel = src.BaseModel
+	u.Identifier = src.Identifier
+	u.Email = src.Email
+	u.Source = src.Source
+	u.ProviderName = src.ProviderName
+	u.IsAdmin = src.IsAdmin
+	u.Authentications = src.Authentications
+	u.PersistLocalChanges = src.PersistLocalChanges
+	u.Firstname = src.Firstname
+	u.Lastname = src.Lastname
+	u.Phone = src.Phone
+	u.Department = src.Department
+	u.Notes = src.Notes
+	u.Disabled = src.Disabled
+	u.DisabledReason = src.DisabledReason
+	u.Locked = src.Locked
+	u.LockedReason = src.LockedReason
+	u.LinkedPeerCount = src.LinkedPeerCount
+	if apiAdminOnly {
+		u.ApiToken = src.ApiToken
+		u.ApiTokenCreated = src.ApiTokenCreated
+	}
+}
+
 // MergeAuthSources merges the given authentication sources with the existing ones.
 // Already existing sources are not overwritten, nor will be added any duplicates.
 func (u *User) MergeAuthSources(extSources ...UserAuthentication) {
