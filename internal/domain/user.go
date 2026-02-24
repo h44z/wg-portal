@@ -185,6 +185,31 @@ func (u *User) CopyCalculatedAttributes(src *User) {
 	u.LinkedPeerCount = src.LinkedPeerCount
 }
 
+// CopyAdminAttributes copies all attributes from the given user except password, passkey and
+// api-token if apiAdminOnly is false.
+func (u *User) CopyAdminAttributes(src *User, apiAdminOnly bool) {
+	u.BaseModel = src.BaseModel
+	u.Identifier = src.Identifier
+	u.Email = src.Email
+	u.Source = src.Source
+	u.ProviderName = src.ProviderName
+	u.IsAdmin = src.IsAdmin
+	u.Firstname = src.Firstname
+	u.Lastname = src.Lastname
+	u.Phone = src.Phone
+	u.Department = src.Department
+	u.Notes = src.Notes
+	u.Disabled = src.Disabled
+	u.DisabledReason = src.DisabledReason
+	u.Locked = src.Locked
+	u.LockedReason = src.LockedReason
+	u.LinkedPeerCount = src.LinkedPeerCount
+	if apiAdminOnly {
+		u.ApiToken = src.ApiToken
+		u.ApiTokenCreated = src.ApiTokenCreated
+	}
+}
+
 // DisplayName returns the display name of the user.
 // The display name is the first and last name, or the email address of the user.
 // If none of these fields are set, the user identifier is returned.
