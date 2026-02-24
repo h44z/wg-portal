@@ -116,10 +116,6 @@ func (m Manager) handleUserCreationEvent(user domain.User) {
 }
 
 func (m Manager) handleUserLoginEvent(userId domain.UserIdentifier) {
-	if !m.cfg.Core.CreateDefaultPeer {
-		return
-	}
-
 	_, loaded := m.userLockMap.LoadOrStore(userId, "login")
 	if loaded {
 		return // another goroutine is already handling this user
@@ -131,6 +127,41 @@ func (m Manager) handleUserLoginEvent(userId domain.UserIdentifier) {
 		slog.Error("failed to retrieve existing peers prior to default peer creation",
 			"user", userId,
 			"error", err)
+		return
+	}
+
+	for i, peer := range userPeers {
+		if m.cfg.Advanced.TwoFactorLifetime == time.Duration(0) {
+			break
+		}
+		expiration := time.Now().Add(m.cfg.Advanced.TwoFactorLifetime)
+
+		err := m.db.SavePeer(context.Background(), peer.Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+			peer.CopyCalculatedAttributes(p)
+			peer.ExpiresAt = &expiration
+			if peer.DisabledReason == domain.DisabledReasonExpired {
+				peer.Disabled = nil
+				peer.DisabledReason = ""
+				userPeers[i].DisabledReason = domain.DisabledReasonPendingActivation
+				userPeers[i].Disabled = nil
+				userPeers[i].ExpiresAt = &expiration
+			}
+			return &peer, nil
+		})
+
+		if err != nil {
+			slog.Error("failed to set expiration of peers for users",
+				"user", userId,
+				"error", err)
+			return
+		}
+		slog.Debug("Setting expiration time for peer", "peer", peer.Identifier, "user", userId)
+	}
+
+	adminCtx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+	m.checkExpiredPeers(adminCtx, userPeers, true)
+
+	if !m.cfg.Core.CreateDefaultPeer {
 		return
 	}
 
@@ -296,17 +327,17 @@ func (m Manager) runExpiredPeersCheck(ctx context.Context) {
 				continue
 			}
 
-			m.checkExpiredPeers(ctx, peers)
+			m.checkExpiredPeers(ctx, peers, false)
 		}
 	}
 }
 
-func (m Manager) checkExpiredPeers(ctx context.Context, peers []domain.Peer) {
+func (m Manager) checkExpiredPeers(ctx context.Context, peers []domain.Peer, forceEnable bool) {
 	now := time.Now()
 
 	for _, peer := range peers {
 		if peer.IsExpired() && !peer.IsDisabled() {
-			slog.Info("peer has expired, disabling", "peer", peer.Identifier)
+			slog.Debug("peer has expired, disabling", "peer", peer.Identifier)
 
 			peer.Disabled = &now
 			peer.DisabledReason = domain.DisabledReasonExpired
@@ -314,6 +345,13 @@ func (m Manager) checkExpiredPeers(ctx context.Context, peers []domain.Peer) {
 			_, err := m.UpdatePeer(ctx, &peer)
 			if err != nil {
 				slog.Error("failed to update expired peer", "peer", peer.Identifier, "error", err)
+			}
+		} else if forceEnable && !peer.IsDisabled() && peer.DisabledReason == domain.DisabledReasonPendingActivation {
+			slog.Debug("user has logged in, enabling", "peer", peer.Identifier)
+			peer.Disabled = nil
+			peer.DisabledReason = ""
+			if _, err := m.UpdatePeer(ctx, &peer); err != nil {
+				slog.Error("failed to update unexpired peer", "peer", peer.Identifier, "error", err)
 			}
 		}
 	}

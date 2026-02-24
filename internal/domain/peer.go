@@ -144,6 +144,10 @@ func (p *Peer) OverwriteUserEditableFields(userPeer *Peer, cfg *config.Config) {
 	p.Interface.Mtu = userPeer.Interface.Mtu
 	p.PersistentKeepalive = userPeer.PersistentKeepalive
 	p.ExpiresAt = userPeer.ExpiresAt
+	if cfg.Advanced.TwoFactorLifetime > time.Duration(0) {
+		t := time.Now().Add(cfg.Advanced.TwoFactorLifetime)
+		p.ExpiresAt = &t
+	}
 	p.Disabled = userPeer.Disabled
 	p.DisabledReason = userPeer.DisabledReason
 }
