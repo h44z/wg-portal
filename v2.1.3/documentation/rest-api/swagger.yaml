@@ -1,0 +1,1567 @@
+basePath: /api/v1
+definitions:
+    models.ConfigOption-array_string:
+        properties:
+            Overridable:
+                type: boolean
+            Value:
+                items:
+                    type: string
+                type: array
+        type: object
+    models.ConfigOption-int:
+        properties:
+            Overridable:
+                type: boolean
+            Value:
+                type: integer
+        type: object
+    models.ConfigOption-string:
+        properties:
+            Overridable:
+                type: boolean
+            Value:
+                type: string
+        type: object
+    models.ConfigOption-uint32:
+        properties:
+            Overridable:
+                type: boolean
+            Value:
+                type: integer
+        type: object
+    models.Error:
+        properties:
+            Code:
+                description: HTTP status code.
+                type: integer
+            Details:
+                description: Additional error details.
+                type: string
+            Message:
+                description: Error message.
+                type: string
+        type: object
+    models.Interface:
+        properties:
+            Addresses:
+                description: Addresses is a list of IP addresses (in CIDR format) that are assigned to the interface.
+                example:
+                    - 10.11.12.1/24
+                items:
+                    type: string
+                type: array
+            Disabled:
+                description: Disabled is a flag that specifies if the interface is enabled (up) or not (down). Disabled interfaces are not able to accept connections.
+                example: false
+                type: boolean
+            DisabledReason:
+                description: DisabledReason is the reason why the interface has been disabled.
+                example: This is a reason why the interface has been disabled.
+                type: string
+            DisplayName:
+                description: DisplayName is a nice display name / description for the interface.
+                example: My Interface
+                maxLength: 64
+                type: string
+            Dns:
+                description: Dns is a list of DNS servers that should be set if the interface is up.
+                example:
+                    - 1.1.1.1
+                items:
+                    type: string
+                type: array
+            DnsSearch:
+                description: DnsSearch is the dns search option string that should be set if the interface is up, will be appended to Dns servers.
+                example:
+                    - wg.local
+                items:
+                    type: string
+                type: array
+            EnabledPeers:
+                description: EnabledPeers is the number of enabled peers for this interface. Only enabled peers are able to connect.
+                readOnly: true
+                type: integer
+            Filename:
+                description: |-
+                    Filename is the name of the config file for this interface.
+                    This value is read only and is not settable by the user.
+                example: wg0.conf
+                maxLength: 21
+                readOnly: true
+                type: string
+            FirewallMark:
+                description: FirewallMark is an optional firewall mark which is used to handle interface traffic.
+                type: integer
+            Identifier:
+                description: Identifier is the unique identifier of the interface. It is always equal to the device name of the interface.
+                example: wg0
+                type: string
+            ListenPort:
+                description: 'ListenPort is the listening port, for example: 51820. The listening port is only required for server interfaces.'
+                example: 51820
+                maximum: 65535
+                minimum: 1
+                type: integer
+            Mode:
+                description: Mode is the interface type, either 'server', 'client' or 'any'. The mode specifies how WireGuard Portal handles peers for this interface.
+                enum:
+                    - server
+                    - client
+                    - any
+                example: server
+                type: string
+            Mtu:
+                description: Mtu is the device MTU of the interface.
+                example: 1420
+                maximum: 9000
+                minimum: 1
+                type: integer
+            PeerDefAllowedIPs:
+                description: PeerDefAllowedIPs specifies the default allowed IP addresses for a new peer.
+                example:
+                    - 10.11.12.0/24
+                items:
+                    type: string
+                type: array
+            PeerDefDns:
+                description: PeerDefDns specifies the default dns servers for a new peer.
+                example:
+                    - 8.8.8.8
+                items:
+                    type: string
+                type: array
+            PeerDefDnsSearch:
+                description: PeerDefDnsSearch specifies the default dns search options for a new peer.
+                example:
+                    - wg.local
+                items:
+                    type: string
+                type: array
+            PeerDefEndpoint:
+                description: PeerDefEndpoint specifies the default endpoint for a new peer.
+                example: wg.example.com:51820
+                type: string
+            PeerDefFirewallMark:
+                description: PeerDefFirewallMark specifies the default firewall mark for a new peer.
+                type: integer
+            PeerDefMtu:
+                description: PeerDefMtu specifies the default device MTU for a new peer.
+                example: 1420
+                type: integer
+            PeerDefNetwork:
+                description: PeerDefNetwork specifies the default subnets from which new peers will get their IP addresses. The subnet is specified in CIDR format.
+                example:
+                    - 10.11.12.0/24
+                items:
+                    type: string
+                type: array
+            PeerDefPersistentKeepalive:
+                description: PeerDefPersistentKeepalive specifies the default persistent keep-alive value in seconds for a new peer.
+                example: 25
+                type: integer
+            PeerDefPostDown:
+                description: PeerDefPostDown specifies the default action that is executed after the device is down for a new peer.
+                type: string
+            PeerDefPostUp:
+                description: PeerDefPostUp specifies the default action that is executed after the device is up for a new peer.
+                type: string
+            PeerDefPreDown:
+                description: PeerDefPreDown specifies the default action that is executed before the device is down for a new peer.
+                type: string
+            PeerDefPreUp:
+                description: PeerDefPreUp specifies the default action that is executed before the device is up for a new peer.
+                type: string
+            PeerDefRoutingTable:
+                description: PeerDefRoutingTable specifies the default routing table for a new peer.
+                type: string
+            PostDown:
+                description: PostDown is an optional action that is executed after the device is down.
+                example: echo 'Interface is down'
+                type: string
+            PostUp:
+                description: PostUp is an optional action that is executed after the device is up.
+                example: iptables -A FORWARD -i %i -j ACCEPT
+                type: string
+            PreDown:
+                description: PreDown is an optional action that is executed before the device is down.
+                example: iptables -D FORWARD -i %i -j ACCEPT
+                type: string
+            PreUp:
+                description: PreUp is an optional action that is executed before the device is up.
+                example: echo 'Interface is up'
+                type: string
+            PrivateKey:
+                description: PrivateKey is the private key of the interface.
+                example: gI6EdUSYvn8ugXOt8QQD6Yc+JyiZxIhp3GInSWRfWGE=
+                type: string
+            PublicKey:
+                description: PublicKey is the public key of the server interface. The public key is used by peers to connect to the server.
+                example: HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=
+                type: string
+            RoutingTable:
+                description: RoutingTable is an optional routing table which is used to route interface traffic.
+                type: string
+            SaveConfig:
+                description: SaveConfig is a flag that specifies if the configuration should be saved to the configuration file (wgX.conf in wg-quick format).
+                example: false
+                type: boolean
+            TotalPeers:
+                description: TotalPeers is the total number of peers for this interface.
+                readOnly: true
+                type: integer
+        required:
+            - Identifier
+            - Mode
+            - PrivateKey
+            - PublicKey
+        type: object
+    models.InterfaceMetrics:
+        properties:
+            BytesReceived:
+                description: The number of bytes received by the interface.
+                example: 123456789
+                type: integer
+            BytesTransmitted:
+                description: The number of bytes transmitted by the interface.
+                example: 123456789
+                type: integer
+            InterfaceIdentifier:
+                description: The unique identifier of the interface.
+                example: wg0
+                type: string
+        type: object
+    models.Peer:
+        properties:
+            Addresses:
+                description: Addresses is a list of IP addresses in CIDR format (both IPv4 and IPv6) for the peer.
+                example:
+                    - 10.11.12.2/24
+                items:
+                    type: string
+                type: array
+            AllowedIPs:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-array_string'
+                description: AllowedIPs is a list of allowed IP subnets for the peer.
+            CheckAliveAddress:
+                description: CheckAliveAddress is an optional ip address or DNS name that is used for ping checks.
+                example: 1.1.1.1
+                type: string
+            Disabled:
+                description: Disabled is a flag that specifies if the peer is enabled or not. Disabled peers are not able to connect.
+                example: false
+                type: boolean
+            DisabledReason:
+                description: DisabledReason is the reason why the peer has been disabled.
+                example: This is a reason why the peer has been disabled.
+                type: string
+            DisplayName:
+                description: DisplayName is a nice display name / description for the peer.
+                example: My Peer
+                maxLength: 64
+                type: string
+            Dns:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-array_string'
+                description: Dns is a list of DNS servers that should be set if the peer interface is up.
+            DnsSearch:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-array_string'
+                description: DnsSearch is the dns search option string that should be set if the peer interface is up, will be appended to Dns servers.
+            Endpoint:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-string'
+                description: Endpoint is the endpoint address of the peer.
+            EndpointPublicKey:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-string'
+                description: EndpointPublicKey is the endpoint public key.
+            ExpiresAt:
+                description: ExpiresAt is the expiry date of the peer  in YYYY-MM-DD format. An expired peer is not able to connect.
+                type: string
+            ExtraAllowedIPs:
+                description: ExtraAllowedIPs is a list of additional allowed IP subnets for the peer. These allowed IP subnets are added on the server side.
+                items:
+                    type: string
+                type: array
+            Filename:
+                description: |-
+                    Filename is the name of the config file for this peer.
+                    This value is read only and is not settable by the user.
+                example: wg_peer_x.conf
+                maxLength: 21
+                readOnly: true
+                type: string
+            FirewallMark:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-uint32'
+                description: FirewallMark is an optional firewall mark which is used to handle peer traffic.
+            Identifier:
+                description: Identifier is the unique identifier of the peer. It is always equal to the public key of the peer.
+                example: xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=
+                type: string
+            InterfaceIdentifier:
+                description: InterfaceIdentifier is the identifier of the interface the peer is linked to.
+                example: wg0
+                type: string
+            Mode:
+                description: Mode is the peer interface type (server, client, any).
+                enum:
+                    - server
+                    - client
+                    - any
+                example: client
+                type: string
+            Mtu:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-int'
+                description: Mtu is the device MTU of the peer.
+            Notes:
+                description: Notes is a note field for peers.
+                example: This is a note for the peer.
+                type: string
+            PersistentKeepalive:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-int'
+                description: PersistentKeepalive is the optional persistent keep-alive interval in seconds.
+            PostDown:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-string'
+                description: PostDown is an optional action that is executed after the device is down.
+            PostUp:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-string'
+                description: PostUp is an optional action that is executed after the device is up.
+            PreDown:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-string'
+                description: PreDown is an optional action that is executed before the device is down.
+            PreUp:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-string'
+                description: PreUp is an optional action that is executed before the device is up.
+            PresharedKey:
+                description: PresharedKey is the optional pre-shared Key of the peer.
+                example: yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=
+                type: string
+            PrivateKey:
+                description: PrivateKey is the private Key of the peer.
+                example: yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=
+                type: string
+            PublicKey:
+                description: PublicKey is the public Key of the server peer.
+                example: TrMvSoP4jYQlY6RIzBgbssQqY3vxI2Pi+y71lOWWXX0=
+                type: string
+            RoutingTable:
+                allOf:
+                    - $ref: '#/definitions/models.ConfigOption-string'
+                description: RoutingTable is an optional routing table which is used to route peer traffic.
+            UserIdentifier:
+                description: UserIdentifier is the identifier of the user that owns the peer.
+                example: uid-1234567
+                type: string
+        required:
+            - Identifier
+            - InterfaceIdentifier
+            - PrivateKey
+        type: object
+    models.PeerMetrics:
+        properties:
+            BytesReceived:
+                description: The number of bytes received by the peer.
+                example: 123456789
+                type: integer
+            BytesTransmitted:
+                description: The number of bytes transmitted by the peer.
+                example: 123456789
+                type: integer
+            Endpoint:
+                description: The current endpoint address of the peer.
+                example: 12.34.56.78
+                type: string
+            IsPingable:
+                description: If this field is set, the peer is pingable.
+                example: true
+                type: boolean
+            LastHandshake:
+                description: The last time the peer initiated a handshake.
+                example: "2021-01-01T12:00:00Z"
+                type: string
+            LastPing:
+                description: The last time the peer responded to a ICMP ping request.
+                example: "2021-01-01T12:00:00Z"
+                type: string
+            LastSessionStart:
+                description: The last time the peer initiated a session.
+                example: "2021-01-01T12:00:00Z"
+                type: string
+            PeerIdentifier:
+                description: The unique identifier of the peer.
+                example: xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=
+                type: string
+        type: object
+    models.ProvisioningRequest:
+        properties:
+            DisplayName:
+                description: |-
+                    DisplayName is an optional name for the new peer.
+                    If unset, a default template value (e.g., "API Peer ...") will be assigned.
+                example: API Peer xyz
+                type: string
+            InterfaceIdentifier:
+                description: InterfaceIdentifier is the identifier of the WireGuard interface the peer should be linked to.
+                example: wg0
+                type: string
+            PresharedKey:
+                description: PresharedKey is the optional pre-shared key of the peer. If no pre-shared key is set, a new key is generated.
+                example: yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=
+                type: string
+            PublicKey:
+                description: PublicKey is the optional public key of the peer. If no public key is set, a new key pair is generated.
+                example: xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=
+                type: string
+            UserIdentifier:
+                description: |-
+                    UserIdentifier is the identifier of the user the peer should be linked to.
+                    If no user identifier is set, the authenticated user is used.
+                example: uid-1234567
+                type: string
+        required:
+            - InterfaceIdentifier
+        type: object
+    models.User:
+        properties:
+            ApiEnabled:
+                description: If this field is set, the user is allowed to use the RESTful API. This field is read-only.
+                example: false
+                readOnly: true
+                type: boolean
+            ApiToken:
+                description: The API token of the user. This field is never populated on bulk read operations.
+                example: ""
+                maxLength: 64
+                minLength: 32
+                type: string
+            Department:
+                description: The department of the user. This field is optional.
+                example: Software Development
+                type: string
+            Disabled:
+                description: If this field is set, the user is disabled.
+                example: false
+                type: boolean
+            DisabledReason:
+                description: The reason why the user has been disabled.
+                example: ""
+                type: string
+            Email:
+                description: The email address of the user. This field is optional.
+                example: test@test.com
+                type: string
+            Firstname:
+                description: The first name of the user. This field is optional.
+                example: Max
+                type: string
+            Identifier:
+                description: The unique identifier of the user.
+                example: uid-1234567
+                maxLength: 64
+                type: string
+            IsAdmin:
+                description: If this field is set, the user is an admin.
+                example: false
+                type: boolean
+            Lastname:
+                description: The last name of the user. This field is optional.
+                example: Muster
+                type: string
+            Locked:
+                description: If this field is set, the user is locked and thus unable to log in to WireGuard Portal.
+                example: false
+                type: boolean
+            LockedReason:
+                description: The reason why the user has been locked.
+                example: ""
+                type: string
+            Notes:
+                description: Additional notes about the user. This field is optional.
+                example: some sample notes
+                type: string
+            Password:
+                description: The password of the user. This field is never populated on read operations.
+                example: ""
+                maxLength: 64
+                minLength: 16
+                type: string
+            PeerCount:
+                description: The number of peers linked to the user. This field is read-only.
+                example: 2
+                readOnly: true
+                type: integer
+            Phone:
+                description: The phone number of the user. This field is optional.
+                example: "+1234546789"
+                type: string
+            ProviderName:
+                description: The name of the authentication provider. This field is read-only.
+                example: ""
+                readOnly: true
+                type: string
+            Source:
+                description: The source of the user. This field is optional.
+                enum:
+                    - db
+                    - ldap
+                    - oauth
+                example: db
+                type: string
+        required:
+            - Identifier
+        type: object
+    models.UserInformation:
+        properties:
+            PeerCount:
+                description: PeerCount is the number of peers linked to the user.
+                example: 2
+                type: integer
+            Peers:
+                description: Peers is a list of peers linked to the user.
+                items:
+                    $ref: '#/definitions/models.UserInformationPeer'
+                type: array
+            UserIdentifier:
+                description: UserIdentifier is the unique identifier of the user.
+                example: uid-1234567
+                type: string
+        type: object
+    models.UserInformationPeer:
+        properties:
+            DisplayName:
+                description: DisplayName is a user-defined description of the peer.
+                example: My iPhone
+                type: string
+            Identifier:
+                description: Identifier is the unique identifier of the peer. It equals the public key of the peer.
+                example: peer-1234567
+                type: string
+            InterfaceIdentifier:
+                description: InterfaceIdentifier is the unique identifier of the WireGuard Portal device the peer is connected to.
+                example: wg0
+                type: string
+            IpAddresses:
+                description: IPAddresses is a list of IP addresses in CIDR format assigned to the peer.
+                example:
+                    - 10.11.12.2/24
+                items:
+                    type: string
+                type: array
+            IsDisabled:
+                description: IsDisabled is a flag that specifies if the peer is enabled or not. Disabled peers are not able to connect.
+                example: true
+                type: boolean
+        type: object
+    models.UserMetrics:
+        properties:
+            BytesReceived:
+                description: The total number of bytes received by the user. This is the sum of all bytes received by the peers linked to the user.
+                example: 123456789
+                type: integer
+            BytesTransmitted:
+                description: The total number of bytes transmitted by the user. This is the sum of all bytes transmitted by the peers linked to the user.
+                example: 123456789
+                type: integer
+            PeerCount:
+                description: PeerCount represents the number of peers linked to the user.
+                example: 2
+                type: integer
+            PeerMetrics:
+                description: PeerMetrics represents the metrics of the peers linked to the user.
+                items:
+                    $ref: '#/definitions/models.PeerMetrics'
+                type: array
+            UserIdentifier:
+                description: The unique identifier of the user.
+                example: uid-1234567
+                type: string
+        type: object
+info:
+    contact:
+        name: WireGuard Portal Project
+        url: https://github.com/h44z/wg-portal
+    description: |-
+        The WireGuard Portal REST API enables efficient management of WireGuard VPN configurations through a set of JSON-based endpoints.
+        It supports creating and editing peers, interfaces, and user profiles, while also providing role-based access control and auditing.
+        This API allows seamless integration with external tools or scripts for automated network configuration and administration.
+    license:
+        name: MIT
+        url: https://github.com/h44z/wg-portal/blob/master/LICENSE.txt
+    title: WireGuard Portal Public API
+    version: "1.0"
+paths:
+    /interface/all:
+        get:
+            operationId: interface_handleAllGet
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        items:
+                            $ref: '#/definitions/models.Interface'
+                        type: array
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get all interface records.
+            tags:
+                - Interfaces
+    /interface/by-id/{id}:
+        delete:
+            operationId: interfaces_handleDelete
+            parameters:
+                - description: The interface identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "204":
+                    description: No content if deletion was successful.
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Delete the interface record.
+            tags:
+                - Interfaces
+        get:
+            operationId: interfaces_handleByIdGet
+            parameters:
+                - description: The interface identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.Interface'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get a specific interface record by its identifier.
+            tags:
+                - Interfaces
+        put:
+            description: This endpoint updates an existing interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
+            operationId: interfaces_handleUpdatePut
+            parameters:
+                - description: The interface identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+                - description: The interface data.
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/models.Interface'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.Interface'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Update an interface record.
+            tags:
+                - Interfaces
+    /interface/new:
+        post:
+            description: This endpoint creates a new interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
+            operationId: interfaces_handleCreatePost
+            parameters:
+                - description: The interface data.
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/models.Interface'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.Interface'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "409":
+                    description: Conflict
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Create a new interface record.
+            tags:
+                - Interfaces
+    /interface/prepare:
+        get:
+            description: This endpoint returns a new interface with default values (fresh key pair, valid name, new IP address pool, ...).
+            operationId: interfaces_handlePrepareGet
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.Interface'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Prepare a new interface record.
+            tags:
+                - Interfaces
+    /metrics/by-interface/{id}:
+        get:
+            operationId: metrics_handleMetricsForInterfaceGet
+            parameters:
+                - description: The WireGuard interface identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.InterfaceMetrics'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get all metrics for a WireGuard Portal interface.
+            tags:
+                - Metrics
+    /metrics/by-peer/{id}:
+        get:
+            operationId: metrics_handleMetricsForPeerGet
+            parameters:
+                - description: The peer identifier (public key).
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.PeerMetrics'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get all metrics for a WireGuard Portal peer.
+            tags:
+                - Metrics
+    /metrics/by-user/{id}:
+        get:
+            operationId: metrics_handleMetricsForUserGet
+            parameters:
+                - description: The user identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.UserMetrics'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get all metrics for a WireGuard Portal user.
+            tags:
+                - Metrics
+    /peer/by-id/{id}:
+        delete:
+            operationId: peers_handleDelete
+            parameters:
+                - description: The peer identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "204":
+                    description: No content if deletion was successful.
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Delete the peer record.
+            tags:
+                - Peers
+        get:
+            description: Normal users can only access their own records. Admins can access all records.
+            operationId: peers_handleByIdGet
+            parameters:
+                - description: The peer identifier (public key).
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.Peer'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get a specific peer record by its identifier (public key).
+            tags:
+                - Peers
+        put:
+            description: Only admins can update existing records. The peer record must contain all required fields (e.g., public key, allowed IPs).
+            operationId: peers_handleUpdatePut
+            parameters:
+                - description: The peer identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+                - description: The peer data.
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/models.Peer'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.Peer'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Update a peer record.
+            tags:
+                - Peers
+    /peer/by-interface/{id}:
+        get:
+            operationId: peers_handleAllForInterfaceGet
+            parameters:
+                - description: The WireGuard interface identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        items:
+                            $ref: '#/definitions/models.Peer'
+                        type: array
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get all peer records for a given WireGuard interface.
+            tags:
+                - Peers
+    /peer/by-user/{id}:
+        get:
+            description: Normal users can only access their own records. Admins can access all records.
+            operationId: peers_handleAllForUserGet
+            parameters:
+                - description: The user identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        items:
+                            $ref: '#/definitions/models.Peer'
+                        type: array
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get all peer records for a given user.
+            tags:
+                - Peers
+    /peer/new:
+        post:
+            description: Only admins can create new records. The peer record must contain all required fields (e.g., public key, allowed IPs).
+            operationId: peers_handleCreatePost
+            parameters:
+                - description: The peer data.
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/models.Peer'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.Peer'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "409":
+                    description: Conflict
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Create a new peer record.
+            tags:
+                - Peers
+    /peer/prepare/{id}:
+        get:
+            description: This endpoint is used to prepare a new peer record. The returned data contains a fresh key pair and valid ip address.
+            operationId: peers_handlePrepareGet
+            parameters:
+                - description: The interface identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.Peer'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Prepare a new peer record for the given WireGuard interface.
+            tags:
+                - Peers
+    /provisioning/data/peer-config:
+        get:
+            description: Normal users can only access their own record. Admins can access all records.
+            operationId: provisioning_handlePeerConfigGet
+            parameters:
+                - description: The peer identifier (public key) that should be queried.
+                  in: query
+                  name: PeerId
+                  required: true
+                  type: string
+            produces:
+                - text/plain
+                - application/json
+            responses:
+                "200":
+                    description: The WireGuard configuration file
+                    schema:
+                        type: string
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get the peer configuration in wg-quick format.
+            tags:
+                - Provisioning
+    /provisioning/data/peer-qr:
+        get:
+            description: Normal users can only access their own record. Admins can access all records.
+            operationId: provisioning_handlePeerQrGet
+            parameters:
+                - description: The peer identifier (public key) that should be queried.
+                  in: query
+                  name: PeerId
+                  required: true
+                  type: string
+            produces:
+                - image/png
+                - application/json
+            responses:
+                "200":
+                    description: The WireGuard configuration QR code
+                    schema:
+                        type: file
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get the peer configuration as QR code.
+            tags:
+                - Provisioning
+    /provisioning/data/user-info:
+        get:
+            description: Normal users can only access their own record. Admins can access all records.
+            operationId: provisioning_handleUserInfoGet
+            parameters:
+                - description: The user identifier that should be queried. If not set, the authenticated user is used.
+                  in: query
+                  name: UserId
+                  type: string
+                - description: The email address that should be queried. If UserId is set, this is ignored.
+                  in: query
+                  name: Email
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.UserInformation'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get information about all peer records for a given user.
+            tags:
+                - Provisioning
+    /provisioning/new-peer:
+        post:
+            description: Normal users can only create new peers if self provisioning is allowed. Admins can always add new peers.
+            operationId: provisioning_handleNewPeerPost
+            parameters:
+                - description: Provisioning request model.
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/models.ProvisioningRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.Peer'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Create a new peer for the given interface and user.
+            tags:
+                - Provisioning
+    /user/all:
+        get:
+            operationId: users_handleAllGet
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        items:
+                            $ref: '#/definitions/models.User'
+                        type: array
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get all user records.
+            tags:
+                - Users
+    /user/by-id/{id}:
+        delete:
+            operationId: users_handleDelete
+            parameters:
+                - description: The user identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "204":
+                    description: No content if deletion was successful.
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Delete the user record.
+            tags:
+                - Users
+        get:
+            description: Normal users can only access their own record. Admins can access all records.
+            operationId: users_handleByIdGet
+            parameters:
+                - description: The user identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.User'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Get a specific user record by its internal identifier.
+            tags:
+                - Users
+        put:
+            description: Only admins can update existing records.
+            operationId: users_handleUpdatePut
+            parameters:
+                - description: The user identifier.
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+                - description: The user data.
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/models.User'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.User'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "404":
+                    description: Not Found
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Update a user record.
+            tags:
+                - Users
+    /user/new:
+        post:
+            description: Only admins can create new records.
+            operationId: users_handleCreatePost
+            parameters:
+                - description: The user data.
+                  in: body
+                  name: request
+                  required: true
+                  schema:
+                    $ref: '#/definitions/models.User'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/models.User'
+                "400":
+                    description: Bad Request
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "401":
+                    description: Unauthorized
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "403":
+                    description: Forbidden
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "409":
+                    description: Conflict
+                    schema:
+                        $ref: '#/definitions/models.Error'
+                "500":
+                    description: Internal Server Error
+                    schema:
+                        $ref: '#/definitions/models.Error'
+            security:
+                - BasicAuth: []
+            summary: Create a new user record.
+            tags:
+                - Users
+swagger: "2.0"
