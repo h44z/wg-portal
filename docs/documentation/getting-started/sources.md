@@ -4,7 +4,7 @@ To build the application from source files, use the Makefile provided in the rep
 
 - [Git](https://git-scm.com/downloads)
 - [Make](https://www.gnu.org/software/make/)
-- [Go](https://go.dev/dl/): `>=1.24.0`
+- [Go](https://go.dev/dl/): `>=1.25.0`
 - [Node.js with npm](https://nodejs.org/en/download): `node>=18, npm>=9`
 
 ## Build

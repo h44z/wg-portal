@@ -129,6 +129,11 @@
     "button-add-peers": "Mehrere Peers hinzufügen",
     "button-show-peer": "Peer anzeigen",
     "button-edit-peer": "Peer bearbeiten",
+    "button-bulk-delete": "Ausgewählte Peers löschen",
+    "button-bulk-enable": "Ausgewählte Peers aktivieren",
+    "button-bulk-disable": "Ausgewählte Peers deaktivieren",
+    "confirm-bulk-delete": "Sind Sie sicher, dass Sie {count} Peers löschen möchten?",
+    "confirm-bulk-disable": "Sind Sie sicher, dass Sie {count} Peers deaktivieren möchten?",
     "peer-disabled": "Peer ist deaktiviert, Grund:",
     "peer-expiring": "Peer läuft ab am",
     "peer-connected": "Verbunden",
@@ -142,7 +147,7 @@
       "email": "E-Mail",
       "firstname": "Vorname",
       "lastname": "Nachname",
-      "source": "Quelle",
+      "sources": "Quellen",
       "peers": "Peers",
       "admin": "Admin"
     },
@@ -153,6 +158,14 @@
     "button-add-user": "Benutzer hinzufügen",
     "button-show-user": "Benutzer anzeigen",
     "button-edit-user": "Benutzer bearbeiten",
+    "button-bulk-delete": "Ausgewählte Benutzer löschen",
+    "button-bulk-enable": "Ausgewählte Benutzer aktivieren",
+    "button-bulk-disable": "Ausgewählte Benutzer deaktivieren",
+    "button-bulk-lock": "Ausgewählte Benutzer sperren",
+    "button-bulk-unlock": "Ausgewählte Benutzer entsperren",
+    "confirm-bulk-delete": "Sind Sie sicher, dass Sie {count} Benutzer löschen möchten?",
+    "confirm-bulk-disable": "Sind Sie sicher, dass Sie {count} Benutzer deaktivieren möchten?",
+    "confirm-bulk-lock": "Sind Sie sicher, dass Sie {count} Benutzer sperren möchten?",
     "user-disabled": "Benutzer ist deaktiviert, Grund:",
     "user-locked": "Konto ist gesperrt, Grund:",
     "admin": "Benutzer hat Administratorrechte",
@@ -365,7 +378,11 @@
       },
       "admin": {
         "label": "Ist Administrator"
-      }
+      },
+      "persist-local-changes": {
+        "label": "Lokale Änderungen speichern"
+      },
+      "sync-warning": "Um diesen synchronisierten Benutzer zu bearbeiten, aktivieren Sie die lokale Änderungsspeicherung. Andernfalls werden Ihre Änderungen bei der nächsten Synchronisierung überschrieben."
     },
     "interface-view": {
       "headline": "Konfiguration für Schnittstelle:"
@@ -455,6 +472,9 @@
       },
       "disabled": {
         "label": "Schnittstelle deaktiviert"
+      },
+      "create-default-peer": {
+        "label": "Peer für neue Benutzer automatisch erstellen"
       },
       "save-config": {
         "label": "wg-quick Konfiguration automatisch speichern"

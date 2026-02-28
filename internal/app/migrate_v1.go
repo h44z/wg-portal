@@ -144,8 +144,6 @@ func migrateV1Users(oldDb, newDb *gorm.DB) error {
 			},
 			Identifier:      domain.UserIdentifier(oldUser.Email),
 			Email:           oldUser.Email,
-			Source:          domain.UserSource(oldUser.Source),
-			ProviderName:    "",
 			IsAdmin:         oldUser.IsAdmin,
 			Firstname:       oldUser.Firstname,
 			Lastname:        oldUser.Lastname,
@@ -159,9 +157,23 @@ func migrateV1Users(oldDb, newDb *gorm.DB) error {
 			LockedReason:    "",
 			LinkedPeerCount: 0,
 		}
-
 		if err := newDb.Create(&newUser).Error; err != nil {
 			return fmt.Errorf("failed to migrate user %s: %w", oldUser.Email, err)
+		}
+
+		authentication := domain.UserAuthentication{
+			BaseModel: domain.BaseModel{
+				CreatedBy: domain.CtxSystemV1Migrator,
+				UpdatedBy: domain.CtxSystemV1Migrator,
+				CreatedAt: oldUser.CreatedAt,
+				UpdatedAt: oldUser.UpdatedAt,
+			},
+			UserIdentifier: domain.UserIdentifier(oldUser.Email),
+			Source:         domain.UserSource(oldUser.Source),
+			ProviderName:   "", // unknown
+		}
+		if err := newDb.Create(&authentication).Error; err != nil {
+			return fmt.Errorf("failed to migrate user-authentication %s: %w", oldUser.Email, err)
 		}
 
 		slog.Debug("user migrated successfully", "identifier", newUser.Identifier)
@@ -346,8 +358,6 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 				},
 				Identifier:   domain.UserIdentifier(oldPeer.Email),
 				Email:        oldPeer.Email,
-				Source:       domain.UserSourceDatabase,
-				ProviderName: "",
 				IsAdmin:      false,
 				Locked:       &now,
 				LockedReason: domain.DisabledReasonMigrationDummy,
@@ -356,6 +366,21 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 
 			if err := newDb.Save(&user).Error; err != nil {
 				return fmt.Errorf("failed to migrate dummy user %s: %w", oldPeer.Email, err)
+			}
+
+			authentication := domain.UserAuthentication{
+				BaseModel: domain.BaseModel{
+					CreatedBy: domain.CtxSystemV1Migrator,
+					UpdatedBy: domain.CtxSystemV1Migrator,
+					CreatedAt: now,
+					UpdatedAt: now,
+				},
+				UserIdentifier: domain.UserIdentifier(oldPeer.Email),
+				Source:         domain.UserSourceDatabase,
+				ProviderName:   "", // unknown
+			}
+			if err := newDb.Create(&authentication).Error; err != nil {
+				return fmt.Errorf("failed to migrate dummy user-authentication %s: %w", oldPeer.Email, err)
 			}
 
 			slog.Debug("dummy user migrated successfully", "identifier", user.Identifier)

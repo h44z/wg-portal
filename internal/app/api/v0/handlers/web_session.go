@@ -49,7 +49,11 @@ func NewSessionWrapper(cfg *config.Config) *SessionWrapper {
 	sessionManager.Cookie.Secure = strings.HasPrefix(cfg.Web.ExternalUrl, "https")
 	sessionManager.Cookie.HttpOnly = true
 	sessionManager.Cookie.SameSite = http.SameSiteLaxMode
-	sessionManager.Cookie.Path = "/"
+	if cfg.Web.BasePath != "" {
+		sessionManager.Cookie.Path = cfg.Web.BasePath
+	} else {
+		sessionManager.Cookie.Path = "/"
+	}
 	sessionManager.Cookie.Persist = false
 
 	wrappedSessionManager := &SessionWrapper{sessionManager}

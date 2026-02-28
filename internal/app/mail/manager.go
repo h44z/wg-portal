@@ -72,7 +72,7 @@ func NewMailManager(
 	users UserDatabaseRepo,
 	wg WireguardDatabaseRepo,
 ) (*Manager, error) {
-	tplHandler, err := newTemplateHandler(cfg.Web.ExternalUrl, cfg.Web.SiteTitle)
+	tplHandler, err := newTemplateHandler(cfg.Web.ExternalUrl, cfg.Web.SiteTitle, cfg.Mail.TemplatesPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template handler: %w", err)
 	}
@@ -190,19 +190,21 @@ func (m Manager) resolveEmail(ctx context.Context, peer *domain.Peer) (string, d
 			if err == nil {
 				slog.Debug("peer email: using user-identifier as email",
 					"peer", peer.Identifier, "email", peer.UserIdentifier)
-				return string(peer.UserIdentifier), domain.User{}
-			} else {
-				slog.Debug("peer email: skipping peer email",
-					"peer", peer.Identifier,
-					"reason", "peer has no user linked and user-identifier is not a valid email address")
-				return "", domain.User{}
+				return string(peer.UserIdentifier), domain.User{
+					Email: string(peer.UserIdentifier),
+				}
 			}
-		} else {
+
 			slog.Debug("peer email: skipping peer email",
 				"peer", peer.Identifier,
-				"reason", "user has no user linked")
+				"reason", "peer has no user linked and user-identifier is not a valid email address")
 			return "", domain.User{}
 		}
+
+		slog.Debug("peer email: skipping peer email",
+			"peer", peer.Identifier,
+			"reason", "user has no user linked")
+		return "", domain.User{}
 	}
 
 	if user.Email == "" {

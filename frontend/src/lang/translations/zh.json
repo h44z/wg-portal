@@ -134,7 +134,7 @@
         "email": "电子邮件",
         "firstname": "名",
         "lastname": "姓",
-        "source": "来源",
+        "sources": "来源",
         "peers": "节点",
         "admin": "管理员"
       },

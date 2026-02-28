@@ -1,4 +1,5 @@
 WGPORTAL_BACKEND_BASE_URL="{{ $.BackendUrl }}";
+WGPORTAL_BASE_PATH="{{ $.BasePath }}";
 WGPORTAL_VERSION="{{ $.Version }}";
 WGPORTAL_SITE_TITLE="{{ $.SiteTitle }}";
 WGPORTAL_SITE_COMPANY_NAME="{{ $.SiteCompanyName }}";

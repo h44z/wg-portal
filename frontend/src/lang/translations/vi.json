@@ -134,7 +134,7 @@
       "email": "E-Mail",
       "firstname": "Tên",
       "lastname": "Họ",
-      "source": "Nguồn",
+      "sources": "Nguồn",
       "peers": "Peers",
       "admin": "Quản trị viên"
     },

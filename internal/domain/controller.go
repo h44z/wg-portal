@@ -5,6 +5,7 @@ package domain
 const (
 	ControllerTypeMikrotik = "mikrotik"
 	ControllerTypeLocal    = "wgctrl"
+	ControllerTypePfsense  = "pfsense"
 )
 
 // Controller extras can be used to store additional information available for specific controllers only.
@@ -29,4 +30,21 @@ type MikrotikPeerExtras struct {
 
 type LocalPeerExtras struct {
 	Disabled bool
+}
+
+type PfsenseInterfaceExtras struct {
+	Id       string // internal pfSense ID
+	Comment  string
+	Disabled bool
+}
+
+type PfsensePeerExtras struct {
+	Id              string // internal pfSense ID
+	Name            string
+	Comment         string
+	Disabled        bool
+	ClientEndpoint  string
+	ClientAddress   string
+	ClientDns       string
+	ClientKeepalive int
 }

@@ -149,6 +149,7 @@ func defaultConfig() *Config {
 		RequestLogging:    getEnvBool("WG_PORTAL_WEB_REQUEST_LOGGING", false),
 		ExposeHostInfo:    getEnvBool("WG_PORTAL_WEB_EXPOSE_HOST_INFO", false),
 		ExternalUrl:       getEnvStr("WG_PORTAL_WEB_EXTERNAL_URL", "http://localhost:8888"),
+		BasePath:          getEnvStr("WG_PORTAL_WEB_BASE_PATH", ""),
 		ListeningAddress:  getEnvStr("WG_PORTAL_WEB_LISTENING_ADDRESS", ":8888"),
 		SessionIdentifier: getEnvStr("WG_PORTAL_WEB_SESSION_IDENTIFIER", "wgPortalSession"),
 		SessionSecret:     getEnvStr("WG_PORTAL_WEB_SESSION_SECRET", "very_secret"),
@@ -157,6 +158,7 @@ func defaultConfig() *Config {
 		SiteCompanyName:   getEnvStr("WG_PORTAL_WEB_SITE_COMPANY_NAME", "WireGuard Portal"),
 		CertFile:          getEnvStr("WG_PORTAL_WEB_CERT_FILE", ""),
 		KeyFile:           getEnvStr("WG_PORTAL_WEB_KEY_FILE", ""),
+		FrontendFilePath:  getEnvStr("WG_PORTAL_WEB_FRONTEND_FILEPATH", ""),
 	}
 
 	cfg.Advanced.LogLevel = getEnvStr("WG_PORTAL_ADVANCED_LOG_LEVEL", "info")
@@ -195,6 +197,7 @@ func defaultConfig() *Config {
 		From:           getEnvStr("WG_PORTAL_MAIL_FROM", "Wireguard Portal <noreply@wireguard.local>"),
 		LinkOnly:       getEnvBool("WG_PORTAL_MAIL_LINK_ONLY", false),
 		AllowPeerEmail: getEnvBool("WG_PORTAL_MAIL_ALLOW_PEER_EMAIL", false),
+		TemplatesPath:  getEnvStr("WG_PORTAL_MAIL_TEMPLATES_PATH", ""),
 	}
 
 	cfg.Webhook.Url = getEnvStr("WG_PORTAL_WEBHOOK_URL", "") // no webhook by default

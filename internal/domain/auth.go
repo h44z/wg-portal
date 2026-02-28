@@ -10,11 +10,12 @@ type LoginProviderInfo struct {
 }
 
 type AuthenticatorUserInfo struct {
-	Identifier UserIdentifier
-	Email      string
-	Firstname  string
-	Lastname   string
-	Phone      string
-	Department string
-	IsAdmin    bool
+	Identifier         UserIdentifier
+	Email              string
+	Firstname          string
+	Lastname           string
+	Phone              string
+	Department         string
+	IsAdmin            bool
+	AdminInfoAvailable bool // true if the IsAdmin flag is valid
 }

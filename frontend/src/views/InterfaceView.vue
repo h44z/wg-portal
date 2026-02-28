@@ -29,6 +29,10 @@ const sortKey = ref("")
 const sortOrder = ref(1)
 const selectAll = ref(false)
 
+const selectedPeers = computed(() => {
+  return peers.All.filter(peer => peer.IsSelected).map(peer => peer.Identifier);
+})
+
 function sortBy(key) {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value * -1; // Toggle sort order
@@ -111,6 +115,39 @@ async function saveConfig() {
   }
 }
 
+async function bulkDelete() {
+  if (confirm(t('interfaces.confirm-bulk-delete', {count: selectedPeers.value.length}))) {
+    try {
+      await peers.BulkDelete(selectedPeers.value)
+      selectAll.value = false // reset selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
+}
+
+async function bulkEnable() {
+  try {
+    await peers.BulkEnable(selectedPeers.value)
+    selectAll.value = false
+    peers.All.forEach(p => p.IsSelected = false) // remove selection
+  } catch (e) {
+    // notification is handled in store
+  }
+}
+
+async function bulkDisable() {
+  if (confirm(t('interfaces.confirm-bulk-disable', {count: selectedPeers.value.length}))) {
+    try {
+      await peers.BulkDisable(selectedPeers.value)
+      selectAll.value = false
+      peers.All.forEach(p => p.IsSelected = false) // remove selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
+}
+
 function toggleSelectAll() {
   peers.FilteredAndPaged.forEach(peer => {
     peer.IsSelected = selectAll.value;
@@ -173,6 +210,12 @@ onMounted(async () => {
             <div class="col-12 col-lg-8">
               {{ $t('interfaces.interface.headline') }} <strong>{{interfaces.GetSelected.Identifier}}</strong> ({{ $t('modals.interface-edit.mode.' + interfaces.GetSelected.Mode )}} | {{ $t('interfaces.interface.backend') + ": " + calculateBackendName }}<span v-if="!isBackendValid" :title="t('interfaces.interface.wrong-backend')" class="ms-1 me-1"><i class="fa-solid fa-triangle-exclamation"></i></span>)
               <span v-if="interfaces.GetSelected.Disabled" class="text-danger"><i class="fa fa-circle-xmark" :title="interfaces.GetSelected.DisabledReason"></i></span>
+              <div v-if="interfaces.GetSelected && (interfaces.TrafficStats.Received > 0 || interfaces.TrafficStats.Transmitted > 0)" class="mt-2">
+                <small class="text-muted">
+                  Traffic: <i class="fa-solid fa-arrow-down me-1"></i>{{ humanFileSize(interfaces.TrafficStats.Received) }}/s
+                    <i class="fa-solid fa-arrow-up ms-1 me-1"></i>{{ humanFileSize(interfaces.TrafficStats.Transmitted) }}/s
+                </small>
+              </div>
             </div>
             <div class="col-12 col-lg-4 text-lg-end">
               <a class="btn-link" href="#" :title="$t('interfaces.interface.button-show-config')" @click.prevent="viewedInterfaceId=interfaces.GetSelected.Identifier"><i class="fas fa-eye"></i></a>
@@ -353,6 +396,13 @@ onMounted(async () => {
       <a class="btn btn-primary ms-2" href="#" :title="$t('interfaces.button-add-peer')" @click.prevent="editPeerId='#NEW#'"><i class="fa fa-plus me-1"></i><i class="fa fa-user"></i></a>
     </div>
   </div>
+  <div class="row" v-if="selectedPeers.length > 0">
+    <div class="col-12 text-lg-end">
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('interfaces.button-bulk-enable')" @click.prevent="bulkEnable"><i class="fa-regular fa-circle-check"></i></a>
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('interfaces.button-bulk-disable')" @click.prevent="bulkDisable"><i class="fa fa-ban"></i></a>
+      <a class="btn btn-outline-danger btn-sm ms-2" href="#" :title="$t('interfaces.button-bulk-delete')" @click.prevent="bulkDelete"><i class="fa fa-trash-can"></i></a>
+    </div>
+  </div>
   <div v-if="interfaces.Count!==0" class="mt-2 table-responsive">
     <div v-if="peers.Count===0">
     <h4>{{ $t('interfaces.no-peer.headline') }}</h4>
@@ -407,14 +457,19 @@ onMounted(async () => {
           <td v-if="interfaces.GetSelected.Mode==='client'">{{peer.Endpoint.Value}}</td>
           <td v-if="peers.hasStatistics">
             <div v-if="peers.Statistics(peer.Identifier).IsConnected">
-              <span class="badge rounded-pill bg-success" :title="$t('interfaces.peer-connected')"><i class="fa-solid fa-link"></i></span> <span :title="$t('interfaces.peer-handshake') + ' ' + peers.Statistics(peer.Identifier).LastHandshake">{{ $t('interfaces.peer-connected') }}</span>
+              <span class="badge rounded-pill bg-success" :title="$t('interfaces.peer-connected')"><i class="fa-solid fa-link"></i></span> <small class="text-muted" :title="$t('interfaces.peer-handshake') + ' ' + peers.Statistics(peer.Identifier).LastHandshake"><i class="fa-solid fa-circle-info"></i></small>
             </div>
             <div v-else>
               <span class="badge rounded-pill bg-light" :title="$t('interfaces.peer-not-connected')"><i class="fa-solid fa-link-slash"></i></span>
             </div>
           </td>
           <td v-if="peers.hasStatistics" >
-            <span class="text-center" >{{ humanFileSize(peers.Statistics(peer.Identifier).BytesReceived) }} / {{ humanFileSize(peers.Statistics(peer.Identifier).BytesTransmitted) }}</span>
+            <div class="d-flex flex-column">
+              <span :title="humanFileSize(peers.Statistics(peer.Identifier).BytesReceived) + ' / ' + humanFileSize(peers.Statistics(peer.Identifier).BytesTransmitted)">
+                <i class="fa-solid fa-arrow-down me-1"></i>{{ humanFileSize(peers.TrafficStats(peer.Identifier).Received) }}/s
+                <i class="fa-solid fa-arrow-up ms-1 me-1"></i>{{ humanFileSize(peers.TrafficStats(peer.Identifier).Transmitted) }}/s
+              </span>
+            </div>
           </td>
           <td class="text-center">
             <a href="#" :title="$t('interfaces.button-show-peer')" @click.prevent="viewedPeerId=peer.Identifier"><i class="fas fa-eye me-2"></i></a>

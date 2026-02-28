@@ -136,7 +136,7 @@
         "email": "이메일",
         "firstname": "이름",
         "lastname": "성",
-        "source": "소스",
+        "sources": "소스",
         "peers": "피어",
         "admin": "관리자"
       },

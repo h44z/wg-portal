@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 import { notify } from "@kyvg/vue3-notification";
 import { apiWrapper } from '@/helpers/fetch-wrapper'
+import { websocketWrapper } from '@/helpers/websocket-wrapper'
 import router from '../router'
 import { browserSupportsWebAuthn,startRegistration,startAuthentication } from '@simplewebauthn/browser';
 import {base64_url_encode} from "@/helpers/encoding";
@@ -295,9 +296,11 @@ export const authStore = defineStore('auth',{
                     }
                 }
                 localStorage.setItem('user', JSON.stringify(this.user))
+                websocketWrapper.connect()
             } else {
                 this.user = null
                 localStorage.removeItem('user')
+                websocketWrapper.disconnect()
             }
         },
         setWebAuthnCredentials(credentials) {

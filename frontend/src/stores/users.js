@@ -142,5 +142,140 @@ export const userStore = defineStore('users', {
           })
         })
     },
+    async BulkDelete(ids) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-delete`, { Identifiers: ids })
+        .then(() => {
+          this.users = this.users.filter(u => !ids.includes(u.Identifier))
+          this.fetching = false
+          notify({
+            title: "Users deleted",
+            text: "Selected users have been deleted!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to delete users: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to delete selected users!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
+    async BulkEnable(ids) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-enable`, { Identifiers: ids })
+        .then(() => {
+          this.users.forEach(u => {
+            if (ids.includes(u.Identifier)) {
+              u.Disabled = false
+              u.DisabledReason = ""
+            }
+          })
+          this.fetching = false
+          notify({
+            title: "Users enabled",
+            text: "Selected users have been enabled!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to enable users: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to enable selected users!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
+    async BulkDisable(ids, reason) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-disable`, { Identifiers: ids, Reason: reason })
+        .then(() => {
+          this.users.forEach(u => {
+            if (ids.includes(u.Identifier)) {
+              u.Disabled = true
+              u.DisabledReason = reason
+            }
+          })
+          this.fetching = false
+          notify({
+            title: "Users disabled",
+            text: "Selected users have been disabled!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to disable users: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to disable selected users!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
+    async BulkLock(ids, reason) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-lock`, { Identifiers: ids, Reason: reason })
+        .then(() => {
+          this.users.forEach(u => {
+            if (ids.includes(u.Identifier)) {
+              u.Locked = true
+              u.LockedReason = reason
+            }
+          })
+          this.fetching = false
+          notify({
+            title: "Users locked",
+            text: "Selected users have been locked!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to lock users: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to lock selected users!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
+    async BulkUnlock(ids) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-unlock`, { Identifiers: ids })
+        .then(() => {
+          this.users.forEach(u => {
+            if (ids.includes(u.Identifier)) {
+              u.Locked = false
+              u.LockedReason = ""
+            }
+          })
+          this.fetching = false
+          notify({
+            title: "Users unlocked",
+            text: "Selected users have been unlocked!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to unlock users: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to unlock selected users!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
   }
 })

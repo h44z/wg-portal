@@ -9,15 +9,16 @@ import (
 )
 
 type Interface struct {
-	Identifier     string `json:"Identifier" example:"wg0"`      // device name, for example: wg0
-	DisplayName    string `json:"DisplayName"`                   // a nice display name/ description for the interface
-	Mode           string `json:"Mode" example:"server"`         // the interface type, either 'server', 'client' or 'any'
-	Backend        string `json:"Backend" example:"local"`       // the backend used for this interface e.g., local, mikrotik, ...
-	PrivateKey     string `json:"PrivateKey" example:"abcdef=="` // private Key of the server interface
-	PublicKey      string `json:"PublicKey" example:"abcdef=="`  // public Key of the server interface
-	Disabled       bool   `json:"Disabled"`                      // flag that specifies if the interface is enabled (up) or not (down)
-	DisabledReason string `json:"DisabledReason"`                // the reason why the interface has been disabled
-	SaveConfig     bool   `json:"SaveConfig"`                    // automatically persist config changes to the wgX.conf file
+	Identifier        string `json:"Identifier" example:"wg0"`      // device name, for example: wg0
+	DisplayName       string `json:"DisplayName"`                   // a nice display name/ description for the interface
+	Mode              string `json:"Mode" example:"server"`         // the interface type, either 'server', 'client' or 'any'
+	Backend           string `json:"Backend" example:"local"`       // the backend used for this interface e.g., local, mikrotik, ...
+	PrivateKey        string `json:"PrivateKey" example:"abcdef=="` // private Key of the server interface
+	PublicKey         string `json:"PublicKey" example:"abcdef=="`  // public Key of the server interface
+	Disabled          bool   `json:"Disabled"`                      // flag that specifies if the interface is enabled (up) or not (down)
+	DisabledReason    string `json:"DisabledReason"`                // the reason why the interface has been disabled
+	SaveConfig        bool   `json:"SaveConfig"`                    // automatically persist config changes to the wgX.conf file
+	CreateDefaultPeer bool   `json:"CreateDefaultPeer"`             // if true, default peers will be created for this interface
 
 	ListenPort   int      `json:"ListenPort"`   // the listening port, for example: 51820
 	Addresses    []string `json:"Addresses"`    // the interface ip addresses
@@ -65,6 +66,7 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 		Disabled:                   src.IsDisabled(),
 		DisabledReason:             src.DisabledReason,
 		SaveConfig:                 src.SaveConfig,
+		CreateDefaultPeer:          src.CreateDefaultPeer,
 		ListenPort:                 src.ListenPort,
 		Addresses:                  domain.CidrsToStringSlice(src.Addresses),
 		Dns:                        internal.SliceString(src.DnsStr),
@@ -151,6 +153,7 @@ func NewDomainInterface(src *Interface) *domain.Interface {
 		PreDown:                    src.PreDown,
 		PostDown:                   src.PostDown,
 		SaveConfig:                 src.SaveConfig,
+		CreateDefaultPeer:          src.CreateDefaultPeer,
 		DisplayName:                src.DisplayName,
 		Type:                       domain.InterfaceType(src.Mode),
 		Backend:                    domain.InterfaceBackend(src.Backend),

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/h44z/wg-portal/internal/app"
@@ -226,15 +227,6 @@ func (m Manager) RestoreInterfaceState(
 					return in, nil
 				})
 
-			// temporarily disable interface in database so that the current state is reflected correctly
-			_ = m.db.SaveInterface(ctx, iface.Identifier,
-				func(in *domain.Interface) (*domain.Interface, error) {
-					now := time.Now()
-					in.Disabled = &now // set
-					in.DisabledReason = domain.DisabledReasonInterfaceMissing
-					return in, nil
-				})
-
 			// try to create a new interface
 			_, err = m.saveInterface(ctx, &iface)
 			if err != nil {
@@ -382,6 +374,7 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 		SaveConfig:                 m.cfg.Advanced.ConfigStoragePath != "",
 		DisplayName:                string(id),
 		Type:                       domain.InterfaceTypeServer,
+		CreateDefaultPeer:          m.cfg.Core.CreateDefaultPeer,
 		DriverType:                 "",
 		Disabled:                   nil,
 		DisabledReason:             "",
@@ -876,6 +869,17 @@ func (m Manager) importInterface(
 	iface.Backend = backend.GetId()
 	iface.PeerDefAllowedIPsStr = iface.AddressStr()
 
+	// For pfSense backends, extract endpoint and DNS from peers
+	if backend.GetId() == domain.ControllerTypePfsense {
+		endpoint, dns := extractPfsenseDefaultsFromPeers(peers, iface.ListenPort)
+		if endpoint != "" {
+			iface.PeerDefEndpoint = endpoint
+		}
+		if dns != "" {
+			iface.PeerDefDnsStr = dns
+		}
+	}
+
 	// try to predict the interface type based on the number of peers
 	switch len(peers) {
 	case 0:
@@ -913,6 +917,61 @@ func (m Manager) importInterface(
 	return nil
 }
 
+// extractPfsenseDefaultsFromPeers extracts common endpoint and DNS information from peers
+// For server interfaces, peers typically have endpoints pointing to the server, so we use the most common one
+func extractPfsenseDefaultsFromPeers(peers []domain.PhysicalPeer, listenPort int) (endpoint, dns string) {
+	if len(peers) == 0 {
+		return "", ""
+	}
+
+	// Count endpoint occurrences to find the most common one
+	endpointCounts := make(map[string]int)
+	dnsValues := make(map[string]int)
+
+	for _, peer := range peers {
+		// Extract endpoint from peer
+		if peer.Endpoint != "" {
+			endpointCounts[peer.Endpoint]++
+		}
+
+		// Extract DNS from peer extras if available
+		if extras := peer.GetExtras(); extras != nil {
+			if pfsenseExtras, ok := extras.(domain.PfsensePeerExtras); ok {
+				if pfsenseExtras.ClientDns != "" {
+					dnsValues[pfsenseExtras.ClientDns]++
+				}
+			}
+		}
+	}
+
+	// Find the most common endpoint
+	maxCount := 0
+	for ep, count := range endpointCounts {
+		if count > maxCount {
+			maxCount = count
+			endpoint = ep
+		}
+	}
+
+	// If endpoint doesn't have a port and we have a listenPort, add it
+	if endpoint != "" && listenPort > 0 {
+		if !strings.Contains(endpoint, ":") {
+			endpoint = fmt.Sprintf("%s:%d", endpoint, listenPort)
+		}
+	}
+
+	// Find the most common DNS
+	maxDnsCount := 0
+	for dnsVal, count := range dnsValues {
+		if count > maxDnsCount {
+			maxDnsCount = count
+			dns = dnsVal
+		}
+	}
+
+	return endpoint, dns
+}
+
 func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain.PhysicalPeer) error {
 	now := time.Now()
 	peer := domain.ConvertPhysicalPeer(p)
@@ -926,7 +985,26 @@ func (m Manager) importPeer(ctx context.Context, in *domain.Interface, p *domain
 	peer.InterfaceIdentifier = in.Identifier
 	peer.EndpointPublicKey = domain.NewConfigOption(in.PublicKey, true)
 	peer.AllowedIPsStr = domain.NewConfigOption(in.PeerDefAllowedIPsStr, true)
-	peer.Interface.Addresses = p.AllowedIPs // use allowed IP's as the peer IP's TODO: Should this also match server interface address' prefix length?
+
+	// split allowed IP's into interface addresses and extra allowed IP's
+	var interfaceAddresses []domain.Cidr
+	var extraAllowedIPs []domain.Cidr
+	for _, allowedIP := range p.AllowedIPs {
+		isHost := (allowedIP.IsV4() && allowedIP.NetLength == 32) || (!allowedIP.IsV4() && allowedIP.NetLength == 128)
+		isNetworkAddr := allowedIP.Addr == allowedIP.NetworkAddr().Addr
+
+		// Network addresses (e.g. 10.0.0.0/24) will always be extra allowed IP's.
+		// For IP addresses, such as 10.0.0.1/24, it is challenging to tell whether it is an interface address or
+		// an extra allowed IP, therefore we treat such addresses as interface addresses.
+		if !isHost && isNetworkAddr {
+			extraAllowedIPs = append(extraAllowedIPs, allowedIP)
+		} else {
+			interfaceAddresses = append(interfaceAddresses, allowedIP)
+		}
+	}
+	peer.Interface.Addresses = interfaceAddresses
+	peer.ExtraAllowedIPsStr = domain.CidrsToString(extraAllowedIPs)
+
 	peer.Interface.DnsStr = domain.NewConfigOption(in.PeerDefDnsStr, true)
 	peer.Interface.DnsSearchStr = domain.NewConfigOption(in.PeerDefDnsSearchStr, true)
 	peer.Interface.Mtu = domain.NewConfigOption(in.PeerDefMtu, true)

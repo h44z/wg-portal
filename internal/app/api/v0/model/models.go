@@ -14,6 +14,7 @@ type Settings struct {
 	MinPasswordLength         int                    `json:"MinPasswordLength"`
 	AvailableBackends         []SettingsBackendNames `json:"AvailableBackends"`
 	LoginFormVisible          bool                   `json:"LoginFormVisible"`
+	CreateDefaultPeer         bool                   `json:"CreateDefaultPeer"`
 }
 
 type SettingsBackendNames struct {

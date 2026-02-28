@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -13,9 +14,7 @@ type User struct {
 	// The email address of the user. This field is optional.
 	Email string `json:"Email" binding:"omitempty,email" example:"test@test.com"`
 	// The source of the user. This field is optional.
-	Source string `json:"Source" binding:"oneof=db ldap oauth" example:"db"`
-	// The name of the authentication provider. This field is read-only.
-	ProviderName string `json:"ProviderName,omitempty" readonly:"true" example:""`
+	AuthSources []string `json:"AuthSources" readonly:"true" binding:"oneof=db ldap oauth" example:"db"`
 	// If this field is set, the user is an admin.
 	IsAdmin bool `json:"IsAdmin" example:"false"`
 
@@ -52,10 +51,11 @@ type User struct {
 
 func NewUser(src *domain.User, exposeCredentials bool) *User {
 	u := &User{
-		Identifier:     string(src.Identifier),
-		Email:          src.Email,
-		Source:         string(src.Source),
-		ProviderName:   src.ProviderName,
+		Identifier: string(src.Identifier),
+		Email:      src.Email,
+		AuthSources: internal.Map(src.Authentications, func(authentication domain.UserAuthentication) string {
+			return string(authentication.Source)
+		}),
 		IsAdmin:        src.IsAdmin,
 		Firstname:      src.Firstname,
 		Lastname:       src.Lastname,
@@ -93,8 +93,6 @@ func NewDomainUser(src *User) *domain.User {
 	res := &domain.User{
 		Identifier:     domain.UserIdentifier(src.Identifier),
 		Email:          src.Email,
-		Source:         domain.UserSource(src.Source),
-		ProviderName:   src.ProviderName,
 		IsAdmin:        src.IsAdmin,
 		Firstname:      src.Firstname,
 		Lastname:       src.Lastname,

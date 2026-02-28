@@ -1,15 +1,76 @@
 <script setup>
 import {userStore} from "@/stores/users";
-import {ref,onMounted} from "vue";
+import {ref, onMounted, computed} from "vue";
 import UserEditModal from "../components/UserEditModal.vue";
 import UserViewModal from "../components/UserViewModal.vue";
+import {useI18n} from "vue-i18n";
 
 const users = userStore()
+const { t } = useI18n()
 
 const editUserId = ref("")
 const viewedUserId = ref("")
 
 const selectAll = ref(false)
+
+const selectedUsers = computed(() => {
+  return users.All.filter(user => user.IsSelected).map(user => user.Identifier);
+})
+
+async function bulkDelete() {
+  if (confirm(t('users.confirm-bulk-delete', {count: selectedUsers.value.length}))) {
+    try {
+      await users.BulkDelete(selectedUsers.value)
+      selectAll.value = false // reset selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
+}
+
+async function bulkEnable() {
+  try {
+    await users.BulkEnable(selectedUsers.value)
+    selectAll.value = false
+    users.All.forEach(u => u.IsSelected = false) // remove selection
+  } catch (e) {
+    // notification is handled in store
+  }
+}
+
+async function bulkDisable() {
+  if (confirm(t('users.confirm-bulk-disable', {count: selectedUsers.value.length}))) {
+    try {
+      await users.BulkDisable(selectedUsers.value)
+      selectAll.value = false
+      users.All.forEach(u => u.IsSelected = false) // remove selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
+}
+
+async function bulkLock() {
+  if (confirm(t('users.confirm-bulk-lock', {count: selectedUsers.value.length}))) {
+    try {
+      await users.BulkLock(selectedUsers.value)
+      selectAll.value = false
+      users.All.forEach(u => u.IsSelected = false) // remove selection
+    } catch (e) {
+      // notification is handled in store
+    }
+  }
+}
+
+async function bulkUnlock() {
+  try {
+    await users.BulkUnlock(selectedUsers.value)
+    selectAll.value = false
+    users.All.forEach(u => u.IsSelected = false) // remove selection
+  } catch (e) {
+    // notification is handled in store
+  }
+}
 
 function toggleSelectAll() {
   users.FilteredAndPaged.forEach(user => {
@@ -45,6 +106,15 @@ onMounted(() => {
       </a>
     </div>
   </div>
+  <div class="row" v-if="selectedUsers.length > 0">
+    <div class="col-12 text-lg-end">
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('users.button-bulk-enable')" @click.prevent="bulkEnable"><i class="fa-regular fa-circle-check"></i></a>
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('users.button-bulk-disable')" @click.prevent="bulkDisable"><i class="fa fa-ban"></i></a>
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('users.button-bulk-unlock')" @click.prevent="bulkUnlock"><i class="fa-solid fa-lock-open"></i></a>
+      <a class="btn btn-outline-primary btn-sm ms-2" href="#" :title="$t('users.button-bulk-lock')" @click.prevent="bulkLock"><i class="fa-solid fa-lock"></i></a>
+      <a class="btn btn-outline-danger btn-sm ms-2" href="#" :title="$t('users.button-bulk-delete')" @click.prevent="bulkDelete"><i class="fa fa-trash-can"></i></a>
+    </div>
+  </div>
   <div class="mt-2 table-responsive">
     <div v-if="users.Count===0">
       <h4>{{ $t('users.no-user.headline') }}</h4>
@@ -61,7 +131,7 @@ onMounted(() => {
           <th scope="col">{{ $t('users.table-heading.email') }}</th>
           <th scope="col">{{ $t('users.table-heading.firstname') }}</th>
           <th scope="col">{{ $t('users.table-heading.lastname') }}</th>
-          <th class="text-center" scope="col">{{ $t('users.table-heading.source') }}</th>
+          <th class="text-center" scope="col">{{ $t('users.table-heading.sources') }}</th>
           <th class="text-center" scope="col">{{ $t('users.table-heading.peers') }}</th>
           <th class="text-center" scope="col">{{ $t('users.table-heading.admin') }}</th>
           <th scope="col"></th><!-- Actions -->
@@ -80,7 +150,7 @@ onMounted(() => {
           <td>{{user.Email}}</td>
           <td>{{user.Firstname}}</td>
           <td>{{user.Lastname}}</td>
-          <td class="text-center"><span class="badge rounded-pill bg-light">{{user.Source}}</span></td>
+          <td><span class="badge bg-light me-1" v-for="src in user.AuthSources" :key="src">{{src}}</span></td>
           <td class="text-center">{{user.PeerCount}}</td>
           <td class="text-center">
             <span v-if="user.IsAdmin" class="text-danger" :title="$t('users.admin')"><i class="fa fa-check-circle"></i></span>

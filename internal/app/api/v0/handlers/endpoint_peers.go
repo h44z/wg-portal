@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/go-pkgz/routegroup"
 
@@ -41,6 +42,10 @@ type PeerService interface {
 	SendPeerEmail(ctx context.Context, linkOnly bool, style string, peers ...domain.PeerIdentifier) error
 	// GetPeerStats returns the peer stats for the given interface.
 	GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error)
+	// BulkDelete deletes multiple peers.
+	BulkDelete(context.Context, []domain.PeerIdentifier) error
+	// BulkUpdate modifies multiple peers.
+	BulkUpdate(context.Context, []domain.PeerIdentifier, func(*domain.Peer)) error
 }
 
 type PeerEndpoint struct {
@@ -84,6 +89,9 @@ func (e PeerEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup.HandleFunc("GET /{id}", e.handleSingleGet())
 	apiGroup.HandleFunc("PUT /{id}", e.handleUpdatePut())
 	apiGroup.HandleFunc("DELETE /{id}", e.handleDelete())
+	apiGroup.HandleFunc("POST /bulk-delete", e.handleBulkDelete())
+	apiGroup.HandleFunc("POST /bulk-enable", e.handleBulkEnable())
+	apiGroup.HandleFunc("POST /bulk-disable", e.handleBulkDisable())
 }
 
 // handleAllGet returns a gorm Handler function.
@@ -520,4 +528,115 @@ func (e PeerEndpoint) getConfigStyle(r *http.Request) string {
 		configStyle = domain.ConfigStyleWgQuick // default to wg-quick style
 	}
 	return configStyle
+}
+
+// handleBulkDelete returns a gorm Handler function.
+//
+// @ID peers_handleBulkDelete
+// @Tags Peer
+// @Summary Bulk delete selected peers.
+// @Produce json
+// @Param request body model.BulkPeerRequest true "A list of peer identifiers to delete"
+// @Success 204 "No content if deletion was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /peer/bulk-delete [post]
+func (e PeerEndpoint) handleBulkDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req model.BulkPeerRequest
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		ids := make([]domain.PeerIdentifier, len(req.Identifiers))
+		for i, id := range req.Identifiers {
+			ids[i] = domain.PeerIdentifier(id)
+		}
+
+		err := e.peerService.BulkDelete(r.Context(), ids)
+		if err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		respond.Status(w, http.StatusNoContent)
+	}
+}
+
+// handleBulkEnable returns a gorm Handler function.
+//
+// @ID peers_handleBulkEnable
+// @Tags Peer
+// @Summary Bulk enable selected peers.
+// @Produce json
+// @Param request body model.BulkPeerRequest true "A list of peer identifiers to enable"
+// @Success 204 "No content if action was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /peer/bulk-enable [post]
+func (e PeerEndpoint) handleBulkEnable() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req model.BulkPeerRequest
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		ids := make([]domain.PeerIdentifier, len(req.Identifiers))
+		for i, id := range req.Identifiers {
+			ids[i] = domain.PeerIdentifier(id)
+		}
+
+		err := e.peerService.BulkUpdate(r.Context(), ids, func(p *domain.Peer) {
+			p.Disabled = nil
+		})
+		if err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		respond.Status(w, http.StatusNoContent)
+	}
+}
+
+// handleBulkDisable returns a gorm Handler function.
+//
+// @ID peers_handleBulkDisable
+// @Tags Peer
+// @Summary Bulk disable selected peers.
+// @Produce json
+// @Param request body model.BulkPeerRequest true "A list of peer identifiers to disable"
+// @Success 204 "No content if action was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /peer/bulk-disable [post]
+func (e PeerEndpoint) handleBulkDisable() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req model.BulkPeerRequest
+		if err := request.BodyJson(r, &req); err != nil {
+			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+
+		ids := make([]domain.PeerIdentifier, len(req.Identifiers))
+		for i, id := range req.Identifiers {
+			ids[i] = domain.PeerIdentifier(id)
+		}
+
+		now := time.Now()
+		err := e.peerService.BulkUpdate(r.Context(), ids, func(p *domain.Peer) {
+			p.Disabled = &now
+			p.DisabledReason = domain.DisabledReasonAdmin
+		})
+		if err != nil {
+			respond.JSON(w, http.StatusInternalServerError,
+				model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+			return
+		}
+
+		respond.Status(w, http.StatusNoContent)
+	}
 }

@@ -74,6 +74,7 @@ mail:
   from: Wireguard Portal <noreply@wireguard.local>
   link_only: false
   allow_peer_email: false
+  templates_path: ""
 
 auth:
   oidc: []
@@ -87,6 +88,7 @@ auth:
 web:
   listening_address: :8888
   external_url: http://localhost:8888
+  base_path: ""
   site_company_name: WireGuard Portal
   site_title: WireGuard Portal
   session_identifier: wgPortalSession
@@ -96,6 +98,7 @@ web:
   expose_host_info: false
   cert_file: ""
   key_File: ""
+  frontend_filepath: ""
 
 webhook:
   url: ""
@@ -154,12 +157,14 @@ More advanced options are found in the subsequent `Advanced` section.
 ### `create_default_peer`
 - **Default:** `false`
 - **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER`
-- **Description:** If a user logs in for the first time with no existing peers, automatically create a new WireGuard peer for **all** server interfaces.
+- **Description:** If a user logs in for the first time with no existing peers, automatically create a new WireGuard peer for all server interfaces where the "Create default peer" flag is set.
+- **Important:** This option is only effective for interfaces where the "Create default peer" flag is set (via the UI).
 
 ### `create_default_peer_on_creation`
 - **Default:** `false`
 - **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION`
-- **Description:** If an LDAP user is created (e.g., through LDAP sync) and has no peers, automatically create a new WireGuard peer for **all** server interfaces.
+- **Description:** If an LDAP user is created (e.g., through LDAP sync) and has no peers, automatically create a new WireGuard peer for all server interfaces where the "Create default peer" flag is set.
+- **Important:** This option requires [create_default_peer](#create_default_peer) to be enabled.
 
 ### `re_enable_peer_after_user_enable`
 - **Default:** `true`
@@ -485,6 +490,11 @@ To send emails to all peers that have a valid email-address as user-identifier, 
   If false, and the peer has no valid user record linked, emails will not be sent.
   If a peer has linked a valid user, the email address is always taken from the user record.
 
+### `templates_path`
+- **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_MAIL_TEMPLATES_PATH`
+- **Description:** Path to the email template files that override embedded templates. Check [usage documentation](../usage/mail-templates.md) for an example.`
+
 ---
 
 ## Auth
@@ -793,8 +803,15 @@ Without a valid `external_url`, the login process may fail due to CSRF protectio
 ### `external_url`
 - **Default:** `http://localhost:8888`
 - **Environment Variable:** `WG_PORTAL_WEB_EXTERNAL_URL`
-- **Description:** The URL where a client can access WireGuard Portal. This URL is used for generating links in emails and for performing OAUTH redirects.  
+- **Description:** The URL where a client can access WireGuard Portal. This URL is used for generating links in emails and for performing OAUTH redirects.
+  The external URL must not contain a path component or trailing slash. If you want to serve WireGuard Portal on a subpath, use the `base_path` setting.
   **Important:** If you are using a reverse proxy, set this to the external URL of the reverse proxy, otherwise login will fail. If you access the portal via IP address, set this to the IP address of the server.
+
+### `base_path`
+- **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_WEB_BASE_PATH`
+- **Description:** The base path for the web server (e.g., `/wgportal`). 
+  By default (meaning an empty value), the portal will be served from the root path `/`.
 
 ### `site_company_name`
 - **Default:** `WireGuard Portal`
@@ -840,6 +857,14 @@ Without a valid `external_url`, the login process may fail due to CSRF protectio
 - **Default:** *(empty)*
 - **Environment Variable:** `WG_PORTAL_WEB_KEY_FILE`
 - **Description:** (Optional) Path to the TLS certificate key file.
+
+### `frontend_filepath`
+- **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_WEB_FRONTEND_FILEPATH`
+- **Description:** Optional base directory from which the web frontend is served. Check out the [building](../getting-started/sources.md) documentation for more information on how to compile the frontend assets.
+  - If the directory contains at least one file (recursively), these files are served at `/app`, overriding the embedded frontend assets.
+  - If the directory is empty or does not exist on startup, the embedded frontend is copied into this directory automatically and then served.
+  - If left empty, the embedded frontend is served and no files are written to disk.
 
 ---
 

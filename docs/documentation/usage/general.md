@@ -14,7 +14,7 @@ WireGuard Interfaces can be categorized into three types:
 ## Accessing the Web UI
 
 The web UI should be accessed via the URL specified in the `external_url` property of the configuration file.
-By default, WireGuard Portal listens on port `8888` for HTTP connections. Check the [Security](security.md) section for more information on securing the web UI.
+By default, WireGuard Portal listens on port `8888` for HTTP connections. Check the [Security](security.md) or [Authentication](authentication.md) sections for more information on securing the web UI.
 
 So the default URL to access the web UI is:
 

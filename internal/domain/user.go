@@ -25,6 +25,14 @@ type UserIdentifier string
 
 type UserSource string
 
+type UserAuthentication struct {
+	BaseModel
+
+	UserIdentifier UserIdentifier `gorm:"primaryKey;column:user_identifier"` // sAMAccountName, sub, etc.
+	Source         UserSource     `gorm:"primaryKey;column:source"`
+	ProviderName   string         `gorm:"primaryKey;column:provider_name"`
+}
+
 // User is the user model that gets linked to peer entries, by default an empty user model with only the email address is created
 type User struct {
 	BaseModel
@@ -32,9 +40,14 @@ type User struct {
 	// required fields
 	Identifier   UserIdentifier `gorm:"primaryKey;column:identifier"`
 	Email        string         `form:"email" binding:"required,email"`
-	Source       UserSource
-	ProviderName string
+	Source       UserSource     // deprecated: moved to Authentications.Source
+	ProviderName string         // deprecated: moved to Authentications.ProviderName
 	IsAdmin      bool
+
+	// authentication sources
+	Authentications []UserAuthentication `gorm:"foreignKey:user_identifier"`
+	// synchronization behavior
+	PersistLocalChanges bool `gorm:"column:persist_local_changes"`
 
 	// optional fields
 	Firstname  string `form:"firstname" binding:"omitempty"`
@@ -81,15 +94,19 @@ func (u *User) IsApiEnabled() bool {
 }
 
 func (u *User) CanChangePassword() error {
-	if u.Source == UserSourceDatabase {
-		return nil
+	if slices.ContainsFunc(u.Authentications, func(e UserAuthentication) bool {
+		return e.Source == UserSourceDatabase
+	}) {
+		return nil // password can be changed for database users
 	}
 
 	return errors.New("password change only allowed for database source")
 }
 
 func (u *User) HasWeakPassword(minLength int) error {
-	if u.Source != UserSourceDatabase {
+	if !slices.ContainsFunc(u.Authentications, func(e UserAuthentication) bool {
+		return e.Source == UserSourceDatabase
+	}) {
 		return nil // password is not required for non-database users, so no check needed
 	}
 
@@ -105,13 +122,16 @@ func (u *User) HasWeakPassword(minLength int) error {
 }
 
 func (u *User) EditAllowed(new *User) error {
-	if u.Source == UserSourceDatabase {
-		return nil
+	if len(u.Authentications) == 1 && u.Authentications[0].Source == UserSourceDatabase {
+		return nil // database-only users can be edited always
+	}
+
+	if new.PersistLocalChanges {
+		return nil // if changes will be persisted locally, they can be edited always
 	}
 
 	// for users which are not database users, only the notes field and the disabled flag can be updated
 	updateOk := u.Identifier == new.Identifier
-	updateOk = updateOk && u.Source == new.Source
 	updateOk = updateOk && u.IsAdmin == new.IsAdmin
 	updateOk = updateOk && u.Email == new.Email
 	updateOk = updateOk && u.Firstname == new.Firstname
@@ -120,7 +140,7 @@ func (u *User) EditAllowed(new *User) error {
 	updateOk = updateOk && u.Department == new.Department
 
 	if !updateOk {
-		return errors.New("edit only allowed for database source")
+		return errors.New("edit only allowed for reserved fields")
 	}
 
 	return nil
@@ -131,8 +151,10 @@ func (u *User) DeleteAllowed() error {
 }
 
 func (u *User) CheckPassword(password string) error {
-	if u.Source != UserSourceDatabase {
-		return errors.New("invalid user source")
+	if !slices.ContainsFunc(u.Authentications, func(e UserAuthentication) bool {
+		return e.Source == UserSourceDatabase
+	}) {
+		return errors.New("invalid user source") // password can only be checked for database users
 	}
 
 	if u.IsDisabled() {
@@ -180,9 +202,14 @@ func (u *User) HashPassword() error {
 	return nil
 }
 
-func (u *User) CopyCalculatedAttributes(src *User) {
+func (u *User) CopyCalculatedAttributes(src *User, withAuthentications bool) {
 	u.BaseModel = src.BaseModel
 	u.LinkedPeerCount = src.LinkedPeerCount
+	if withAuthentications {
+		u.Authentications = src.Authentications
+		u.WebAuthnId = src.WebAuthnId
+		u.WebAuthnCredentialList = src.WebAuthnCredentialList
+	}
 }
 
 // CopyAdminAttributes copies all attributes from the given user except password, passkey and
@@ -194,6 +221,8 @@ func (u *User) CopyAdminAttributes(src *User, apiAdminOnly bool) {
 	u.Source = src.Source
 	u.ProviderName = src.ProviderName
 	u.IsAdmin = src.IsAdmin
+	u.Authentications = src.Authentications
+	u.PersistLocalChanges = src.PersistLocalChanges
 	u.Firstname = src.Firstname
 	u.Lastname = src.Lastname
 	u.Phone = src.Phone
@@ -207,6 +236,16 @@ func (u *User) CopyAdminAttributes(src *User, apiAdminOnly bool) {
 	if apiAdminOnly {
 		u.ApiToken = src.ApiToken
 		u.ApiTokenCreated = src.ApiTokenCreated
+	}
+}
+
+// MergeAuthSources merges the given authentication sources with the existing ones.
+// Already existing sources are not overwritten, nor will be added any duplicates.
+func (u *User) MergeAuthSources(extSources ...UserAuthentication) {
+	for _, src := range extSources {
+		if !slices.Contains(u.Authentications, src) {
+			u.Authentications = append(u.Authentications, src)
+		}
 	}
 }
 

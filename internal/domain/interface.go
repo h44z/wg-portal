@@ -53,12 +53,13 @@ type Interface struct {
 	SaveConfig bool // automatically persist config changes to the wgX.conf file
 
 	// WG Portal specific
-	DisplayName    string           // a nice display name/ description for the interface
-	Type           InterfaceType    // the interface type, either InterfaceTypeServer or InterfaceTypeClient
-	Backend        InterfaceBackend // the backend that is used to manage the interface (wgctrl, mikrotik, ...)
-	DriverType     string           // the interface driver type (linux, software, ...)
-	Disabled       *time.Time       `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
-	DisabledReason string           // the reason why the interface has been disabled
+	DisplayName       string           // a nice display name/ description for the interface
+	Type              InterfaceType    // the interface type, either InterfaceTypeServer or InterfaceTypeClient
+	CreateDefaultPeer bool             // if true, default peers will be created for this interface
+	Backend           InterfaceBackend // the backend that is used to manage the interface (wgctrl, mikrotik, ...)
+	DriverType        string           // the interface driver type (linux, software, ...)
+	Disabled          *time.Time       `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
+	DisabledReason    string           // the reason why the interface has been disabled
 
 	// Default settings for the peer, used for new peers, those settings will be published to ConfigOption options of
 	// the peer config
@@ -240,7 +241,8 @@ func (p *PhysicalInterface) GetExtras() any {
 func (p *PhysicalInterface) SetExtras(extras any) {
 	switch extras.(type) {
 	case MikrotikInterfaceExtras: // OK
-	default: // we only support MikrotikInterfaceExtras for now
+	case PfsenseInterfaceExtras: // OK
+	default: // we only support MikrotikInterfaceExtras and PfsenseInterfaceExtras for now
 		panic(fmt.Sprintf("unsupported interface backend extras type %T", extras))
 	}
 
@@ -303,6 +305,14 @@ func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
 		} else {
 			iface.Disabled = nil
 		}
+	case ControllerTypePfsense:
+		extras := pi.GetExtras().(PfsenseInterfaceExtras)
+		iface.DisplayName = extras.Comment
+		if extras.Disabled {
+			iface.Disabled = &now
+		} else {
+			iface.Disabled = nil
+		}
 	}
 
 	return iface
@@ -321,6 +331,12 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 	switch pi.ImportSource {
 	case ControllerTypeMikrotik:
 		extras := MikrotikInterfaceExtras{
+			Comment:  i.DisplayName,
+			Disabled: i.IsDisabled(),
+		}
+		pi.SetExtras(extras)
+	case ControllerTypePfsense:
+		extras := PfsenseInterfaceExtras{
 			Comment:  i.DisplayName,
 			Disabled: i.IsDisabled(),
 		}

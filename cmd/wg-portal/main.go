@@ -47,7 +47,7 @@ func main() {
 	rawDb, err := adapters.NewDatabase(cfg.Database)
 	internal.AssertNoError(err)
 
-	database, err := adapters.NewSqlRepository(rawDb)
+	database, err := adapters.NewSqlRepository(rawDb, cfg)
 	internal.AssertNoError(err)
 
 	wireGuard, err := wireguard.NewControllerManager(cfg)
@@ -84,7 +84,7 @@ func main() {
 	internal.AssertNoError(err)
 	userManager.StartBackgroundJobs(ctx)
 
-	authenticator, err := auth.NewAuthenticator(&cfg.Auth, cfg.Web.ExternalUrl, eventBus, userManager)
+	authenticator, err := auth.NewAuthenticator(&cfg.Auth, cfg.Web.ExternalUrl, cfg.Web.BasePath, eventBus, userManager)
 	internal.AssertNoError(err)
 	authenticator.StartBackgroundJobs(ctx)
 
@@ -135,6 +135,7 @@ func main() {
 	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendPeers)
 	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth, wireGuard)
 	apiV0EndpointTest := handlersV0.NewTestEndpoint(apiV0Auth)
+	apiV0EndpointWebsocket := handlersV0.NewWebsocketEndpoint(cfg, apiV0Auth, eventBus)
 
 	apiFrontend := handlersV0.NewRestApi(apiV0Session,
 		apiV0EndpointAuth,
@@ -144,6 +145,7 @@ func main() {
 		apiV0EndpointPeers,
 		apiV0EndpointConfig,
 		apiV0EndpointTest,
+		apiV0EndpointWebsocket,
 	)
 
 	// endregion API v0 (SPA frontend)

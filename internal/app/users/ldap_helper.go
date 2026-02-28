@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,6 +26,8 @@ func convertRawLdapUser(
 		return nil, fmt.Errorf("failed to check admin group: %w", err)
 	}
 
+	uid := domain.UserIdentifier(internal.MapDefaultString(rawUser, fields.UserIdentifier, ""))
+
 	return &domain.User{
 		BaseModel: domain.BaseModel{
 			CreatedBy: domain.CtxSystemLdapSyncer,
@@ -32,18 +35,23 @@ func convertRawLdapUser(
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
-		Identifier:   domain.UserIdentifier(internal.MapDefaultString(rawUser, fields.UserIdentifier, "")),
-		Email:        strings.ToLower(internal.MapDefaultString(rawUser, fields.Email, "")),
-		Source:       domain.UserSourceLdap,
-		ProviderName: providerName,
-		IsAdmin:      isAdmin,
-		Firstname:    internal.MapDefaultString(rawUser, fields.Firstname, ""),
-		Lastname:     internal.MapDefaultString(rawUser, fields.Lastname, ""),
-		Phone:        internal.MapDefaultString(rawUser, fields.Phone, ""),
-		Department:   internal.MapDefaultString(rawUser, fields.Department, ""),
-		Notes:        "",
-		Password:     "",
-		Disabled:     nil,
+		Identifier: uid,
+		Email:      strings.ToLower(internal.MapDefaultString(rawUser, fields.Email, "")),
+		IsAdmin:    isAdmin,
+		Authentications: []domain.UserAuthentication{
+			{
+				UserIdentifier: uid,
+				Source:         domain.UserSourceLdap,
+				ProviderName:   providerName,
+			},
+		},
+		Firstname:  internal.MapDefaultString(rawUser, fields.Firstname, ""),
+		Lastname:   internal.MapDefaultString(rawUser, fields.Lastname, ""),
+		Phone:      internal.MapDefaultString(rawUser, fields.Phone, ""),
+		Department: internal.MapDefaultString(rawUser, fields.Department, ""),
+		Notes:      "",
+		Password:   "",
+		Disabled:   nil,
 	}, nil
 }
 
@@ -72,7 +80,9 @@ func userChangedInLdap(dbUser, ldapUser *domain.User) bool {
 		return true
 	}
 
-	if dbUser.ProviderName != ldapUser.ProviderName {
+	if !slices.ContainsFunc(dbUser.Authentications, func(authentication domain.UserAuthentication) bool {
+		return authentication.Source == ldapUser.Authentications[0].Source
+	}) {
 		return true
 	}
 

@@ -43,4 +43,8 @@ type MailConfig struct {
 	LinkOnly bool `yaml:"link_only"`
 	// AllowPeerEmail specifies whether emails should be sent to peers which have no valid user account linked, but an email address is set as "user".
 	AllowPeerEmail bool `yaml:"allow_peer_email"`
+	// TemplatesPath is an optional base path on the filesystem that contains email templates (.gotpl and .gohtml).
+	// If the directory exists but is empty, the embedded default templates will be written there on startup.
+	// If templates are present in the directory, they override the embedded defaults.
+	TemplatesPath string `yaml:"templates_path"`
 }

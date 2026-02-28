@@ -23,6 +23,7 @@ export const peerStore = defineStore('peers', {
     fetching: false,
     sortKey: 'IsConnected', // Default sort key
     sortOrder: -1, // 1 for ascending, -1 for descending
+    trafficStats: {},
   }),
   getters: {
     Find: (state) => {
@@ -76,6 +77,9 @@ export const peerStore = defineStore('peers', {
     Statistics: (state) => {
       return (id) => state.statsEnabled && (id in state.stats) ? state.stats[id] : freshStats()
     },
+    TrafficStats: (state) => {
+      return (id) => (id in state.trafficStats) ? state.trafficStats[id] : { Received: 0, Transmitted: 0 }
+    },
     hasStatistics: (state) => state.statsEnabled,
 
   },
@@ -111,6 +115,7 @@ export const peerStore = defineStore('peers', {
       this.peers = peers
       this.calculatePages()
       this.fetching = false
+      this.trafficStats = {}
     },
     setPeer(peer) {
       this.peer = peer
@@ -126,10 +131,18 @@ export const peerStore = defineStore('peers', {
       if (!statsResponse) {
         this.stats = {}
         this.statsEnabled = false
+        this.trafficStats = {}
       } else {
           this.stats = statsResponse.Stats
           this.statsEnabled = statsResponse.Enabled
       }
+    },
+    updatePeerTrafficStats(peerStats) {
+      const id = peerStats.EntityId;
+      this.trafficStats[id] = {
+        Received: peerStats.BytesReceived,
+        Transmitted: peerStats.BytesTransmitted,
+      };
     },
     async Reset() {
       this.setPeers([])
@@ -219,6 +232,73 @@ export const peerStore = defineStore('peers', {
         .catch(error => {
           this.fetching = false
           console.log(error)
+          throw new Error(error)
+        })
+    },
+    async BulkDelete(ids) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-delete`, { Identifiers: ids })
+        .then(() => {
+          this.peers = this.peers.filter(p => !ids.includes(p.Identifier))
+          this.fetching = false
+          notify({
+            title: "Peers deleted",
+            text: "Selected peers have been deleted!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to delete peers: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to delete selected peers!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
+    async BulkEnable(ids) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-enable`, { Identifiers: ids })
+        .then(async () => {
+          await this.LoadPeers()
+          notify({
+            title: "Peers enabled",
+            text: "Selected peers have been enabled!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to enable peers: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to enable selected peers!",
+            type: 'error',
+          })
+          throw new Error(error)
+        })
+    },
+    async BulkDisable(ids, reason) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/bulk-disable`, { Identifiers: ids, Reason: reason })
+        .then(async () => {
+          await this.LoadPeers()
+          notify({
+            title: "Peers disabled",
+            text: "Selected peers have been disabled!",
+            type: 'success',
+          })
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log("Failed to disable peers: ", error)
+          notify({
+            title: "Backend Connection Failure",
+            text: "Failed to disable selected peers!",
+            type: 'error',
+          })
           throw new Error(error)
         })
     },

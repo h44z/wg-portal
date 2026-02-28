@@ -23,14 +23,14 @@
     "is-ip": "^5.0.1",
     "pinia": "^3.0.4",
     "prismjs": "^1.30.0",
-    "vue": "^3.5.24",
-    "vue-i18n": "^11.1.12",
+    "vue": "^3.5.25",
+    "vue-i18n": "^11.2.2",
     "vue-prism-component": "github:h44z/vue-prism-component",
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.1",
+    "@vitejs/plugin-vue": "^6.0.2",
     "sass-embedded": "^1.93.3",
-    "vite": "^7.2.2"
+    "vite": "^7.2.7"
   }
 }

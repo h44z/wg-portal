@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/h44z/wg-portal/internal/config"
@@ -117,4 +118,31 @@ func (p PeerService) SendPeerEmail(
 
 func (p PeerService) GetPeerStats(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.PeerStatus, error) {
 	return p.peers.GetPeerStats(ctx, id)
+}
+
+func (p PeerService) BulkDelete(ctx context.Context, ids []domain.PeerIdentifier) error {
+	for _, id := range ids {
+		if err := p.peers.DeletePeer(ctx, id); err != nil {
+			return fmt.Errorf("failed to delete peer %s: %w", id, err)
+		}
+	}
+
+	return nil
+}
+
+func (p PeerService) BulkUpdate(ctx context.Context, ids []domain.PeerIdentifier, updateFn func(*domain.Peer)) error {
+	for _, id := range ids {
+		peer, err := p.peers.GetPeer(ctx, id)
+		if err != nil {
+			return fmt.Errorf("failed to get peer %s: %w", id, err)
+		}
+
+		updateFn(peer)
+
+		if _, err := p.peers.UpdatePeer(ctx, peer); err != nil {
+			return fmt.Errorf("failed to update peer %s: %w", id, err)
+		}
+	}
+
+	return nil
 }
