@@ -351,7 +351,6 @@ func (a *Authenticator) passwordAuthentication(
 		domain.SystemAdminContextUserInfo()) // switch to admin user context to check if user exists
 
 	var ldapUserInfo *domain.AuthenticatorUserInfo
-	var ldapProvider AuthenticatorLdap
 
 	var userInDatabase = false
 	existingUser, err := a.users.GetUser(ctx, identifier)
@@ -417,14 +416,14 @@ func (a *Authenticator) passwordAuthentication(
 					"source", ldapAuth.GetName(), "identifier", identifier, "error", err)
 				continue
 			}
-			user, err := a.processUserInfo(ctx, ldapUserInfo, domain.UserSourceLdap, ldapProvider.GetName(), true)
+			user, err := a.processUserInfo(ctx, ldapUserInfo, domain.UserSourceLdap, ldapAuth.GetName(), true)
 			if err != nil {
 				return nil, fmt.Errorf("unable to process user information: %w", err)
 			}
 
 			existingUser = user
 			slog.Debug("created new LDAP user in db",
-				"identifier", user.Identifier, "provider", ldapProvider.GetName())
+				"identifier", user.Identifier, "provider", ldapAuth.GetName())
 
 			authOK = true
 			break
