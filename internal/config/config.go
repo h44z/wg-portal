@@ -43,8 +43,9 @@ type Config struct {
 		ExpiryCheckInterval      time.Duration `yaml:"expiry_check_interval"`
 		RulePrioOffset           int           `yaml:"rule_prio_offset"`
 		RouteTableOffset         int           `yaml:"route_table_offset"`
-		ApiAdminOnly             bool          `yaml:"api_admin_only"` // if true, only admin users can access the API
+		ApiAdminOnly             bool          `yaml:"api_admin_only"`               // if true, only admin users can access the API
 		LimitAdditionalUserPeers int           `yaml:"limit_additional_user_peers"`
+		TwoFactorLifetime        time.Duration `yaml:"two_factor_lifetime"`          // if set, all peers will expire after duration and require a login into UI
 	} `yaml:"advanced"`
 
 	Backend Backend `yaml:"backend"`
@@ -174,6 +175,7 @@ func defaultConfig() *Config {
 	cfg.Advanced.RouteTableOffset = getEnvInt("WG_PORTAL_ADVANCED_ROUTE_TABLE_OFFSET", 20000)
 	cfg.Advanced.ApiAdminOnly = getEnvBool("WG_PORTAL_ADVANCED_API_ADMIN_ONLY", true)
 	cfg.Advanced.LimitAdditionalUserPeers = getEnvInt("WG_PORTAL_ADVANCED_LIMIT_ADDITIONAL_USER_PEERS", 0)
+	cfg.Advanced.TwoFactorLifetime = getEnvDuration("WG_PORTAL_ADVANCED_TWO_FACTOR_LIFETIME", 0)
 
 	cfg.Statistics.UsePingChecks = getEnvBool("WG_PORTAL_STATISTICS_USE_PING_CHECKS", true)
 	cfg.Statistics.PingCheckWorkers = getEnvInt("WG_PORTAL_STATISTICS_PING_CHECK_WORKERS", 10)
