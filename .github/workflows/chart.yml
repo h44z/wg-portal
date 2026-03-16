@@ -44,7 +44,7 @@ jobs:
       - name: Run chart-testing (lint)
         run: ct lint --config ct.yaml
 
-      - uses: nolar/setup-k3d-k3s@293b8e5822a20bc0d5bcdd4826f1a665e72aba96 # v1.0.9
+      - uses: nolar/setup-k3d-k3s@8bf8d22160e8b1d184dcb780e390d6952a7eec65 # v1.0.10
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -62,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+      - uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
