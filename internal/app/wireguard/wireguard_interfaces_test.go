@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -96,6 +97,110 @@ func TestImportPeer_AddressMapping(t *testing.T) {
 func (f *mockDB) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
 	return &domain.User{
 		Identifier: id,
-		IsAdmin:    true,
+		IsAdmin:    false,
 	}, nil
+}
+
+func TestInterface_IsUserAllowed(t *testing.T) {
+	cfg := &config.Config{
+		Auth: config.Auth{
+			Ldap: []config.LdapProvider{
+				{
+					ProviderName: "ldap1",
+					InterfaceFilter: map[string]string{
+						"wg0": "(memberOf=CN=VPNUsers,...)",
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name   string
+		iface  domain.Interface
+		userId domain.UserIdentifier
+		expect bool
+	}{
+		{
+			name: "Unrestricted interface",
+			iface: domain.Interface{
+				Identifier: "wg1",
+			},
+			userId: "user1",
+			expect: true,
+		},
+		{
+			name: "Restricted interface - user allowed",
+			iface: domain.Interface{
+				Identifier: "wg0",
+				LdapAllowedUsers: map[string][]domain.UserIdentifier{
+					"ldap1": {"user1"},
+				},
+			},
+			userId: "user1",
+			expect: true,
+		},
+		{
+			name: "Restricted interface - user NOT allowed",
+			iface: domain.Interface{
+				Identifier: "wg0",
+				LdapAllowedUsers: map[string][]domain.UserIdentifier{
+					"ldap1": {"user2"},
+				},
+			},
+			userId: "user1",
+			expect: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expect, tt.iface.IsUserAllowed(tt.userId, cfg))
+		})
+	}
+}
+
+func TestManager_GetUserInterfaces_Filtering(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.Core.SelfProvisioningAllowed = true
+	cfg.Auth.Ldap = []config.LdapProvider{
+		{
+			ProviderName: "ldap1",
+			InterfaceFilter: map[string]string{
+				"wg_restricted": "(some-filter)",
+			},
+		},
+	}
+
+	db := &mockDB{
+		interfaces: []domain.Interface{
+			{Identifier: "wg_public", Type: domain.InterfaceTypeServer},
+			{
+				Identifier: "wg_restricted",
+				Type:       domain.InterfaceTypeServer,
+				LdapAllowedUsers: map[string][]domain.UserIdentifier{
+					"ldap1": {"allowed_user"},
+				},
+			},
+		},
+	}
+	m := Manager{
+		cfg: cfg,
+		db:  db,
+	}
+
+	t.Run("Allowed user sees both", func(t *testing.T) {
+		ifaces, err := m.GetUserInterfaces(context.Background(), "allowed_user")
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(ifaces))
+	})
+
+	t.Run("Unallowed user sees only public", func(t *testing.T) {
+		ifaces, err := m.GetUserInterfaces(context.Background(), "other_user")
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(ifaces))
+		if len(ifaces) > 0 {
+			assert.Equal(t, domain.InterfaceIdentifier("wg_public"), ifaces[0].Identifier)
+		}
+	})
 }
