@@ -214,6 +214,10 @@ type LdapProvider struct {
 	// If RegistrationEnabled is set to true, wg-portal will create new users that do not exist in the database.
 	RegistrationEnabled bool `yaml:"registration_enabled"`
 
+	// InterfaceFilter allows restricting interfaces using an LDAP filter.
+	// Map key is the interface identifier (e.g., "wg0"), value is the filter string.
+	InterfaceFilter map[string]string `yaml:"interface_filter"`
+
 	// If LogUserInfo is set to true, the user info retrieved from the LDAP provider will be logged in trace level.
 	LogUserInfo bool `yaml:"log_user_info"`
 }

@@ -86,6 +86,9 @@ auth:
         memberof: memberOf
       admin_group: CN=WireGuardAdmins,OU=Some-OU,DC=COMPANY,DC=LOCAL
       registration_enabled: true
+      # Restrict interface access based on LDAP filters
+      interface_filter:
+        wg0: "(memberOf=CN=VPNUsers,OU=Groups,DC=COMPANY,DC=LOCAL)"
       log_user_info: true
 ```
 

@@ -16,6 +16,8 @@ import (
 )
 
 type PeerService interface {
+	// GetInterface returns the interface with the given id.
+	GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error)
 	// GetInterfaceAndPeers returns the interface with the given id and all peers associated with it.
 	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
 	// PreparePeer returns a new peer with default values for the given interface.

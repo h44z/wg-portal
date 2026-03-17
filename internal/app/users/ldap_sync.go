@@ -90,6 +90,12 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 		}
 	}
 
+	// Update interface allowed users based on LDAP filters
+	err = m.updateInterfaceLdapFilters(ctx, conn, provider)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -233,6 +239,62 @@ func (m Manager) disableMissingLdapUsers(
 		}
 
 		m.bus.Publish(app.TopicUserDisabled, user)
+	}
+
+	return nil
+}
+
+func (m Manager) updateInterfaceLdapFilters(
+	ctx context.Context,
+	conn *ldap.Conn,
+	provider *config.LdapProvider,
+) error {
+	if len(provider.InterfaceFilter) == 0 {
+		return nil // nothing to do if no interfaces are configured for this provider
+	}
+
+	for ifaceName, groupFilter := range provider.InterfaceFilter {
+		ifaceId := domain.InterfaceIdentifier(ifaceName)
+
+		// Combined filter: user must match the provider's base SyncFilter AND the interface's LdapGroupFilter
+		combinedFilter := fmt.Sprintf("(&(%s)(%s))", provider.SyncFilter, groupFilter)
+		
+		rawUsers, err := internal.LdapFindAllUsers(conn, provider.BaseDN, combinedFilter, &provider.FieldMap)
+		if err != nil {
+			slog.Error("failed to find users for interface filter", 
+				"interface", ifaceId, 
+				"provider", provider.ProviderName, 
+				"error", err)
+			continue
+		}
+
+		matchedUserIds := make([]domain.UserIdentifier, 0, len(rawUsers))
+		for _, rawUser := range rawUsers {
+			userId := domain.UserIdentifier(internal.MapDefaultString(rawUser, provider.FieldMap.UserIdentifier, ""))
+			if userId != "" {
+				matchedUserIds = append(matchedUserIds, userId)
+			}
+		}
+
+		// Save the interface
+		err = m.interfaces.SaveInterface(ctx, ifaceId, func(i *domain.Interface) (*domain.Interface, error) {
+			if i.LdapAllowedUsers == nil {
+				i.LdapAllowedUsers = make(map[string][]domain.UserIdentifier)
+			}
+			i.LdapAllowedUsers[provider.ProviderName] = matchedUserIds
+			return i, nil
+		})
+		if err != nil {
+			slog.Error("failed to save interface ldap allowed users", 
+				"interface", ifaceId, 
+				"provider", provider.ProviderName, 
+				"error", err)
+		} else {
+			slog.Debug("updated interface ldap allowed users", 
+				"interface", ifaceId, 
+				"provider", provider.ProviderName, 
+				"matched_count", len(matchedUserIds))
+		}
 	}
 
 	return nil

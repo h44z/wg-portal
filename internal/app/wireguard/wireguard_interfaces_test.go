@@ -92,3 +92,10 @@ func TestImportPeer_AddressMapping(t *testing.T) {
 		})
 	}
 }
+
+func (f *mockDB) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+	return &domain.User{
+		Identifier: id,
+		IsAdmin:    true,
+	}, nil
+}
