@@ -150,3 +150,17 @@ All groups that are listed in the `memberof` attribute of the user will be check
 
 ## User Synchronization
 
+## Two-factor-like authentication
+
+When enabled, this feature requires users to periodically authenticate via the web UI to keep their WireGuard peers active, adding a second verification layer beyond just possessing the WireGuard keys.
+
+To enable this feature, simply set `two_factor_lifetime` parameter in config->advanced (or via WG_PORTAL_ADVANCED_TWO_FACTOR_LIFETIME env variable) to the desired lifetime (0 disables the feature):
+
+```yaml
+advanced:
+  two_factor_lifetime: 12h
+```
+
+The above example will require users to log-out / log-in from WG-portal every 12 hours to keep their peers active.
+
+Note: due to the standalone nature of the Wireguard protocol, I couldn't find a way to communicate to users that their peer has expired. Most tools will consider the connection as "established" even though the remote-peer has been deleted.
