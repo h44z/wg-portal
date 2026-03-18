@@ -80,6 +80,8 @@ onMounted(async () => {
     <div class="col-12 col-lg-5">
       <h2 class="mt-2">{{ $t('profile.headline') }}</h2>
     </div>
+    <div class="col-12 col-lg-3 text-lg-end" v-if="!settings.Setting('SelfProvisioning') || profile.CountInterfaces===0">
+    </div>
     <div class="col-12 col-lg-4 text-lg-end">
       <div class="form-group d-inline">
         <div class="input-group mb-3">
@@ -90,8 +92,8 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <div class="col-12 col-lg-3 text-lg-end">
-      <div class="form-group" v-if="settings.Setting('SelfProvisioning')">
+    <div class="col-12 col-lg-3 text-lg-end" v-if="settings.Setting('SelfProvisioning') && profile.CountInterfaces>0">
+      <div class="form-group">
         <div class="input-group mb-3">
           <button class="btn btn-primary" :title="$t('interfaces.button-add-peer')" @click.prevent="editPeerId = '#NEW#'">
             <i class="fa fa-plus me-1"></i><i class="fa fa-user"></i>
@@ -160,8 +162,7 @@ onMounted(async () => {
           </td>
           <td v-if="profile.hasStatistics">
             <div v-if="profile.Statistics(peer.Identifier).IsConnected">
-              <span class="badge rounded-pill bg-success"><i class="fa-solid fa-link"></i></span>
-              <span :title="profile.Statistics(peer.Identifier).LastHandshake">{{ $t('profile.peer-connected') }}</span>
+              <span class="badge rounded-pill bg-success" :title="$t('profile.peer-connected')"><i class="fa-solid fa-link"></i></span> <small class="text-muted" :title="$t('interfaces.peer-handshake') + ' ' + profile.Statistics(peer.Identifier).LastHandshake"><i class="fa-solid fa-circle-info"></i></small>
             </div>
             <div v-else>
               <span class="badge rounded-pill bg-light"><i class="fa-solid fa-link-slash"></i></span>
@@ -174,7 +175,7 @@ onMounted(async () => {
           <td class="text-center">
             <a href="#" :title="$t('profile.button-show-peer')" @click.prevent="viewedPeerId = peer.Identifier"><i
                 class="fas fa-eye me-2"></i></a>
-            <a href="#" :title="$t('profile.button-edit-peer')" @click.prevent="editPeerId = peer.Identifier"><i
+            <a href="#" :title="$t('profile.button-edit-peer')" @click.prevent="editPeerId = peer.Identifier" v-if="settings.Setting('SelfProvisioning') && profile.HasInterface(peer.InterfaceIdentifier)"><i
                 class="fas fa-cog"></i></a>
           </td>
         </tr>

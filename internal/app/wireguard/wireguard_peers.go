@@ -179,10 +179,6 @@ func (m Manager) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain
 		return nil, err
 	}
 
-	if err := m.checkInterfaceAccess(ctx, peer.InterfaceIdentifier); err != nil {
-		return nil, err
-	}
-
 	return peer, nil
 }
 
@@ -194,6 +190,9 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		}
 	} else {
 		if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+			return nil, err
+		}
+		if err := m.checkInterfaceAccess(ctx, peer.InterfaceIdentifier); err != nil {
 			return nil, err
 		}
 	}

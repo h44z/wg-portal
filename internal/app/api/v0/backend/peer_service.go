@@ -13,7 +13,6 @@ import (
 
 type PeerServicePeerManager interface {
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
-	GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error)
 	GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error)
 	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
 	PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error)
@@ -67,10 +66,6 @@ func (p PeerService) GetInterfaceAndPeers(ctx context.Context, id domain.Interfa
 	error,
 ) {
 	return p.peers.GetInterfaceAndPeers(ctx, id)
-}
-
-func (p PeerService) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error) {
-	return p.peers.GetInterface(ctx, id)
 }
 
 func (p PeerService) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Peer, error) {

@@ -80,7 +80,7 @@ type Interface struct {
 	PeerDefPostDown string // default action that is executed after the device is down
 
 	// Self-provisioning access control
-	LdapAllowedUsers map[string][]UserIdentifier           `gorm:"serializer:json"` // Materialised during LDAP sync, keyed by ProviderName
+	LdapAllowedUsers map[string][]UserIdentifier `gorm:"serializer:json"` // Materialised during LDAP sync, keyed by ProviderName
 }
 
 // IsUserAllowed returns true if the interface has no filter, or if the user is in the allowed list.
@@ -97,8 +97,8 @@ func (i *Interface) IsUserAllowed(userId UserIdentifier, cfg *config.Config) boo
 		return true // The interface is completely unrestricted by LDAP config
 	}
 
-	for _, providerUsers := range i.LdapAllowedUsers {
-		for _, uid := range providerUsers {
+	for _, allowedUsers := range i.LdapAllowedUsers {
+		for _, uid := range allowedUsers {
 			if uid == userId {
 				return true
 			}

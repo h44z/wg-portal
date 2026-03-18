@@ -141,6 +141,18 @@ func TestInterface_IsUserAllowed(t *testing.T) {
 			expect: true,
 		},
 		{
+			name: "Restricted interface - user allowed (at least one match)",
+			iface: domain.Interface{
+				Identifier: "wg0",
+				LdapAllowedUsers: map[string][]domain.UserIdentifier{
+					"ldap1": {"user2"},
+					"ldap2": {"user1"},
+				},
+			},
+			userId: "user1",
+			expect: true,
+		},
+		{
 			name: "Restricted interface - user NOT allowed",
 			iface: domain.Interface{
 				Identifier: "wg0",
