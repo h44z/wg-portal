@@ -204,13 +204,13 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 
 							// calculate if session was restarted
 							p.UpdatedAt = now
-							p.LastSessionStart = getSessionStartTime(*p, peer.BytesUpload, peer.BytesDownload,
+							p.LastSessionStart = c.getSessionStartTime(*p, peer.BytesUpload, peer.BytesDownload,
 								lastHandshake)
 							p.BytesReceived = peer.BytesUpload      // store bytes that where uploaded from the peer and received by the server
 							p.BytesTransmitted = peer.BytesDownload // store bytes that where received from the peer and sent by the server
 							p.Endpoint = peer.Endpoint
 							p.LastHandshake = lastHandshake
-							p.CalcConnected()
+							p.CalcConnected(c.cfg.Backend.ReKeyTimeoutInterval)
 
 							if wasConnected != p.IsConnected {
 								slog.Debug("peer connection state changed",
@@ -249,7 +249,7 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 	}
 }
 
-func getSessionStartTime(
+func (c *StatisticsCollector) getSessionStartTime(
 	oldStats domain.PeerStatus,
 	newReceived, newTransmitted uint64,
 	latestHandshake *time.Time,
@@ -258,7 +258,7 @@ func getSessionStartTime(
 		return nil // currently not connected
 	}
 
-	oldestHandshakeTime := time.Now().Add(-2 * time.Minute) // if a handshake is older than 2 minutes, the peer is no longer connected
+	oldestHandshakeTime := time.Now().Add(-1 * c.cfg.Backend.ReKeyTimeoutInterval) // if a handshake is older than the rekey interval + grace-period, the peer is no longer connected
 	switch {
 	// old session was never initiated
 	case oldStats.BytesReceived == 0 && oldStats.BytesTransmitted == 0 && (newReceived > 0 || newTransmitted > 0):
@@ -369,7 +369,7 @@ func (c *StatisticsCollector) pingWorker(ctx context.Context) {
 					p.LastPing = nil
 				}
 				p.UpdatedAt = time.Now()
-				p.CalcConnected()
+				p.CalcConnected(c.cfg.Backend.ReKeyTimeoutInterval)
 
 				if wasConnected != p.IsConnected {
 					connectionStateChanged = true
