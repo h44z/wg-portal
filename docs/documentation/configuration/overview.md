@@ -742,6 +742,16 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 - **Important**: The `login_filter` must always be a valid LDAP filter. It should at most return one user. 
   If the filter returns multiple or no users, the login will fail.
 
+#### `interface_filter`
+- **Default:** *(empty)*
+- **Description:** A map of LDAP filters to restrict access to specific WireGuard interfaces. The map keys are the interface identifiers (e.g., `wg0`), and the values are LDAP filters. Only users matching the filter will be allowed to provision peers for the respective interface.
+  For example:
+  ```yaml
+  interface_filter:
+    wg0: "(memberOf=CN=VPNUsers,OU=Groups,DC=COMPANY,DC=LOCAL)"
+    wg1: "(description=special-access)"
+  ```
+
 #### `admin_group`
 - **Default:** *(empty)*
 - **Description:** A specific LDAP group whose members are considered administrators in WireGuard Portal.

@@ -80,7 +80,7 @@ func main() {
 	internal.AssertNoError(err)
 	auditRecorder.StartBackgroundJobs(ctx)
 
-	userManager, err := users.NewUserManager(cfg, eventBus, database, database)
+	userManager, err := users.NewUserManager(cfg, eventBus, database, database, database)
 	internal.AssertNoError(err)
 	userManager.StartBackgroundJobs(ctx)
 

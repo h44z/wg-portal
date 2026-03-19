@@ -44,3 +44,11 @@ All peers associated with that user will also be disabled.
 
 If you want a user and its peers to be automatically re-enabled once they are found in LDAP again, set the `auto_re_enable` property to `true`.
 This will only re-enable the user if they were disabled by the synchronization process. Manually disabled users will not be re-enabled.
+
+##### Interface-specific Access Materialization
+
+If `interface_filter` is configured in the LDAP provider, the synchronization process will evaluate these filters for each enabled user.
+The results are materialized in the `interfaces` table of the database in a hidden field. 
+This materialized list is used by the backend to quickly determine if a user has permission to provision peers for a specific interface, without having to query the LDAP server for every request.
+The list is refreshed every time the LDAP synchronization runs.
+For more details on how to configure these filters, see the [Authentication](./authentication.md#interface-specific-provisioning-filters) section.
