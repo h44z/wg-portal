@@ -76,6 +76,9 @@
 <span class=w>        </span><span class=nt>memberof</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">memberOf</span>
 <span class=w>      </span><span class=nt>admin_group</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">CN=WireGuardAdmins,OU=Some-OU,DC=COMPANY,DC=LOCAL</span>
 <span class=w>      </span><span class=nt>registration_enabled</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class=w>      </span><span class=c1># Restrict interface access based on LDAP filters</span>
+<span class=w>      </span><span class=nt>interface_filter</span><span class=p>:</span>
+<span class=w>        </span><span class=nt>wg0</span><span class=p>:</span><span class=w> </span><span class=s>&quot;(memberOf=CN=VPNUsers,OU=Groups,DC=COMPANY,DC=LOCAL)&quot;</span>
 <span class=w>      </span><span class=nt>log_user_info</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div> <h2 id=openid-connect-oidc-authentication>OpenID Connect (OIDC) Authentication</h2> <div class=highlight><pre><span></span><code><span class=c1># ... (basic configuration)</span>
 
