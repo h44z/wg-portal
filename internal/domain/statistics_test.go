@@ -7,7 +7,7 @@ import (
 
 func TestPeerStatus_IsConnected(t *testing.T) {
 	now := time.Now()
-	past := now.Add(-3 * time.Minute)
+	past := now.Add(-4 * time.Minute)
 	recent := now.Add(-1 * time.Minute)
 
 	tests := []struct {

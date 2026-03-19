@@ -258,7 +258,7 @@ func getSessionStartTime(
 		return nil // currently not connected
 	}
 
-	oldestHandshakeTime := time.Now().Add(-2 * time.Minute) // if a handshake is older than 2 minutes, the peer is no longer connected
+	oldestHandshakeTime := time.Now().Add(-domain.HandshakeValidityWindow) // if a handshake is older than the validity window, the peer is no longer connected
 	switch {
 	// old session was never initiated
 	case oldStats.BytesReceived == 0 && oldStats.BytesTransmitted == 0 && (newReceived > 0 || newTransmitted > 0):

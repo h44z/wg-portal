@@ -11,7 +11,7 @@ import (
 func Test_getSessionStartTime(t *testing.T) {
 	now := time.Now()
 	nowMinus1 := now.Add(-1 * time.Minute)
-	nowMinus3 := now.Add(-3 * time.Minute)
+	nowMinus4 := now.Add(-4 * time.Minute)
 	nowMinus5 := now.Add(-5 * time.Minute)
 
 	type args struct {
@@ -84,7 +84,7 @@ func Test_getSessionStartTime(t *testing.T) {
 				},
 				newReceived:    100,
 				newTransmitted: 100,
-				lastHandshake:  &nowMinus3,
+				lastHandshake:  &nowMinus4,
 			},
 			want: &nowMinus5,
 		},

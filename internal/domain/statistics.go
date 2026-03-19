@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+const HandshakeValidityWindow = 3 * time.Minute
+
 type PeerStatus struct {
 	PeerId    PeerIdentifier `gorm:"primaryKey;column:identifier" json:"PeerId"`
 	UpdatedAt time.Time      `gorm:"column:updated_at" json:"-"`
@@ -22,7 +24,7 @@ type PeerStatus struct {
 }
 
 func (s *PeerStatus) CalcConnected() {
-	oldestHandshakeTime := time.Now().Add(-2 * time.Minute) // if a handshake is older than 2 minutes, the peer is no longer connected
+	oldestHandshakeTime := time.Now().Add(-HandshakeValidityWindow) // if a handshake is older than the validity window, the peer is no longer connected
 
 	handshakeValid := false
 	if s.LastHandshake != nil {
