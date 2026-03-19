@@ -137,7 +137,7 @@ func TestStatisticsCollector_getSessionStartTime(t *testing.T) {
 			c := &StatisticsCollector{
 				cfg: &config.Config{
 					Backend: config.Backend{
-						ReKeyTimeoutInterval: 150 * time.Second,
+						ReKeyTimeoutInterval: 180 * time.Second,
 					},
 				},
 			}

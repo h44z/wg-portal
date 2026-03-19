@@ -205,11 +205,11 @@ The current MikroTik backend is in **BETA** and may not support all features.
   Valid options are: `local`, or other backend id's configured in the `mikrotik` section.
 
 ### `rekey_timeout_interval`
-- **Default:** `150s`
+- **Default:** `180s`
 - **Environment Variable:** `WG_PORTAL_BACKEND_REKEY_TIMEOUT_INTERVAL`
 - **Description:** The interval after which a WireGuard peer is considered disconnected if no handshake updates are received. 
-  This corresponds to the WireGuard rekey timeout setting of 120 seconds plus a 30-second buffer to account for latency or retry handling.
-  Uses Go duration format (e.g., `10s`, `1m`). If omitted, a default of 150 seconds is used.
+  This corresponds to the WireGuard rekey timeout setting of 120 seconds plus a 60-second buffer to account for latency or retry handling.
+  Uses Go duration format (e.g., `10s`, `1m`). If omitted, a default of 180 seconds is used.
 
 ### `local_resolvconf_prefix`
 - **Default:** `tun.`
