@@ -30,7 +30,7 @@ type MetricsServer struct {
 // Wireguard metrics labels
 var (
 	ifaceLabels = []string{"interface"}
-	peerLabels  = []string{"interface", "addresses", "id", "name"}
+	peerLabels  = []string{"interface", "addresses", "id", "name", "user"}
 )
 
 // NewMetricsServer returns a new prometheus server
@@ -126,6 +126,7 @@ func (m *MetricsServer) UpdatePeerMetrics(peer *domain.Peer, status domain.PeerS
 		peer.Interface.AddressStr(),
 		string(status.PeerId),
 		peer.DisplayName,
+		string(peer.UserIdentifier),
 	}
 
 	if status.LastHandshake != nil {
