@@ -10,6 +10,8 @@ const LocalBackendName = "local"
 type Backend struct {
 	Default string `yaml:"default"` // The default backend to use (defaults to the internal backend)
 
+	ReKeyTimeoutInterval time.Duration `yaml:"rekey_timeout_interval"` // Interval after which a connection is assumed dead
+
 	// Local Backend-specific configuration
 
 	IgnoredLocalInterfaces []string `yaml:"ignored_local_interfaces"` // A list of interface names that should be ignored by this backend (e.g., "wg0")
@@ -115,8 +117,8 @@ func (b *BackendMikrotik) GetApiTimeout() time.Duration {
 type BackendPfsense struct {
 	BackendBase `yaml:",inline"` // Embed the base fields
 
-	ApiUrl       string        `yaml:"api_url"` // The base URL of the pfSense REST API (e.g., "https://pfsense.example.com/api/v2")
-	ApiKey       string        `yaml:"api_key"` // API key for authentication (generated in pfSense under 'System' -> 'REST API' -> 'Keys')
+	ApiUrl       string        `yaml:"api_url"`        // The base URL of the pfSense REST API (e.g., "https://pfsense.example.com/api/v2")
+	ApiKey       string        `yaml:"api_key"`        // API key for authentication (generated in pfSense under 'System' -> 'REST API' -> 'Keys')
 	ApiVerifyTls bool          `yaml:"api_verify_tls"` // Whether to verify the TLS certificate of the pfSense API
 	ApiTimeout   time.Duration `yaml:"api_timeout"`    // Timeout for API requests (default: 30 seconds)
 

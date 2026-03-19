@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-func Test_getSessionStartTime(t *testing.T) {
+func TestStatisticsCollector_getSessionStartTime(t *testing.T) {
 	now := time.Now()
 	nowMinus1 := now.Add(-1 * time.Minute)
 	nowMinus3 := now.Add(-3 * time.Minute)
@@ -133,7 +134,14 @@ func Test_getSessionStartTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getSessionStartTime(tt.args.oldStats, tt.args.newReceived, tt.args.newTransmitted,
+			c := &StatisticsCollector{
+				cfg: &config.Config{
+					Backend: config.Backend{
+						ReKeyTimeoutInterval: 180 * time.Second,
+					},
+				},
+			}
+			if got := c.getSessionStartTime(tt.args.oldStats, tt.args.newReceived, tt.args.newTransmitted,
 				tt.args.lastHandshake); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getSessionStartTime() = %v, want %v", got, tt.want)
 			}
