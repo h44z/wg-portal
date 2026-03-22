@@ -147,6 +147,26 @@ You can map users to admin roles based on their group membership in the LDAP ser
 The `admin_group` property defines the distinguished name of the group that is allowed to log in as admin.
 All groups that are listed in the `memberof` attribute of the user will be checked against this group. If one of the groups matches, the user is granted admin access.
 
+### Interface-specific Provisioning Filters
+
+You can restrict which users are allowed to provision peers for specific WireGuard interfaces by setting the `interface_filter` property.
+This property is a map where each key corresponds to a WireGuard interface identifier, and the value is an LDAP filter.
+A user will only be able to see and provision peers for an interface if they match the specified LDAP filter for that interface.
+
+Example:
+```yaml
+auth:
+  ldap:
+    - provider_name: "ldap1"
+      # ... other settings
+      interface_filter:
+        wg0: "(memberOf=CN=VPNUsers,OU=Groups,DC=COMPANY,DC=LOCAL)"
+        wg1: "(department=IT)"
+```
+
+This feature works by materializing the list of authorized users for each interface during the periodic LDAP synchronization.
+Even if a user bypasses the UI, the backend will enforce these restrictions at the service layer.
+
 
 ## User Synchronization
 

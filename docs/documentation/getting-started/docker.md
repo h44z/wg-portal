@@ -35,6 +35,14 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
    > :warning: If host networking is used, the WireGuard Portal UI will be accessible on all the host's IP addresses if the listening address is set to `:8888` in the configuration file.
    To avoid this, you can bind the listening address to a specific IP address, for example, the loopback address (`127.0.0.1:8888`). It is also possible to deploy firewall rules to restrict access to the WireGuard Portal UI.
 
+   > :warning: If the host is running **systemd-networkd**, routes managed by WireGuard Portal may be removed whenever systemd-networkd restarts, as it will clean up routes it considers "foreign". To prevent this, add the following to your host's network configuration (e.g. `/etc/systemd/networkd.conf` or a drop-in file):
+   > ```ini
+   > [Network]
+   > ManageForeignRoutingPolicyRules=no
+   > ManageForeignRoutes=no
+   > ```
+   > After editing, reload the configuration with `sudo systemctl restart systemd-networkd`. For more information refer to the [systemd-networkd documentation](https://www.freedesktop.org/software/systemd/man/latest/networkd.conf.html#ManageForeignRoutes=).
+
  - **Within the WireGuard Portal Docker container**: 
    WireGuard interfaces can be managed directly from within the WireGuard Portal container itself.
    This is the recommended approach when running WireGuard Portal via Docker, as it encapsulates all functionality in a single, portable container without requiring a separate WireGuard host or image.

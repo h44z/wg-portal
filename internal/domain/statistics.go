@@ -21,8 +21,8 @@ type PeerStatus struct {
 	LastSessionStart *time.Time `gorm:"column:last_session_start" json:"LastSessionStart"`
 }
 
-func (s *PeerStatus) CalcConnected() {
-	oldestHandshakeTime := time.Now().Add(-2 * time.Minute) // if a handshake is older than 2 minutes, the peer is no longer connected
+func (s *PeerStatus) CalcConnected(timeout time.Duration) {
+	oldestHandshakeTime := time.Now().Add(-1 * timeout) // if a handshake is older than the rekey-interval + grace-period, the peer is no longer connected
 
 	handshakeValid := false
 	if s.LastHandshake != nil {

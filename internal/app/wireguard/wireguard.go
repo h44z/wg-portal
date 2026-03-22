@@ -35,6 +35,7 @@ type InterfaceAndPeerDatabaseRepo interface {
 	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 	GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (map[domain.Cidr][]domain.Cidr, error)
+	GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
 }
 
 type WgQuickController interface {

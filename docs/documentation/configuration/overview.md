@@ -28,6 +28,7 @@ core:
   
 backend:
   default: local
+  rekey_timeout_interval: 125s
   local_resolvconf_prefix: tun.
 
 advanced:
@@ -202,6 +203,13 @@ The current MikroTik backend is in **BETA** and may not support all features.
 - **Default:** `local`
 - **Description:** The default backend to use for managing WireGuard interfaces. 
   Valid options are: `local`, or other backend id's configured in the `mikrotik` section.
+
+### `rekey_timeout_interval`
+- **Default:** `180s`
+- **Environment Variable:** `WG_PORTAL_BACKEND_REKEY_TIMEOUT_INTERVAL`
+- **Description:** The interval after which a WireGuard peer is considered disconnected if no handshake updates are received. 
+  This corresponds to the WireGuard rekey timeout setting of 120 seconds plus a 60-second buffer to account for latency or retry handling.
+  Uses Go duration format (e.g., `10s`, `1m`). If omitted, a default of 180 seconds is used.
 
 ### `local_resolvconf_prefix`
 - **Default:** `tun.`
@@ -733,6 +741,16 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
   ```
 - **Important**: The `login_filter` must always be a valid LDAP filter. It should at most return one user. 
   If the filter returns multiple or no users, the login will fail.
+
+#### `interface_filter`
+- **Default:** *(empty)*
+- **Description:** A map of LDAP filters to restrict access to specific WireGuard interfaces. The map keys are the interface identifiers (e.g., `wg0`), and the values are LDAP filters. Only users matching the filter will be allowed to provision peers for the respective interface.
+  For example:
+  ```yaml
+  interface_filter:
+    wg0: "(memberOf=CN=VPNUsers,OU=Groups,DC=COMPANY,DC=LOCAL)"
+    wg1: "(description=special-access)"
+  ```
 
 #### `admin_group`
 - **Default:** *(empty)*

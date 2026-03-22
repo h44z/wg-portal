@@ -74,6 +74,7 @@ export const profileStore = defineStore('profile', {
     },
     hasStatistics: (state) => state.statsEnabled,
     CountInterfaces: (state) => state.interfaces.length,
+    HasInterface: (state) => (id) => state.interfaces.some((i) => i.Identifier === id),
   },
   actions: {
     afterPageSizeChange() {

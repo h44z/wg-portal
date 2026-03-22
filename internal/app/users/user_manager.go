@@ -39,6 +39,11 @@ type PeerDatabaseRepo interface {
 	GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error)
 }
 
+type InterfaceDatabaseRepo interface {
+	// SaveInterface saves the interface with the given identifier.
+	SaveInterface(ctx context.Context, id domain.InterfaceIdentifier, updateFunc func(i *domain.Interface) (*domain.Interface, error)) error
+}
+
 type EventBus interface {
 	// Publish sends a message to the message bus.
 	Publish(topic string, args ...any)
@@ -50,22 +55,27 @@ type EventBus interface {
 type Manager struct {
 	cfg *config.Config
 
-	bus   EventBus
-	users UserDatabaseRepo
-	peers PeerDatabaseRepo
+	bus        EventBus
+	users      UserDatabaseRepo
+	peers      PeerDatabaseRepo
+	interfaces InterfaceDatabaseRepo
 }
 
 // NewUserManager creates a new user manager instance.
-func NewUserManager(cfg *config.Config, bus EventBus, users UserDatabaseRepo, peers PeerDatabaseRepo) (
-	*Manager,
-	error,
-) {
+func NewUserManager(
+	cfg *config.Config,
+	bus EventBus,
+	users UserDatabaseRepo,
+	peers PeerDatabaseRepo,
+	interfaces InterfaceDatabaseRepo,
+) (*Manager, error) {
 	m := &Manager{
 		cfg: cfg,
 		bus: bus,
 
-		users: users,
-		peers: peers,
+		users:      users,
+		peers:      peers,
+		interfaces: interfaces,
 	}
 	return m, nil
 }

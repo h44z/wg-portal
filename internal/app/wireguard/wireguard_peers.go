@@ -93,6 +93,10 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 
 	currentUser := domain.GetUserInfo(ctx)
 
+	if err := m.checkInterfaceAccess(ctx, id); err != nil {
+		return nil, err
+	}
+
 	iface, err := m.db.GetInterface(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find interface %s: %w", id, err)
@@ -186,6 +190,9 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		}
 	} else {
 		if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+			return nil, err
+		}
+		if err := m.checkInterfaceAccess(ctx, peer.InterfaceIdentifier); err != nil {
 			return nil, err
 		}
 	}
@@ -304,6 +311,10 @@ func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		return nil, err
 	}
 
+	if err := m.checkInterfaceAccess(ctx, existingPeer.InterfaceIdentifier); err != nil {
+		return nil, err
+	}
+
 	if err := m.validatePeerModifications(ctx, existingPeer, peer); err != nil {
 		return nil, fmt.Errorf("update not allowed: %w", err)
 	}
@@ -370,6 +381,10 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	}
 
 	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+		return err
+	}
+
+	if err := m.checkInterfaceAccess(ctx, peer.InterfaceIdentifier); err != nil {
 		return err
 	}
 
@@ -601,6 +616,24 @@ func (m Manager) validatePeerDeletion(ctx context.Context, _ *domain.Peer) error
 
 	if !currentUser.IsAdmin && !m.cfg.Core.SelfProvisioningAllowed {
 		return domain.ErrNoPermission
+	}
+
+	return nil
+}
+
+func (m Manager) checkInterfaceAccess(ctx context.Context, id domain.InterfaceIdentifier) error {
+	user := domain.GetUserInfo(ctx)
+	if user.IsAdmin {
+		return nil
+	}
+
+	iface, err := m.db.GetInterface(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to get interface %s: %w", id, err)
+	}
+
+	if !iface.IsUserAllowed(user.Id, m.cfg) {
+		return fmt.Errorf("user %s is not allowed to access interface %s: %w", user.Id, id, domain.ErrNoPermission)
 	}
 
 	return nil

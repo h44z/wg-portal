@@ -16,6 +16,11 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
+// GetInterface returns the interface for the given interface identifier.
+func (m Manager) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error) {
+	return m.db.GetInterface(ctx, id)
+}
+
 // GetInterfaceAndPeers returns the interface and all peers for the given interface identifier.
 func (m Manager) GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (
 	*domain.Interface,
@@ -63,10 +68,15 @@ func (m Manager) GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interfa
 
 // GetUserInterfaces returns all interfaces that are available for users to create new peers.
 // If self-provisioning is disabled, this function will return an empty list.
-// At the moment, there are no interfaces specific to single users, thus the user id is not used.
-func (m Manager) GetUserInterfaces(ctx context.Context, _ domain.UserIdentifier) ([]domain.Interface, error) {
+func (m Manager) GetUserInterfaces(ctx context.Context, userId domain.UserIdentifier) ([]domain.Interface, error) {
 	if !m.cfg.Core.SelfProvisioningAllowed {
 		return nil, nil // self-provisioning is disabled - no interfaces for users
+	}
+
+	user, err := m.db.GetUser(ctx, userId)
+	if err != nil {
+		slog.Error("failed to load user for interface group verification", "user", userId, "error", err)
+		return nil, nil // fail closed
 	}
 
 	interfaces, err := m.db.GetAllInterfaces(ctx)
@@ -82,6 +92,9 @@ func (m Manager) GetUserInterfaces(ctx context.Context, _ domain.UserIdentifier)
 		}
 		if iface.Type != domain.InterfaceTypeServer {
 			continue // skip client interfaces
+		}
+		if !user.IsAdmin && !iface.IsUserAllowed(userId, m.cfg) {
+			continue // user not allowed due to LDAP group filter
 		}
 
 		userInterfaces = append(userInterfaces, iface.PublicInfo())
