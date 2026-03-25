@@ -482,7 +482,7 @@ func (r *SqlRepo) getOrCreateInterface(
 		Identifier: id,
 	}
 
-	err := tx.Attrs(interfaceDefaults).FirstOrCreate(&in, id).Error
+	err := tx.Preload("Addresses").Attrs(interfaceDefaults).FirstOrCreate(&in, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -691,7 +691,7 @@ func (r *SqlRepo) getOrCreatePeer(ui *domain.ContextUserInfo, tx *gorm.DB, id do
 		Identifier: id,
 	}
 
-	err := tx.Attrs(interfaceDefaults).FirstOrCreate(&peer, id).Error
+	err := tx.Preload("Addresses").Attrs(interfaceDefaults).FirstOrCreate(&peer, id).Error
 	if err != nil {
 		return nil, err
 	}
