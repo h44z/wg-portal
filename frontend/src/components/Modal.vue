@@ -26,13 +26,13 @@
   display:block;
 }
 .modal.show {
-  opacity: 1;
+  opacity: 1.0;
 }
 .modal-backdrop {
   background-color: rgba(0,0,0,0.6) !important;
 }
 .modal-backdrop.show {
-  opacity: 1 !important;
+  opacity: 1.0 !important;
 }
 </style>
 
