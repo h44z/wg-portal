@@ -242,8 +242,7 @@
           "label": "管理员"
         }
       },
-        "confirm-delete": "确定要删除用户“{id}”吗？"
-},
+      "confirm-delete": "确定要删除用户“{id}”吗？",
       "interface-view": {
         "headline": "接口配置: "
       },
@@ -356,7 +355,6 @@
           }
         },
         "button-apply-defaults": "应用节点默认值",
-
         "confirm-delete": "确定要删除接口“{id}”吗？"
       },
       "peer-view": {
@@ -474,7 +472,6 @@
         "expires-at": {
           "label": "过期日期"
         },
-
         "confirm-delete": "确定要删除对等点“{id}”吗？"
       },
       "peer-multi-create": {

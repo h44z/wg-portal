@@ -365,8 +365,7 @@
       },
       "admin": {
         "label": "Es administrador"
-      }
-    },
+      },
       "confirm-delete": "Seguro que desea eliminar el usuario '{id}'?"
     },
     "interface-view": {
