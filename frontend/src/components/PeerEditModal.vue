@@ -294,6 +294,7 @@ async function save() {
 
 async function del() {
   if (isDeleting.value) return
+  if (!confirm(t('modals.peer-edit.confirm-delete', {id: selectedPeer.value.Identifier}))) return
   isDeleting.value = true
   try {
     await peers.DeletePeer(selectedPeer.value.Identifier)

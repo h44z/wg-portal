@@ -282,6 +282,8 @@
           "label": "관리자 여부"
         }
       },
+        "confirm-delete": "사용자 '{id}'를 삭제하시겠습니까?"
+},
       "interface-view": {
         "headline": "인터페이스 구성:"
       },
@@ -393,7 +395,9 @@
             "placeholder": "영구 Keepalive (0 = 기본값)"
           }
         },
-        "button-apply-defaults": "피어 기본값 적용"
+        "button-apply-defaults": "피어 기본값 적용",
+
+        "confirm-delete": "인터페이스 '{id}'를 삭제하시겠습니까?"
       },
       "peer-view": {
         "headline-peer": "피어:",
@@ -509,7 +513,9 @@
         },
         "expires-at": {
           "label": "만료 날짜"
-        }
+        },
+
+        "confirm-delete": "피어 '{id}'를 삭제하시겠습니까?"
       },
       "peer-multi-create": {
         "headline-peer": "여러 피어 생성",
