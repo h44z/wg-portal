@@ -232,21 +232,19 @@ func (r *SqlRepo) migrate() error {
 	slog.Debug("running migration: interface status", "result", r.db.AutoMigrate(&domain.InterfaceStatus{}))
 	slog.Debug("running migration: audit data", "result", r.db.AutoMigrate(&domain.AuditEntry{}))
 
-	existingSysStat := SysStat{}
+	var existingSysStat SysStat
+	var err error
+
 	r.db.Order("schema_version desc").First(&existingSysStat) // get latest version
 
 	// Migration: 0 --> 1
 	if existingSysStat.SchemaVersion == 0 {
 		const schemaVersion = 1
-		sysStat := SysStat{
-			MigratedAt:    time.Now(),
-			SchemaVersion: schemaVersion,
-		}
-		if err := r.db.Create(&sysStat).Error; err != nil {
-			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", schemaVersion, err)
+		existingSysStat, err = r.addMigration(schemaVersion) // ensure that follow-up checks test against the latest version
+		if err != nil {
+			return err
 		}
 		slog.Debug("sys-stat entry written", "schema_version", schemaVersion)
-		existingSysStat = sysStat // ensure that follow-up checks test against the latest version
 	}
 
 	// Migration: 1 --> 2
@@ -262,14 +260,10 @@ func (r *SqlRepo) migrate() error {
 			}
 			slog.Debug("migrated interface create_default_peer flags", "schema_version", schemaVersion)
 		}
-		sysStat := SysStat{
-			MigratedAt:    time.Now(),
-			SchemaVersion: schemaVersion,
+		existingSysStat, err = r.addMigration(schemaVersion) // ensure that follow-up checks test against the latest version
+		if err != nil {
+			return err
 		}
-		if err := r.db.Create(&sysStat).Error; err != nil {
-			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", schemaVersion, err)
-		}
-		existingSysStat = sysStat // ensure that follow-up checks test against the latest version
 	}
 
 	// Migration: 2 --> 3
@@ -307,42 +301,43 @@ func (r *SqlRepo) migrate() error {
 		if err != nil {
 			return fmt.Errorf("failed to migrate to multi-auth: %w", err)
 		}
-		sysStat := SysStat{
-			MigratedAt:    time.Now(),
-			SchemaVersion: schemaVersion,
+		existingSysStat, err = r.addMigration(schemaVersion) // ensure that follow-up checks test against the latest version
+		if err != nil {
+			return err
 		}
-		if err := r.db.Create(&sysStat).Error; err != nil {
-			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", schemaVersion, err)
-		}
-		existingSysStat = sysStat // ensure that follow-up checks test against the latest version
 	}
 
 	// Migration: 3 --> 4
 	if existingSysStat.SchemaVersion == 3 {
 		const schemaVersion = 4
-		// Fix zero created_at timestamps across all tables
-		for _, table := range []string{"users", "user_authentications", "interfaces", "peers", "audit_entries"} {
-			err := r.db.Exec(
-				"UPDATE "+table+" SET created_at = updated_at WHERE created_at < ?",
-				time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
-			).Error
-			if err != nil {
-				slog.Warn("failed to fix zero created_at in table", "table", table, "error", err)
-			}
-		}
-		slog.Debug("fixed zero created_at timestamps", "schema_version", schemaVersion)
+		cutoff := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
-		sysStat := SysStat{
-			MigratedAt:    time.Now(),
-			SchemaVersion: schemaVersion,
+		// Fix zero created_at timestamps for users. Set the to the last known update timestamp.
+		err := r.db.Model(&domain.User{}).Where("created_at < ?", cutoff).
+			Update("created_at", gorm.Expr("updated_at")).Error
+		if err != nil {
+			slog.Warn("failed to fix zero created_at for users", "error", err)
 		}
-		if err := r.db.Create(&sysStat).Error; err != nil {
-			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", schemaVersion, err)
+		slog.Debug("fixed zero created_at timestamps for users", "schema_version", schemaVersion)
+
+		existingSysStat, err = r.addMigration(schemaVersion) // ensure that follow-up checks test against the latest version
+		if err != nil {
+			return err
 		}
-		existingSysStat = sysStat // ensure that follow-up checks test against the latest version
 	}
 
 	return nil
+}
+
+func (r *SqlRepo) addMigration(schemaVersion uint64) (SysStat, error) {
+	sysStat := SysStat{
+		MigratedAt:    time.Now(),
+		SchemaVersion: schemaVersion,
+	}
+	if err := r.db.Create(&sysStat).Error; err != nil {
+		return SysStat{}, fmt.Errorf("failed to write sysstat entry for schema version %d: %w", schemaVersion, err)
+	}
+	return sysStat, nil
 }
 
 // region interfaces
@@ -1021,13 +1016,6 @@ func (r *SqlRepo) getOrCreateUser(ui *domain.ContextUserInfo, tx *gorm.DB, id do
 func (r *SqlRepo) upsertUser(ui *domain.ContextUserInfo, tx *gorm.DB, user *domain.User) error {
 	user.UpdatedBy = ui.UserId()
 	user.UpdatedAt = time.Now()
-
-	if user.CreatedAt.IsZero() {
-		user.CreatedAt = user.UpdatedAt
-	}
-	if user.CreatedBy == "" {
-		user.CreatedBy = ui.UserId()
-	}
 
 	err := tx.Save(user).Error
 	if err != nil {

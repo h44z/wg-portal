@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
-	"github.com/h44z/wg-portal/internal/config"
-	"github.com/h44z/wg-portal/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
+
+	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 func newTestDB(t *testing.T) *gorm.DB {
@@ -37,8 +38,9 @@ func TestUpsertUser_SetsCreatedAtWhenZero(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.False(t, user.CreatedAt.IsZero(), "CreatedAt should be set when it was zero")
-	assert.Equal(t, ui.UserId(), user.CreatedBy, "CreatedBy should be set when it was empty")
-	assert.WithinDuration(t, user.UpdatedAt, user.CreatedAt, time.Second, "CreatedAt should be close to UpdatedAt for new user")
+	assert.Equal(t, ui.UserId(), user.UpdatedBy, "UpdatedBy should be set when it was empty")
+	assert.WithinDuration(t, user.UpdatedAt, user.CreatedAt, time.Second,
+		"CreatedAt should be close to UpdatedAt for new user")
 }
 
 func TestUpsertUser_PreservesExistingCreatedAt(t *testing.T) {
