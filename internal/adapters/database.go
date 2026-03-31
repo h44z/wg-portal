@@ -317,6 +317,31 @@ func (r *SqlRepo) migrate() error {
 		existingSysStat = sysStat // ensure that follow-up checks test against the latest version
 	}
 
+	// Migration: 3 --> 4
+	if existingSysStat.SchemaVersion == 3 {
+		const schemaVersion = 4
+		// Fix zero created_at timestamps across all tables
+		for _, table := range []string{"users", "user_authentications", "interfaces", "peers", "audit_entries"} {
+			err := r.db.Exec(
+				"UPDATE "+table+" SET created_at = updated_at WHERE created_at < ?",
+				time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+			).Error
+			if err != nil {
+				slog.Warn("failed to fix zero created_at in table", "table", table, "error", err)
+			}
+		}
+		slog.Debug("fixed zero created_at timestamps", "schema_version", schemaVersion)
+
+		sysStat := SysStat{
+			MigratedAt:    time.Now(),
+			SchemaVersion: schemaVersion,
+		}
+		if err := r.db.Create(&sysStat).Error; err != nil {
+			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", schemaVersion, err)
+		}
+		existingSysStat = sysStat // ensure that follow-up checks test against the latest version
+	}
+
 	return nil
 }
 
@@ -996,6 +1021,13 @@ func (r *SqlRepo) getOrCreateUser(ui *domain.ContextUserInfo, tx *gorm.DB, id do
 func (r *SqlRepo) upsertUser(ui *domain.ContextUserInfo, tx *gorm.DB, user *domain.User) error {
 	user.UpdatedBy = ui.UserId()
 	user.UpdatedAt = time.Now()
+
+	if user.CreatedAt.IsZero() {
+		user.CreatedAt = user.UpdatedAt
+	}
+	if user.CreatedBy == "" {
+		user.CreatedBy = ui.UserId()
+	}
 
 	err := tx.Save(user).Error
 	if err != nil {

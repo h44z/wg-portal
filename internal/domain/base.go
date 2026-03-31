@@ -9,8 +9,8 @@ import (
 type BaseModel struct {
 	CreatedBy string
 	UpdatedBy string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
 
 type PrivateString string
