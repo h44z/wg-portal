@@ -382,7 +382,8 @@
       "persist-local-changes": {
         "label": "Lokale Änderungen speichern"
       },
-      "sync-warning": "Um diesen synchronisierten Benutzer zu bearbeiten, aktivieren Sie die lokale Änderungsspeicherung. Andernfalls werden Ihre Änderungen bei der nächsten Synchronisierung überschrieben."
+      "sync-warning": "Um diesen synchronisierten Benutzer zu bearbeiten, aktivieren Sie die lokale Änderungsspeicherung. Andernfalls werden Ihre Änderungen bei der nächsten Synchronisierung überschrieben.",
+      "confirm-delete": "Benutzer '{id}' wirklich löschen?"
     },
     "interface-view": {
       "headline": "Konfiguration für Schnittstelle:"
@@ -503,7 +504,8 @@
           "placeholder": "Persistentes Keepalive (0 = Standard)"
         }
       },
-      "button-apply-defaults": "Peer-Standardeinstellungen anwenden"
+      "button-apply-defaults": "Peer-Standardeinstellungen anwenden",
+      "confirm-delete": "Interface '{id}' wirklich löschen?"
     },
     "peer-view": {
       "headline-peer": "Peer:",
@@ -625,7 +627,8 @@
       },
       "expires-at": {
         "label": "Ablaufdatum"
-      }
+      },
+      "confirm-delete": "Peer '{id}' wirklich löschen?"
     },
     "peer-multi-create": {
       "headline-peer": "Mehrere Peers erstellen",

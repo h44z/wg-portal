@@ -126,9 +126,7 @@
     "peer-expiring": "Le pair expire le",
     "peer-connected": "Connecté",
     "peer-not-connected": "Non connecté",
-    "peer-handshake": "Dernière négociation :",
-    "button-show-peer": "Afficher le pair",
-    "button-edit-peer": "Modifier le pair"
+    "peer-handshake": "Dernière négociation :"
   },
   "users": {
     "headline": "Administration des utilisateurs",
@@ -264,7 +262,8 @@
       },
       "admin": {
         "label": "Est Admin"
-      }
+      },
+      "confirm-delete": "Voulez-vous vraiment supprimer l'utilisateur \"{id}\" ?"
     },
     "interface-view": {
       "headline": "Configuration pour l'interface :"
@@ -377,7 +376,8 @@
           "placeholder": "Persistent Keepalive (0 = par défaut)"
         }
       },
-      "button-apply-defaults": "Appliquer les valeurs par défaut des pairs"
+      "button-apply-defaults": "Appliquer les valeurs par défaut des pairs",
+      "confirm-delete": "Voulez-vous vraiment supprimer l'interface \"{id}\" ?"
     },
     "peer-view": {
       "headline-peer": "Pair :",
@@ -493,7 +493,8 @@
       },
       "expires-at": {
         "label": "Date d'expiration"
-      }
+      },
+      "confirm-delete": "Voulez-vous vraiment supprimer le pair \"{id}\" ?"
     },
     "peer-multi-create": {
       "headline-peer": "Créer plusieurs pairs",

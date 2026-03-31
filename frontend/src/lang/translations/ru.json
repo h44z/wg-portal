@@ -259,16 +259,16 @@
     "headline-preshared-key": "Новый общий ключ",
     "button-generate": "Генерировать",
     "private-key": {
-        "label": "Приватный ключ",
-        "placeholder": "Приватный ключ"
+      "label": "Приватный ключ",
+      "placeholder": "Приватный ключ"
     },
     "public-key": {
-        "label": "Публичный ключ",
-        "placeholder": "Публичный ключ"
+      "label": "Публичный ключ",
+      "placeholder": "Публичный ключ"
     },
     "preshared-key": {
-        "label": "Общий ключ",
-        "placeholder": "Общий ключ"
+      "label": "Общий ключ",
+      "placeholder": "Общий ключ"
     }
   },
   "calculator": {
@@ -277,18 +277,18 @@
     "headline-allowed-ip": "Новые разрешенные IP-адреса",
     "button-exclude-private": "Исключить частные диапазоны IP-адресов",
     "allowed-ip": {
-        "label": "Разрешенные IP-адреса",
-        "placeholder": "0.0.0.0/0, ::/0",
-        "empty": "Поле ввода не должно быть пустым"
+      "label": "Разрешенные IP-адреса",
+      "placeholder": "0.0.0.0/0, ::/0",
+      "empty": "Поле ввода не должно быть пустым"
     },
     "dissallowed-ip": {
-        "label": "Запрещенные IP-адреса",
-        "placeholder": "10.0.0.0/8, 192.168.0.0/16",
-        "invalid": "Некорректный адрес: {addr}"
+      "label": "Запрещенные IP-адреса",
+      "placeholder": "10.0.0.0/8, 192.168.0.0/16",
+      "invalid": "Некорректный адрес: {addr}"
     },
     "new-allowed-ip": {
-        "label": "Разрешенные IP-адреса",
-        "placeholder": ""
+      "label": "Разрешенные IP-адреса",
+      "placeholder": ""
     }
   },
   "modals": {
@@ -366,7 +366,8 @@
       },
       "admin": {
         "label": "Является администратором"
-      }
+      },
+      "confirm-delete": "Вы уверены, что хотите удалить пользователя «{id}»?"
     },
     "interface-view": {
       "headline": "Конфигурация интерфейса:"
@@ -484,7 +485,8 @@
           "placeholder": "Постоянное поддержание активности (0 = значение по умолчанию)"
         }
       },
-      "button-apply-defaults": "Применить настройки пира по умолчанию"
+      "button-apply-defaults": "Применить настройки пира по умолчанию",
+      "confirm-delete": "Вы уверены, что хотите удалить интерфейс «{id}»?"
     },
     "peer-view": {
       "headline-peer": "Пир:",
@@ -605,7 +607,8 @@
       },
       "expires-at": {
         "label": "Дата истечения срока действия"
-      }
+      },
+      "confirm-delete": "Вы уверены, что хотите удалить пир «{id}»?"
     },
     "peer-multi-create": {
       "headline-peer": "Создать несколько узлов",

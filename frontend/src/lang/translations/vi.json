@@ -240,7 +240,8 @@
       },
       "admin": {
         "label": "Là Quản trị viên"
-      }
+      },
+      "confirm-delete": "Ban co chac muon xoa nguoi dung '{id}' khong?"
     },
     "interface-view": {
       "headline": "Cấu hình cho Giao diện:"
@@ -353,8 +354,8 @@
           "placeholder": "Giữ kết nối liên tục (0 = mặc định)"
         }
       },
-
-      "button-apply-defaults": "Áp dụng Cài đặt Mặc định của Peer"
+      "button-apply-defaults": "Áp dụng Cài đặt Mặc định của Peer",
+      "confirm-delete": "Ban co chac muon xoa giao dien '{id}' khong?"
     },
     "peer-view": {
       "headline-peer": "Peer:",
@@ -470,7 +471,8 @@
       },
       "expires-at": {
         "label": "Ngày hết hạn"
-      }
+      },
+      "confirm-delete": "Ban co chac muon xoa peer '{id}' khong?"
     },
     "peer-multi-create": {
       "headline-peer": "Tạo nhiều peer",

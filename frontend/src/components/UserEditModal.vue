@@ -114,6 +114,7 @@ async function save() {
 
 async function del() {
   if (isDeleting.value) return
+  if (!confirm(t('modals.user-edit.confirm-delete', {id: selectedUser.value.Identifier}))) return
   isDeleting.value = true
   try {
     await users.DeleteUser(selectedUser.value.Identifier)
