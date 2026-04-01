@@ -51,6 +51,11 @@ format:
 .PHONY: test
 test: test-vet test-race
 
+#> test-in-docker: Run tests in Docker (for non-Linux environments e.g. MacOS)
+.PHONY: test-in-docker
+test-in-docker:
+	docker run --rm -v $(PWD):/app -w /app golang:$(GOVERSION) make test
+
 #< test-vet: Static code analysis
 .PHONY: test-vet
 test-vet: build-dependencies
