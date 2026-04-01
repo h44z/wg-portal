@@ -533,6 +533,7 @@ func (m Manager) create(ctx context.Context, user *domain.User) (*domain.User, e
 	}
 
 	err = m.users.SaveUser(ctx, user.Identifier, func(u *domain.User) (*domain.User, error) {
+		user.CopyCalculatedAttributes(u, false)
 		return user, nil
 	})
 	if err != nil {
