@@ -68,7 +68,7 @@ type User struct {
 	WebAuthnCredentialList []UserWebauthnCredential `gorm:"foreignKey:user_identifier"` // the webauthn credentials of the user, used for webauthn authentication
 
 	// API token for REST API access
-	ApiToken        string `form:"api_token" binding:"omitempty"`
+	ApiToken        string `form:"api_token" binding:"omitempty" gorm:"serializer:encstr"`
 	ApiTokenCreated *time.Time
 
 	LinkedPeerCount int `gorm:"-"`
