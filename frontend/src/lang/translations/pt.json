@@ -300,7 +300,8 @@
       },
       "admin": {
         "label": "É Administrador"
-      }
+      },
+      "confirm-delete": "Tem certeza que deseja excluir o utilizador '{id}'?"
     },
     "interface-view": {
       "headline": "Configuração para a Interface:"
@@ -413,7 +414,8 @@
           "placeholder": "Keepalive persistente (0 = padrão)"
         }
       },
-      "button-apply-defaults": "Aplicar Padrões de Peer"
+      "button-apply-defaults": "Aplicar Padrões de Peer",
+      "confirm-delete": "Tem certeza que deseja excluir a interface '{id}'?"
     },
     "peer-view": {
       "headline-peer": "Peer:",
@@ -530,7 +532,8 @@
       },
       "expires-at": {
         "label": "Data de expiração"
-      }
+      },
+      "confirm-delete": "Tem certeza que deseja excluir o par '{id}'?"
     },
     "peer-multi-create": {
       "headline-peer": "Criar múltiplos peers",

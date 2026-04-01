@@ -315,6 +315,7 @@ async function applyPeerDefaults() {
 
 async function del() {
   if (isDeleting.value) return
+  if (!confirm(t('modals.interface-edit.confirm-delete', {id: selectedInterface.value.Identifier}))) return
   isDeleting.value = true
   try {
     await interfaces.DeleteInterface(selectedInterface.value.Identifier)
