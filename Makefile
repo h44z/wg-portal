@@ -55,7 +55,7 @@ test: test-vet test-race
 #> test-in-docker: Run tests in Docker (for non-Linux environments e.g. MacOS)
 .PHONY: test-in-docker
 test-in-docker:
-	/usr/local/bin/docker run --rm -u $(shell id -u):$(shell id -g) -e HOME=/tmp -v $(PWD):/app -w /app golang:$(GOVERSION) make test
+	docker run --rm -u $(shell id -u):$(shell id -g) -e HOME=/tmp -v $(PWD):/app -w /app golang:$(GOVERSION) make test
 
 #< test-vet: Static code analysis
 .PHONY: test-vet
