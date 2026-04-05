@@ -1,8 +1,9 @@
 <script setup>
 import {userStore} from "@/stores/users";
 import {ref, onMounted, computed} from "vue";
-import UserEditModal from "../components/UserEditModal.vue";
-import UserViewModal from "../components/UserViewModal.vue";
+import UserEditModal from "@/components/UserEditModal.vue";
+import UserViewModal from "@/components/UserViewModal.vue";
+import Pagination from "@/components/Pagination.vue";
 import {useI18n} from "vue-i18n";
 
 const users = userStore()
@@ -165,28 +166,24 @@ onMounted(() => {
     </table>
   </div>
   <hr>
-  <div class="mt-3">
     <div class="row">
-      <div class="col-6">
-        <ul class="pagination pagination-sm">
-          <li :class="{disabled:users.pageOffset===0}" class="page-item">
-            <a class="page-link" @click="users.previousPage">&laquo;</a>
-          </li>
-
-          <li v-for="page in users.pages" :key="page" :class="{active:users.currentPage===page}" class="page-item">
-            <a class="page-link" @click="users.gotoPage(page)">{{page}}</a>
-          </li>
-
-          <li :class="{disabled:!users.hasNextPage}" class="page-item">
-            <a class="page-link" @click="users.nextPage">&raquo;</a>
-          </li>
-        </ul>
+      <div class="col-12 col-md-6">
+        <Pagination
+            :currentPage="users.currentPage"
+            :totalCount="users.FilteredCount"
+            :pageSize="users.pageSize"
+            :hasNextPage="users.hasNextPage"
+            :hasPrevPage="users.hasPrevPage"
+            :onGotoPage="users.gotoPage"
+            :onNextPage="users.nextPage"
+            :onPrevPage="users.previousPage"
+        />
       </div>
-      <div class="col-6">
+      <div class="col-12 col-md-6">
         <div class="form-group row">
-          <label class="col-sm-6 col-form-label text-end" for="paginationSelector">{{ $t('general.pagination.size') }}:</label>
+          <label class="col-sm-6 col-form-label text-md-end" for="paginationSelector">{{ $t('general.pagination.size') }}:</label>
           <div class="col-sm-6">
-            <select id="paginationSelector" v-model.number="users.pageSize" class="form-select" @click="users.afterPageSizeChange()">
+            <select id="paginationSelector" v-model.number="users.pageSize" class="form-select" @change="users.afterPageSizeChange()">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
@@ -197,5 +194,4 @@ onMounted(() => {
         </div>
       </div>
     </div>
-  </div>
 </template>

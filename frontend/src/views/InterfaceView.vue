@@ -1,9 +1,10 @@
 <script setup>
-import PeerViewModal from "../components/PeerViewModal.vue";
-import PeerEditModal from "../components/PeerEditModal.vue";
-import PeerMultiCreateModal from "../components/PeerMultiCreateModal.vue";
-import InterfaceEditModal from "../components/InterfaceEditModal.vue";
-import InterfaceViewModal from "../components/InterfaceViewModal.vue";
+import PeerViewModal from "@/components/PeerViewModal.vue";
+import PeerEditModal from "@/components/PeerEditModal.vue";
+import PeerMultiCreateModal from "@/components/PeerMultiCreateModal.vue";
+import InterfaceEditModal from "@/components/InterfaceEditModal.vue";
+import InterfaceViewModal from "@/components/InterfaceViewModal.vue";
+import Pagination from "@/components/Pagination.vue";
 
 import {computed, onMounted, ref} from "vue";
 import {peerStore} from "@/stores/peers";
@@ -482,26 +483,23 @@ onMounted(async () => {
   <hr v-if="interfaces.Count!==0">
   <div v-if="interfaces.Count!==0" class="mt-3">
     <div class="row">
-      <div class="col-6">
-        <ul class="pagination pagination-sm">
-          <li :class="{disabled:peers.pageOffset===0}" class="page-item">
-            <a class="page-link" @click="peers.previousPage">&laquo;</a>
-          </li>
-
-          <li v-for="page in peers.pages" :key="page" :class="{active:peers.currentPage===page}" class="page-item">
-            <a class="page-link" @click="peers.gotoPage(page)">{{page}}</a>
-          </li>
-
-          <li :class="{disabled:!peers.hasNextPage}" class="page-item">
-            <a class="page-link" @click="peers.nextPage">&raquo;</a>
-          </li>
-        </ul>
+      <div class="col-12 col-md-6">
+        <Pagination
+            :currentPage="peers.currentPage"
+            :totalCount="peers.FilteredCount"
+            :pageSize="peers.pageSize"
+            :hasNextPage="peers.hasNextPage"
+            :hasPrevPage="peers.hasPrevPage"
+            :onGotoPage="peers.gotoPage"
+            :onNextPage="peers.nextPage"
+            :onPrevPage="peers.previousPage"
+        />
       </div>
-      <div class="col-6">
+      <div class="col-12 col-md-6">
         <div class="form-group row">
-          <label class="col-sm-6 col-form-label text-end" for="paginationSelector">{{ $t('general.pagination.size') }}:</label>
+          <label class="col-sm-6 col-form-label text-md-end" for="paginationSelector">{{ $t('general.pagination.size') }}:</label>
           <div class="col-sm-6">
-            <select id="paginationSelector" v-model.number="peers.pageSize" class="form-select" @click="peers.afterPageSizeChange()">
+            <select id="paginationSelector" v-model.number="peers.pageSize" class="form-select" @change="peers.afterPageSizeChange()">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
