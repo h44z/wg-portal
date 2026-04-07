@@ -26,6 +26,7 @@ type OidcAuthenticator struct {
 	userInfoLogging      bool
 	sensitiveInfoLogging bool
 	allowedDomains       []string
+	allowedUserGroups    []string
 }
 
 func newOidcAuthenticator(
@@ -61,6 +62,7 @@ func newOidcAuthenticator(
 	provider.userInfoLogging = cfg.LogUserInfo
 	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
+	provider.allowedUserGroups = cfg.AllowedUserGroups
 
 	return provider, nil
 }
@@ -72,6 +74,10 @@ func (o OidcAuthenticator) GetName() string {
 
 func (o OidcAuthenticator) GetAllowedDomains() []string {
 	return o.allowedDomains
+}
+
+func (o OidcAuthenticator) GetAllowedUserGroups() []string {
+	return o.allowedUserGroups
 }
 
 // RegistrationEnabled returns whether registration is enabled for this authenticator.

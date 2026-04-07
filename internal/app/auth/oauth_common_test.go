@@ -96,6 +96,7 @@ func Test_parseOauthUserInfo_admin_group(t *testing.T) {
 	assert.Equal(t, info.Firstname, "Test User")
 	assert.Equal(t, info.Lastname, "")
 	assert.Equal(t, info.Email, "test@mydomain.net")
+	assert.Equal(t, info.UserGroups, []string{"abuse@mydomain.net", "postmaster@mydomain.net", "wgportal-admins@mydomain.net"})
 }
 
 func Test_parseOauthUserInfo_admin_value(t *testing.T) {

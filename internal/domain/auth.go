@@ -12,6 +12,7 @@ type LoginProviderInfo struct {
 type AuthenticatorUserInfo struct {
 	Identifier         UserIdentifier
 	Email              string
+	UserGroups         []string
 	Firstname          string
 	Lastname           string
 	Phone              string
