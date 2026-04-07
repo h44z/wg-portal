@@ -6,6 +6,7 @@ import { useI18n } from "vue-i18n";
 import { profileStore } from "@/stores/profile";
 import { peerStore } from "@/stores/peers";
 import UserPeerEditModal from "@/components/UserPeerEditModal.vue";
+import Pagination from "@/components/Pagination.vue";
 import { settingsStore } from "@/stores/settings";
 import { humanFileSize } from "@/helpers/utils";
 
@@ -66,7 +67,6 @@ onMounted(async () => {
   await profile.LoadPeers()
   await profile.LoadStats()
   await profile.LoadInterfaces()
-  await profile.calculatePages(); // Forces to show initial page number
 })
 
 </script>
@@ -185,36 +185,33 @@ onMounted(async () => {
   <hr>
   <div class="mt-3">
     <div class="row">
-      <div class="col-6">
-        <ul class="pagination pagination-sm">
-          <li :class="{ disabled: profile.pageOffset === 0 }" class="page-item">
-            <a class="page-link" @click="profile.previousPage">&laquo;</a>
-          </li>
-
-          <li v-for="page in profile.pages" :key="page" :class="{ active: profile.currentPage === page }" class="page-item">
-            <a class="page-link" @click="profile.gotoPage(page)">{{ page }}</a>
-          </li>
-
-          <li :class="{ disabled: !profile.hasNextPage }" class="page-item">
-            <a class="page-link" @click="profile.nextPage">&raquo;</a>
-          </li>
-        </ul>
+      <div class="col-12 col-md-6">
+        <Pagination
+            :currentPage="profile.currentPage"
+            :totalCount="profile.FilteredPeerCount"
+            :pageSize="profile.pageSize"
+            :hasNextPage="profile.hasNextPage"
+            :hasPrevPage="profile.hasPrevPage"
+            :onGotoPage="profile.gotoPage"
+            :onNextPage="profile.nextPage"
+            :onPrevPage="profile.previousPage"
+        />
       </div>
-      <div class="col-6">
+      <div class="col-12 col-md-6">
         <div class="form-group row">
-          <label class="col-sm-6 col-form-label text-end" for="paginationSelector">
+          <label class="col-sm-6 col-form-label text-md-end" for="paginationSelector">
             {{ $t('general.pagination.size')}}:
           </label>
           <div class="col-sm-6">
-            <select id="paginationSelector" v-model.number="profile.pageSize" class="form-select" @click="profile.afterPageSizeChange()">
+            <select id="paginationSelector" v-model.number="profile.pageSize" class="form-select" @change="profile.afterPageSizeChange()">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
-            <option value="100">100</option>
-            <option value="999999999">{{ $t('general.pagination.all') }}</option>
-          </select>
+              <option value="100">100</option>
+              <option value="999999999">{{ $t('general.pagination.all') }}</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 </div></template>

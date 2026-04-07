@@ -11,7 +11,6 @@ export const auditStore = defineStore('audit', {
     filter: "",
     pageSize: 10,
     pageOffset: 0,
-    pages: [],
     fetching: false,
   }),
   getters: {
@@ -41,33 +40,22 @@ export const auditStore = defineStore('audit', {
     afterPageSizeChange() {
       // reset pageOffset to avoid problems with new page sizes
       this.pageOffset = 0
-      this.calculatePages()
-    },
-    calculatePages() {
-      let pageCounter = 1;
-      this.pages = []
-      for (let i = 0; i < this.FilteredCount; i+=this.pageSize) {
-        this.pages.push(pageCounter++)
-      }
     },
     gotoPage(page) {
       this.pageOffset = (page-1) * this.pageSize
-
-      this.calculatePages()
     },
     nextPage() {
-      this.pageOffset += this.pageSize
-
-      this.calculatePages()
+      if (this.hasNextPage) {
+        this.pageOffset += this.pageSize
+      }
     },
     previousPage() {
-      this.pageOffset -= this.pageSize
-
-      this.calculatePages()
+      if (this.hasPrevPage) {
+        this.pageOffset -= this.pageSize
+      }
     },
     setEntries(entries) {
       this.entries = entries
-      this.calculatePages()
       this.fetching = false
     },
     async LoadEntries() {
