@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -26,6 +27,7 @@ type OidcAuthenticator struct {
 	userInfoLogging      bool
 	sensitiveInfoLogging bool
 	allowedDomains       []string
+	endSessionEndpoint   string
 }
 
 func newOidcAuthenticator(
@@ -62,6 +64,15 @@ func newOidcAuthenticator(
 	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
 
+	var providerMetadata struct {
+		EndSessionEndpoint string `json:"end_session_endpoint"`
+	}
+	if err = provider.provider.Claims(&providerMetadata); err != nil {
+		slog.Debug("OIDC: failed to parse provider metadata", "provider", cfg.ProviderName, "error", err)
+	} else {
+		provider.endSessionEndpoint = providerMetadata.EndSessionEndpoint
+	}
+
 	return provider, nil
 }
 
@@ -72,6 +83,28 @@ func (o OidcAuthenticator) GetName() string {
 
 func (o OidcAuthenticator) GetAllowedDomains() []string {
 	return o.allowedDomains
+}
+
+func (o OidcAuthenticator) GetLogoutUrl(idTokenHint, postLogoutRedirectUri string) (string, bool) {
+	if o.endSessionEndpoint == "" {
+		return "", false
+	}
+
+	logoutUrl, err := url.Parse(o.endSessionEndpoint)
+	if err != nil {
+		return "", false
+	}
+
+	params := logoutUrl.Query()
+	if idTokenHint != "" {
+		params.Set("id_token_hint", idTokenHint)
+	}
+	if postLogoutRedirectUri != "" {
+		params.Set("post_logout_redirect_uri", postLogoutRedirectUri)
+	}
+	logoutUrl.RawQuery = params.Encode()
+
+	return logoutUrl.String(), true
 }
 
 // RegistrationEnabled returns whether registration is enabled for this authenticator.

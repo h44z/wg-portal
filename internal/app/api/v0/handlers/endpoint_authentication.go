@@ -25,7 +25,9 @@ type AuthenticationService interface {
 	// OauthLoginStep1 initiates the OAuth login flow.
 	OauthLoginStep1(_ context.Context, providerId string) (authCodeUrl, state, nonce string, err error)
 	// OauthLoginStep2 completes the OAuth login flow and logins the user in.
-	OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, error)
+	OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, string, error)
+	// OauthProviderLogoutUrl returns an IdP logout URL for the given provider if supported.
+	OauthProviderLogoutUrl(providerId, idTokenHint, postLogoutRedirectUri string) (string, bool)
 }
 
 type WebAuthnService interface {
@@ -331,7 +333,7 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 		}
 
 		loginCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // avoid long waits
-		user, err := e.authService.OauthLoginStep2(loginCtx, provider, currentSession.OauthNonce,
+		user, idTokenHint, err := e.authService.OauthLoginStep2(loginCtx, provider, currentSession.OauthNonce,
 			oauthCode)
 		cancel()
 		if err != nil {
@@ -346,7 +348,7 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 			return
 		}
 
-		e.setAuthenticatedUser(r, user)
+		e.setAuthenticatedUser(r, user, provider, idTokenHint)
 
 		if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
 			queryParams := returnUrl.Query()
@@ -359,7 +361,7 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 	}
 }
 
-func (e AuthEndpoint) setAuthenticatedUser(r *http.Request, user *domain.User) {
+func (e AuthEndpoint) setAuthenticatedUser(r *http.Request, user *domain.User, oauthProvider, idTokenHint string) {
 	// start a fresh session
 	e.session.DestroyData(r.Context())
 
@@ -374,8 +376,9 @@ func (e AuthEndpoint) setAuthenticatedUser(r *http.Request, user *domain.User) {
 
 	currentSession.OauthState = ""
 	currentSession.OauthNonce = ""
-	currentSession.OauthProvider = ""
+	currentSession.OauthProvider = oauthProvider
 	currentSession.OauthReturnTo = ""
+	currentSession.OauthIdToken = idTokenHint
 
 	e.session.SetData(r.Context(), currentSession)
 }
@@ -418,7 +421,7 @@ func (e AuthEndpoint) handleLoginPost() http.HandlerFunc {
 			return
 		}
 
-		e.setAuthenticatedUser(r, user)
+		e.setAuthenticatedUser(r, user, "", "")
 
 		respond.JSON(w, http.StatusOK, user)
 	}
@@ -430,19 +433,33 @@ func (e AuthEndpoint) handleLoginPost() http.HandlerFunc {
 // @Tags Authentication
 // @Summary Get all available external login providers.
 // @Produce json
-// @Success 200 {object} model.Error
+// @Success 200 {object} model.LogoutResponse
 // @Router /auth/logout [post]
 func (e AuthEndpoint) handleLogoutPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentSession := e.session.GetData(r.Context())
 
 		if !currentSession.LoggedIn { // Not logged in
-			respond.JSON(w, http.StatusOK, model.Error{Code: http.StatusOK, Message: "not logged in"})
+			respond.JSON(w, http.StatusOK, model.LogoutResponse{Message: "not logged in"})
 			return
 		}
 
+		postLogoutRedirectUri := e.cfg.Web.ExternalUrl
+		if e.cfg.Web.BasePath != "" {
+			postLogoutRedirectUri += e.cfg.Web.BasePath
+		}
+		postLogoutRedirectUri += "/#/login"
+
+		var redirectUrl *string
+		if currentSession.OauthProvider != "" {
+			if idpLogoutUrl, ok := e.authService.OauthProviderLogoutUrl(currentSession.OauthProvider,
+				currentSession.OauthIdToken, postLogoutRedirectUri); ok {
+				redirectUrl = &idpLogoutUrl
+			}
+		}
+
 		e.session.DestroyData(r.Context())
-		respond.JSON(w, http.StatusOK, model.Error{Code: http.StatusOK, Message: "logout ok"})
+		respond.JSON(w, http.StatusOK, model.LogoutResponse{Message: "logout ok", RedirectUrl: redirectUrl})
 	}
 }
 
@@ -693,7 +710,7 @@ func (e AuthEndpoint) handleWebAuthnLoginFinish() http.HandlerFunc {
 			return
 		}
 
-		e.setAuthenticatedUser(r, user)
+		e.setAuthenticatedUser(r, user, "", "")
 
 		respond.JSON(w, http.StatusOK, model.NewUser(user, false))
 	}

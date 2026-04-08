@@ -73,6 +73,10 @@ func (p PlainOauthAuthenticator) GetAllowedDomains() []string {
 	return p.allowedDomains
 }
 
+func (p PlainOauthAuthenticator) GetLogoutUrl(_, _ string) (string, bool) {
+	return "", false
+}
+
 // RegistrationEnabled returns whether registration is enabled for the OAuth authenticator.
 func (p PlainOauthAuthenticator) RegistrationEnabled() bool {
 	return p.registrationEnabled

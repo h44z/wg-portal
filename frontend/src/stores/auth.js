@@ -108,10 +108,17 @@ export const authStore = defineStore('auth',{
             this.setUserInfo(null)
             this.ResetReturnUrl() // just to be sure^^
 
+            let logoutResponse = null
             try {
-                await apiWrapper.post(`/auth/logout`)
+                logoutResponse = await apiWrapper.post(`/auth/logout`)
             } catch (e) {
                 console.log("Logout request failed:", e)
+            }
+
+            const redirectUrl = logoutResponse?.RedirectUrl
+            if (redirectUrl) {
+                window.location.href = redirectUrl
+                return
             }
 
             notify({

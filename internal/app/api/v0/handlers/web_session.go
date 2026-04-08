@@ -30,6 +30,7 @@ type SessionData struct {
 	OauthNonce    string
 	OauthProvider string
 	OauthReturnTo string
+	OauthIdToken  string
 
 	WebAuthnData string
 
@@ -89,5 +90,6 @@ func (s *SessionWrapper) defaultSessionData() SessionData {
 		OauthNonce:     "",
 		OauthProvider:  "",
 		OauthReturnTo:  "",
+		OauthIdToken:   "",
 	}
 }
