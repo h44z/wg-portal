@@ -29,6 +29,7 @@ type PlainOauthAuthenticator struct {
 	userInfoLogging      bool
 	sensitiveInfoLogging bool
 	allowedDomains       []string
+	allowedUserGroups    []string
 }
 
 func newPlainOauthAuthenticator(
@@ -60,6 +61,7 @@ func newPlainOauthAuthenticator(
 	provider.userInfoLogging = cfg.LogUserInfo
 	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
+	provider.allowedUserGroups = cfg.AllowedUserGroups
 
 	return provider, nil
 }
@@ -71,6 +73,10 @@ func (p PlainOauthAuthenticator) GetName() string {
 
 func (p PlainOauthAuthenticator) GetAllowedDomains() []string {
 	return p.allowedDomains
+}
+
+func (p PlainOauthAuthenticator) GetAllowedUserGroups() []string {
+	return p.allowedUserGroups
 }
 
 // RegistrationEnabled returns whether registration is enabled for the OAuth authenticator.

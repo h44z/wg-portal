@@ -65,6 +65,9 @@ type AuthenticatorOauth interface {
 	RegistrationEnabled() bool
 	// GetAllowedDomains returns the list of whitelisted domains
 	GetAllowedDomains() []string
+	// GetAllowedUserGroups returns the list of whitelisted user groups.
+	// If non-empty, at least one user group must match.
+	GetAllowedUserGroups() []string
 }
 
 // AuthenticatorLdap is the interface for all LDAP authenticators.
@@ -497,6 +500,33 @@ func isDomainAllowed(email string, allowedDomains []string) bool {
 	return false
 }
 
+func isAnyAllowedUserGroup(userGroups, allowedUserGroups []string) bool {
+	if len(allowedUserGroups) == 0 {
+		return true
+	}
+
+	allowed := make(map[string]struct{}, len(allowedUserGroups))
+	for _, group := range allowedUserGroups {
+		trimmed := strings.TrimSpace(group)
+		if trimmed == "" {
+			continue
+		}
+		allowed[trimmed] = struct{}{}
+	}
+
+	if len(allowed) == 0 {
+		return false
+	}
+
+	for _, group := range userGroups {
+		if _, ok := allowed[strings.TrimSpace(group)]; ok {
+			return true
+		}
+	}
+
+	return false
+}
+
 // OauthLoginStep2 finishes the oauth authentication flow by exchanging the code for an access token and
 // fetching the user information.
 func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, error) {
@@ -522,6 +552,10 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 
 	if !isDomainAllowed(userInfo.Email, oauthProvider.GetAllowedDomains()) {
 		return nil, fmt.Errorf("user %s is not in allowed domains", userInfo.Email)
+	}
+
+	if !isAnyAllowedUserGroup(userInfo.UserGroups, oauthProvider.GetAllowedUserGroups()) {
+		return nil, fmt.Errorf("user %s is not in allowed user groups", userInfo.Identifier)
 	}
 
 	ctx = domain.SetUserInfo(ctx,
