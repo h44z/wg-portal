@@ -558,7 +558,7 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 	}
 
 	if !isAnyAllowedUserGroup(userInfo.UserGroups, oauthProvider.GetAllowedUserGroups()) {
-		return nil, fmt.Errorf("user %s is not in allowed user groups", userInfo.Identifier)
+		return nil, "", fmt.Errorf("user %s is not in allowed user groups", userInfo.Identifier)
 	}
 
 	ctx = domain.SetUserInfo(ctx,
