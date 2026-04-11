@@ -16,6 +16,7 @@ func parseOauthUserInfo(
 ) (*domain.AuthenticatorUserInfo, error) {
 	var isAdmin bool
 	var adminInfoAvailable bool
+	userGroups := internal.MapDefaultStringSlice(raw, mapping.UserGroups, nil)
 
 	// first try to match the is_admin field against the given regex
 	if mapping.IsAdmin != "" {
@@ -29,7 +30,6 @@ func parseOauthUserInfo(
 	// next try to parse the user's groups
 	if !isAdmin && mapping.UserGroups != "" && adminMapping.AdminGroupRegex != "" {
 		adminInfoAvailable = true
-		userGroups := internal.MapDefaultStringSlice(raw, mapping.UserGroups, nil)
 		re := adminMapping.GetAdminGroupRegex()
 		for _, group := range userGroups {
 			if re.MatchString(strings.TrimSpace(group)) {
@@ -42,6 +42,7 @@ func parseOauthUserInfo(
 	userInfo := &domain.AuthenticatorUserInfo{
 		Identifier:         domain.UserIdentifier(internal.MapDefaultString(raw, mapping.UserIdentifier, "")),
 		Email:              internal.MapDefaultString(raw, mapping.Email, ""),
+		UserGroups:         userGroups,
 		Firstname:          internal.MapDefaultString(raw, mapping.Firstname, ""),
 		Lastname:           internal.MapDefaultString(raw, mapping.Lastname, ""),
 		Phone:              internal.MapDefaultString(raw, mapping.Phone, ""),

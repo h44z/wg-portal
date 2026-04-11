@@ -561,6 +561,10 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Default:** *(empty)*
 - **Description:** A list of allowlisted domains. Only users with email addresses in these domains can log in or register. This is useful for restricting access to specific organizations or groups.
 
+#### `allowed_user_groups`
+- **Default:** *(empty)*
+- **Description:** A list of allowlisted user groups. If configured, at least one entry in the mapped `user_groups` claim must match one of these values.
+
 #### `field_map`
 - **Default:** *(empty)*
 - **Description:** Maps OIDC claims to WireGuard Portal user fields. 
@@ -642,6 +646,10 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 #### `allowed_domains`
 - **Default:** *(empty)*
 - **Description:** A list of allowlisted domains. Only users with email addresses in these domains can log in or register. This is useful for restricting access to specific organizations or groups.
+
+#### `allowed_user_groups`
+- **Default:** *(empty)*
+- **Description:** A list of allowlisted user groups. If configured, at least one entry in the mapped `user_groups` claim must match one of these values.
 
 #### `field_map`
 - **Default:** *(empty)*

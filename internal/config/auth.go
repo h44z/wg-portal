@@ -258,6 +258,10 @@ type OpenIDConnectProvider struct {
 	// AllowedDomains defines the list of allowed domains
 	AllowedDomains []string `yaml:"allowed_domains"`
 
+	// AllowedUserGroups defines the list of allowed user groups.
+	// If not empty, at least one group from the user's group claim must match.
+	AllowedUserGroups []string `yaml:"allowed_user_groups"`
+
 	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`
 
@@ -307,6 +311,10 @@ type OAuthProvider struct {
 
 	// AllowedDomains defines the list of allowed domains
 	AllowedDomains []string `yaml:"allowed_domains"`
+
+	// AllowedUserGroups defines the list of allowed user groups.
+	// If not empty, at least one group from the user's group claim must match.
+	AllowedUserGroups []string `yaml:"allowed_user_groups"`
 
 	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`

@@ -27,6 +27,7 @@ type OidcAuthenticator struct {
 	userInfoLogging      bool
 	sensitiveInfoLogging bool
 	allowedDomains       []string
+	allowedUserGroups    []string
 	endSessionEndpoint   string
 	logoutIdpSession     bool
 }
@@ -64,6 +65,7 @@ func newOidcAuthenticator(
 	provider.userInfoLogging = cfg.LogUserInfo
 	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
+	provider.allowedUserGroups = cfg.AllowedUserGroups
 	provider.logoutIdpSession = cfg.LogoutIdpSession == nil || *cfg.LogoutIdpSession
 
 	var providerMetadata struct {
@@ -75,7 +77,6 @@ func newOidcAuthenticator(
 		provider.endSessionEndpoint = providerMetadata.EndSessionEndpoint
 	}
 
-
 	return provider, nil
 }
 
@@ -86,6 +87,10 @@ func (o OidcAuthenticator) GetName() string {
 
 func (o OidcAuthenticator) GetAllowedDomains() []string {
 	return o.allowedDomains
+}
+
+func (o OidcAuthenticator) GetAllowedUserGroups() []string {
+	return o.allowedUserGroups
 }
 
 func (o OidcAuthenticator) GetLogoutUrl(idTokenHint, postLogoutRedirectUri string) (string, bool) {

@@ -66,6 +66,40 @@ auth:
         - "outlook.com"
 ```
 
+#### Limiting Login to Specific User Groups
+
+You can limit the login to specific user groups by setting the `allowed_user_groups` property for OAuth2 or OIDC providers.
+If this property is not empty, the user's `user_groups` claim must contain at least one matching group.
+
+To use this feature, ensure your group claim is mapped via `field_map.user_groups`.
+
+```yaml
+auth:
+  oidc:
+    - provider_name: "oidc1"
+      # ... other settings
+      allowed_user_groups:
+        - "wg-users"
+        - "wg-admins"
+      field_map:
+        user_groups: "groups"
+```
+
+If `allowed_user_groups` is configured and the authenticated user has no matching group in `user_groups`, login is denied.
+
+Minimal deny-by-group example:
+
+```yaml
+auth:
+  oauth:
+    - provider_name: "oauth1"
+      # ... other settings
+      allowed_user_groups:
+        - "vpn-users"
+      field_map:
+        user_groups: "groups"
+```
+
 #### Limit Login to Existing Users
 
 You can limit the login to existing users only by setting the `registration_enabled` property to `false` for OAuth2 or OIDC providers.
