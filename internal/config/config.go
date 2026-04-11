@@ -70,6 +70,7 @@ type Config struct {
 	Web WebConfig `yaml:"web"`
 
 	Webhook WebhookConfig `yaml:"webhook"`
+
 }
 
 // LogStartupValues logs the startup values of the configuration in debug level
@@ -96,6 +97,7 @@ func (c *Config) LogStartupValues() {
 		"externalUrl", c.Web.ExternalUrl,
 	)
 
+
 	slog.Debug("Config Authentication",
 		"oidcProviders", len(c.Auth.OpenIDConnect),
 		"oauthProviders", len(c.Auth.OAuth),
@@ -104,6 +106,7 @@ func (c *Config) LogStartupValues() {
 		"minPasswordLength", c.Auth.MinPasswordLength,
 		"hideLoginForm", c.Auth.HideLoginForm,
 	)
+
 
 	slog.Debug("Config Backend",
 		"defaultBackend", c.Backend.Default,

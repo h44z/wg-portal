@@ -28,6 +28,7 @@ type OidcAuthenticator struct {
 	sensitiveInfoLogging bool
 	allowedDomains       []string
 	endSessionEndpoint   string
+	logoutIdpSession     bool
 }
 
 func newOidcAuthenticator(
@@ -63,6 +64,7 @@ func newOidcAuthenticator(
 	provider.userInfoLogging = cfg.LogUserInfo
 	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
+	provider.logoutIdpSession = cfg.LogoutIdpSession == nil || *cfg.LogoutIdpSession
 
 	var providerMetadata struct {
 		EndSessionEndpoint string `json:"end_session_endpoint"`
@@ -72,6 +74,7 @@ func newOidcAuthenticator(
 	} else {
 		provider.endSessionEndpoint = providerMetadata.EndSessionEndpoint
 	}
+
 
 	return provider, nil
 }
@@ -86,7 +89,12 @@ func (o OidcAuthenticator) GetAllowedDomains() []string {
 }
 
 func (o OidcAuthenticator) GetLogoutUrl(idTokenHint, postLogoutRedirectUri string) (string, bool) {
+	if !o.logoutIdpSession {
+		slog.Debug("OIDC logout URL generation disabled by config", "provider", o.name)
+		return "", false
+	}
 	if o.endSessionEndpoint == "" {
+		slog.Debug("OIDC logout URL generation disabled: provider has no end_session_endpoint", "provider", o.name)
 		return "", false
 	}
 

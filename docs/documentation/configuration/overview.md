@@ -596,6 +596,10 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
 - **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
 
+#### `logout_idp_session`
+- **Default:** `true`
+- **Description:** If `true` (default), WireGuard Portal will redirect the user to the OIDC provider's `end_session_endpoint` after local logout, terminating the session at the IdP as well. Set to `false` to only invalidate the local WireGuard Portal session without touching the IdP session.
+
 ---
 
 ### OAuth
