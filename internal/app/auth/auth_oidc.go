@@ -95,7 +95,6 @@ func (o OidcAuthenticator) GetAllowedUserGroups() []string {
 
 func (o OidcAuthenticator) GetLogoutUrl(idTokenHint, postLogoutRedirectUri string) (string, bool) {
 	if !o.logoutIdpSession {
-		slog.Debug("OIDC logout URL generation disabled by config", "provider", o.name)
 		return "", false
 	}
 	if o.endSessionEndpoint == "" {
@@ -105,6 +104,8 @@ func (o OidcAuthenticator) GetLogoutUrl(idTokenHint, postLogoutRedirectUri strin
 
 	logoutUrl, err := url.Parse(o.endSessionEndpoint)
 	if err != nil {
+		slog.Debug("OIDC logout URL generation failed, unable to parse end_session_endpoint url",
+			"provider", o.name, "error", err)
 		return "", false
 	}
 
