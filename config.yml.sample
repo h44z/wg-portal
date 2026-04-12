@@ -47,6 +47,7 @@ auth:
         - https://www.googleapis.com/auth/userinfo.email
         - https://www.googleapis.com/auth/userinfo.profile
       registration_enabled: true
+      logout_idp_session: true
     - id: oidc2
       provider_name: google2
       display_name: Login with</br>Google2
@@ -57,6 +58,7 @@ auth:
         - https://www.googleapis.com/auth/userinfo.email
         - https://www.googleapis.com/auth/userinfo.profile
       registration_enabled: true
+      logout_idp_session: true
   oauth:
     - id: google_plain_oauth
       provider_name: google3

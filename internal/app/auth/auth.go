@@ -68,6 +68,8 @@ type AuthenticatorOauth interface {
 	// GetAllowedUserGroups returns the list of whitelisted user groups.
 	// If non-empty, at least one user group must match.
 	GetAllowedUserGroups() []string
+	// GetLogoutUrl returns an IdP logout URL if supported by the provider.
+	GetLogoutUrl(idTokenHint, postLogoutRedirectUri string) (string, bool)
 }
 
 // AuthenticatorLdap is the interface for all LDAP authenticators.
@@ -529,33 +531,34 @@ func isAnyAllowedUserGroup(userGroups, allowedUserGroups []string) bool {
 
 // OauthLoginStep2 finishes the oauth authentication flow by exchanging the code for an access token and
 // fetching the user information.
-func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, error) {
+func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, string, error) {
 	oauthProvider, ok := a.oauthAuthenticators[providerId]
 	if !ok {
-		return nil, fmt.Errorf("missing oauth provider %s", providerId)
+		return nil, "", fmt.Errorf("missing oauth provider %s", providerId)
 	}
 
 	oauth2Token, err := oauthProvider.Exchange(ctx, code)
 	if err != nil {
-		return nil, fmt.Errorf("unable to exchange code: %w", err)
+		return nil, "", fmt.Errorf("unable to exchange code: %w", err)
 	}
+	idTokenHint, _ := oauth2Token.Extra("id_token").(string)
 
 	rawUserInfo, err := oauthProvider.GetUserInfo(ctx, oauth2Token, nonce)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch user information: %w", err)
+		return nil, "", fmt.Errorf("unable to fetch user information: %w", err)
 	}
 
 	userInfo, err := oauthProvider.ParseUserInfo(rawUserInfo)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse user information: %w", err)
+		return nil, "", fmt.Errorf("unable to parse user information: %w", err)
 	}
 
 	if !isDomainAllowed(userInfo.Email, oauthProvider.GetAllowedDomains()) {
-		return nil, fmt.Errorf("user %s is not in allowed domains", userInfo.Email)
+		return nil, "", fmt.Errorf("user %s is not in allowed domains", userInfo.Email)
 	}
 
 	if !isAnyAllowedUserGroup(userInfo.UserGroups, oauthProvider.GetAllowedUserGroups()) {
-		return nil, fmt.Errorf("user %s is not in allowed user groups", userInfo.Identifier)
+		return nil, "", fmt.Errorf("user %s is not in allowed user groups", userInfo.Identifier)
 	}
 
 	ctx = domain.SetUserInfo(ctx,
@@ -571,7 +574,7 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 				Error:    err.Error(),
 			},
 		})
-		return nil, fmt.Errorf("unable to process user information: %w", err)
+		return nil, "", fmt.Errorf("unable to process user information: %w", err)
 	}
 
 	if user.IsLocked() || user.IsDisabled() {
@@ -583,7 +586,7 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 				Error:    "user is locked",
 			},
 		})
-		return nil, errors.New("user is locked")
+		return nil, "", errors.New("user is locked")
 	}
 
 	a.bus.Publish(app.TopicAuthLogin, user.Identifier)
@@ -595,7 +598,16 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 		},
 	})
 
-	return user, nil
+	return user, idTokenHint, nil
+}
+
+func (a *Authenticator) OauthProviderLogoutUrl(providerId, idTokenHint, postLogoutRedirectUri string) (string, bool) {
+	oauthProvider, ok := a.oauthAuthenticators[providerId]
+	if !ok {
+		return "", false
+	}
+
+	return oauthProvider.GetLogoutUrl(idTokenHint, postLogoutRedirectUri)
 }
 
 func (a *Authenticator) processUserInfo(

@@ -278,6 +278,11 @@ type OpenIDConnectProvider struct {
 	// If LogSensitiveInfo is set to true, sensitive information retrieved from the OIDC provider will be logged in trace level.
 	// This also includes OAuth tokens! Keep this disabled in production!
 	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
+
+	// LogoutIdpSession controls whether the user's session at the OIDC provider is terminated on logout.
+	// If set to true (default), the user will be redirected to the IdP's end_session_endpoint after local logout.
+	// If set to false, only the local wg-portal session is invalidated.
+	LogoutIdpSession *bool `yaml:"logout_idp_session"`
 }
 
 // OAuthProvider contains the configuration for the OAuth provider.
