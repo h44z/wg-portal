@@ -8,7 +8,7 @@ core:
   admin_password: password
   admin_api_token: super-s3cr3t-api-token-or-a-UUID
   import_existing: false
-  create_default_peer: true
+  create_default_peer_on_login: true
   self_provisioning_allowed: true
 
 backend:

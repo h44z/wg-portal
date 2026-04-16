@@ -270,6 +270,18 @@ func (u *User) DisplayName() string {
 	return displayName
 }
 
+// CreateDefaultPeers determines whether default peers should be created for this user.
+func (u *User) CreateDefaultPeers() bool {
+	if u.IsDisabled() {
+		return false
+	}
+	if u.IsLocked() {
+		return false
+	}
+
+	return true
+}
+
 // region webauthn
 
 func (u *User) WebAuthnID() []byte {

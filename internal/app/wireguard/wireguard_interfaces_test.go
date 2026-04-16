@@ -94,13 +94,6 @@ func TestImportPeer_AddressMapping(t *testing.T) {
 	}
 }
 
-func (f *mockDB) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
-	return &domain.User{
-		Identifier: id,
-		IsAdmin:    false,
-	}, nil
-}
-
 func TestInterface_IsUserAllowed(t *testing.T) {
 	cfg := &config.Config{
 		Auth: config.Auth{
