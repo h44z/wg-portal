@@ -395,6 +395,7 @@
           }
         },
         "button-apply-defaults": "피어 기본값 적용",
+        "button-create-default-peers": "기본 피어 생성",
         "confirm-delete": "인터페이스 '{id}'를 삭제하시겠습니까?"
       },
       "peer-view": {

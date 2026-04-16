@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/h44z/wg-portal/internal/config"
@@ -18,6 +19,7 @@ type InterfaceServiceInterfaceManager interface {
 	DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error
 	PrepareInterface(ctx context.Context) (*domain.Interface, error)
 	ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error
+	CreateDefaultPeers(ctx context.Context, id domain.InterfaceIdentifier) error
 }
 
 type InterfaceServiceConfigFileManager interface {
@@ -88,4 +90,11 @@ func (i InterfaceService) PersistInterfaceConfig(ctx context.Context, id domain.
 
 func (i InterfaceService) ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error {
 	return i.interfaces.ApplyPeerDefaults(ctx, in)
+}
+
+func (i InterfaceService) CreateDefaultPeers(ctx context.Context, id domain.InterfaceIdentifier) error {
+	if !i.cfg.DefaultPeerCreationEnabled() {
+		return fmt.Errorf("default peer creation is not enabled")
+	}
+	return i.interfaces.CreateDefaultPeers(ctx, id)
 }

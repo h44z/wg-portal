@@ -355,6 +355,7 @@
         }
       },
       "button-apply-defaults": "Áp dụng Cài đặt Mặc định của Peer",
+      "button-create-default-peers": "Tạo Peer Mặc định",
       "confirm-delete": "Ban co chac muon xoa giao dien '{id}' khong?"
     },
     "peer-view": {

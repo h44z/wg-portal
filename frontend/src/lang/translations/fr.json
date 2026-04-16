@@ -377,6 +377,7 @@
         }
       },
       "button-apply-defaults": "Appliquer les valeurs par défaut des pairs",
+      "button-create-default-peers": "Créer les pairs par défaut",
       "confirm-delete": "Voulez-vous vraiment supprimer l'interface \"{id}\" ?"
     },
     "peer-view": {
