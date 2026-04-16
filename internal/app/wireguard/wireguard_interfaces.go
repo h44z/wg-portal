@@ -387,7 +387,7 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 		SaveConfig:                 m.cfg.Advanced.ConfigStoragePath != "",
 		DisplayName:                string(id),
 		Type:                       domain.InterfaceTypeServer,
-		CreateDefaultPeer:          m.cfg.Core.CreateDefaultPeer,
+		CreateDefaultPeer:          m.cfg.DefaultPeerCreationEnabled(),
 		DriverType:                 "",
 		Disabled:                   nil,
 		DisabledReason:             "",

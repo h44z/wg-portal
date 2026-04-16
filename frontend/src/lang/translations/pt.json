@@ -415,6 +415,7 @@
         }
       },
       "button-apply-defaults": "Aplicar Padrões de Peer",
+      "button-create-default-peers": "Criar Peers Padrão",
       "confirm-delete": "Tem certeza que deseja excluir a interface '{id}'?"
     },
     "peer-view": {

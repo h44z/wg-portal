@@ -240,6 +240,18 @@ func (i *Interface) GetRoutingTable() int {
 	}
 }
 
+// CreateDefaultPeers determines whether default peers should be created for this interface.
+func (i *Interface) CreateDefaultPeers() bool {
+	if !i.CreateDefaultPeer {
+		return false // only create default peers if the interface flag is set
+	}
+	if i.Type != InterfaceTypeServer {
+		return false // only create default peers for server interfaces
+	}
+
+	return true
+}
+
 type PhysicalInterface struct {
 	Identifier InterfaceIdentifier // device name, for example: wg0
 	KeyPair                        // private/public Key of the server interface

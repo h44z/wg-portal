@@ -15,6 +15,10 @@ import (
 
 // CreateDefaultPeer creates a default peer for the given user on all server interfaces.
 func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdentifier) error {
+	if !m.cfg.DefaultPeerCreationEnabled() {
+		return nil
+	}
+
 	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
 		return err
 	}
@@ -24,39 +28,21 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdenti
 		return fmt.Errorf("failed to fetch all interfaces: %w", err)
 	}
 
-	userPeers, err := m.db.GetUserPeers(context.Background(), userId)
+	user, err := m.db.GetUser(ctx, userId)
 	if err != nil {
-		return fmt.Errorf("failed to retrieve existing peers prior to default peer creation: %w", err)
+		return fmt.Errorf("failed to fetch user: %w", err)
 	}
 
 	var newPeers []domain.Peer
 	for _, iface := range existingInterfaces {
-		if iface.Type != domain.InterfaceTypeServer {
-			continue // only create default peers for server interfaces
-		}
-
-		if !iface.CreateDefaultPeer {
-			continue // only create default peers if the interface flag is set
-		}
-
-		peerAlreadyCreated := slices.ContainsFunc(userPeers, func(peer domain.Peer) bool {
-			return peer.InterfaceIdentifier == iface.Identifier
-		})
-		if peerAlreadyCreated {
-			continue // skip creation if a peer already exists for this interface
-		}
-
-		peer, err := m.PreparePeer(ctx, iface.Identifier)
+		peer, err := m.prepareDefaultPeer(ctx, &iface, user)
 		if err != nil {
-			return fmt.Errorf("failed to create default peer for interface %s: %w", iface.Identifier, err)
+			return fmt.Errorf("failed to prepare default peer: %w", err)
 		}
 
-		peer.UserIdentifier = userId
-		peer.Notes = fmt.Sprintf("Default peer created for user %s", userId)
-		peer.AutomaticallyCreated = true
-		peer.GenerateDisplayName("Default")
-
-		newPeers = append(newPeers, *peer)
+		if peer != nil {
+			newPeers = append(newPeers, *peer)
+		}
 	}
 
 	for i, peer := range newPeers {
@@ -67,9 +53,61 @@ func (m Manager) CreateDefaultPeer(ctx context.Context, userId domain.UserIdenti
 		}
 	}
 
-	slog.InfoContext(ctx, "created default peers for user",
-		"user", userId,
-		"count", len(newPeers))
+	slog.InfoContext(ctx, "created default peers for user", "user", userId, "count", len(newPeers))
+
+	return nil
+}
+
+// CreateDefaultPeers creates default peers for all existing users on the given interface.
+func (m Manager) CreateDefaultPeers(ctx context.Context, interfaceId domain.InterfaceIdentifier) error {
+	if !m.cfg.DefaultPeerCreationEnabled() {
+		return nil
+	}
+
+	if err := domain.ValidateAdminAccessRights(ctx); err != nil {
+		return err
+	}
+
+	iface, err := m.db.GetInterface(ctx, interfaceId)
+	if err != nil {
+		return fmt.Errorf("failed to fetch interface %s: %w", interfaceId, err)
+	}
+
+	if !iface.CreateDefaultPeers() {
+		return nil
+	}
+
+	users, err := m.db.GetAllUsers(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch all users: %w", err)
+	}
+
+	var errs error
+	var peerCount int
+	for _, user := range users {
+		peer, err := m.prepareDefaultPeer(ctx, iface, &user)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to prepare default peer for user %s: %w",
+				user.Identifier, err))
+			continue
+		}
+		if peer == nil {
+			continue
+		}
+		_, err = m.CreatePeer(ctx, peer)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to create default peer for user %s: %w",
+				user.Identifier, err))
+			continue
+		}
+		peerCount++
+	}
+
+	if errs != nil {
+		return fmt.Errorf("failed to create default peers for interface %s: %w", interfaceId, errs)
+	}
+
+	slog.InfoContext(ctx, "created default peers for interface", "interface", interfaceId, "count", peerCount)
 
 	return nil
 }
@@ -637,6 +675,41 @@ func (m Manager) checkInterfaceAccess(ctx context.Context, id domain.InterfaceId
 	}
 
 	return nil
+}
+
+func (m Manager) prepareDefaultPeer(ctx context.Context, iface *domain.Interface, user *domain.User) (
+	*domain.Peer,
+	error,
+) {
+	if !iface.CreateDefaultPeers() || !user.CreateDefaultPeers() {
+		return nil, nil
+	}
+
+	userPeers, err := m.db.GetUserPeers(ctx, user.Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve existing peers prior to default peer creation: %w", err)
+	}
+
+	peerAlreadyCreated := slices.ContainsFunc(userPeers, func(peer domain.Peer) bool {
+		// Ignore the AutomaticallyCreated flag on the peer.
+		// If a user already has a peer for a given interface, no default peer should be created.
+		return peer.InterfaceIdentifier == iface.Identifier
+	})
+	if peerAlreadyCreated {
+		return nil, nil // skip creation if a peer already exists for this interface
+	}
+
+	peer, err := m.PreparePeer(ctx, iface.Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create default peer for interface %s: %w", iface.Identifier, err)
+	}
+
+	peer.UserIdentifier = user.Identifier
+	peer.Notes = fmt.Sprintf("Default peer created for user %s", user.Identifier)
+	peer.AutomaticallyCreated = true
+	peer.GenerateDisplayName("Default")
+
+	return peer, nil
 }
 
 // endregion helper-functions

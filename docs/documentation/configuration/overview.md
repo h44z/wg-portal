@@ -155,17 +155,33 @@ More advanced options are found in the subsequent `Advanced` section.
 - **Environment Variable:** `WG_PORTAL_CORE_EDITABLE_KEYS`
 - **Description:** Allow editing of WireGuard key-pairs directly in the UI.
 
-### `create_default_peer`
+### `create_default_peer` (deprecated)
+- **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER`
+- **Description:** **DEPRECATED** in favor of [create_default_peer_on_login](#create_default_peer_on_login). If set to `true`, this option is equivalent to enabling `create_default_peer_on_login`. It will be removed in a future release (2.4).
+
+### `create_default_peer_on_creation` (deprecated)
+- **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION`
+- **Description:** **DEPRECATED** in favor of [create_default_peer_on_user_creation](#create_default_peer_on_user_creation) and [create_default_peer_on_interface_creation](#create_default_peer_on_interface_creation). If set to `true`, both of those options are enabled. It will be removed in a future release (2.4).
+
+### `create_default_peer_on_login`
 - **Default:** `false`
 - **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER`
 - **Description:** If a user logs in for the first time with no existing peers, automatically create a new WireGuard peer for all server interfaces where the "Create default peer" flag is set.
 - **Important:** This option is only effective for interfaces where the "Create default peer" flag is set (via the UI).
 
-### `create_default_peer_on_creation`
+### `create_default_peer_on_user_creation`
 - **Default:** `false`
-- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION`
-- **Description:** If an LDAP user is created (e.g., through LDAP sync) and has no peers, automatically create a new WireGuard peer for all server interfaces where the "Create default peer" flag is set.
-- **Important:** This option requires [create_default_peer](#create_default_peer) to be enabled.
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_USER_CREATION`
+- **Description:** If a new user is created (e.g., through LDAP sync or registration) and has no peers, automatically create a new WireGuard peer for all server interfaces where the "Create default peer" flag is set.
+- **Important:** This option is only effective for interfaces where the "Create default peer" flag is set (via the UI).
+
+### `create_default_peer_on_interface_creation`
+- **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_INTERFACE_CREATION`
+- **Description:** When a new server interface is created with the "Create default peer" flag set, automatically create a default WireGuard peer on that interface for every existing user who does not yet have a peer on it.
+- **Important:** This option is only effective for interfaces where the "Create default peer" flag is set (via the UI).
 
 ### `re_enable_peer_after_user_enable`
 - **Default:** `true`

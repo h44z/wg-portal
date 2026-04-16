@@ -53,6 +53,7 @@ const formData = ref(freshInterface())
 const isSaving = ref(false)
 const isDeleting = ref(false)
 const isApplyingDefaults = ref(false)
+const isCreatingDefaultPeers = ref(false)
 
 const isBackendValid = computed(() => {
   if (!props.visible || !selectedInterface.value) {
@@ -313,6 +314,39 @@ async function applyPeerDefaults() {
   }
 }
 
+async function createDefaultPeers() {
+  if (props.interfaceId==='#NEW#') {
+    return; // do nothing for new interfaces
+  }
+
+  if (!formData.value.CreateDefaultPeer) {
+    return; // only allowed if the interface flag is set
+  }
+
+  if (isCreatingDefaultPeers.value) return
+  isCreatingDefaultPeers.value = true
+  try {
+    await interfaces.CreateDefaultPeers(selectedInterface.value.Identifier)
+
+    notify({
+      title: "Default Peers Created",
+      text: "Created default peers for all users on this interface.",
+      type: 'success',
+    })
+
+    await peers.LoadPeers(selectedInterface.value.Identifier) // reload peers list
+  } catch (e) {
+    console.log(e)
+    notify({
+      title: "Failed to create default peers!",
+      text: e.toString(),
+      type: 'error',
+    })
+  } finally {
+    isCreatingDefaultPeers.value = false
+  }
+}
+
 async function del() {
   if (isDeleting.value) return
   if (!confirm(t('modals.interface-edit.confirm-delete', {id: selectedInterface.value.Identifier}))) return
@@ -490,9 +524,15 @@ async function del() {
               <input v-model="formData.Disabled" class="form-check-input" type="checkbox">
               <label class="form-check-label">{{ $t('modals.interface-edit.disabled.label') }}</label>
             </div>
-            <div class="form-check form-switch" v-if="formData.Mode==='server' && settings.Setting('CreateDefaultPeer')">
-              <input v-model="formData.CreateDefaultPeer" class="form-check-input" type="checkbox">
-              <label class="form-check-label">{{ $t('modals.interface-edit.create-default-peer.label') }}</label>
+            <div class="d-flex align-items-center justify-content-between" v-if="formData.Mode==='server' && settings.Setting('CreateDefaultPeer')">
+              <div class="form-check form-switch mb-0">
+                <input v-model="formData.CreateDefaultPeer" class="form-check-input" type="checkbox">
+                <label class="form-check-label">{{ $t('modals.interface-edit.create-default-peer.label') }}</label>
+              </div>
+              <button v-if="props.interfaceId!=='#NEW#'" class="btn btn-primary btn-sm" type="button" @click.prevent="createDefaultPeers" :disabled="!formData.CreateDefaultPeer || isCreatingDefaultPeers">
+                <span v-if="isCreatingDefaultPeers" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                {{ $t('modals.interface-edit.button-create-default-peers') }}
+              </button>
             </div>
             <div class="form-check form-switch" v-if="formData.Backend==='local'">
               <input v-model="formData.SaveConfig" checked="" class="form-check-input" type="checkbox">

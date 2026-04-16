@@ -495,6 +495,7 @@
         }
       },
       "button-apply-defaults": "Aplicar Valores Predeterminados de peers",
+      "button-create-default-peers": "Crear Peers Predeterminados",
       "confirm-delete": "Seguro que desea eliminar la interfaz '{id}'?"
     },
     "peer-view": {

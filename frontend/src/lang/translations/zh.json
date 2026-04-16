@@ -355,6 +355,7 @@
           }
         },
         "button-apply-defaults": "应用节点默认值",
+        "button-create-default-peers": "创建默认节点",
         "confirm-delete": "确定要删除接口“{id}”吗？"
       },
       "peer-view": {
