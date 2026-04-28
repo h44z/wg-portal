@@ -371,6 +371,7 @@
       "user": "Người dùng Liên kết",
       "notes": "Ghi chú",
       "expiry-status": "Hết hạn vào",
+      "created-at": "Ngày tạo",
       "no-expiry": "Không hết hạn",
       "disabled-status": "Bị Vô hiệu hóa vào",
       "traffic": "Lưu lượng",

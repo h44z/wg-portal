@@ -523,6 +523,7 @@
       "user": "Zugeordneter Benutzer",
       "notes": "Notizen",
       "expiry-status": "Läuft ab am",
+      "created-at": "Erstellt am",
       "no-expiry": "Kein Ablaufdatum",
       "disabled-status": "Deaktiviert am",
       "traffic": "Datenverkehr",

@@ -393,6 +393,7 @@
       "user": "Utilisateur associé",
       "notes": "Notes",
       "expiry-status": "Expire le",
+      "created-at": "Créé le",
       "no-expiry": "Pas d'expiration",
       "disabled-status": "Désactivé le",
       "traffic": "Trafic",

@@ -371,6 +371,7 @@
         "user": "关联用户",
         "notes": "备注",
         "expiry-status": "过期时间",
+        "created-at": "创建时间",
         "no-expiry": "无过期时间",
         "disabled-status": "禁用时间",
         "traffic": "流量",

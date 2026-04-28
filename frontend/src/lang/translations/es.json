@@ -513,6 +513,7 @@
       "user": "Usuario Asociado",
       "notes": "Notas",
       "expiry-status": "Expira en",
+      "created-at": "Creado el",
       "no-expiry": "Sin expiración",
       "disabled-status": "Deshabilitado en",
       "traffic": "Tráfico",

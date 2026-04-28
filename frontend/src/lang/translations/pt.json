@@ -431,6 +431,7 @@
       "user": "Utilizador Associado",
       "notes": "Notas",
       "expiry-status": "Expira em",
+      "created-at": "Criado em",
       "no-expiry": "Sem expiração",
       "disabled-status": "Desativado em",
       "traffic": "Tráfego",

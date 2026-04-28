@@ -411,6 +411,7 @@
         "user": "연결된 사용자",
         "notes": "메모",
         "expiry-status": "만료 시각",
+        "created-at": "생성 시각",
         "no-expiry": "만료 없음",
         "disabled-status": "비활성화 시각",
         "traffic": "트래픽",
