@@ -33,6 +33,12 @@ core:
     # Records older than this duration are pruned at the end of each check cycle.
     # Defaults to 720h (30 days).
     notification_cleanup_after: 720h
+    # purge_expired_after controls automatic deletion of disabled expired peers.
+    # When non-zero, any peer that is both expired and disabled, and whose ExpiresAt
+    # is older than this duration, is permanently deleted during each expiry check cycle.
+    # Set to 0 to disable purging — disabled expired peers are kept forever.
+    # Defaults to 720h (30 days).
+    purge_expired_after: 720h
 
 web:
   external_url: http://localhost:8888

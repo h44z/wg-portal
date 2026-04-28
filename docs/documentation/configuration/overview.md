@@ -249,7 +249,7 @@ The `peer` sub-section groups peer lifecycle and expiry notification settings.
 #### `purge_expired_after`
 - **Default:** `720h` (30 days)
 - **Environment Variable:** `WG_PORTAL_CORE_PEER_PURGE_EXPIRED_AFTER`
-- **Description:** When `expiry_action` is `disable`, disabled expired peers accumulate in the database. This setting automatically deletes them after the specified duration has passed since their expiry date. A value of `0` disables purging entirely.
+- **Description:** When `expiry_action` is `disable`, disabled expired peers accumulate in the database. This setting automatically deletes them after the specified duration has passed since their expiry date. A value of `0` disables purging entirely — disabled expired peers are kept forever until manually removed.
   Format uses `s`, `m`, `h` for seconds, minutes, hours, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
 
 #### `expiry_notification_enabled`
