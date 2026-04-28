@@ -11,7 +11,7 @@ core:
   create_default_peer_on_interface_creation: false
   peer:
     # rotation_interval sets the maximum lifetime for newly created peers.
-    # When non-zero, each new peer's ExpiresAt is set to CreatedAt + rotation_interval.
+    # When non-zero, each new peer's ExpiresAt is set to the current time + rotation_interval.
     # Set to 0 (default) to disable automatic expiry assignment.
     # Example: 8760h = 1 year
     rotation_interval: 0
