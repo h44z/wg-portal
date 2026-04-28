@@ -9,6 +9,7 @@ import UserPeerEditModal from "@/components/UserPeerEditModal.vue";
 import Pagination from "@/components/Pagination.vue";
 import { settingsStore } from "@/stores/settings";
 import { humanFileSize } from "@/helpers/utils";
+import { formatDateTime } from "@/helpers/utils";
 
 const settings = settingsStore()
 const profile = profileStore()
@@ -140,6 +141,7 @@ onMounted(async () => {
           <th v-if="profile.hasStatistics" scope="col" @click="sortBy('Traffic')">RX/TX
             <i v-if="sortKey === 'Traffic'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
           </th>
+          <th scope="col">{{ $t('profile.table-heading.expires') }}</th>
           <th scope="col">{{ $t('profile.table-heading.interface') }}</th>
           <th scope="col"></th><!-- Actions -->
         </tr>
@@ -150,10 +152,16 @@ onMounted(async () => {
             <input class="form-check-input" type="checkbox" v-model="peer.IsSelected">
           </th>
           <td class="text-center">
-            <span v-if="peer.Disabled" class="text-danger"><i class="fa fa-circle-xmark"
-                :title="peer.DisabledReason"></i></span>
-            <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning"><i class="fas fa-hourglass-end"
-                :title="peer.ExpiresAt"></i></span>
+            <span v-if="peer.Disabled" class="text-danger">
+              <i class="fa fa-circle-xmark" :title="peer.DisabledReason"></i>
+            </span>
+            <span v-else-if="peer.ExpiresAt" class="text-warning">
+              <i class="fas fa-hourglass-end"></i>
+              <small class="ms-1">{{ formatDateTime(peer.ExpiresAt) }}</small>
+            </span>
+            <span v-else class="text-muted">
+              <small>{{ $t('profile.no-expiry') }}</small>
+            </span>
           </td>
           <td><span v-if="peer.DisplayName" :title="peer.Identifier">{{ peer.DisplayName }}</span><span v-else
               :title="peer.Identifier">{{ $filters.truncate(peer.Identifier, 10) }}</span></td>
@@ -171,6 +179,7 @@ onMounted(async () => {
           <td v-if="profile.hasStatistics" >
             <span class="text-center" >{{ humanFileSize(profile.Statistics(peer.Identifier).BytesReceived) }} / {{ humanFileSize(profile.Statistics(peer.Identifier).BytesTransmitted) }}</span>
           </td>
+          <td>{{ peer.ExpiresAt ? formatDateTime(peer.ExpiresAt) : $t('profile.no-expiry') }}</td>
           <td>{{ peer.InterfaceIdentifier }}</td>
           <td class="text-center">
             <a href="#" :title="$t('profile.button-show-peer')" @click.prevent="viewedPeerId = peer.Identifier"><i

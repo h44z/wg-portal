@@ -2,7 +2,9 @@ package wireguard
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,10 +16,10 @@ import (
 // region dependencies
 
 type InterfaceAndPeerDatabaseRepo interface {
+	NotificationManagerDatabaseRepo // embeds GetAllInterfaces, GetInterfacePeers, GetUser
 	GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error)
 	GetInterfaceAndPeers(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, []domain.Peer, error)
 	GetPeersStats(ctx context.Context, ids ...domain.PeerIdentifier) ([]domain.PeerStatus, error)
-	GetAllInterfaces(ctx context.Context) ([]domain.Interface, error)
 	GetInterfaceIps(ctx context.Context) (map[domain.InterfaceIdentifier][]domain.Cidr, error)
 	SaveInterface(
 		ctx context.Context,
@@ -25,7 +27,6 @@ type InterfaceAndPeerDatabaseRepo interface {
 		updateFunc func(in *domain.Interface) (*domain.Interface, error),
 	) error
 	DeleteInterface(ctx context.Context, id domain.InterfaceIdentifier) error
-	GetInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.Peer, error)
 	GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error)
 	SavePeer(
 		ctx context.Context,
@@ -35,7 +36,6 @@ type InterfaceAndPeerDatabaseRepo interface {
 	DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 	GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (map[domain.Cidr][]domain.Cidr, error)
-	GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
 	GetAllUsers(ctx context.Context) ([]domain.User, error)
 }
 
@@ -55,10 +55,12 @@ type EventBus interface {
 // endregion dependencies
 
 type Manager struct {
-	cfg *config.Config
-	bus EventBus
-	db  InterfaceAndPeerDatabaseRepo
-	wg  *ControllerManager
+	cfg       *config.Config
+	bus       EventBus
+	db        InterfaceAndPeerDatabaseRepo
+	wg        *ControllerManager
+	notifRepo NotificationRepository
+	mailer    NotificationMailer
 
 	userLockMap      *sync.Map
 	interfaceLockMap *sync.Map
@@ -69,12 +71,16 @@ func NewWireGuardManager(
 	bus EventBus,
 	wg *ControllerManager,
 	db InterfaceAndPeerDatabaseRepo,
+	notifRepo NotificationRepository,
+	mailer NotificationMailer,
 ) (*Manager, error) {
 	m := &Manager{
 		cfg:              cfg,
 		bus:              bus,
 		wg:               wg,
 		db:               db,
+		notifRepo:        notifRepo,
+		mailer:           mailer,
 		userLockMap:      &sync.Map{},
 		interfaceLockMap: &sync.Map{},
 	}
@@ -86,8 +92,11 @@ func NewWireGuardManager(
 
 // StartBackgroundJobs starts background jobs like the expired peers check.
 // This method is non-blocking.
-func (m Manager) StartBackgroundJobs(ctx context.Context) {
+func (m *Manager) StartBackgroundJobs(ctx context.Context) {
 	go m.runExpiredPeersCheck(ctx)
+
+	nm := NewNotificationManager(m.cfg, m.db, m.notifRepo, m.mailer)
+	go nm.Run(ctx)
 }
 
 func (m Manager) connectToMessageBus() {
@@ -336,15 +345,117 @@ func (m Manager) checkExpiredPeers(ctx context.Context, peers []domain.Peer) {
 
 	for _, peer := range peers {
 		if peer.IsExpired() && !peer.IsDisabled() {
-			slog.Info("peer has expired, disabling", "peer", peer.Identifier)
+			expiryStr := peer.ExpiresAt.UTC().Format(time.RFC3339)
 
-			peer.Disabled = &now
-			peer.DisabledReason = domain.DisabledReasonExpired
+			// Capture info for potential recreate before the old peer is removed.
+			shouldRecreate := m.cfg.Core.Peer.AutoRecreateOnExpiry && peer.UserIdentifier != ""
+			oldUser := peer.UserIdentifier
+			oldIface := peer.InterfaceIdentifier
+			oldDisplayName := peer.DisplayName
 
-			_, err := m.UpdatePeer(ctx, &peer)
-			if err != nil {
-				slog.Error("failed to update expired peer", "peer", peer.Identifier, "error", err)
+			if m.cfg.Core.Peer.ExpiryAction == "delete" {
+				slog.Info("peer has expired, deleting",
+					"peer", peer.Identifier,
+					"expired_at", expiryStr,
+					"action", "delete",
+				)
+				if err := m.DeletePeer(ctx, peer.Identifier); err != nil {
+					slog.Error("failed to delete expired peer",
+						"peer", peer.Identifier,
+						"expired_at", expiryStr,
+						"error", err,
+					)
+					continue // skip recreate on failure
+				} else {
+					slog.Info("expired peer deleted successfully",
+						"peer", peer.Identifier,
+						"expired_at", expiryStr,
+					)
+				}
+			} else {
+				// default: disable
+				slog.Info("peer has expired, disabling",
+					"peer", peer.Identifier,
+					"expired_at", expiryStr,
+					"action", "disable",
+				)
+				peer.Disabled = &now
+				peer.DisabledReason = fmt.Sprintf("expired on %s", expiryStr)
+				if _, err := m.UpdatePeer(ctx, &peer); err != nil {
+					slog.Error("failed to disable expired peer",
+						"peer", peer.Identifier,
+						"expired_at", expiryStr,
+						"error", err,
+					)
+					continue // skip recreate on failure
+				} else {
+					slog.Info("expired peer disabled successfully",
+						"peer", peer.Identifier,
+						"expired_at", expiryStr,
+						"disabled_reason", peer.DisabledReason,
+					)
+				}
+			}
+
+			if shouldRecreate {
+				m.recreateExpiredPeer(ctx, oldIface, oldUser, oldDisplayName)
+			}
+		}
+
+		// Purge disabled expired peers that have been expired longer than PurgeExpiredAfter.
+		if m.cfg.Core.Peer.PurgeExpiredAfter > 0 && peer.IsExpired() && peer.IsDisabled() {
+			if now.Sub(*peer.ExpiresAt) > m.cfg.Core.Peer.PurgeExpiredAfter {
+				slog.Info("purging disabled expired peer",
+					"peer", peer.Identifier,
+					"expired_at", peer.ExpiresAt.UTC().Format(time.RFC3339),
+				)
+				if err := m.DeletePeer(ctx, peer.Identifier); err != nil {
+					slog.Error("failed to purge expired peer",
+						"peer", peer.Identifier,
+						"error", err,
+					)
+				}
 			}
 		}
 	}
+}
+
+// recreateExpiredPeer creates a fresh replacement peer for the same user and interface.
+func (m Manager) recreateExpiredPeer(
+	ctx context.Context,
+	ifaceID domain.InterfaceIdentifier,
+	userID domain.UserIdentifier,
+	displayName string,
+) {
+	freshPeer, err := m.PreparePeer(ctx, ifaceID)
+	if err != nil {
+		slog.Error("failed to prepare replacement peer",
+			"interface", ifaceID, "user", userID, "error", err)
+		return
+	}
+
+	freshPeer.UserIdentifier = userID
+	freshPeer.DisplayName = displayName
+	if suffix := m.cfg.Core.Peer.RecreateOnExpirySuffix; suffix != "" && !strings.HasSuffix(displayName, suffix) {
+		freshPeer.DisplayName = displayName + suffix
+	}
+
+	if m.cfg.Core.Peer.RotationInterval > 0 {
+		expiresAt := time.Now().Add(m.cfg.Core.Peer.RotationInterval)
+		freshPeer.ExpiresAt = &expiresAt
+	}
+
+	if err := m.savePeers(ctx, freshPeer); err != nil {
+		slog.Error("failed to save replacement peer",
+			"interface", ifaceID, "user", userID, "error", err)
+		return
+	}
+
+	m.bus.Publish(app.TopicPeerCreated, *freshPeer)
+
+	slog.Info("replacement peer created for expired peer",
+		"new_peer", freshPeer.Identifier,
+		"interface", ifaceID,
+		"user", userID,
+	)
 }

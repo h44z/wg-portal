@@ -157,7 +157,8 @@
       "name": "Nom",
       "ip": "IP",
       "stats": "Statut",
-      "interface": "Interface serveur"
+      "interface": "Interface serveur",
+      "expires": "Expire"
     },
     "no-peer": {
       "headline": "Aucun pair disponible",
@@ -166,7 +167,8 @@
     "peer-connected": "Connecté",
     "button-add-peer": "Ajouter un pair",
     "button-show-peer": "Afficher le pair",
-    "button-edit-peer": "Modifier le pair"
+    "button-edit-peer": "Modifier le pair",
+    "no-expiry": "Pas d'expiration"
   },
   "settings": {
     "headline": "Paramètres",
@@ -391,6 +393,7 @@
       "user": "Utilisateur associé",
       "notes": "Notes",
       "expiry-status": "Expire le",
+      "no-expiry": "Pas d'expiration",
       "disabled-status": "Désactivé le",
       "traffic": "Trafic",
       "connection-status": "Statistiques de connexion",

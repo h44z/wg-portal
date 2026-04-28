@@ -157,7 +157,8 @@
       "name": "Ім'я",
       "ip": "IP-адреси",
       "stats": "Статус",
-      "interface": "Серверний інтерфейс"
+      "interface": "Серверний інтерфейс",
+      "expires": "Закінчується"
     },
     "no-peer": {
       "headline": "Немає доступних пірів",
@@ -166,7 +167,8 @@
     "peer-connected": "Підключено",
     "button-add-peer": "Додати пір",
     "button-show-peer": "Показати пір",
-    "button-edit-peer": "Редагувати пір"
+    "button-edit-peer": "Редагувати пір",
+    "no-expiry": "Без терміну дії"
   },
   "settings": {
     "headline": "Налаштування",
@@ -391,6 +393,7 @@
       "user": "Пов'язаний користувач",
       "notes": "Примітки",
       "expiry-status": "Закінчується",
+      "no-expiry": "Без терміну дії",
       "disabled-status": "Відключено",
       "traffic": "Трафік",
       "connection-status": "Статистика з'єднання",

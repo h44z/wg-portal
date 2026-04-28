@@ -177,7 +177,8 @@
       "name": "Name",
       "ip": "IP's",
       "stats": "Status",
-      "interface": "Server Interface"
+      "interface": "Server Interface",
+      "expires": "Expires"
     },
     "no-peer": {
       "headline": "No peers available",
@@ -186,7 +187,8 @@
     "peer-connected": "Connected",
     "button-add-peer": "Add Peer",
     "button-show-peer": "Show Peer",
-    "button-edit-peer": "Edit Peer"
+    "button-edit-peer": "Edit Peer",
+    "no-expiry": "No expiry"
   },
   "settings": {
     "headline": "Settings",
@@ -521,6 +523,8 @@
       "user": "Associated User",
       "notes": "Notes",
       "expiry-status": "Expires At",
+      "created-at": "Created At",
+      "no-expiry": "No expiry",
       "disabled-status": "Disabled At",
       "traffic": "Traffic",
       "connection-status": "Connection Stats",

@@ -18,3 +18,23 @@ $web-font-path: false;
 @use "bootstrap/scss/bootstrap" as bs;
 @use "bootswatch/dist/lux/_bootswatch.scss" as lux-theme;
 */
+
+// Instant tooltip (replaces slow native title attribute)
+.instant-tip {
+  position: relative;
+  &:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    margin-bottom: 4px;
+    background: var(--bs-dark, #333);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1080;
+    pointer-events: none;
+  }
+}

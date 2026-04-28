@@ -18,3 +18,21 @@ export function humanFileSize(size) {
   const i = parseInt(Math.floor(Math.log(size) / Math.log(1024)))
   return Math.round(size / Math.pow(1024, i), 2) + sizes[i]
 }
+
+// Formats an ISO date or datetime string as "DD.MM.YYYY HH:MM UTC".
+export function formatDateTime(value) {
+  if (!value) return String(value ?? '')
+  try {
+    const d = new Date(value)
+    if (isNaN(d.getTime())) return String(value)
+    const pad = (n) => String(n).padStart(2, '0')
+    const day   = pad(d.getUTCDate())
+    const month = pad(d.getUTCMonth() + 1)
+    const year  = d.getUTCFullYear()
+    const hours = pad(d.getUTCHours())
+    const mins  = pad(d.getUTCMinutes())
+    return `${day}.${month}.${year} ${hours}:${mins} UTC`
+  } catch {
+    return String(value)
+  }
+}

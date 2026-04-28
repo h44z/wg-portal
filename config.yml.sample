@@ -9,6 +9,30 @@ core:
   create_default_peer_on_login: true
   create_default_peer_on_user_creation: false
   create_default_peer_on_interface_creation: false
+  peer:
+    # rotation_interval sets the maximum lifetime for newly created peers.
+    # When non-zero, each new peer's ExpiresAt is set to CreatedAt + rotation_interval.
+    # Set to 0 (default) to disable automatic expiry assignment.
+    # Example: 8760h = 1 year
+    rotation_interval: 0
+    # expiry_action controls what happens when a peer reaches its expiry date.
+    # Valid values: "disable" (default) or "delete".
+    # "disable" sets the peer as disabled with a reason; "delete" permanently removes the peer.
+    expiry_action: disable
+    # expiry_notification_enabled controls whether expiry warning emails are sent to users.
+    # Defaults to true. Set to false to suppress all expiry warning emails.
+    expiry_notification_enabled: true
+    # expiry_notification_intervals is an ordered list of lead times before expiry at which
+    # a warning email is sent. At most one email is sent per peer per interval.
+    # Defaults to [168h, 72h, 24h] (7 days, 3 days, 1 day before expiry).
+    expiry_notification_intervals:
+      - 168h
+      - 72h
+      - 24h
+    # notification_cleanup_after controls how long sent-notification records are kept.
+    # Records older than this duration are pruned at the end of each check cycle.
+    # Defaults to 720h (30 days).
+    notification_cleanup_after: 720h
 
 web:
   external_url: http://localhost:8888
