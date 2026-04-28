@@ -65,7 +65,7 @@ WireGuard Portal supports an optional peer rotation interval that automatically 
 
 ### How It Works
 
-When `core.peer.rotation_interval` is set to a non-zero duration, the Portal sets the `ExpiresAt` field of each new peer to `CreatedAt + rotation_interval` at creation time. If a peer already has an explicit expiry date set by an administrator, that value is preserved and not overwritten.
+When `core.peer.rotation_interval` is set to a non-zero duration, the Portal sets the `ExpiresAt` field of each new peer to `now + rotation_interval` at the moment of creation. If a peer already has an explicit expiry date set by an administrator, that value is preserved and not overwritten.
 
 The existing expiry checker (controlled by `advanced.expiry_check_interval`) periodically scans all peers. When a peer's `ExpiresAt` is reached, the action defined by `core.peer.expiry_action` is applied:
 
