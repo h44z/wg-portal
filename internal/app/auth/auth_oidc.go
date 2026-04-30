@@ -30,6 +30,7 @@ type OidcAuthenticator struct {
 	allowedUserGroups    []string
 	endSessionEndpoint   string
 	logoutIdpSession     bool
+	sanitizeUserData     bool
 }
 
 func newOidcAuthenticator(
@@ -67,6 +68,7 @@ func newOidcAuthenticator(
 	provider.allowedDomains = cfg.AllowedDomains
 	provider.allowedUserGroups = cfg.AllowedUserGroups
 	provider.logoutIdpSession = cfg.LogoutIdpSession == nil || *cfg.LogoutIdpSession
+	provider.sanitizeUserData = cfg.SanitizeUserData
 
 	var providerMetadata struct {
 		EndSessionEndpoint string `json:"end_session_endpoint"`
@@ -194,5 +196,5 @@ func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 
 // ParseUserInfo parses the user info.
 func (o OidcAuthenticator) ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error) {
-	return parseOauthUserInfo(o.userInfoMapping, o.userAdminMapping, raw)
+	return parseOauthUserInfo(o.userInfoMapping, o.userAdminMapping, raw, o.sanitizeUserData, "oidc", o.name)
 }

@@ -85,6 +85,7 @@ auth:
     enabled: true
   min_password_length: 16
   hide_login_form: false
+  sanitize_external_user_data: true
 
 web:
   listening_address: :8888
@@ -541,6 +542,12 @@ Some core authentication options are shared across all providers, while others a
 - **Description:** If `true`, the login form is hidden and only the OIDC, OAuth, LDAP, or WebAuthn providers are shown. This is useful if you want to enforce a specific authentication method.
   If no social login providers are configured, the login form is always shown, regardless of this setting.
 - **Important:** You can still access the login form by adding the `?all` query parameter to the login URL (e.g. https://wg.portal/#/login?all). 
+
+### `sanitize_external_user_data`
+- **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_AUTH_SANITIZE_EXTERNAL_USER_DATA`
+- **Description:** Controls whether user data received from LDAP, OIDC, and OAuth providers is sanitized before storage. Sanitization strips Unicode control/format characters, enforces field length limits, validates plain email values, rejects reserved user identifiers, and avoids log injection. See [External Identity Provider Data Sanitization](../usage/security.md#external-identity-provider-data-sanitization) for details.
+- **Important:** Set to `false` only if your identity provider is fully trusted and sanitization would cause unacceptable data loss.
 
 ---
 

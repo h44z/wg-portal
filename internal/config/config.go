@@ -106,6 +106,7 @@ func (c *Config) LogStartupValues() {
 		"webauthnEnabled", c.Auth.WebAuthn.Enabled,
 		"minPasswordLength", c.Auth.MinPasswordLength,
 		"hideLoginForm", c.Auth.HideLoginForm,
+		"sanitizeExternalUserData", c.Auth.SanitizeExternalUserData,
 	)
 
 	slog.Debug("Config Backend",
@@ -223,6 +224,7 @@ func defaultConfig() *Config {
 	cfg.Auth.WebAuthn.Enabled = getEnvBool("WG_PORTAL_AUTH_WEBAUTHN_ENABLED", true)
 	cfg.Auth.MinPasswordLength = getEnvInt("WG_PORTAL_AUTH_MIN_PASSWORD_LENGTH", 16)
 	cfg.Auth.HideLoginForm = getEnvBool("WG_PORTAL_AUTH_HIDE_LOGIN_FORM", false)
+	cfg.Auth.SanitizeExternalUserData = getEnvBool("WG_PORTAL_AUTH_SANITIZE_EXTERNAL_USER_DATA", true)
 
 	return cfg
 }
@@ -256,9 +258,16 @@ func GetConfig() (*Config, error) {
 		return nil, err
 	}
 	for i := range cfg.Auth.Ldap {
+		cfg.Auth.Ldap[i].SanitizeUserData = cfg.Auth.SanitizeExternalUserData
 		if err := cfg.Auth.Ldap[i].Sanitize(); err != nil {
 			return nil, fmt.Errorf("sanitizing of ldap config for %s failed: %w", cfg.Auth.Ldap[i].ProviderName, err)
 		}
+	}
+	for i := range cfg.Auth.OpenIDConnect {
+		cfg.Auth.OpenIDConnect[i].SanitizeUserData = cfg.Auth.SanitizeExternalUserData
+	}
+	for i := range cfg.Auth.OAuth {
+		cfg.Auth.OAuth[i].SanitizeUserData = cfg.Auth.SanitizeExternalUserData
 	}
 
 	handleDeprecatedConfigValues(cfg)
