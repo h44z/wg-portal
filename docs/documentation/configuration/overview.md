@@ -25,6 +25,15 @@ core:
   self_provisioning_allowed: false
   import_existing: true
   restore_state: true
+  peer:
+    rotation_interval: 0
+    expiry_action: disable
+    expiry_notification_enabled: true
+    expiry_notification_intervals:
+      - 168h
+      - 72h
+      - 24h
+    notification_cleanup_after: 720h
   
 backend:
   default: local
@@ -208,6 +217,58 @@ More advanced options are found in the subsequent `Advanced` section.
 - **Environment Variable:** `WG_PORTAL_CORE_RESTORE_STATE`
 - **Description:** Restore the WireGuard interface states (up/down) that existed before WireGuard Portal started.
 
+### Peer
+
+The `peer` sub-section groups peer lifecycle and expiry notification settings.
+
+#### `rotation_interval`
+- **Default:** `0` (disabled)
+- **Environment Variable:** `WG_PORTAL_CORE_PEER_ROTATION_INTERVAL`
+- **Description:** The maximum lifetime of a peer. When set to a non-zero duration, every newly created peer automatically receives an expiry date equal to its creation time plus this interval. When the peer expires, the action defined by `expiry_action` is applied. A value of `0` disables automatic expiry assignment entirely.
+  Format uses `s`, `m`, `h` for seconds, minutes, hours, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
+  **Example:** `rotation_interval: 8760h` sets a one-year maximum peer lifetime.
+
+#### `expiry_action`
+- **Default:** `disable`
+- **Environment Variable:** `WG_PORTAL_CORE_PEER_EXPIRY_ACTION`
+- **Description:** The action taken when a peer reaches its expiry date. Valid values are:
+  - `disable` — the peer is disabled and its `DisabledReason` is set to a human-readable string that includes the expiry timestamp (e.g. `expired on 2026-04-06T15:04:05Z`).
+  - `delete` — the peer record is permanently removed from storage.
+
+#### `auto_recreate_on_expiry`
+- **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_PEER_AUTO_RECREATE_ON_EXPIRY`
+- **Description:** If `true`, a fresh replacement peer is automatically created for the same user and interface after the expired peer is disabled or deleted (according to `expiry_action`). The new peer receives fresh keys and a new expiry date based on `rotation_interval`. The peer must be linked to a user for auto-recreation to take effect. When expiry notifications are enabled, the warning emails will include a notice that a new peer will be generated and the user will need to download the new configuration from the portal.
+
+#### `recreate_on_expiry_suffix`
+- **Default:** `" (recreated)"`
+- **Environment Variable:** `WG_PORTAL_CORE_PEER_RECREATE_ON_EXPIRY_SUFFIX`
+- **Description:** A string appended to the display name of auto-recreated peers to distinguish them from the original. The suffix is only added once — if the display name already ends with this suffix, it is not duplicated. Set to an empty string to disable the suffix.
+  **Suggested variants:** `" (recreated)"`, `" (renewed)"`, `" (rotated)"`, `" (auto)"`, `" -R"`
+
+#### `purge_expired_after`
+- **Default:** `720h` (30 days)
+- **Environment Variable:** `WG_PORTAL_CORE_PEER_PURGE_EXPIRED_AFTER`
+- **Description:** When `expiry_action` is `disable`, disabled expired peers accumulate in the database. This setting automatically deletes them after the specified duration has passed since their expiry date. A value of `0` disables purging entirely — disabled expired peers are kept forever until manually removed.
+  Format uses `s`, `m`, `h` for seconds, minutes, hours, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
+
+#### `expiry_notification_enabled`
+- **Default:** `true`
+- **Environment Variable:** `WG_PORTAL_CORE_PEER_EXPIRY_NOTIFICATION_ENABLED`
+- **Description:** If `true`, the notification manager sends expiry warning emails to users before their peer expires, according to the intervals defined in `expiry_notification_intervals`. Set to `false` to disable all expiry warning emails.
+
+#### `expiry_notification_intervals`
+- **Default:** `[168h, 72h, 24h]` (7 days, 3 days, 1 day)
+- **Environment Variable:** `WG_PORTAL_CORE_PEER_EXPIRY_NOTIFICATION_INTERVALS` (comma-separated, e.g. `168h,72h,24h`)
+- **Description:** An ordered list of durations that define how far before expiry a warning email is sent. For each interval, at most one email is sent per peer. If the list is empty, no warning emails are sent regardless of the `expiry_notification_enabled` flag.
+  Format uses `s`, `m`, `h` for seconds, minutes, hours, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
+
+#### `notification_cleanup_after`
+- **Default:** `720h` (30 days)
+- **Environment Variable:** `WG_PORTAL_CORE_PEER_NOTIFICATION_CLEANUP_AFTER`
+- **Description:** How long sent-notification records are kept in storage. Records older than this duration are pruned at the end of each notification check cycle. This prevents unbounded growth of the notification history table.
+  Format uses `s`, `m`, `h` for seconds, minutes, hours, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
+
 ---
 
 ## Backend
@@ -341,7 +402,7 @@ Additional or more specialized configuration options for logging and interface c
 ### `expiry_check_interval`
 - **Default:** `15m`
 - **Environment Variable:** `WG_PORTAL_ADVANCED_EXPIRY_CHECK_INTERVAL`
-- **Description:** Interval after which existing peers are checked if they are expired. Format uses `s`, `m`, `h`, `d` for seconds, minutes, hours, days, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
+- **Description:** Interval after which existing peers are checked if they are expired. Format uses `s`, `m`, `h` for seconds, minutes, hours, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration). Note: `d` (days) is not supported — use `24h` for one day.
 
 ### `rule_prio_offset`
 - **Default:** `20000`
@@ -427,12 +488,12 @@ Controls how WireGuard Portal collects and reports usage statistics, including p
 ### `ping_check_interval`
 - **Default:** `1m`
 - **Environment Variable:** `WG_PORTAL_STATISTICS_PING_CHECK_INTERVAL`
-- **Description:** Interval between consecutive ping checks for all peers. Format uses `s`, `m`, `h`, `d` for seconds, minutes, hours, days, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
+- **Description:** Interval between consecutive ping checks for all peers. Format uses `s`, `m`, `h` for seconds, minutes, hours, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration). Note: `d` (days) is not supported — use `24h` for one day.
 
 ### `data_collection_interval`
 - **Default:** `1m`
 - **Environment Variable:** `WG_PORTAL_STATISTICS_DATA_COLLECTION_INTERVAL`
-- **Description:** Interval between data collection cycles (bytes sent/received, handshake times, etc.). Format uses `s`, `m`, `h`, `d` for seconds, minutes, hours, days, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
+- **Description:** Interval between data collection cycles (bytes sent/received, handshake times, etc.). Format uses `s`, `m`, `h` for seconds, minutes, hours, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration). Note: `d` (days) is not supported — use `24h` for one day.
 
 ### `collect_interface_data`
 - **Default:** `true`

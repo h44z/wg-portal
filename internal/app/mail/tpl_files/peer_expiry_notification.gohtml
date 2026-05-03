@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>{{$.PortalName}}</title>
+    <style type="text/css" media="screen">
+        body { padding:0 !important; margin:0 !important; display:block !important; min-width:100% !important; width:100% !important; background:#ffffff; -webkit-text-size-adjust:none }
+        a { color:#000000; text-decoration:none }
+        p { padding:0 !important; margin:0 !important }
+        @media only screen and (max-device-width: 480px), only screen and (max-width: 480px) {
+            .mobile-shell { width:100% !important; min-width:100% !important; }
+            .container { padding:20px 10px !important }
+        }
+    </style>
+</head>
+<body style="padding:0 !important; margin:0 !important; display:block !important; min-width:100% !important; width:100% !important; background:#000000; -webkit-text-size-adjust:none;">
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#000000">
+    <tr>
+        <td align="center" valign="top">
+            <table width="650" border="0" cellspacing="0" cellpadding="0" class="mobile-shell">
+                <tr>
+                    <td class="container" style="width:650px; min-width:650px; font-size:0pt; line-height:0pt; margin:0; font-weight:normal; padding:55px 0px;">
+
+                        <!-- Header -->
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td style="padding-bottom:10px;">
+                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                            <td style="padding:60px 30px; border-radius:26px 26px 0px 0px;" bgcolor="#ffffff">
+                                                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                    <tr>
+                                                        {{if $.User.Firstname}}
+                                                            <td style="color:#000000; font-family:'Arial',sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello {{$.User.Firstname}} {{$.User.Lastname}},</td>
+                                                        {{else}}
+                                                            <td style="color:#000000; font-family:'Arial',sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello,</td>
+                                                        {{end}}
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="color:#000000; font-family:Arial,sans-serif; font-size:14px; line-height:26px; text-align:left; padding-bottom:5px;">
+                                                            Your WireGuard VPN peer will expire in <strong>{{$.DaysLeft}} day(s)</strong>.
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="color:#000000; font-family:Arial,sans-serif; font-size:14px; line-height:26px; text-align:left; padding-bottom:5px;">
+                                                            Peer name: <strong>{{$.Peer.DisplayName}}</strong>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="color:#999999; font-family:Arial,sans-serif; font-size:12px; line-height:20px; text-align:left; padding-bottom:20px;">
+                                                            Peer ID: {{$.Peer.Identifier}}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="color:#000000; font-family:Arial,sans-serif; font-size:14px; line-height:26px; text-align:left; padding-bottom:20px;">
+                                                            Expiry date: <strong>{{$.ExpiresAt.UTC.Format "2006-01-02 15:04:05 UTC"}}</strong>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="color:#000000; font-family:Arial,sans-serif; font-size:14px; line-height:26px; text-align:left; padding-bottom:20px;">
+                                                            Please visit the portal to renew your peer before it expires and you lose VPN access.
+                                                        </td>
+                                                    </tr>
+                                                    {{if $.AutoRecreate}}
+                                                    <tr>
+                                                        <td style="color:#000000; font-family:Arial,sans-serif; font-size:14px; line-height:26px; text-align:left; padding-bottom:20px;">
+                                                            <strong>Note:</strong> A new peer will be automatically generated upon expiry. You will need to download the new peer configuration from the portal.
+                                                        </td>
+                                                    </tr>
+                                                    {{end}}
+                                                    <!-- Button -->
+                                                    <tr>
+                                                        <td align="left">
+                                                            <table border="0" cellspacing="0" cellpadding="0">
+                                                                <tr>
+                                                                    <td style="background:#000000; color:#ffffff; font-family:'Arial',sans-serif; font-size:14px; line-height:18px; padding:12px 30px; text-align:center; border-radius:0px 22px 22px 22px; font-weight:bold;">
+                                                                        <a href="{{$.PortalUrl}}" target="_blank" style="color:#ffffff; text-decoration:none;">Visit {{$.PortalName}}</a>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- END Button -->
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                        <!-- END Header -->
+
+                        <!-- Footer -->
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td style="padding:50px 30px; border-radius:0px 0px 26px 26px;" bgcolor="#ffffff">
+                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                            <td style="color:#000000; font-family:'Arial',sans-serif; font-size:16px; line-height:20px; text-align:center; padding-bottom:10px;">This mail was generated by {{$.PortalName}}.</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color:#000000; font-family:'Arial',sans-serif; font-size:12px; line-height:26px; text-align:center;">
+                                                <a href="{{$.PortalUrl}}" target="_blank" rel="noopener noreferrer" style="color:#000000; text-decoration:none;">Visit {{$.PortalName}}</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                        <!-- END Footer -->
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

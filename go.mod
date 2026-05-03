@@ -106,5 +106,6 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.48.2 // indirect
+	pgregory.net/rapid v1.2.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )

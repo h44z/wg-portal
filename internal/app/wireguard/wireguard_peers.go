@@ -287,6 +287,12 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		return nil, fmt.Errorf("creation not allowed: %w", err)
 	}
 
+	// Apply rotation interval if configured and ExpiresAt is not already set
+	if m.cfg.Core.Peer.RotationInterval > 0 && peer.ExpiresAt == nil {
+		expiresAt := time.Now().Add(m.cfg.Core.Peer.RotationInterval)
+		peer.ExpiresAt = &expiresAt
+	}
+
 	err = m.savePeers(ctx, peer)
 	if err != nil {
 		return nil, fmt.Errorf("creation failure: %w", err)
@@ -323,6 +329,12 @@ func (m Manager) CreateMultiplePeers(
 
 		if err := m.validatePeerCreation(ctx, nil, freshPeer); err != nil {
 			return nil, fmt.Errorf("creation not allowed: %w", err)
+		}
+
+		// Apply rotation interval if configured and ExpiresAt is not already set
+		if m.cfg.Core.Peer.RotationInterval > 0 && freshPeer.ExpiresAt == nil {
+			expiresAt := time.Now().Add(m.cfg.Core.Peer.RotationInterval)
+			freshPeer.ExpiresAt = &expiresAt
 		}
 
 		// Save immediately to reserve the assigned IPs so the next prepared peer gets the next free IPs
@@ -406,6 +418,20 @@ func (m Manager) UpdatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		}
 	}
 
+	// Clear persisted notifications whenever the new ExpiresAt supersedes the old
+	// one, so emails are re-sent relative to the updated expiry
+	if peer.ExpiresAt != nil {
+		prev := existingPeer.ExpiresAt
+		if prev == nil || peer.ExpiresAt.After(*prev) {
+			if err := m.notifRepo.DeleteNotificationRecordsForPeer(ctx, peer.Identifier); err != nil {
+				slog.WarnContext(ctx, "failed to clear notification records after ExpiresAt change",
+					"peer", peer.Identifier,
+					"error", err,
+				)
+			}
+		}
+	}
+
 	m.bus.Publish(app.TopicPeerUpdated, *peer)
 
 	return peer, nil
@@ -433,6 +459,14 @@ func (m Manager) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error
 	iface, err := m.db.GetInterface(ctx, peer.InterfaceIdentifier)
 	if err != nil {
 		return fmt.Errorf("unable to find interface %s: %w", peer.InterfaceIdentifier, err)
+	}
+
+	// Delete notification records before removing the peer
+	if err := m.notifRepo.DeleteNotificationRecordsForPeer(ctx, id); err != nil {
+		slog.WarnContext(ctx, "failed to delete notification records for peer",
+			"peer", id,
+			"error", err,
+		)
 	}
 
 	err = m.wg.GetController(*iface).DeletePeer(ctx, peer.InterfaceIdentifier, id)

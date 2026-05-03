@@ -156,7 +156,8 @@
         "name": "名称",
         "ip": "IP 地址",
         "stats": "状态",
-        "interface": "服务器接口"
+        "interface": "服务器接口",
+        "expires": "过期时间"
       },
       "no-peer": {
         "headline": "没有可用节点",
@@ -165,7 +166,8 @@
       "peer-connected": "已连接",
       "button-add-peer": "添加节点",
       "button-show-peer": "显示节点",
-      "button-edit-peer": "编辑节点"
+      "button-edit-peer": "编辑节点",
+      "no-expiry": "无过期时间"
     },
     "modals": {
       "user-view": {
@@ -369,6 +371,8 @@
         "user": "关联用户",
         "notes": "备注",
         "expiry-status": "过期时间",
+        "created-at": "创建时间",
+        "no-expiry": "无过期时间",
         "disabled-status": "禁用时间",
         "traffic": "流量",
         "connection-status": "连接状态",
