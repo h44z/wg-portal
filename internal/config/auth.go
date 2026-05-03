@@ -25,6 +25,9 @@ type Auth struct {
 	// HideLoginForm specifies whether the login form should be hidden. If no social login providers are configured,
 	// the login form will be shown regardless of this setting.
 	HideLoginForm bool `yaml:"hide_login_form"`
+	// SanitizeExternalUserData controls whether user data received from external identity providers
+	// (LDAP, OIDC, OAuth) is sanitized before being stored. Enabled by default.
+	SanitizeExternalUserData bool `yaml:"sanitize_external_user_data"`
 }
 
 // BaseFields contains the basic fields that are used to map user information from the authentication providers.
@@ -220,6 +223,10 @@ type LdapProvider struct {
 
 	// If LogUserInfo is set to true, the user info retrieved from the LDAP provider will be logged in trace level.
 	LogUserInfo bool `yaml:"log_user_info"`
+
+	// SanitizeUserData is populated at runtime from Auth.SanitizeExternalUserData.
+	// It is not configurable per-provider.
+	SanitizeUserData bool `yaml:"-"`
 }
 
 // Sanitize checks the LDAP configuration and sets default values for missing fields.
@@ -283,6 +290,10 @@ type OpenIDConnectProvider struct {
 	// If set to true (default), the user will be redirected to the IdP's end_session_endpoint after local logout.
 	// If set to false, only the local wg-portal session is invalidated.
 	LogoutIdpSession *bool `yaml:"logout_idp_session"`
+
+	// SanitizeUserData is populated at runtime from Auth.SanitizeExternalUserData.
+	// It is not configurable per-provider.
+	SanitizeUserData bool `yaml:"-"`
 }
 
 // OAuthProvider contains the configuration for the OAuth provider.
@@ -332,6 +343,10 @@ type OAuthProvider struct {
 	// If LogSensitiveInfo is set to true, sensitive information retrieved from the OAuth provider will be logged in trace level.
 	// This also includes OAuth tokens! Keep this disabled in production!
 	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
+
+	// SanitizeUserData is populated at runtime from Auth.SanitizeExternalUserData.
+	// It is not configurable per-provider.
+	SanitizeUserData bool `yaml:"-"`
 }
 
 // WebauthnConfig contains the configuration for the WebAuthn authenticator.

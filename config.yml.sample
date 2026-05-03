@@ -25,6 +25,12 @@ webhook:
   timeout: 10s
 
 auth:
+  # sanitize_external_user_data controls whether user data received from LDAP, OIDC, and OAuth
+  # providers is sanitized before storage. Sanitization strips Unicode control/format characters,
+  # enforces field length limits, validates plain email values, and avoids log injection.
+  # Enabled by default. Set to false only if your identity provider is fully trusted and sanitization
+  # would cause unacceptable data loss.
+  sanitize_external_user_data: true
   ldap:
     - id: ldap1
       provider_name: company ldap

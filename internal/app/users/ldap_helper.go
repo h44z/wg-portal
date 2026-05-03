@@ -11,6 +11,7 @@ import (
 	"github.com/h44z/wg-portal/internal"
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
+	sanitizeutil "github.com/h44z/wg-portal/internal/sanitize"
 )
 
 func convertRawLdapUser(
@@ -18,6 +19,7 @@ func convertRawLdapUser(
 	rawUser map[string]any,
 	fields *config.LdapFields,
 	adminGroupDN *ldap.DN,
+	sanitizeUserData bool,
 ) (*domain.User, error) {
 	now := time.Now()
 
@@ -26,7 +28,33 @@ func convertRawLdapUser(
 		return nil, fmt.Errorf("failed to check admin group: %w", err)
 	}
 
-	uid := domain.UserIdentifier(internal.MapDefaultString(rawUser, fields.UserIdentifier, ""))
+	uid := internal.MapDefaultString(rawUser, fields.UserIdentifier, "")
+	email := strings.ToLower(internal.MapDefaultString(rawUser, fields.Email, ""))
+	firstname := internal.MapDefaultString(rawUser, fields.Firstname, "")
+	lastname := internal.MapDefaultString(rawUser, fields.Lastname, "")
+	phone := internal.MapDefaultString(rawUser, fields.Phone, "")
+	department := internal.MapDefaultString(rawUser, fields.Department, "")
+
+	if sanitizeUserData {
+		sanitizeutil.LogChange("ldap", providerName, "identifier", uid,
+			func() string { return domain.SanitizeIdentifier(uid, 256) }, &uid)
+		sanitizeutil.LogChange("ldap", providerName, "email", email,
+			func() string { return domain.SanitizeEmail(email, 254) }, &email)
+		sanitizeutil.LogChange("ldap", providerName, "firstname", firstname,
+			func() string { return domain.SanitizeString(firstname, 128) }, &firstname)
+		sanitizeutil.LogChange("ldap", providerName, "lastname", lastname,
+			func() string { return domain.SanitizeString(lastname, 128) }, &lastname)
+		sanitizeutil.LogChange("ldap", providerName, "phone", phone,
+			func() string { return domain.SanitizePhone(phone, 50) }, &phone)
+		sanitizeutil.LogChange("ldap", providerName, "department", department,
+			func() string { return domain.SanitizeString(department, 128) }, &department)
+	}
+
+	if uid == "" {
+		return nil, fmt.Errorf("empty user identifier: %w", domain.ErrInvalidData)
+	}
+
+	domainUid := domain.UserIdentifier(uid)
 
 	return &domain.User{
 		BaseModel: domain.BaseModel{
@@ -35,20 +63,20 @@ func convertRawLdapUser(
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
-		Identifier: uid,
-		Email:      strings.ToLower(internal.MapDefaultString(rawUser, fields.Email, "")),
+		Identifier: domainUid,
+		Email:      email,
 		IsAdmin:    isAdmin,
 		Authentications: []domain.UserAuthentication{
 			{
-				UserIdentifier: uid,
+				UserIdentifier: domainUid,
 				Source:         domain.UserSourceLdap,
 				ProviderName:   providerName,
 			},
 		},
-		Firstname:  internal.MapDefaultString(rawUser, fields.Firstname, ""),
-		Lastname:   internal.MapDefaultString(rawUser, fields.Lastname, ""),
-		Phone:      internal.MapDefaultString(rawUser, fields.Phone, ""),
-		Department: internal.MapDefaultString(rawUser, fields.Department, ""),
+		Firstname:  firstname,
+		Lastname:   lastname,
+		Phone:      phone,
+		Department: department,
 		Notes:      "",
 		Password:   "",
 		Disabled:   nil,

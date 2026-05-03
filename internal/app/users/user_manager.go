@@ -365,19 +365,7 @@ func (m Manager) validateCreation(ctx context.Context, new *domain.User) error {
 		return fmt.Errorf("invalid user identifier: %w", domain.ErrInvalidData)
 	}
 
-	if new.Identifier == "all" { // the 'all' user identifier collides with the rest api routes
-		return fmt.Errorf("reserved user identifier: %w", domain.ErrInvalidData)
-	}
-
-	if new.Identifier == "new" { // the 'new' user identifier collides with the rest api routes
-		return fmt.Errorf("reserved user identifier: %w", domain.ErrInvalidData)
-	}
-
-	if new.Identifier == "id" { // the 'id' user identifier collides with the rest api routes
-		return fmt.Errorf("reserved user identifier: %w", domain.ErrInvalidData)
-	}
-
-	if new.Identifier == domain.CtxSystemAdminId || new.Identifier == domain.CtxUnknownUserId {
+	if domain.IsReservedUserIdentifier(new.Identifier) {
 		return fmt.Errorf("reserved user identifier: %w", domain.ErrInvalidData)
 	}
 
