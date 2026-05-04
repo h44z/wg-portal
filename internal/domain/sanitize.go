@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"log/slog"
 	"net/mail"
 	"strings"
 	"unicode"
@@ -8,6 +9,31 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 )
+
+// LogSanitizeChange applies sanitizeFn to raw, logs when the value changes, and writes
+// the sanitized value to dest. Raw and sanitized values are intentionally omitted.
+func LogSanitizeChange(
+	providerType string,
+	providerName string,
+	field string,
+	raw string,
+	sanitizeFn func() string,
+	dest *string,
+) {
+	sanitized := sanitizeFn()
+	if sanitized != raw {
+		message := "sanitization modified field value from external provider"
+		if sanitized == "" {
+			message = "sanitization cleared field value from external provider"
+		}
+		slog.Warn(message,
+			"provider_type", SanitizeString(providerType, 64),
+			"provider", SanitizeString(providerName, 128),
+			"field", SanitizeString(field, 64),
+		)
+	}
+	*dest = sanitized
+}
 
 var reservedUserIdentifiers = map[string]struct{}{
 	"all":                       {},

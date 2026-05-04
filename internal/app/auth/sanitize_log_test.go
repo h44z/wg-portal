@@ -16,7 +16,6 @@ import (
 
 // captureWarnLogsInline redirects the default slog logger to a buffer, calls fn,
 // restores the original logger, and returns the captured log records.
-// Unlike captureWarnLogs, this does not require *testing.T so it can be used inside rapid callbacks.
 func captureWarnLogsInline(fn func()) []map[string]any {
 	original := slog.Default()
 	var buf bytes.Buffer
@@ -38,17 +37,12 @@ func captureWarnLogsInline(fn func()) []map[string]any {
 	return records
 }
 
-// ---------------------------------------------------------------------------
 // Property 7: Sanitization change logging completeness
-// ---------------------------------------------------------------------------
-
-// Feature: external-identity-sanitization, Property 7: Sanitization change logging completeness
 func TestPropertySanitizationChangeLoggingCompleteness(t *testing.T) {
 	mapping := makeOauthFieldMapping()
 	adminMapping := &config.OauthAdminMapping{}
 
 	rapid.Check(t, func(t *rapid.T) {
-		// Generate arbitrary field values
 		sub := rapid.StringMatching(`[a-zA-Z0-9_@.-]{1,50}`).Draw(t, "sub")
 		email := rapid.String().Draw(t, "email")
 		firstname := rapid.String().Draw(t, "firstname")
@@ -85,7 +79,7 @@ func TestPropertySanitizationChangeLoggingCompleteness(t *testing.T) {
 
 		var records []map[string]any
 		records = captureWarnLogsInline(func() {
-			_, _ = parseOauthUserInfo(mapping, adminMapping, raw, true, "oauth", "test-provider")
+			_, _ = parseOauthUserInfo(mapping, adminMapping, raw, "oauth", "test-provider")
 		})
 
 		actualWarnCount := testutil.CountWarnEntries(records)

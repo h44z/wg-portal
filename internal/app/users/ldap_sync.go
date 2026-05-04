@@ -84,7 +84,7 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 
 	// Disable missing LDAP users
 	if provider.DisableMissing {
-		err = m.disableMissingLdapUsers(ctx, provider.ProviderName, rawUsers, &provider.FieldMap, provider.SanitizeUserData)
+		err = m.disableMissingLdapUsers(ctx, provider.ProviderName, rawUsers, &provider.FieldMap)
 		if err != nil {
 			return err
 		}
@@ -107,7 +107,7 @@ func (m Manager) updateLdapUsers(
 	adminGroupDN *ldap.DN,
 ) error {
 	for _, rawUser := range rawUsers {
-		user, err := convertRawLdapUser(provider.ProviderName, rawUser, fields, adminGroupDN, provider.SanitizeUserData)
+		user, err := convertRawLdapUser(provider.ProviderName, rawUser, fields, adminGroupDN)
 		if err != nil {
 			if errors.Is(err, domain.ErrInvalidData) {
 				slog.Warn("skipping LDAP user with invalid data after sanitization",
@@ -192,7 +192,6 @@ func (m Manager) disableMissingLdapUsers(
 	providerName string,
 	rawUsers []internal.RawLdapUser,
 	fields *config.LdapFields,
-	sanitize bool,
 ) error {
 	allUsers, err := m.users.GetAllUsers(ctx)
 	if err != nil {
@@ -218,7 +217,7 @@ func (m Manager) disableMissingLdapUsers(
 
 		existsInLDAP := false
 		for _, rawUser := range rawUsers {
-			userId := ldapUserIdentifier(rawUser, fields.UserIdentifier, sanitize)
+			userId := ldapUserIdentifier(rawUser, fields.UserIdentifier)
 			if user.Identifier == userId {
 				existsInLDAP = true
 				break
@@ -276,7 +275,7 @@ func (m Manager) updateInterfaceLdapFilters(
 
 		matchedUserIds := make([]domain.UserIdentifier, 0, len(rawUsers))
 		for _, rawUser := range rawUsers {
-			userId := ldapUserIdentifier(rawUser, provider.FieldMap.UserIdentifier, provider.SanitizeUserData)
+			userId := ldapUserIdentifier(rawUser, provider.FieldMap.UserIdentifier)
 			if userId != "" {
 				matchedUserIds = append(matchedUserIds, userId)
 			}
@@ -306,11 +305,9 @@ func (m Manager) updateInterfaceLdapFilters(
 	return nil
 }
 
-func ldapUserIdentifier(rawUser map[string]any, field string, sanitize bool) domain.UserIdentifier {
+func ldapUserIdentifier(rawUser map[string]any, field string) domain.UserIdentifier {
 	identifier := internal.MapDefaultString(rawUser, field, "")
-	if sanitize {
-		identifier = domain.SanitizeIdentifier(identifier, 256)
-	}
+	identifier = domain.SanitizeIdentifier(identifier, 256)
 	if identifier == "" {
 		return ""
 	}

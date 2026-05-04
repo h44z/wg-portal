@@ -19,9 +19,7 @@ When users authenticate via LDAP, OIDC, or OAuth, WireGuard Portal sanitizes the
 - **Reserved identifier collision** — reserved user identifiers such as `"all"`, `"new"`, `"id"`, and internal system user identifiers are rejected.
 - **Unsafe authorization groups** — OIDC/OAuth group claims are sanitized before group-based checks; groups changed by control/format stripping or truncation are dropped rather than repaired into allowed/admin matches.
 
-Sanitization is **enabled by default**. It can be disabled via the [`sanitize_external_user_data`](../configuration/overview.md#sanitize_external_user_data) configuration key.
-
-> :warning: Only disable sanitization if your identity provider is fully under your control and you have confirmed that sanitization causes unacceptable data loss (for example, legitimate usernames that contain characters the sanitizer strips).
+Sanitization is always enabled and cannot be disabled.
 
 When sanitization modifies or clears a field value, a `WARN` log entry is emitted with the provider name, provider type, and field name — but never the raw or sanitized value, to avoid leaking sensitive data into logs. This makes it straightforward to detect and investigate potentially malicious or misconfigured providers.
 

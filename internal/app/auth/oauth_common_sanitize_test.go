@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"pgregory.net/rapid"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -40,19 +39,15 @@ func makeOauthRaw(sub, email, givenName, familyName, phone, department string) m
 	}
 }
 
-// ---------------------------------------------------------------------------
-// parseOauthUserInfo sanitization wiring
-// ---------------------------------------------------------------------------
-
-// Test: sanitize=true, email containing \r\n → output email is "",
+// Test: email containing \r\n → output email is "",
 // one WARN log entry with field: "email" and cleared indication.
-func TestParseOauthUserInfo_SanitizeTrue_CRLFInEmail(t *testing.T) {
+func TestParseOauthUserInfo_CRLFInEmail(t *testing.T) {
 	mapping := makeOauthFieldMapping()
 	adminMapping := &config.OauthAdminMapping{}
 	raw := makeOauthRaw("user123", "user\r\n@example.com", "Alice", "Smith", "", "")
 
 	restore := testutil.CaptureWarnLogs(t)
-	info, err := parseOauthUserInfo(mapping, adminMapping, raw, true, "oauth", "test-provider")
+	info, err := parseOauthUserInfo(mapping, adminMapping, raw, "oauth", "test-provider")
 	records := restore()
 
 	require.NoError(t, err)
@@ -69,18 +64,17 @@ func TestParseOauthUserInfo_SanitizeTrue_CRLFInEmail(t *testing.T) {
 	}
 }
 
-// Test: sanitize=true, two fields modified (email cleared, firstname truncated) →
+// Test: two fields modified (email cleared, firstname truncated) →
 // two separate WARN log entries.
-func TestParseOauthUserInfo_SanitizeTrue_TwoFieldsModified(t *testing.T) {
+func TestParseOauthUserInfo_TwoFieldsModified(t *testing.T) {
 	mapping := makeOauthFieldMapping()
 	adminMapping := &config.OauthAdminMapping{}
 
-	// email with CR/LF → cleared; firstname with 200 chars → truncated to 128
 	longFirstname := strings.Repeat("A", 200)
 	raw := makeOauthRaw("user123", "bad\r\nemail@example.com", longFirstname, "Smith", "", "")
 
 	restore := testutil.CaptureWarnLogs(t)
-	info, err := parseOauthUserInfo(mapping, adminMapping, raw, true, "oauth", "test-provider")
+	info, err := parseOauthUserInfo(mapping, adminMapping, raw, "oauth", "test-provider")
 	records := restore()
 
 	require.NoError(t, err)
@@ -97,38 +91,21 @@ func TestParseOauthUserInfo_SanitizeTrue_TwoFieldsModified(t *testing.T) {
 	assert.True(t, firstnameFound, "expected WARN log entry with field=firstname")
 }
 
-// Test: sanitize=false, email containing \r\n → output email unchanged, no WARN log entries.
-func TestParseOauthUserInfo_SanitizeFalse_CRLFInEmail(t *testing.T) {
-	mapping := makeOauthFieldMapping()
-	adminMapping := &config.OauthAdminMapping{}
-	raw := makeOauthRaw("user123", "user\r\n@example.com", "Alice", "Smith", "", "")
-
-	restore := testutil.CaptureWarnLogs(t)
-	info, err := parseOauthUserInfo(mapping, adminMapping, raw, false, "oauth", "test-provider")
-	records := restore()
-
-	require.NoError(t, err)
-	assert.Equal(t, "user\r\n@example.com", info.Email, "email should be unchanged when sanitization is disabled")
-
-	warnCount := testutil.CountWarnEntries(records)
-	assert.Equal(t, 0, warnCount, "expected no WARN log entries when sanitization is disabled")
-}
-
-// Test: sanitize=true, identifier "all" → returns ErrInvalidData.
-func TestParseOauthUserInfo_SanitizeTrue_IdentifierAll(t *testing.T) {
+// Test: identifier "all" → returns ErrInvalidData.
+func TestParseOauthUserInfo_IdentifierAll(t *testing.T) {
 	mapping := makeOauthFieldMapping()
 	adminMapping := &config.OauthAdminMapping{}
 	raw := makeOauthRaw("all", "all@example.com", "Alice", "Smith", "", "")
 
 	restore := testutil.CaptureWarnLogs(t)
-	_, err := parseOauthUserInfo(mapping, adminMapping, raw, true, "oauth", "test-provider")
+	_, err := parseOauthUserInfo(mapping, adminMapping, raw, "oauth", "test-provider")
 	_ = restore()
 
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, domain.ErrInvalidData), "expected ErrInvalidData when identifier is 'all'")
 }
 
-func TestParseOauthUserInfo_SanitizeTrue_DropsModifiedGroupBeforeAdminMatch(t *testing.T) {
+func TestParseOauthUserInfo_DropsModifiedGroupBeforeAdminMatch(t *testing.T) {
 	mapping := makeOauthFieldMapping()
 	mapping.UserGroups = "groups"
 	adminMapping := &config.OauthAdminMapping{
@@ -138,7 +115,7 @@ func TestParseOauthUserInfo_SanitizeTrue_DropsModifiedGroupBeforeAdminMatch(t *t
 	raw["groups"] = []any{"wgportal-\u200badmins"}
 
 	restore := testutil.CaptureWarnLogs(t)
-	info, err := parseOauthUserInfo(mapping, adminMapping, raw, true, "oidc", "test-provider")
+	info, err := parseOauthUserInfo(mapping, adminMapping, raw, "oidc", "test-provider")
 	records := restore()
 
 	require.NoError(t, err)
@@ -153,7 +130,7 @@ func TestParseOauthUserInfo_SanitizeTrue_DropsModifiedGroupBeforeAdminMatch(t *t
 	}
 }
 
-func TestParseOauthUserInfo_SanitizeTrue_AllowsWhitespaceOnlyGroupTrim(t *testing.T) {
+func TestParseOauthUserInfo_AllowsWhitespaceOnlyGroupTrim(t *testing.T) {
 	mapping := makeOauthFieldMapping()
 	mapping.UserGroups = "groups"
 	adminMapping := &config.OauthAdminMapping{
@@ -162,57 +139,10 @@ func TestParseOauthUserInfo_SanitizeTrue_AllowsWhitespaceOnlyGroupTrim(t *testin
 	raw := makeOauthRaw("user123", "user@example.com", "Alice", "Smith", "", "")
 	raw["groups"] = []any{" wgportal-admins "}
 
-	info, err := parseOauthUserInfo(mapping, adminMapping, raw, true, "oidc", "test-provider")
+	info, err := parseOauthUserInfo(mapping, adminMapping, raw, "oidc", "test-provider")
 
 	require.NoError(t, err)
 	require.NotNil(t, info)
 	assert.True(t, info.IsAdmin)
 	assert.Equal(t, []string{"wgportal-admins"}, info.UserGroups)
-}
-
-// ---------------------------------------------------------------------------
-// Property 6: Sanitization bypass when flag is false
-// ---------------------------------------------------------------------------
-
-// Feature: external-identity-sanitization, Property 6: Sanitization bypass when flag is false
-func TestPropertySanitizationBypassWhenFlagFalse(t *testing.T) {
-	mapping := makeOauthFieldMapping()
-	adminMapping := &config.OauthAdminMapping{}
-
-	rapid.Check(t, func(t *rapid.T) {
-		// Generate arbitrary field values (may contain control chars, "all", etc.)
-		sub := rapid.StringMatching(`[a-zA-Z0-9_@.-]{1,50}`).Draw(t, "sub")
-		email := rapid.String().Draw(t, "email")
-		firstname := rapid.String().Draw(t, "firstname")
-		lastname := rapid.String().Draw(t, "lastname")
-		phone := rapid.String().Draw(t, "phone")
-		department := rapid.String().Draw(t, "department")
-
-		// Ensure sub is not empty (otherwise parseOauthUserInfo returns error even without sanitization)
-		if sub == "" {
-			sub = "testuser"
-		}
-
-		raw := makeOauthRaw(sub, email, firstname, lastname, phone, department)
-
-		info, err := parseOauthUserInfo(mapping, adminMapping, raw, false, "oauth", "test-provider")
-		if err != nil {
-			// If identifier is empty, error is expected — skip this iteration
-			return
-		}
-
-		// With sanitize=false, all output fields must equal the raw extracted values
-		require.Equal(t, sub, string(info.Identifier),
-			"identifier should equal raw value when sanitization is disabled")
-		require.Equal(t, email, info.Email,
-			"email should equal raw value when sanitization is disabled")
-		require.Equal(t, firstname, info.Firstname,
-			"firstname should equal raw value when sanitization is disabled")
-		require.Equal(t, lastname, info.Lastname,
-			"lastname should equal raw value when sanitization is disabled")
-		require.Equal(t, phone, info.Phone,
-			"phone should equal raw value when sanitization is disabled")
-		require.Equal(t, department, info.Department,
-			"department should equal raw value when sanitization is disabled")
-	})
 }

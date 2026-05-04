@@ -13,8 +13,7 @@ import (
 )
 
 // makeLdapAuthenticator creates a minimal LdapAuthenticator for testing ParseUserInfo.
-// It does not connect to any LDAP server; only ParseUserInfo is exercised.
-func makeLdapAuthenticator(sanitize bool) *LdapAuthenticator {
+func makeLdapAuthenticator() *LdapAuthenticator {
 	return &LdapAuthenticator{
 		cfg: &config.LdapProvider{
 			ProviderName: "test-ldap",
@@ -29,7 +28,6 @@ func makeLdapAuthenticator(sanitize bool) *LdapAuthenticator {
 				},
 				GroupMembership: "", // no group membership check
 			},
-			SanitizeUserData: sanitize,
 		},
 	}
 }
@@ -46,14 +44,10 @@ func makeRawLdapMap(uid, mail, givenName, sn, phone, department string) map[stri
 	}
 }
 
-// ---------------------------------------------------------------------------
-// LdapAuthenticator.ParseUserInfo sanitization wiring
-// ---------------------------------------------------------------------------
-
-// Test: SanitizeUserData=true, firstname contains \x00 → output firstname has no null byte,
+// Test: firstname contains \x00 → output firstname has no null byte,
 // one WARN log entry with field: "firstname".
-func TestLdapParseUserInfo_SanitizeTrue_NullByteInFirstname(t *testing.T) {
-	auth := makeLdapAuthenticator(true)
+func TestLdapParseUserInfo_NullByteInFirstname(t *testing.T) {
+	auth := makeLdapAuthenticator()
 	raw := makeRawLdapMap("alice", "alice@example.com", "Ali\x00ce", "Smith", "", "")
 
 	restore := testutil.CaptureWarnLogs(t)
@@ -74,9 +68,9 @@ func TestLdapParseUserInfo_SanitizeTrue_NullByteInFirstname(t *testing.T) {
 	}
 }
 
-// Test: SanitizeUserData=true, all fields clean → no WARN log entries emitted.
-func TestLdapParseUserInfo_SanitizeTrue_AllFieldsClean(t *testing.T) {
-	auth := makeLdapAuthenticator(true)
+// Test: all fields clean → no WARN log entries emitted.
+func TestLdapParseUserInfo_AllFieldsClean(t *testing.T) {
+	auth := makeLdapAuthenticator()
 	raw := makeRawLdapMap("alice", "alice@example.com", "Alice", "Smith", "+1 555-1234", "Engineering")
 
 	restore := testutil.CaptureWarnLogs(t)
@@ -90,25 +84,9 @@ func TestLdapParseUserInfo_SanitizeTrue_AllFieldsClean(t *testing.T) {
 	assert.Equal(t, 0, warnCount, "expected no WARN log entries when all fields are clean")
 }
 
-// Test: SanitizeUserData=false, firstname contains \x00 → output firstname unchanged, no WARN log entries.
-func TestLdapParseUserInfo_SanitizeFalse_NullByteInFirstname(t *testing.T) {
-	auth := makeLdapAuthenticator(false)
-	raw := makeRawLdapMap("alice", "alice@example.com", "Ali\x00ce", "Smith", "", "")
-
-	restore := testutil.CaptureWarnLogs(t)
-	info, err := auth.ParseUserInfo(raw)
-	records := restore()
-
-	require.NoError(t, err)
-	assert.Equal(t, "Ali\x00ce", info.Firstname, "firstname should be unchanged when sanitization is disabled")
-
-	warnCount := testutil.CountWarnEntries(records)
-	assert.Equal(t, 0, warnCount, "expected no WARN log entries when sanitization is disabled")
-}
-
-// Test: SanitizeUserData=true, identifier is "all" → returns ErrInvalidData.
-func TestLdapParseUserInfo_SanitizeTrue_IdentifierAll(t *testing.T) {
-	auth := makeLdapAuthenticator(true)
+// Test: identifier is "all" → returns ErrInvalidData.
+func TestLdapParseUserInfo_IdentifierAll(t *testing.T) {
+	auth := makeLdapAuthenticator()
 	raw := makeRawLdapMap("all", "all@example.com", "Alice", "Smith", "", "")
 
 	restore := testutil.CaptureWarnLogs(t)
