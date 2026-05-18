@@ -26,6 +26,8 @@ func convertRawLdapUser(
 		return nil, fmt.Errorf("failed to check admin group: %w", err)
 	}
 
+	uid := domain.UserIdentifier(internal.MapDefaultString(rawUser, fields.UserIdentifier, ""))
+
 	user := &domain.User{
 		BaseModel: domain.BaseModel{
 			CreatedBy: domain.CtxSystemLdapSyncer,
@@ -33,12 +35,12 @@ func convertRawLdapUser(
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
-		Identifier: domain.UserIdentifier(internal.MapDefaultString(rawUser, fields.UserIdentifier, "")),
+		Identifier: uid,
 		Email:      strings.ToLower(internal.MapDefaultString(rawUser, fields.Email, "")),
 		IsAdmin:    isAdmin,
 		Authentications: []domain.UserAuthentication{
 			{
-				UserIdentifier: domain.UserIdentifier(internal.MapDefaultString(rawUser, fields.UserIdentifier, "")),
+				UserIdentifier: uid,
 				Source:         domain.UserSourceLdap,
 				ProviderName:   providerName,
 			},

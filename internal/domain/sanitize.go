@@ -36,15 +36,15 @@ func LogSanitizeChange(
 }
 
 var reservedUserIdentifiers = map[string]struct{}{
-	"all":                       {},
-	"new":                       {},
-	"id":                        {},
-	string(CtxSystemAdminId):    {},
-	string(CtxUnknownUserId):    {},
-	string(CtxSystemLdapSyncer): {},
-	string(CtxSystemWgImporter): {},
-	string(CtxSystemV1Migrator): {},
-	string(CtxSystemDBMigrator): {},
+	"all":               {},
+	"new":               {},
+	"id":                {},
+	CtxSystemAdminId:    {},
+	CtxUnknownUserId:    {},
+	CtxSystemLdapSyncer: {},
+	CtxSystemWgImporter: {},
+	CtxSystemV1Migrator: {},
+	CtxSystemDBMigrator: {},
 }
 
 // SanitizeString normalizes to NFC, trims leading and trailing whitespace, strips Unicode

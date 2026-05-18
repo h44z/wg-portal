@@ -108,7 +108,7 @@ func (m Manager) updateLdapUsers(
 ) error {
 	for _, rawUser := range rawUsers {
 		user, err := convertRawLdapUser(provider.ProviderName, rawUser, fields, adminGroupDN)
-		if err != nil {
+		if err != nil && !errors.Is(err, domain.ErrNotFound) {
 			if errors.Is(err, domain.ErrInvalidData) {
 				slog.Warn("skipping LDAP user with invalid data after sanitization",
 					"raw-dn", rawUser["dn"], "error", err)

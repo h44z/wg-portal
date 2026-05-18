@@ -50,7 +50,7 @@ func parseOauthUserInfo(
 		adminInfoAvailable = true
 		re := adminMapping.GetAdminGroupRegex()
 		for _, group := range userInfo.UserGroups {
-			if re.MatchString(strings.TrimSpace(group)) {
+			if re.MatchString(group) {
 				isAdmin = true
 				break
 			}
