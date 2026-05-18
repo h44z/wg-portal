@@ -155,5 +155,5 @@ func (p PlainOauthAuthenticator) GetUserInfo(
 
 // ParseUserInfo parses the user information from the raw data.
 func (p PlainOauthAuthenticator) ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error) {
-	return parseOauthUserInfo(p.userInfoMapping, p.userAdminMapping, raw)
+	return parseOauthUserInfo(p.userInfoMapping, p.userAdminMapping, raw, "oauth", p.name)
 }

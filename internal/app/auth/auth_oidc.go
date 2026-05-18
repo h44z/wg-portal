@@ -194,5 +194,5 @@ func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 
 // ParseUserInfo parses the user info.
 func (o OidcAuthenticator) ParseUserInfo(raw map[string]any) (*domain.AuthenticatorUserInfo, error) {
-	return parseOauthUserInfo(o.userInfoMapping, o.userAdminMapping, raw)
+	return parseOauthUserInfo(o.userInfoMapping, o.userAdminMapping, raw, "oidc", o.name)
 }

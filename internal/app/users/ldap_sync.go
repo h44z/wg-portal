@@ -109,6 +109,11 @@ func (m Manager) updateLdapUsers(
 	for _, rawUser := range rawUsers {
 		user, err := convertRawLdapUser(provider.ProviderName, rawUser, fields, adminGroupDN)
 		if err != nil && !errors.Is(err, domain.ErrNotFound) {
+			if errors.Is(err, domain.ErrInvalidData) {
+				slog.Warn("skipping LDAP user with invalid data after sanitization",
+					"raw-dn", rawUser["dn"], "error", err)
+				continue
+			}
 			return fmt.Errorf("failed to convert LDAP data for %v: %w", rawUser["dn"], err)
 		}
 
@@ -212,7 +217,7 @@ func (m Manager) disableMissingLdapUsers(
 
 		existsInLDAP := false
 		for _, rawUser := range rawUsers {
-			userId := domain.UserIdentifier(internal.MapDefaultString(rawUser, fields.UserIdentifier, ""))
+			userId := ldapUserIdentifier(rawUser, fields.UserIdentifier)
 			if user.Identifier == userId {
 				existsInLDAP = true
 				break
@@ -258,19 +263,19 @@ func (m Manager) updateInterfaceLdapFilters(
 
 		// Combined filter: user must match the provider's base SyncFilter AND the interface's LdapGroupFilter
 		combinedFilter := fmt.Sprintf("(&(%s)(%s))", provider.SyncFilter, groupFilter)
-		
+
 		rawUsers, err := internal.LdapFindAllUsers(conn, provider.BaseDN, combinedFilter, &provider.FieldMap)
 		if err != nil {
-			slog.Error("failed to find users for interface filter", 
-				"interface", ifaceId, 
-				"provider", provider.ProviderName, 
+			slog.Error("failed to find users for interface filter",
+				"interface", ifaceId,
+				"provider", provider.ProviderName,
 				"error", err)
 			continue
 		}
 
 		matchedUserIds := make([]domain.UserIdentifier, 0, len(rawUsers))
 		for _, rawUser := range rawUsers {
-			userId := domain.UserIdentifier(internal.MapDefaultString(rawUser, provider.FieldMap.UserIdentifier, ""))
+			userId := ldapUserIdentifier(rawUser, provider.FieldMap.UserIdentifier)
 			if userId != "" {
 				matchedUserIds = append(matchedUserIds, userId)
 			}
@@ -285,17 +290,26 @@ func (m Manager) updateInterfaceLdapFilters(
 			return i, nil
 		})
 		if err != nil {
-			slog.Error("failed to save interface ldap allowed users", 
-				"interface", ifaceId, 
-				"provider", provider.ProviderName, 
+			slog.Error("failed to save interface ldap allowed users",
+				"interface", ifaceId,
+				"provider", provider.ProviderName,
 				"error", err)
 		} else {
-			slog.Debug("updated interface ldap allowed users", 
-				"interface", ifaceId, 
-				"provider", provider.ProviderName, 
+			slog.Debug("updated interface ldap allowed users",
+				"interface", ifaceId,
+				"provider", provider.ProviderName,
 				"matched_count", len(matchedUserIds))
 		}
 	}
 
 	return nil
+}
+
+func ldapUserIdentifier(rawUser map[string]any, field string) domain.UserIdentifier {
+	identifier := internal.MapDefaultString(rawUser, field, "")
+	identifier = domain.SanitizeIdentifier(identifier, 256)
+	if identifier == "" {
+		return ""
+	}
+	return domain.UserIdentifier(identifier)
 }
