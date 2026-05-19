@@ -83,7 +83,9 @@ const externalLogin = function (provider) {
   console.log("Performing external login for provider", provider.Identifier);
   loggingIn.value = true;
   console.log(router.currentRoute.value);
-  let currentUri = window.location.origin + "/#" + router.currentRoute.value.fullPath;
+  const currentUrl = new URL(`${WGPORTAL_BASE_PATH || ''}${import.meta.env.BASE_URL || '/'}`, window.location.origin);
+  currentUrl.hash = router.currentRoute.value.fullPath;
+  let currentUri = currentUrl.toString();
   let redirectUrl = `${WGPORTAL_BACKEND_BASE_URL}${provider.ProviderUrl}`;
   redirectUrl += "?redirect=true";
   redirectUrl += "&return=" + encodeURIComponent(currentUri);

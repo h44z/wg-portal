@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-pkgz/routegroup"
@@ -201,9 +202,8 @@ func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 		provider := request.Path(r, "provider")
 
 		var returnUrl *url.URL
-		var returnParams string
-		redirectToReturn := func() {
-			respond.Redirect(w, r, http.StatusFound, returnUrl.String()+"?"+returnParams)
+		redirectToReturn := func(loginState string) {
+			respond.Redirect(w, r, http.StatusFound, e.returnUrlWithLoginState(returnUrl, loginState))
 		}
 
 		if returnTo != "" {
@@ -212,21 +212,18 @@ func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 					model.Error{Code: http.StatusBadRequest, Message: "invalid return URL"})
 				return
 			}
-			if u, err := url.Parse(returnTo); err == nil {
-				returnUrl = u
+			u, err := url.Parse(returnTo)
+			if err != nil {
+				respond.JSON(w, http.StatusBadRequest,
+					model.Error{Code: http.StatusBadRequest, Message: "invalid return URL"})
+				return
 			}
-			queryParams := returnUrl.Query()
-			queryParams.Set("wgLoginState", "err") // by default, we set the state to error
-			returnUrl.RawQuery = ""                // remove potential query params
-			returnParams = queryParams.Encode()
+			returnUrl = u
 		}
 
 		if currentSession.LoggedIn {
-			if autoRedirect && e.isValidReturnUrl(returnTo) {
-				queryParams := returnUrl.Query()
-				queryParams.Set("wgLoginState", "success")
-				returnParams = queryParams.Encode()
-				redirectToReturn()
+			if autoRedirect && returnUrl != nil {
+				redirectToReturn("success")
 			} else {
 				respond.JSON(w, http.StatusBadRequest,
 					model.Error{Code: http.StatusBadRequest, Message: "already logged in"})
@@ -238,8 +235,8 @@ func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 		if err != nil {
 			slog.Debug("failed to create oauth auth code URL",
 				"provider", provider, "error", err)
-			if autoRedirect && e.isValidReturnUrl(returnTo) {
-				redirectToReturn()
+			if autoRedirect && returnUrl != nil {
+				redirectToReturn("err")
 			} else {
 				respond.JSON(w, http.StatusInternalServerError,
 					model.Error{Code: http.StatusInternalServerError, Message: err.Error()})
@@ -278,27 +275,19 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 		currentSession := e.session.GetData(r.Context())
 
 		var returnUrl *url.URL
-		var returnParams string
-		redirectToReturn := func() {
-			respond.Redirect(w, r, http.StatusFound, returnUrl.String()+"?"+returnParams)
+		redirectToReturn := func(loginState string) {
+			respond.Redirect(w, r, http.StatusFound, e.returnUrlWithLoginState(returnUrl, loginState))
 		}
 
-		if currentSession.OauthReturnTo != "" {
+		if currentSession.OauthReturnTo != "" && e.isValidReturnUrl(currentSession.OauthReturnTo) {
 			if u, err := url.Parse(currentSession.OauthReturnTo); err == nil {
 				returnUrl = u
 			}
-			queryParams := returnUrl.Query()
-			queryParams.Set("wgLoginState", "err") // by default, we set the state to error
-			returnUrl.RawQuery = ""                // remove potential query params
-			returnParams = queryParams.Encode()
 		}
 
 		if currentSession.LoggedIn {
-			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
-				queryParams := returnUrl.Query()
-				queryParams.Set("wgLoginState", "success")
-				returnParams = queryParams.Encode()
-				redirectToReturn()
+			if returnUrl != nil {
+				redirectToReturn("success")
 			} else {
 				respond.JSON(w, http.StatusBadRequest, model.Error{Message: "already logged in"})
 			}
@@ -312,8 +301,8 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 		if provider != currentSession.OauthProvider {
 			slog.Debug("invalid oauth provider in callback",
 				"expected", currentSession.OauthProvider, "got", provider, "state", oauthState)
-			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
-				redirectToReturn()
+			if returnUrl != nil {
+				redirectToReturn("err")
 			} else {
 				respond.JSON(w, http.StatusBadRequest,
 					model.Error{Code: http.StatusBadRequest, Message: "invalid oauth provider"})
@@ -323,8 +312,8 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 		if oauthState != currentSession.OauthState {
 			slog.Debug("invalid oauth state in callback",
 				"expected", currentSession.OauthState, "got", oauthState, "provider", provider)
-			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
-				redirectToReturn()
+			if returnUrl != nil {
+				redirectToReturn("err")
 			} else {
 				respond.JSON(w, http.StatusBadRequest,
 					model.Error{Code: http.StatusBadRequest, Message: "invalid oauth state"})
@@ -339,8 +328,8 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 		if err != nil {
 			slog.Debug("failed to process oauth code",
 				"provider", provider, "state", oauthState, "error", err)
-			if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
-				redirectToReturn()
+			if returnUrl != nil {
+				redirectToReturn("err")
 			} else {
 				respond.JSON(w, http.StatusUnauthorized,
 					model.Error{Code: http.StatusUnauthorized, Message: err.Error()})
@@ -350,11 +339,8 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 
 		e.setAuthenticatedUser(r, user, provider, idTokenHint)
 
-		if returnUrl != nil && e.isValidReturnUrl(returnUrl.String()) {
-			queryParams := returnUrl.Query()
-			queryParams.Set("wgLoginState", "success")
-			returnParams = queryParams.Encode()
-			redirectToReturn()
+		if returnUrl != nil {
+			redirectToReturn("success")
 		} else {
 			respond.JSON(w, http.StatusOK, user)
 		}
@@ -444,11 +430,7 @@ func (e AuthEndpoint) handleLogoutPost() http.HandlerFunc {
 			return
 		}
 
-		postLogoutRedirectUri := e.cfg.Web.ExternalUrl
-		if e.cfg.Web.BasePath != "" {
-			postLogoutRedirectUri += e.cfg.Web.BasePath
-		}
-		postLogoutRedirectUri += "/#/login"
+		postLogoutRedirectUri := e.frontendUrl("/login")
 
 		var redirectUrl *string
 		if currentSession.OauthProvider != "" {
@@ -479,7 +461,58 @@ func (e AuthEndpoint) isValidReturnUrl(returnUrl string) bool {
 		return false
 	}
 
+	if e.cfg.Web.BasePath != "" {
+		expectedPath := e.cfg.Web.BasePath + "/app"
+		if returnUrlParsed.Path != expectedPath && !strings.HasPrefix(returnUrlParsed.Path, expectedPath+"/") {
+			return false
+		}
+	}
+
 	return true
+}
+
+func (e AuthEndpoint) frontendUrl(route string) string {
+	frontendUrl := e.cfg.Web.ExternalUrl + e.cfg.Web.BasePath + "/app/"
+	if route != "" {
+		frontendUrl += "#" + route
+	}
+	return frontendUrl
+}
+
+func (e AuthEndpoint) returnUrlWithLoginState(returnUrl *url.URL, loginState string) string {
+	if returnUrl == nil {
+		frontendURL, err := url.Parse(e.frontendUrl("/login"))
+		if err != nil {
+			return e.frontendUrl("/login")
+		}
+		returnUrl = frontendURL
+	}
+
+	redirectUrl := *returnUrl
+
+	if redirectUrl.Fragment != "" {
+		fragmentPath := redirectUrl.Fragment
+		fragmentQuery := ""
+		if queryStart := strings.Index(fragmentPath, "?"); queryStart >= 0 {
+			fragmentQuery = fragmentPath[queryStart+1:]
+			fragmentPath = fragmentPath[:queryStart]
+		}
+
+		queryParams, err := url.ParseQuery(fragmentQuery)
+		if err != nil {
+			queryParams = url.Values{}
+		}
+		queryParams.Set("wgLoginState", loginState)
+		redirectUrl.Fragment = fragmentPath + "?" + queryParams.Encode()
+
+		return redirectUrl.String()
+	}
+
+	queryParams := redirectUrl.Query()
+	queryParams.Set("wgLoginState", loginState)
+	redirectUrl.RawQuery = queryParams.Encode()
+
+	return redirectUrl.String()
 }
 
 // handleWebAuthnCredentialsGet returns a gorm Handler function.
