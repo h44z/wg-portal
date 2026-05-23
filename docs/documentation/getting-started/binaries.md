@@ -51,12 +51,30 @@ sudo install wg-portal /opt/wg-portal/
 To handle tasks such as restarting the service or configuring automatic startup, it is recommended to use a process manager like [systemd](https://systemd.io/). 
 Refer to [Systemd Service Setup](#systemd-service-setup) for instructions.
 
-## Systemd Service Setup
+## Systemd Integration
 
 > **Note:** To run WireGuard Portal as systemd service, you need to download the binary for your architecture beforehand.
 > 
 > The following examples assume that you downloaded the binary to `/opt/wg-portal/wg-portal`. 
 > The configuration file is expected to be located at `/opt/wg-portal/config.yml`.
+
+### Limit Systemd-Networkd Management Scope
+
+If you are using `systemd-networkd` to manage the rest of your network
+configuration, you will need to ensure it doesn't remove routing policy
+created by `wg-portal` when it restarts:
+
+```shell
+sudo mkdir --parents /etc/systemd/networkd.conf.d/
+sudo tee --append /etc/systemd/networkd.conf.d/foreign-routing.conf <<EOF
+[Network]
+ManageForeignRoutingPolicyRules=no
+EOF
+sudo systemctl restart systemd-networkd.service
+sudo systemctl status systemd-networkd.service
+```
+
+### Wireguard Portal Service Setup
 
 To run WireGuard Portal as a systemd service, you can create a service unit file. The easiest way to do this is by using `systemctl edit`:
 
