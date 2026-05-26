@@ -617,6 +617,14 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
 - **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
 
+#### `use_pkce`
+- **Default:** `true`
+- **Description:** If `true`, Proof Key for Code Exchange (PKCE) is used for the OIDC authorization code flow. A fresh `code_verifier` is generated per login request, the matching `code_challenge` is sent with the authorization request, and the `code_verifier` is included in the token exchange. Set to `false` only for providers that do not support PKCE.
+
+#### `pkce_method`
+- **Default:** `S256`
+- **Description:** PKCE challenge method to use when `use_pkce` is enabled. Supported values are `S256` and `plain`. `S256` is recommended; use `plain` only for providers that explicitly require it.
+
 #### `logout_idp_session`
 - **Default:** `true`
 - **Description:** If `true` (default), WireGuard Portal will redirect the user to the OIDC provider's `end_session_endpoint` after local logout, terminating the session at the IdP as well. Set to `false` to only invalidate the local WireGuard Portal session without touching the IdP session.
@@ -702,6 +710,14 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 - **Default:** `false`
 - **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
 - **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
+
+#### `use_pkce`
+- **Default:** `true`
+- **Description:** If `true`, Proof Key for Code Exchange (PKCE) is used for the OIDC authorization code flow. A fresh `code_verifier` is generated per login request, the matching `code_challenge` is sent with the authorization request, and the `code_verifier` is included in the token exchange. Set to `false` only for providers that do not support PKCE.
+
+#### `pkce_method`
+- **Default:** `S256`
+- **Description:** PKCE challenge method to use when `use_pkce` is enabled. Supported values are `S256` and `plain`. `S256` is recommended; use `plain` only for providers that explicitly require it.
 
 ---
 

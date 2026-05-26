@@ -24,9 +24,9 @@ type AuthenticationService interface {
 	// PlainLogin authenticates a user with a username and password.
 	PlainLogin(ctx context.Context, username, password string) (*domain.User, error)
 	// OauthLoginStep1 initiates the OAuth login flow.
-	OauthLoginStep1(_ context.Context, providerId string) (authCodeUrl, state, nonce string, err error)
+	OauthLoginStep1(_ context.Context, providerId string) (authCodeUrl, state, nonce, codeVerifier string, err error)
 	// OauthLoginStep2 completes the OAuth login flow and logins the user in.
-	OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, string, error)
+	OauthLoginStep2(ctx context.Context, providerId, nonce, code, codeVerifier string) (*domain.User, string, error)
 	// OauthProviderLogoutUrl returns an IdP logout URL for the given provider if supported.
 	OauthProviderLogoutUrl(providerId, idTokenHint, postLogoutRedirectUri string) (string, bool)
 }
@@ -231,7 +231,7 @@ func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 			return
 		}
 
-		authCodeUrl, state, nonce, err := e.authService.OauthLoginStep1(context.Background(), provider)
+		authCodeUrl, state, nonce, codeVerifier, err := e.authService.OauthLoginStep1(context.Background(), provider)
 		if err != nil {
 			slog.Debug("failed to create oauth auth code URL",
 				"provider", provider, "error", err)
@@ -247,6 +247,7 @@ func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 		authSession := e.session.GetData(r.Context())
 		authSession.OauthState = state
 		authSession.OauthNonce = nonce
+		authSession.OauthCodeVerifier = codeVerifier
 		authSession.OauthProvider = provider
 		authSession.OauthReturnTo = returnTo
 		e.session.SetData(r.Context(), authSession)
@@ -323,7 +324,7 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 
 		loginCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // avoid long waits
 		user, idTokenHint, err := e.authService.OauthLoginStep2(loginCtx, provider, currentSession.OauthNonce,
-			oauthCode)
+			oauthCode, currentSession.OauthCodeVerifier)
 		cancel()
 		if err != nil {
 			slog.Debug("failed to process oauth code",
@@ -362,6 +363,7 @@ func (e AuthEndpoint) setAuthenticatedUser(r *http.Request, user *domain.User, o
 
 	currentSession.OauthState = ""
 	currentSession.OauthNonce = ""
+	currentSession.OauthCodeVerifier = ""
 	currentSession.OauthProvider = oauthProvider
 	currentSession.OauthReturnTo = ""
 	currentSession.OauthIdToken = idTokenHint

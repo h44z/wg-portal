@@ -30,6 +30,8 @@ type OidcAuthenticator struct {
 	allowedUserGroups    []string
 	endSessionEndpoint   string
 	logoutIdpSession     bool
+	usePKCE              bool
+	pkceMethod           string
 }
 
 func newOidcAuthenticator(
@@ -67,6 +69,14 @@ func newOidcAuthenticator(
 	provider.allowedDomains = cfg.AllowedDomains
 	provider.allowedUserGroups = cfg.AllowedUserGroups
 	provider.logoutIdpSession = cfg.LogoutIdpSession == nil || *cfg.LogoutIdpSession
+	provider.usePKCE = cfg.UsePKCE == nil || *cfg.UsePKCE
+	provider.pkceMethod = cfg.PKCEMethod
+	if provider.pkceMethod == "" {
+		provider.pkceMethod = pkceMethodS256
+	}
+	if provider.usePKCE && provider.pkceMethod != pkceMethodS256 && provider.pkceMethod != pkceMethodPlain {
+		return nil, fmt.Errorf("unsupported PKCE method %q, allowed: S256, plain", provider.pkceMethod)
+	}
 
 	var providerMetadata struct {
 		EndSessionEndpoint string `json:"end_session_endpoint"`
@@ -119,6 +129,32 @@ func (o OidcAuthenticator) GetLogoutUrl(idTokenHint, postLogoutRedirectUri strin
 	logoutUrl.RawQuery = params.Encode()
 
 	return logoutUrl.String(), true
+}
+
+// PKCEAuthCodeOptions returns PKCE options for the authorization request and the verifier for the token exchange.
+func (o OidcAuthenticator) PKCEAuthCodeOptions() ([]oauth2.AuthCodeOption, string) {
+	if !o.usePKCE {
+		return nil, ""
+	}
+
+	verifier := oauth2.GenerateVerifier()
+	if o.pkceMethod == pkceMethodPlain {
+		return []oauth2.AuthCodeOption{
+			oauth2.SetAuthURLParam("code_challenge", verifier),
+			oauth2.SetAuthURLParam("code_challenge_method", pkceMethodPlain),
+		}, verifier
+	}
+
+	return []oauth2.AuthCodeOption{oauth2.S256ChallengeOption(verifier)}, verifier
+}
+
+// PKCETokenOptions returns PKCE options for the token exchange.
+func (o OidcAuthenticator) PKCETokenOptions(verifier string) []oauth2.AuthCodeOption {
+	if !o.usePKCE || verifier == "" {
+		return nil
+	}
+
+	return []oauth2.AuthCodeOption{oauth2.VerifierOption(verifier)}
 }
 
 // RegistrationEnabled returns whether registration is enabled for this authenticator.

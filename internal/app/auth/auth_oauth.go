@@ -30,6 +30,8 @@ type PlainOauthAuthenticator struct {
 	sensitiveInfoLogging bool
 	allowedDomains       []string
 	allowedUserGroups    []string
+	usePKCE              bool
+	pkceMethod           string
 }
 
 func newPlainOauthAuthenticator(
@@ -62,6 +64,14 @@ func newPlainOauthAuthenticator(
 	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
 	provider.allowedUserGroups = cfg.AllowedUserGroups
+	provider.usePKCE = cfg.UsePKCE == nil || *cfg.UsePKCE
+	provider.pkceMethod = cfg.PKCEMethod
+	if provider.pkceMethod == "" {
+		provider.pkceMethod = pkceMethodS256
+	}
+	if provider.usePKCE && provider.pkceMethod != pkceMethodS256 && provider.pkceMethod != pkceMethodPlain {
+		return nil, fmt.Errorf("unsupported PKCE method %q, allowed: S256, plain", provider.pkceMethod)
+	}
 
 	return provider, nil
 }
@@ -81,6 +91,32 @@ func (p PlainOauthAuthenticator) GetAllowedUserGroups() []string {
 
 func (p PlainOauthAuthenticator) GetLogoutUrl(_, _ string) (string, bool) {
 	return "", false
+}
+
+// PKCEAuthCodeOptions returns PKCE options for the authorization request and the verifier for the token exchange.
+func (p PlainOauthAuthenticator) PKCEAuthCodeOptions() ([]oauth2.AuthCodeOption, string) {
+	if !p.usePKCE {
+		return nil, ""
+	}
+
+	verifier := oauth2.GenerateVerifier()
+	if p.pkceMethod == pkceMethodPlain {
+		return []oauth2.AuthCodeOption{
+			oauth2.SetAuthURLParam("code_challenge", verifier),
+			oauth2.SetAuthURLParam("code_challenge_method", pkceMethodPlain),
+		}, verifier
+	}
+
+	return []oauth2.AuthCodeOption{oauth2.S256ChallengeOption(verifier)}, verifier
+}
+
+// PKCETokenOptions returns PKCE options for the token exchange.
+func (p PlainOauthAuthenticator) PKCETokenOptions(verifier string) []oauth2.AuthCodeOption {
+	if !p.usePKCE || verifier == "" {
+		return nil
+	}
+
+	return []oauth2.AuthCodeOption{oauth2.VerifierOption(verifier)}
 }
 
 // RegistrationEnabled returns whether registration is enabled for the OAuth authenticator.

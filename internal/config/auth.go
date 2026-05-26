@@ -279,6 +279,14 @@ type OpenIDConnectProvider struct {
 	// This also includes OAuth tokens! Keep this disabled in production!
 	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
 
+	// UsePKCE controls whether Proof Key for Code Exchange is used during the authorization code flow.
+	// If unset, PKCE is enabled by default.
+	UsePKCE *bool `yaml:"use_pkce"`
+
+	// PKCEMethod controls which PKCE challenge method is used. Supported values are "S256" and "plain".
+	// If empty, "S256" is used.
+	PKCEMethod string `yaml:"pkce_method"`
+
 	// LogoutIdpSession controls whether the user's session at the OIDC provider is terminated on logout.
 	// If set to true (default), the user will be redirected to the IdP's end_session_endpoint after local logout.
 	// If set to false, only the local wg-portal session is invalidated.
@@ -332,6 +340,14 @@ type OAuthProvider struct {
 	// If LogSensitiveInfo is set to true, sensitive information retrieved from the OAuth provider will be logged in trace level.
 	// This also includes OAuth tokens! Keep this disabled in production!
 	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
+
+	// UsePKCE controls whether Proof Key for Code Exchange is used during the authorization code flow.
+	// If unset, PKCE is enabled by default.
+	UsePKCE *bool `yaml:"use_pkce"`
+
+	// PKCEMethod controls which PKCE challenge method is used. Supported values are "S256" and "plain".
+	// If empty, "S256" is used.
+	PKCEMethod string `yaml:"pkce_method"`
 }
 
 // WebauthnConfig contains the configuration for the WebAuthn authenticator.
