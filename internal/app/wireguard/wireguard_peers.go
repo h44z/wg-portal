@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/fedor-git/wg-portal-2/internal/app"
@@ -317,9 +318,56 @@ func (m Manager) CreatePeer(ctx context.Context, peer *domain.Peer) (*domain.Pee
 		return nil, fmt.Errorf("creation not allowed: %w", err)
 	}
 
-	err = m.savePeers(ctx, peer)
-	if err != nil {
-		return nil, fmt.Errorf("creation failure: %w", err)
+	// Retry logic for unique constraint violations on IP addresses
+	// Uses sequence-based IP allocation: on conflict, allocate next IP and retry
+	// No locks - maximum parallelism
+	maxRetries := 5
+	var saveErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		saveErr = m.savePeers(ctx, peer)
+		if saveErr == nil {
+			break // Success
+		}
+
+		// Check if this is a unique constraint violation (IP already taken)
+		if strings.Contains(saveErr.Error(), "Duplicate entry") || 
+		   strings.Contains(saveErr.Error(), "UNIQUE constraint") ||
+		   strings.Contains(saveErr.Error(), "unique constraint") {
+			if attempt < maxRetries {
+				slog.DebugContext(ctx, "IP allocation conflict - retrying with next IP",
+					"peer_id", peer.Identifier,
+					"attempt", attempt+1,
+					"max_retries", maxRetries)
+				
+				// Get fresh IP addresses for all subnets
+				iface, ifaceErr := m.db.GetInterface(ctx, peer.InterfaceIdentifier)
+				if ifaceErr != nil {
+					return nil, fmt.Errorf("failed to get interface after IP conflict: %w", ifaceErr)
+				}
+				
+				// Allocate next IPs using sequence-based approach (no locks)
+				networks, _ := domain.CidrsFromString(iface.PeerDefNetworkStr)
+				newIps := make([]domain.Cidr, 0, len(networks))
+				
+				for _, network := range networks {
+					nextIP, ipErr := m.db.GetNextPeerIPForSubnet(ctx, network)
+					if ipErr != nil {
+						return nil, fmt.Errorf("failed to allocate IP for subnet %s: %w", network.String(), ipErr)
+					}
+					newIps = append(newIps, nextIP)
+				}
+				
+				peer.Interface.Addresses = newIps
+				continue
+			}
+		}
+		
+		// For other errors, return immediately
+		return nil, fmt.Errorf("creation failure: %w", saveErr)
+	}
+	
+	if saveErr != nil {
+		return nil, fmt.Errorf("creation failure: max retries exceeded: %w", saveErr)
 	}
 
 	m.bus.Publish(app.TopicPeerCreated, *peer) // Webhooks receive full peer
@@ -362,9 +410,57 @@ func (m Manager) CreateMultiplePeers(
 			return nil, fmt.Errorf("creation not allowed: %w", err)
 		}
 
-		// Save immediately to reserve the assigned IPs so the next prepared peer gets the next free IPs
-		if err := m.savePeers(ctx, freshPeer); err != nil {
-			return nil, fmt.Errorf("failed to create new peer %s: %w", freshPeer.Identifier, err)
+		// Save with retry logic for unique constraint violations on IP addresses
+		// Uses sequence-based IP allocation: on conflict, allocate next IP and retry
+		// No locks - maximum parallelism
+		maxRetries := 5
+		var saveErr error
+		for attempt := 0; attempt <= maxRetries; attempt++ {
+			saveErr = m.savePeers(ctx, freshPeer)
+			if saveErr == nil {
+				break // Success
+			}
+
+			// Check if this is a unique constraint violation (IP already taken)
+			if strings.Contains(saveErr.Error(), "Duplicate entry") || 
+			   strings.Contains(saveErr.Error(), "UNIQUE constraint") ||
+			   strings.Contains(saveErr.Error(), "unique constraint") {
+				if attempt < maxRetries {
+					slog.DebugContext(ctx, "IP allocation conflict in CreateMultiplePeers - retrying with next IP",
+						"peer_id", freshPeer.Identifier,
+						"user_id", id,
+						"attempt", attempt+1,
+						"max_retries", maxRetries)
+					
+					// Get fresh interface config
+					iface, ifaceErr := m.db.GetInterface(ctx, interfaceId)
+					if ifaceErr != nil {
+						return nil, fmt.Errorf("failed to get interface after IP conflict: %w", ifaceErr)
+					}
+					
+					// Allocate next IPs (no locks, sequence-based)
+					networks, _ := domain.CidrsFromString(iface.PeerDefNetworkStr)
+					newIps := make([]domain.Cidr, 0, len(networks))
+					
+					for _, network := range networks {
+						nextIP, ipErr := m.db.GetNextPeerIPForSubnet(ctx, network)
+						if ipErr != nil {
+							return nil, fmt.Errorf("failed to allocate IP for subnet %s: %w", network.String(), ipErr)
+						}
+						newIps = append(newIps, nextIP)
+					}
+					
+					freshPeer.Interface.Addresses = newIps
+					continue
+				}
+			}
+			
+			// For other errors, return immediately
+			return nil, fmt.Errorf("failed to create new peer %s: %w", freshPeer.Identifier, saveErr)
+		}
+		
+		if saveErr != nil {
+			return nil, fmt.Errorf("failed to create peer %s: max retries exceeded: %w", freshPeer.Identifier, saveErr)
 		}
 
 		createdPeers = append(createdPeers, *freshPeer)

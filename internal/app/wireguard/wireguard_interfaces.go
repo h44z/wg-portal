@@ -240,8 +240,36 @@ func (m Manager) RestoreInterfaceState(
 				})
 
 			// try to create a new interface using the original state (not disabled)
-			createdIface, err := m.saveInterface(ctx, &originalIface)
-			if err != nil {
+			// with retry logic for slow-starting interfaces (e.g., after reboot)
+			maxRetries := 10
+			retryDelay := 100 * time.Millisecond
+			var createdIface *domain.Interface
+			var saveErr error
+
+			for attempt := 0; attempt <= maxRetries; attempt++ {
+				createdIface, saveErr = m.saveInterface(ctx, &originalIface)
+				if saveErr == nil {
+					break // success
+				}
+
+				if attempt < maxRetries {
+					slog.WarnContext(ctx, "[RESTORE_INTERFACE] interface creation attempt failed, retrying",
+						"interface", iface.Identifier,
+						"attempt", attempt+1,
+						"max_attempts", maxRetries+1,
+						"error", saveErr)
+					
+					// Exponential backoff with max 5 seconds
+					time.Sleep(retryDelay)
+					nextDelay := retryDelay * 2
+					if nextDelay > 5*time.Second {
+						nextDelay = 5 * time.Second
+					}
+					retryDelay = nextDelay
+				}
+			}
+
+			if saveErr != nil {
 				if updateDbOnError {
 					// disable interface in database as no physical interface exists
 					_ = m.db.SaveInterface(ctx, iface.Identifier,
@@ -252,7 +280,7 @@ func (m Manager) RestoreInterfaceState(
 							return in, nil
 						})
 				}
-				return fmt.Errorf("failed to create physical interface %s: %w", iface.Identifier, err)
+				return fmt.Errorf("failed to create physical interface %s after %d attempts: %w", iface.Identifier, maxRetries+1, saveErr)
 			}
 
 			// Force trigger interface creation event for config file generation
@@ -263,9 +291,35 @@ func (m Manager) RestoreInterfaceState(
 		} else {
 			slog.Debug("restoring interface state", "interface", iface.Identifier, "disabled", iface.IsDisabled())
 
-			// try to move interface to stored state
-			_, err = m.saveInterface(ctx, &iface)
-			if err != nil {
+			// try to move interface to stored state with retry logic for slow-starting interfaces
+			maxRetries := 10
+			retryDelay := 100 * time.Millisecond
+			var restoreErr error
+
+			for attempt := 0; attempt <= maxRetries; attempt++ {
+				_, restoreErr = m.saveInterface(ctx, &iface)
+				if restoreErr == nil {
+					break // success
+				}
+
+				if attempt < maxRetries {
+					slog.WarnContext(ctx, "[RESTORE_INTERFACE] interface state restoration attempt failed, retrying",
+						"interface", iface.Identifier,
+						"attempt", attempt+1,
+						"max_attempts", maxRetries+1,
+						"error", restoreErr)
+					
+					// Exponential backoff with max 5 seconds
+					time.Sleep(retryDelay)
+					nextDelay := retryDelay * 2
+					if nextDelay > 5*time.Second {
+						nextDelay = 5 * time.Second
+					}
+					retryDelay = nextDelay
+				}
+			}
+
+			if restoreErr != nil {
 				if updateDbOnError {
 					// disable interface in database as no physical interface is available
 					_ = m.db.SaveInterface(ctx, iface.Identifier,
@@ -281,7 +335,7 @@ func (m Manager) RestoreInterfaceState(
 							return in, nil
 						})
 				}
-				return fmt.Errorf("failed to change physical interface state for %s: %w", iface.Identifier, err)
+				return fmt.Errorf("failed to change physical interface state for %s after %d attempts: %w", iface.Identifier, maxRetries+1, restoreErr)
 			}
 		}
 

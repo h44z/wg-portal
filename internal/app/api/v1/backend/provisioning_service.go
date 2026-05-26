@@ -182,8 +182,11 @@ func (p ProvisioningService) NewPeer(ctx context.Context, req models.Provisionin
 		if !req.ExpiresAtIsDefault {
 			peer.TTLLocked = true
 		}
+	} else if req.DoNotExpire {
+		// If DoNotExpire is true, lock TTL to prevent activity tracking from updating it
+		// This ensures ExpiresAt remains nil and peer never expires
+		peer.TTLLocked = true
 	}
-	// If DoNotExpire is true, ExpiresAt remains nil (peer will not expire)
 
 	// save new peer
 	peer, err = p.peers.CreatePeer(ctx, peer)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -38,6 +39,7 @@ type InterfaceAndPeerDatabaseRepo interface {
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 	GetPeersByDisplayName(ctx context.Context, displayName string) ([]domain.Peer, error)
 	GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (map[domain.Cidr][]domain.Cidr, error)
+	GetNextPeerIPForSubnet(ctx context.Context, subnet domain.Cidr) (domain.Cidr, error)
 	SyncAllPeersFromDB(ctx context.Context) (int, error) // Synchronize all peers from the database
 
 	// Event-driven sync methods
@@ -402,7 +404,14 @@ func (m Manager) runExpiredPeersCheck(ctx context.Context) {
 	dbCtx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
 	expiredPeerIDs, err := m.db.FindAndDeleteExpiredPeersWithLock(dbCtx, nodeID)
 	if err != nil {
-		slog.Error("[EXPIRE_CLEANUP] failed to find and delete expired peers at startup", "error", err)
+		// Under high load during startup, defer cleanup to first periodic check
+		if strings.Contains(err.Error(), "lock") || strings.Contains(err.Error(), "timeout") {
+			slog.WarnContext(dbCtx, "[EXPIRE_CLEANUP] high load at startup - deferring expired peer cleanup",
+				"node_id", nodeID, "reason", err.Error())
+		} else {
+			slog.ErrorContext(dbCtx, "[EXPIRE_CLEANUP] failed to find and delete expired peers at startup",
+				"node_id", nodeID, "error", err)
+		}
 	} else if len(expiredPeerIDs) > 0 {
 		slog.Info("[EXPIRE_CLEANUP] found and deleted expired peers at startup", "count", len(expiredPeerIDs), "node_id", nodeID)
 		// Publish batch event for all nodes to handle cleanup locally
@@ -438,8 +447,16 @@ func (m Manager) runExpiredPeersCheck(ctx context.Context) {
 		dbCtx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
 		expiredPeerIDs, err := m.db.FindAndDeleteExpiredPeersWithLock(dbCtx, nodeID)
 		if err != nil {
-			slog.Error("[EXPIRE_CLEANUP] failed to find and delete expired peers", "error", err)
-			continue
+			// Under high load, deletion might fail due to lock contention
+			// Log as warning (not error) and gracefully defer to next cycle
+			if strings.Contains(err.Error(), "lock") || strings.Contains(err.Error(), "timeout") {
+				slog.WarnContext(dbCtx, "[EXPIRE_CLEANUP] high load detected - deferring expired peer cleanup to next cycle",
+					"node_id", nodeID, "reason", err.Error())
+			} else {
+				slog.ErrorContext(dbCtx, "[EXPIRE_CLEANUP] failed to find and delete expired peers",
+					"node_id", nodeID, "error", err)
+			}
+			continue // Retry on next ticker cycle
 		}
 
 		if len(expiredPeerIDs) > 0 {
@@ -516,6 +533,17 @@ func (m Manager) handlePeerStateChangeEvent(peerStatus domain.PeerStatus, peer d
 	// Skip TTL update if TTL is locked (explicitly set)
 	if peer.TTLLocked {
 		slog.Debug("skipping TTL update - TTL is locked for peer", "peer", peer.Identifier)
+		return
+	}
+
+	// Also skip if peer has an explicit future expiration date already set
+	// This covers cases where:
+	// 1. TTLLocked wasn't set during peer creation (legacy peers)
+	// 2. User explicitly set ExpiresAt via API update without setting TTLLocked
+	if peer.ExpiresAt != nil && peer.ExpiresAt.After(time.Now().Add(1*time.Hour)) {
+		slog.Debug("skipping TTL update - peer has explicit future expiration date",
+			"peer", peer.Identifier,
+			"expires_at", peer.ExpiresAt.Format(time.RFC3339))
 		return
 	}
 

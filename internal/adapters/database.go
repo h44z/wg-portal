@@ -769,6 +769,18 @@ func (r *SqlRepo) SavePeer(
 			return err
 		}
 
+		// CRITICAL: Ensure TTLLocked is set to true if peer has explicit future expiration date
+		// This handles cases where:
+		// 1. User sets ExpiresAt via API but TTLLocked wasn't set (legacy or update scenario)
+		// 2. Peer was created with explicit future date (far in future, beyond 1 hour)
+		// We use 1 hour threshold to distinguish explicit dates from "now + DefaultUserTTL"
+		if peer.ExpiresAt != nil && peer.ExpiresAt.After(time.Now().Add(1*time.Hour)) && !peer.TTLLocked {
+			slog.Debug("automatically locking TTL for peer with explicit future expiration",
+				"peer", id,
+				"expires_at", peer.ExpiresAt.Format(time.RFC3339))
+			peer.TTLLocked = true
+		}
+
 		err = r.upsertPeer(userInfo, tx, peer)
 		if err != nil {
 			return err
@@ -891,6 +903,7 @@ func (r *SqlRepo) GetPeerIps(ctx context.Context) (map[domain.PeerIdentifier][]d
 }
 
 // GetUsedIpsPerSubnet returns a map of subnets to their respective used IP addresses.
+// Does NOT use locks - relies on retry logic when unique constraint violations occur.
 func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (
 	map[domain.Cidr][]domain.Cidr,
 	error,
@@ -900,6 +913,7 @@ func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr
 		PeerId domain.PeerIdentifier `gorm:"column:peer_identifier"`
 	}
 
+	// Read peer addresses without lock - allocation uses sequence-based approach with retry on conflict
 	err := r.db.WithContext(ctx).
 		Table("peer_addresses").
 		Joins("LEFT JOIN cidrs ON peer_addresses.cidr_cidr = cidrs.cidr").
@@ -913,6 +927,7 @@ func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr
 		InterfaceId domain.InterfaceIdentifier `gorm:"column:interface_identifier"`
 	}
 
+	// Read interface addresses without lock
 	err = r.db.WithContext(ctx).
 		Table("interface_addresses").
 		Joins("LEFT JOIN cidrs ON interface_addresses.cidr_cidr = cidrs.cidr").
@@ -943,6 +958,48 @@ func (r *SqlRepo) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr
 		result[subnet] = append(result[subnet], ip.Cidr)
 	}
 	return result, nil
+}
+
+// GetNextPeerIPForSubnet returns the next available IP address for a peer in the given subnet.
+// Uses sequence-based allocation: reads the last allocated IP and returns next.
+// No locks - relies on INSERT unique constraint to prevent duplicates.
+// On conflict, caller retries with next IP.
+func (r *SqlRepo) GetNextPeerIPForSubnet(ctx context.Context, subnet domain.Cidr) (domain.Cidr, error) {
+	var lastIP struct {
+		Addr string `gorm:"column:addr"`
+	}
+
+	// Find highest IP currently allocated in this subnet
+	err := r.db.WithContext(ctx).
+		Table("peer_addresses").
+		Joins("LEFT JOIN cidrs ON peer_addresses.cidr_cidr = cidrs.cidr").
+		Where("cidrs.cidr = ?", subnet.Cidr).
+		Order("cidrs.addr DESC").
+		Limit(1).
+		Scan(&lastIP).Error
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return domain.Cidr{}, fmt.Errorf("failed to get last allocated IP: %w", err)
+	}
+
+	// If no IP found, start from network base + 1
+	if lastIP.Addr == "" {
+		start := subnet.NextAddr()
+		return start.HostAddr(), nil
+	}
+
+	// Parse last IP and return next
+	lastCidr, err := domain.CidrFromString(lastIP.Addr)
+	if err != nil {
+		return domain.Cidr{}, fmt.Errorf("failed to parse last IP: %w", err)
+	}
+
+	nextIP := lastCidr.NextAddr()
+	if !nextIP.IsValid() {
+		return domain.Cidr{}, fmt.Errorf("ip space on subnet %s is exhausted", subnet.String())
+	}
+
+	return nextIP.HostAddr(), nil
 }
 
 // endregion peers
@@ -1740,7 +1797,7 @@ func (r *SqlRepo) DeletePeersByIDs(ctx context.Context, peerIDs []string) (int64
 
 // FindAndDeleteExpiredPeersWithLock ensures only MASTER node deletes expired peers
 // Other nodes skip cleanup to avoid conflicts across multiple nodes
-// If this node is not configured as master, cleanup is skipped
+// Under high load, returns error to defer deletion to next cycle instead of blocking
 func (r *SqlRepo) FindAndDeleteExpiredPeersWithLock(ctx context.Context, nodeID string) (expiredPeerIDs []string, err error) {
 	// Only MASTER node can delete expired peers
 	if !r.cfg.Core.Master {
@@ -1748,10 +1805,18 @@ func (r *SqlRepo) FindAndDeleteExpiredPeersWithLock(ctx context.Context, nodeID 
 		return nil, nil
 	}
 
+	// Create a child context with 30-second timeout for the entire cleanup operation
+	// If deletion takes too long (high load), we defer to next cycle to avoid blocking
+	cleanupCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	// Find expired peers
-	expiredPeers, err := r.GetExpiredPeers(ctx)
+	expiredPeers, err := r.GetExpiredPeers(cleanupCtx)
 	if err != nil {
-		slog.Error("[EXPIRE_CLEANUP] failed to get expired peers", "error", err)
+		slog.ErrorContext(cleanupCtx, "[EXPIRE_CLEANUP] failed to get expired peers", "error", err)
+		if cleanupCtx.Err() != nil {
+			return nil, fmt.Errorf("expired peer lookup timeout (high load condition): %w", cleanupCtx.Err())
+		}
 		return nil, err
 	}
 
@@ -1766,9 +1831,13 @@ func (r *SqlRepo) FindAndDeleteExpiredPeersWithLock(ctx context.Context, nodeID 
 		peerIDs[i] = string(p.Identifier)
 	}
 
-	deletedCount, err := r.DeletePeersByIDs(ctx, peerIDs)
+	deletedCount, err := r.DeletePeersByIDs(cleanupCtx, peerIDs)
 	if err != nil {
-		slog.Error("[EXPIRE_CLEANUP] failed to delete expired peers", "error", err, "count", len(peerIDs))
+		slog.ErrorContext(cleanupCtx, "[EXPIRE_CLEANUP] failed to delete expired peers", "error", err, "count", len(peerIDs))
+		// Return timeout error to signal high load condition
+		if cleanupCtx.Err() != nil {
+			return nil, fmt.Errorf("expired peer deletion timeout (high load condition): %w", cleanupCtx.Err())
+		}
 		return nil, err
 	}
 
