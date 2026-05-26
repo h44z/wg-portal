@@ -61,7 +61,7 @@ POST /provisioning/new-peer
   "DoNotExpire": true
 }
 ```
-Result: `ExpiresAt = null`, `TTLLocked = false` ♾️ Never expires
+Result: `ExpiresAt = null`, `TTLLocked = true` ♾️ Never expires (TTL locked to prevent updates on activity)
 
 ## Behavior Comparison
 
@@ -70,7 +70,7 @@ Result: `ExpiresAt = null`, `TTLLocked = false` ♾️ Never expires
 | **Old peer (after upgrade)** | `2025-01-15` | `false` | ✅ Yes | Works exactly as before |
 | **New peer, no date** | `null` | `false` | - | Uses default_user_ttl on first activity |
 | **New peer, explicit date** | `2025-12-31` | `true` | ❌ No | Locked to this date |
-| **New peer, DoNotExpire** | `null` | `false` | - | Never expires |
+| **New peer, DoNotExpire** | `null` | `true` | ❌ No | Never expires (TTL locked to prevent updates) |
 
 ## Conclusion
 
