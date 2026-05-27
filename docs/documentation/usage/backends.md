@@ -61,7 +61,7 @@ backend:
 
 > :warning: The pfSense backend is currently **alpha**. Only basic interface and peer CRUD are supported. Traffic statistics (rx/tx, last handshake) are not exposed by the pfSense REST API and will show as empty.
 
-The pfSense backend talks to the pfSense REST API (pfSense Plus / CE with the REST API package installed). Point the backend at the appliance hostname without appending `/api/v2` — the portal appends `/api/v2` automatically.
+The pfSense backend talks to the pfSense REST API (pfSense Plus / CE with the REST API package installed). Point the backend at the appliance hostname without appending `/api/v2` — the portal appends `/api/v2` automatically. wg-portal is developed for and tested against REST API v2.8.0.
 
 ### Prerequisites on pfSense:
 - pfSense with the REST API package enabled (`System -> API`) and WireGuard configured.
