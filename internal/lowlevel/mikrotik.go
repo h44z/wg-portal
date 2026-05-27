@@ -57,6 +57,9 @@ type EmptyResponse struct{}
 
 func (JsonObject GenericJsonObject) GetString(key string) string {
 	if value, ok := JsonObject[key]; ok {
+		if value == nil {
+			return ""
+		}
 		if strValue, ok := value.(string); ok {
 			return strValue
 		} else {
