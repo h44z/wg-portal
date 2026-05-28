@@ -184,6 +184,7 @@ func (u *User) HashPassword() error {
 func (u *User) CopyCalculatedAttributes(src *User) {
 	u.BaseModel = src.BaseModel
 	u.LinkedPeerCount = src.LinkedPeerCount
+	u.IsAdmin = src.IsAdmin // CRITICAL: protect IsAdmin from client-supplied input (CVE)
 }
 
 // region webauthn
