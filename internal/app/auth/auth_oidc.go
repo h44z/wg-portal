@@ -144,7 +144,7 @@ func (o OidcAuthenticator) Exchange(ctx context.Context, code string, opts ...oa
 	return o.cfg.Exchange(ctx, code, opts...)
 }
 
-// GetUserInfo retrieves the user info from the token.
+// GetUserInfo retrieves the user info from the token and the userinfo endpoint.
 func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token, nonce string) (
 	map[string]any,
 	error,
@@ -180,6 +180,41 @@ func (o OidcAuthenticator) GetUserInfo(ctx context.Context, token *oauth2.Token,
 				err)
 		}
 		return nil, fmt.Errorf("failed to parse extra claims: %w", err)
+	}
+
+	// Fetch additional user information from the userinfo endpoint
+	userInfo, err := o.provider.UserInfo(ctx, oauth2.StaticTokenSource(token))
+	if err != nil {
+		if o.sensitiveInfoLogging {
+			slog.Debug("OIDC: failed to fetch user info from endpoint", "provider", o.name, "error", err)
+		}
+		// Don't fail the entire flow if userinfo endpoint is unavailable;
+		// ID token claims may be sufficient
+		slog.Debug("OIDC: proceeding with ID token claims only", "provider", o.name)
+	} else {
+		// Parse claims from userinfo endpoint response
+		var userInfoFields map[string]any
+		if err = userInfo.Claims(&userInfoFields); err != nil {
+			if o.sensitiveInfoLogging {
+				slog.Debug("OIDC: failed to parse userinfo claims", "provider", o.name, "error", err)
+			}
+			// Don't fail if we can't parse userinfo; continue with ID token claims
+			slog.Debug("OIDC: proceeding with ID token claims only", "provider", o.name)
+		} else {
+			// Merge userinfo fields into tokenFields, preferring ID token claims
+			for key, value := range userInfoFields {
+				if _, exists := tokenFields[key]; !exists {
+					tokenFields[key] = value
+				}
+			}
+
+			if o.userInfoLogging {
+				contents, _ := json.Marshal(userInfoFields)
+				slog.Debug("OIDC: user info from endpoint",
+					"source", o.name,
+					"info", string(contents))
+			}
+		}
 	}
 
 	if o.userInfoLogging {
