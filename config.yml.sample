@@ -77,6 +77,8 @@ auth:
       extra_scopes:
         - https://www.googleapis.com/auth/userinfo.email
         - https://www.googleapis.com/auth/userinfo.profile
+      use_pkce: true
+      pkce_method: S256
       registration_enabled: true
       logout_idp_session: true
     - id: oidc2
@@ -109,6 +111,7 @@ auth:
         user_identifier: sub
         is_admin: this-attribute-must-be-true
       registration_enabled: true
+      use_pkce: false
     - id: google_plain_oauth_with_groups
       provider_name: google4
       display_name: Login with</br>Google4

@@ -149,5 +149,9 @@ func (l LdapAuthenticator) ParseUserInfo(raw map[string]any) (*domain.Authentica
 		AdminInfoAvailable: adminInfoAvailable,
 	}
 
+	if err := userInfo.Sanitize("ldap", l.cfg.ProviderName); err != nil {
+		return nil, err
+	}
+
 	return userInfo, nil
 }

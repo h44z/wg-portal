@@ -663,6 +663,7 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Description:** WgPortal can grant a user admin rights by matching the value of the `is_admin` claim against a regular expression. Alternatively, a regular expression can be used to check if a user is member of a specific group listed in the `user_group` claim. The regular expressions are defined in `admin_value_regex` and `admin_group_regex`.
     - `admin_value_regex`: A regular expression to match the `is_admin` claim. By default, this expression matches the string "true" (`^true$`).
     - `admin_group_regex`: A regular expression to match the `user_groups` claim. Each entry in the `user_groups` claim is checked against this regex.
+        - To identify which claim to match against, set log_level: debug and reload the config. Log in with the intended admin account and inspect the logs for the OIDC user info payload. If the required claim is missing it must be added by the OIDC provider. If it is present, use its value as the pattern for admin_group_regex.
 
 #### `registration_enabled`
 - **Default:** `false`
@@ -676,6 +677,14 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Default:** `false`
 - **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
 - **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
+
+#### `use_pkce`
+- **Default:** `true`
+- **Description:** If `true`, Proof Key for Code Exchange (PKCE) is used for the OIDC authorization code flow. A fresh `code_verifier` is generated per login request, the matching `code_challenge` is sent with the authorization request, and the `code_verifier` is included in the token exchange. Set to `false` only for providers that do not support PKCE.
+
+#### `pkce_method`
+- **Default:** `S256`
+- **Description:** PKCE challenge method to use when `use_pkce` is enabled. Supported values are `S256` and `plain`. `S256` is recommended; use `plain` only for providers that explicitly require it.
 
 #### `logout_idp_session`
 - **Default:** `true`
@@ -762,6 +771,14 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 - **Default:** `false`
 - **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
 - **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
+
+#### `use_pkce`
+- **Default:** `true`
+- **Description:** If `true`, Proof Key for Code Exchange (PKCE) is used for the OIDC authorization code flow. A fresh `code_verifier` is generated per login request, the matching `code_challenge` is sent with the authorization request, and the `code_verifier` is included in the token exchange. Set to `false` only for providers that do not support PKCE.
+
+#### `pkce_method`
+- **Default:** `S256`
+- **Description:** PKCE challenge method to use when `use_pkce` is enabled. Supported values are `S256` and `plain`. `S256` is recommended; use `plain` only for providers that explicitly require it.
 
 ---
 
