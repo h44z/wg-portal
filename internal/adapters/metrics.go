@@ -227,6 +227,11 @@ func (m *MetricsServer) UpdatePeerMetricsValues(peer *domain.Peer, status domain
 	// Lazy registration: metrics are initialized on first use
 	// This ensures metrics exist before we try to set values
 	// WithLabelValues is idempotent - calling multiple times is safe
+	
+	// CRITICAL FIX: Recalculate IsConnected based on fresh LastHandshake data
+	// This ensures metrics reflect actual peer status, not stale cached values
+	// CalcConnected() uses: peer is online if handshake is within last 2 minutes OR IsPingable
+	status.CalcConnected()
 	m.peerIsConnected.WithLabelValues(labels...).Set(internal.BoolToFloat64(status.IsConnected))
 
 	// ALWAYS update LastHandshake - it's the most important metric for lifecycle tracking

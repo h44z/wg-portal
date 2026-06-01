@@ -788,16 +788,39 @@ func (r *SqlRepo) SavePeer(
 
 		// DEADLOCK FIX: Ensure peer_status record exists WITHOUT FOR UPDATE lock
 		// This prevents lock contention when stats collection immediately tries to update it
-		// Use explicit WHERE clause with correct column name (identifier, not peer_id)
-		peerStatus := domain.PeerStatus{
-			PeerId:    id,
-			UpdatedAt: time.Now(),
-		}
-		// Explicit WHERE using correct column name for FirstOrCreate
-		err = tx.Where("identifier = ?", id).FirstOrCreate(&peerStatus).Error
-		if err != nil {
-			// Log but don't fail - peer_status will be created on first stats update anyway
-			slog.Debug("peer status record already exists or creation deferred", "peer", id)
+		// CRITICAL: Reset peer_status if peer was recreated with same ID to avoid inheriting old stats
+		// (e.g., if old peer was online, new peer would show as online until stats update)
+		var existingStatus domain.PeerStatus
+		statusExists := tx.Where("identifier = ?", id).First(&existingStatus).Error == nil
+		
+		if statusExists {
+			// Reset existing status to clean state for new peer
+			cleanStatus := domain.PeerStatus{
+				PeerId:    id,
+				UpdatedAt: time.Now(),
+				IsConnected: false,
+				IsPingable: false,
+				LastHandshake: nil,
+				Endpoint: "",
+				LastSessionStart: nil,
+				BytesReceived: 0,
+				BytesTransmitted: 0,
+				OwnerNodeId: "",
+			}
+			err = tx.Where("identifier = ?", id).Save(&cleanStatus).Error
+			if err != nil {
+				slog.Debug("failed to reset peer status", "peer", id, "error", err)
+			}
+		} else {
+			// Create new status record for new peer
+			peerStatus := domain.PeerStatus{
+				PeerId:    id,
+				UpdatedAt: time.Now(),
+			}
+			err = tx.Create(&peerStatus).Error
+			if err != nil {
+				slog.Debug("peer status record creation deferred", "peer", id, "error", err)
+			}
 		}
 
 		// return nil will commit the whole transaction
