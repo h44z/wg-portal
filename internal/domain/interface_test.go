@@ -139,3 +139,29 @@ func TestInterface_GetRoutingTableNonLocal(t *testing.T) {
 	iface.RoutingTable = "abc"
 	assert.Equal(t, 0, iface.GetRoutingTable())
 }
+
+func TestInterface_CreateDefaultPeers(t *testing.T) {
+	iface := &Interface{}
+	assert.False(t, iface.CreateDefaultPeers())
+
+	iface.CreateDefaultPeer = true
+	assert.False(t, iface.CreateDefaultPeers()) // still wrong type
+
+	iface2 := &Interface{Type: InterfaceTypeServer}
+	assert.False(t, iface2.CreateDefaultPeers()) // CreateDefaultPeer flag is false
+
+	iface2.CreateDefaultPeer = true
+	assert.True(t, iface2.CreateDefaultPeers())
+
+	iface3 := &Interface{Type: InterfaceTypeClient}
+	assert.False(t, iface3.CreateDefaultPeers())
+
+	iface3.CreateDefaultPeer = true
+	assert.False(t, iface3.CreateDefaultPeers())
+
+	iface4 := &Interface{Type: InterfaceTypeAny}
+	assert.False(t, iface4.CreateDefaultPeers())
+
+	iface4.CreateDefaultPeer = true
+	assert.False(t, iface4.CreateDefaultPeers())
+}

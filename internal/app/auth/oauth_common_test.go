@@ -43,7 +43,7 @@ func Test_parseOauthUserInfo_no_admin(t *testing.T) {
 	})
 	adminMapping := &config.OauthAdminMapping{}
 
-	info, err := parseOauthUserInfo(fieldMapping, adminMapping, userInfo)
+	info, err := parseOauthUserInfo(fieldMapping, adminMapping, userInfo, "oauth", "test-provider")
 	assert.NoError(t, err)
 	assert.False(t, info.IsAdmin)
 	assert.Equal(t, info.Firstname, "Test User")
@@ -90,12 +90,13 @@ func Test_parseOauthUserInfo_admin_group(t *testing.T) {
 		AdminGroupRegex: "^wgportal-admins@mydomain.net$",
 	}
 
-	info, err := parseOauthUserInfo(fieldMapping, adminMapping, userInfo)
+	info, err := parseOauthUserInfo(fieldMapping, adminMapping, userInfo, "oauth", "test-provider")
 	assert.NoError(t, err)
 	assert.True(t, info.IsAdmin)
 	assert.Equal(t, info.Firstname, "Test User")
 	assert.Equal(t, info.Lastname, "")
 	assert.Equal(t, info.Email, "test@mydomain.net")
+	assert.Equal(t, info.UserGroups, []string{"abuse@mydomain.net", "postmaster@mydomain.net", "wgportal-admins@mydomain.net"})
 }
 
 func Test_parseOauthUserInfo_admin_value(t *testing.T) {
@@ -131,7 +132,7 @@ func Test_parseOauthUserInfo_admin_value(t *testing.T) {
 	})
 	adminMapping := &config.OauthAdminMapping{} // test with default regex
 
-	info, err := parseOauthUserInfo(fieldMapping, adminMapping, userInfo)
+	info, err := parseOauthUserInfo(fieldMapping, adminMapping, userInfo, "oauth", "test-provider")
 	assert.NoError(t, err)
 	assert.True(t, info.IsAdmin)
 	assert.Equal(t, info.Firstname, "Test User")
@@ -174,7 +175,7 @@ func Test_parseOauthUserInfo_admin_value_custom(t *testing.T) {
 		AdminValueRegex: "^1$",
 	}
 
-	info, err := parseOauthUserInfo(fieldMapping, adminMapping, userInfo)
+	info, err := parseOauthUserInfo(fieldMapping, adminMapping, userInfo, "oauth", "test-provider")
 	assert.NoError(t, err)
 	assert.True(t, info.IsAdmin)
 	assert.Equal(t, info.Firstname, "Test User")

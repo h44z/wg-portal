@@ -45,6 +45,11 @@ type OauthInitiationResponse struct {
 	State       string
 }
 
+type LogoutResponse struct {
+	Message     string  `json:"Message"`
+	RedirectUrl *string `json:"RedirectUrl,omitempty"`
+}
+
 type WebAuthnCredentialRequest struct {
 	Name string `json:"Name"`
 }

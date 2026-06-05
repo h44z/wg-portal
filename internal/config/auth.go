@@ -258,6 +258,10 @@ type OpenIDConnectProvider struct {
 	// AllowedDomains defines the list of allowed domains
 	AllowedDomains []string `yaml:"allowed_domains"`
 
+	// AllowedUserGroups defines the list of allowed user groups.
+	// If not empty, at least one group from the user's group claim must match.
+	AllowedUserGroups []string `yaml:"allowed_user_groups"`
+
 	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`
 
@@ -274,6 +278,19 @@ type OpenIDConnectProvider struct {
 	// If LogSensitiveInfo is set to true, sensitive information retrieved from the OIDC provider will be logged in trace level.
 	// This also includes OAuth tokens! Keep this disabled in production!
 	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
+
+	// UsePKCE controls whether Proof Key for Code Exchange is used during the authorization code flow.
+	// If unset, PKCE is enabled by default.
+	UsePKCE *bool `yaml:"use_pkce"`
+
+	// PKCEMethod controls which PKCE challenge method is used. Supported values are "S256" and "plain".
+	// If empty, "S256" is used.
+	PKCEMethod string `yaml:"pkce_method"`
+
+	// LogoutIdpSession controls whether the user's session at the OIDC provider is terminated on logout.
+	// If set to true (default), the user will be redirected to the IdP's end_session_endpoint after local logout.
+	// If set to false, only the local wg-portal session is invalidated.
+	LogoutIdpSession *bool `yaml:"logout_idp_session"`
 }
 
 // OAuthProvider contains the configuration for the OAuth provider.
@@ -303,6 +320,10 @@ type OAuthProvider struct {
 	// AllowedDomains defines the list of allowed domains
 	AllowedDomains []string `yaml:"allowed_domains"`
 
+	// AllowedUserGroups defines the list of allowed user groups.
+	// If not empty, at least one group from the user's group claim must match.
+	AllowedUserGroups []string `yaml:"allowed_user_groups"`
+
 	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`
 
@@ -319,6 +340,14 @@ type OAuthProvider struct {
 	// If LogSensitiveInfo is set to true, sensitive information retrieved from the OAuth provider will be logged in trace level.
 	// This also includes OAuth tokens! Keep this disabled in production!
 	LogSensitiveInfo bool `yaml:"log_sensitive_info"`
+
+	// UsePKCE controls whether Proof Key for Code Exchange is used during the authorization code flow.
+	// If unset, PKCE is enabled by default.
+	UsePKCE *bool `yaml:"use_pkce"`
+
+	// PKCEMethod controls which PKCE challenge method is used. Supported values are "S256" and "plain".
+	// If empty, "S256" is used.
+	PKCEMethod string `yaml:"pkce_method"`
 }
 
 // WebauthnConfig contains the configuration for the WebAuthn authenticator.

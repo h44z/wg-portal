@@ -155,17 +155,33 @@ More advanced options are found in the subsequent `Advanced` section.
 - **Environment Variable:** `WG_PORTAL_CORE_EDITABLE_KEYS`
 - **Description:** Allow editing of WireGuard key-pairs directly in the UI.
 
-### `create_default_peer`
+### `create_default_peer` (deprecated)
+- **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER`
+- **Description:** **DEPRECATED** in favor of [create_default_peer_on_login](#create_default_peer_on_login). If set to `true`, this option is equivalent to enabling `create_default_peer_on_login`. It will be removed in a future release (2.4).
+
+### `create_default_peer_on_creation` (deprecated)
+- **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION`
+- **Description:** **DEPRECATED** in favor of [create_default_peer_on_user_creation](#create_default_peer_on_user_creation) and [create_default_peer_on_interface_creation](#create_default_peer_on_interface_creation). If set to `true`, both of those options are enabled. It will be removed in a future release (2.4).
+
+### `create_default_peer_on_login`
 - **Default:** `false`
 - **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER`
 - **Description:** If a user logs in for the first time with no existing peers, automatically create a new WireGuard peer for all server interfaces where the "Create default peer" flag is set.
 - **Important:** This option is only effective for interfaces where the "Create default peer" flag is set (via the UI).
 
-### `create_default_peer_on_creation`
+### `create_default_peer_on_user_creation`
 - **Default:** `false`
-- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION`
-- **Description:** If an LDAP user is created (e.g., through LDAP sync) and has no peers, automatically create a new WireGuard peer for all server interfaces where the "Create default peer" flag is set.
-- **Important:** This option requires [create_default_peer](#create_default_peer) to be enabled.
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_USER_CREATION`
+- **Description:** If a new user is created (e.g., through LDAP sync or registration) and has no peers, automatically create a new WireGuard peer for all server interfaces where the "Create default peer" flag is set.
+- **Important:** This option is only effective for interfaces where the "Create default peer" flag is set (via the UI).
+
+### `create_default_peer_on_interface_creation`
+- **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_INTERFACE_CREATION`
+- **Description:** When a new server interface is created with the "Create default peer" flag set, automatically create a default WireGuard peer on that interface for every existing user who does not yet have a peer on it.
+- **Important:** This option is only effective for interfaces where the "Create default peer" flag is set (via the UI).
 
 ### `re_enable_peer_after_user_enable`
 - **Default:** `true`
@@ -536,6 +552,7 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 #### `provider_name`
 - **Default:** *(empty)*
 - **Description:** A **unique** name for this provider. Must not conflict with other providers.
+  This name is used to derive the callback URL for the OIDC provider: `<external_url>/api/v0/auth/login/<provider_name>/callback`.
 
 #### `display_name`
 - **Default:** *(empty)*
@@ -561,6 +578,10 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Default:** *(empty)*
 - **Description:** A list of allowlisted domains. Only users with email addresses in these domains can log in or register. This is useful for restricting access to specific organizations or groups.
 
+#### `allowed_user_groups`
+- **Default:** *(empty)*
+- **Description:** A list of allowlisted user groups. If configured, at least one entry in the mapped `user_groups` claim must match one of these values.
+
 #### `field_map`
 - **Default:** *(empty)*
 - **Description:** Maps OIDC claims to WireGuard Portal user fields. 
@@ -582,6 +603,7 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Description:** WgPortal can grant a user admin rights by matching the value of the `is_admin` claim against a regular expression. Alternatively, a regular expression can be used to check if a user is member of a specific group listed in the `user_group` claim. The regular expressions are defined in `admin_value_regex` and `admin_group_regex`.
     - `admin_value_regex`: A regular expression to match the `is_admin` claim. By default, this expression matches the string "true" (`^true$`).
     - `admin_group_regex`: A regular expression to match the `user_groups` claim. Each entry in the `user_groups` claim is checked against this regex.
+        - To identify which claim to match against, set log_level: debug and reload the config. Log in with the intended admin account and inspect the logs for the OIDC user info payload. If the required claim is missing it must be added by the OIDC provider. If it is present, use its value as the pattern for admin_group_regex.
 
 #### `registration_enabled`
 - **Default:** `false`
@@ -596,6 +618,18 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
 - **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
 
+#### `use_pkce`
+- **Default:** `true`
+- **Description:** If `true`, Proof Key for Code Exchange (PKCE) is used for the OIDC authorization code flow. A fresh `code_verifier` is generated per login request, the matching `code_challenge` is sent with the authorization request, and the `code_verifier` is included in the token exchange. Set to `false` only for providers that do not support PKCE.
+
+#### `pkce_method`
+- **Default:** `S256`
+- **Description:** PKCE challenge method to use when `use_pkce` is enabled. Supported values are `S256` and `plain`. `S256` is recommended; use `plain` only for providers that explicitly require it.
+
+#### `logout_idp_session`
+- **Default:** `true`
+- **Description:** If `true` (default), WireGuard Portal will redirect the user to the OIDC provider's `end_session_endpoint` after local logout, terminating the session at the IdP as well. Set to `false` to only invalidate the local WireGuard Portal session without touching the IdP session.
+
 ---
 
 ### OAuth
@@ -606,6 +640,7 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 #### `provider_name`
 - **Default:** *(empty)*
 - **Description:** A **unique** name for this provider. Must not conflict with other providers.
+  This name is used to derive the callback URL for the OAuth provider: `<external_url>/api/v0/auth/login/<provider_name>/callback`.
 
 #### `display_name`
 - **Default:** *(empty)*
@@ -638,6 +673,10 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 #### `allowed_domains`
 - **Default:** *(empty)*
 - **Description:** A list of allowlisted domains. Only users with email addresses in these domains can log in or register. This is useful for restricting access to specific organizations or groups.
+
+#### `allowed_user_groups`
+- **Default:** *(empty)*
+- **Description:** A list of allowlisted user groups. If configured, at least one entry in the mapped `user_groups` claim must match one of these values.
 
 #### `field_map`
 - **Default:** *(empty)*
@@ -673,6 +712,14 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 - **Default:** `false`
 - **Description:** If `true`, sensitive OIDC user data, such as tokens and raw responses, will be logged at the trace level upon login (for debugging).
 - **Important:** Keep this setting disabled in production environments! Remove logs once you finished debugging authentication issues.
+
+#### `use_pkce`
+- **Default:** `true`
+- **Description:** If `true`, Proof Key for Code Exchange (PKCE) is used for the OIDC authorization code flow. A fresh `code_verifier` is generated per login request, the matching `code_challenge` is sent with the authorization request, and the `code_verifier` is included in the token exchange. Set to `false` only for providers that do not support PKCE.
+
+#### `pkce_method`
+- **Default:** `S256`
+- **Description:** PKCE challenge method to use when `use_pkce` is enabled. Supported values are `S256` and `plain`. `S256` is recommended; use `plain` only for providers that explicitly require it.
 
 ---
 

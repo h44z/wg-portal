@@ -28,7 +28,7 @@ func convertRawLdapUser(
 
 	uid := domain.UserIdentifier(internal.MapDefaultString(rawUser, fields.UserIdentifier, ""))
 
-	return &domain.User{
+	user := &domain.User{
 		BaseModel: domain.BaseModel{
 			CreatedBy: domain.CtxSystemLdapSyncer,
 			UpdatedBy: domain.CtxSystemLdapSyncer,
@@ -49,10 +49,16 @@ func convertRawLdapUser(
 		Lastname:   internal.MapDefaultString(rawUser, fields.Lastname, ""),
 		Phone:      internal.MapDefaultString(rawUser, fields.Phone, ""),
 		Department: internal.MapDefaultString(rawUser, fields.Department, ""),
-		Notes:      "",
-		Password:   "",
-		Disabled:   nil,
-	}, nil
+	}
+
+	if err := user.SanitizeExternalData("ldap", providerName); err != nil {
+		return nil, err
+	}
+
+	// Update authentication identifier after sanitization
+	user.Authentications[0].UserIdentifier = user.Identifier
+
+	return user, nil
 }
 
 func userChangedInLdap(dbUser, ldapUser *domain.User) bool {

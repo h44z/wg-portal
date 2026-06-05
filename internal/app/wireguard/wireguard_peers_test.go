@@ -61,6 +61,7 @@ type mockDB struct {
 	savedPeers map[domain.PeerIdentifier]*domain.Peer
 	iface      *domain.Interface
 	interfaces []domain.Interface
+	users      []domain.User
 }
 
 func (f *mockDB) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error) {
@@ -141,6 +142,15 @@ func (f *mockDB) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr)
 ) {
 	return map[domain.Cidr][]domain.Cidr{}, nil
 }
+func (f *mockDB) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+	return &domain.User{
+		Identifier: id,
+		IsAdmin:    false,
+	}, nil
+}
+func (f *mockDB) GetAllUsers(ctx context.Context) ([]domain.User, error) {
+	return f.users, nil
+}
 
 // --- Test ---
 
@@ -205,7 +215,7 @@ func TestCreatePeer_SetsIdentifier_FromPublicKey(t *testing.T) {
 func TestCreateDefaultPeer_RespectsInterfaceFlag(t *testing.T) {
 	// Arrange
 	cfg := &config.Config{}
-	cfg.Core.CreateDefaultPeer = true
+	cfg.Core.CreateDefaultPeerOnLogin = true
 
 	bus := &mockBus{}
 	ctrlMgr := &ControllerManager{

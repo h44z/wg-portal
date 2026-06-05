@@ -251,7 +251,7 @@ func (r *SqlRepo) migrate() error {
 	if existingSysStat.SchemaVersion == 1 {
 		const schemaVersion = 2
 		// Preserve existing behavior for installations that had default-peer-creation enabled.
-		if r.cfg.Core.CreateDefaultPeer {
+		if r.cfg.DefaultPeerCreationEnabled() {
 			err := r.db.Model(&domain.Interface{}).
 				Where("type = ?", domain.InterfaceTypeServer).
 				Update("create_default_peer", true).Error

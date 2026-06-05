@@ -33,6 +33,8 @@ type InterfaceService interface {
 	PersistInterfaceConfig(ctx context.Context, id domain.InterfaceIdentifier) error
 	// ApplyPeerDefaults applies the peer defaults to all peers of the given interface.
 	ApplyPeerDefaults(ctx context.Context, in *domain.Interface) error
+	// CreateDefaultPeers creates default peers for all existing users on the given interface.
+	CreateDefaultPeers(ctx context.Context, id domain.InterfaceIdentifier) error
 }
 
 type InterfaceEndpoint struct {
@@ -73,6 +75,7 @@ func (e InterfaceEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup.HandleFunc("GET /config/{id}", e.handleConfigGet())
 	apiGroup.HandleFunc("POST /{id}/save-config", e.handleSaveConfigPost())
 	apiGroup.HandleFunc("POST /{id}/apply-peer-defaults", e.handleApplyPeerDefaultsPost())
+	apiGroup.HandleFunc("POST /{id}/create-default-peers", e.handleCreateDefaultPeersPost())
 
 	apiGroup.HandleFunc("GET /peers/{id}", e.handlePeersGet())
 }
@@ -412,6 +415,37 @@ func (e InterfaceEndpoint) handleApplyPeerDefaultsPost() http.HandlerFunc {
 		}
 
 		if err := e.interfaceService.ApplyPeerDefaults(r.Context(), model.NewDomainInterface(&in)); err != nil {
+			respond.JSON(w, http.StatusInternalServerError, model.Error{
+				Code: http.StatusInternalServerError, Message: err.Error(),
+			})
+			return
+		}
+
+		respond.Status(w, http.StatusNoContent)
+	}
+}
+
+// handleCreateDefaultPeersPost returns a gorm Handler function.
+//
+// @ID interfaces_handleCreateDefaultPeersPost
+// @Tags Interface
+// @Summary Create default peers for all existing users on the given interface.
+// @Produce json
+// @Param id path string true "The interface identifier"
+// @Success 204 "No content if creating the default peers was successful"
+// @Failure 400 {object} model.Error
+// @Failure 500 {object} model.Error
+// @Router /interface/{id}/create-default-peers [post]
+func (e InterfaceEndpoint) handleCreateDefaultPeersPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := Base64UrlDecode(request.Path(r, "id"))
+		if id == "" {
+			respond.JSON(w, http.StatusBadRequest,
+				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
+			return
+		}
+
+		if err := e.interfaceService.CreateDefaultPeers(r.Context(), domain.InterfaceIdentifier(id)); err != nil {
 			respond.JSON(w, http.StatusInternalServerError, model.Error{
 				Code: http.StatusInternalServerError, Message: err.Error(),
 			})

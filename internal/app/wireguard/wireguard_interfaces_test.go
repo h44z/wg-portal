@@ -10,6 +10,49 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
+func TestInferImportedInterfaceType(t *testing.T) {
+	tests := []struct {
+		name       string
+		listenPort int
+		peerCount  int
+		expected   domain.InterfaceType
+	}{
+		{
+			name:       "no peers stays unknown",
+			listenPort: 51820,
+			peerCount:  0,
+			expected:   domain.InterfaceTypeAny,
+		},
+		{
+			name:       "single peer with listen port is server",
+			listenPort: 51820,
+			peerCount:  1,
+			expected:   domain.InterfaceTypeServer,
+		},
+		{
+			name:       "single peer without listen port stays client",
+			listenPort: 0,
+			peerCount:  1,
+			expected:   domain.InterfaceTypeClient,
+		},
+		{
+			name:       "multiple peers is server",
+			listenPort: 0,
+			peerCount:  2,
+			expected:   domain.InterfaceTypeServer,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			iface := &domain.Interface{ListenPort: tt.listenPort}
+			peers := make([]domain.PhysicalPeer, tt.peerCount)
+
+			assert.Equal(t, tt.expected, inferImportedInterfaceType(iface, peers))
+		})
+	}
+}
+
 func TestImportPeer_AddressMapping(t *testing.T) {
 	tests := []struct {
 		name                 string
@@ -92,13 +135,6 @@ func TestImportPeer_AddressMapping(t *testing.T) {
 			assert.Equal(t, tt.expectedExtraAllowed, savedPeer.ExtraAllowedIPsStr)
 		})
 	}
-}
-
-func (f *mockDB) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
-	return &domain.User{
-		Identifier: id,
-		IsAdmin:    false,
-	}, nil
 }
 
 func TestInterface_IsUserAllowed(t *testing.T) {

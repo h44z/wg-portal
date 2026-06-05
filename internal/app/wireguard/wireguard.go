@@ -36,6 +36,7 @@ type InterfaceAndPeerDatabaseRepo interface {
 	GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error)
 	GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (map[domain.Cidr][]domain.Cidr, error)
 	GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
+	GetAllUsers(ctx context.Context) ([]domain.User, error)
 }
 
 type WgQuickController interface {
@@ -59,7 +60,8 @@ type Manager struct {
 	db  InterfaceAndPeerDatabaseRepo
 	wg  *ControllerManager
 
-	userLockMap *sync.Map
+	userLockMap      *sync.Map
+	interfaceLockMap *sync.Map
 }
 
 func NewWireGuardManager(
@@ -69,11 +71,12 @@ func NewWireGuardManager(
 	db InterfaceAndPeerDatabaseRepo,
 ) (*Manager, error) {
 	m := &Manager{
-		cfg:         cfg,
-		bus:         bus,
-		wg:          wg,
-		db:          db,
-		userLockMap: &sync.Map{},
+		cfg:              cfg,
+		bus:              bus,
+		wg:               wg,
+		db:               db,
+		userLockMap:      &sync.Map{},
+		interfaceLockMap: &sync.Map{},
 	}
 
 	m.connectToMessageBus()
@@ -93,10 +96,11 @@ func (m Manager) connectToMessageBus() {
 	_ = m.bus.Subscribe(app.TopicUserDisabled, m.handleUserDisabledEvent)
 	_ = m.bus.Subscribe(app.TopicUserEnabled, m.handleUserEnabledEvent)
 	_ = m.bus.Subscribe(app.TopicUserDeleted, m.handleUserDeletedEvent)
+	_ = m.bus.Subscribe(app.TopicInterfaceCreated, m.handleInterfaceCreatedEvent)
 }
 
 func (m Manager) handleUserCreationEvent(user domain.User) {
-	if !m.cfg.Core.CreateDefaultPeerOnCreation {
+	if !m.cfg.Core.CreateDefaultPeerOnUserCreation {
 		return
 	}
 
@@ -117,7 +121,7 @@ func (m Manager) handleUserCreationEvent(user domain.User) {
 }
 
 func (m Manager) handleUserLoginEvent(userId domain.UserIdentifier) {
-	if !m.cfg.Core.CreateDefaultPeer {
+	if !m.cfg.Core.CreateDefaultPeerOnLogin {
 		return
 	}
 
@@ -266,6 +270,31 @@ func (m Manager) handleUserDeletedEvent(user domain.User) {
 					"error", err)
 			}
 		}
+	}
+}
+
+// handleInterfaceCreatedEvent creates default peers for all existing users when a new interface is created.
+// This ensures users that already exist (e.g. imported via a prior LDAP sync that had no interface available)
+// also receive a default peer for the newly created interface.
+func (m Manager) handleInterfaceCreatedEvent(iface domain.Interface) {
+	if !m.cfg.Core.CreateDefaultPeerOnUserCreation {
+		return
+	}
+
+	_, loaded := m.interfaceLockMap.LoadOrStore(iface.Identifier, "create")
+	if loaded {
+		return // another goroutine is already handling this interface
+	}
+	defer m.interfaceLockMap.Delete(iface.Identifier)
+
+	slog.Debug("handling new interface event", "interface", iface.Identifier)
+
+	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+
+	err := m.CreateDefaultPeers(ctx, iface.Identifier)
+	if err != nil {
+		slog.Error("failed to create default peers on new interface",
+			"interface", iface.Identifier, "error", err)
 	}
 }
 

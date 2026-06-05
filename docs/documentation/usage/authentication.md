@@ -51,6 +51,15 @@ To add OIDC or OAuth2 authentication to WireGuard Portal, create a Client-ID and
 configure a new authentication provider in the [`auth`](../configuration/overview.md#auth) section of the configuration file.
 Make sure that each configured provider has a unique `provider_name` property set. Samples can be seen [here](../configuration/examples.md).
 
+When registering the OAuth2 or OIDC application with your provider, configure the callback/redirect URL as follows:
+
+```text
+<external_url>/api/v0/auth/login/<provider_name>/callback
+```
+
+Replace `<external_url>` with the value configured in [`external_url`](../configuration/overview.md#external_url) and
+`<provider_name>` with the exact `provider_name` from the matching OAuth2 or OIDC provider configuration.
+
 #### Limiting Login to Specific Domains
 
 You can limit the login to specific domains by setting the `allowed_domains` property for OAuth2 or OIDC providers.
@@ -64,6 +73,40 @@ auth:
       # ... other settings
       allowed_domains:
         - "outlook.com"
+```
+
+#### Limiting Login to Specific User Groups
+
+You can limit the login to specific user groups by setting the `allowed_user_groups` property for OAuth2 or OIDC providers.
+If this property is not empty, the user's `user_groups` claim must contain at least one matching group.
+
+To use this feature, ensure your group claim is mapped via `field_map.user_groups`.
+
+```yaml
+auth:
+  oidc:
+    - provider_name: "oidc1"
+      # ... other settings
+      allowed_user_groups:
+        - "wg-users"
+        - "wg-admins"
+      field_map:
+        user_groups: "groups"
+```
+
+If `allowed_user_groups` is configured and the authenticated user has no matching group in `user_groups`, login is denied.
+
+Minimal deny-by-group example:
+
+```yaml
+auth:
+  oauth:
+    - provider_name: "oauth1"
+      # ... other settings
+      allowed_user_groups:
+        - "vpn-users"
+      field_map:
+        user_groups: "groups"
 ```
 
 #### Limit Login to Existing Users

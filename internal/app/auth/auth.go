@@ -47,6 +47,11 @@ const (
 	AuthenticatorTypeOidc  AuthenticatorType = "oidc"
 )
 
+const (
+	pkceMethodS256  = "S256"  // SHA-256 hashing
+	pkceMethodPlain = "plain" // plain text
+)
+
 // AuthenticatorOauth is the interface for all OAuth authenticators.
 type AuthenticatorOauth interface {
 	// GetName returns the name of the authenticator.
@@ -65,6 +70,15 @@ type AuthenticatorOauth interface {
 	RegistrationEnabled() bool
 	// GetAllowedDomains returns the list of whitelisted domains
 	GetAllowedDomains() []string
+	// GetAllowedUserGroups returns the list of whitelisted user groups.
+	// If non-empty, at least one user group must match.
+	GetAllowedUserGroups() []string
+	// GetLogoutUrl returns an IdP logout URL if supported by the provider.
+	GetLogoutUrl(idTokenHint, postLogoutRedirectUri string) (string, bool)
+	// PKCEAuthCodeOptions returns PKCE options for the authorization request and the verifier for the token exchange.
+	PKCEAuthCodeOptions() ([]oauth2.AuthCodeOption, string)
+	// PKCETokenOptions returns PKCE options for the token exchange.
+	PKCETokenOptions(verifier string) []oauth2.AuthCodeOption
 }
 
 // AuthenticatorLdap is the interface for all LDAP authenticators.
@@ -443,30 +457,34 @@ func (a *Authenticator) passwordAuthentication(
 
 // OauthLoginStep1 starts the oauth authentication flow by returning the authentication URL, state and nonce.
 func (a *Authenticator) OauthLoginStep1(_ context.Context, providerId string) (
-	authCodeUrl, state, nonce string,
+	authCodeUrl, state, nonce, codeVerifier string,
 	err error,
 ) {
 	oauthProvider, ok := a.oauthAuthenticators[providerId]
 	if !ok {
-		return "", "", "", fmt.Errorf("missing oauth provider %s", providerId)
+		return "", "", "", "", fmt.Errorf("missing oauth provider %s", providerId)
 	}
 
 	// Prepare authentication flow, set state cookies
 	state, err = a.randString(16)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to generate state: %w", err)
+		return "", "", "", "", fmt.Errorf("failed to generate state: %w", err)
 	}
+
+	// Generate PKCE code verifier and challenge if enabled. Otherwise, options will be empty.
+	authCodeOptions, codeVerifier := oauthProvider.PKCEAuthCodeOptions()
 
 	switch oauthProvider.GetType() {
 	case AuthenticatorTypeOAuth:
-		authCodeUrl = oauthProvider.AuthCodeURL(state)
+		authCodeUrl = oauthProvider.AuthCodeURL(state, authCodeOptions...)
 	case AuthenticatorTypeOidc:
 		nonce, err = a.randString(16)
 		if err != nil {
-			return "", "", "", fmt.Errorf("failed to generate nonce: %w", err)
+			return "", "", "", "", fmt.Errorf("failed to generate nonce: %w", err)
 		}
 
-		authCodeUrl = oauthProvider.AuthCodeURL(state, oidc.Nonce(nonce))
+		authCodeOptions = append(authCodeOptions, oidc.Nonce(nonce))
+		authCodeUrl = oauthProvider.AuthCodeURL(state, authCodeOptions...)
 	}
 
 	return
@@ -497,31 +515,66 @@ func isDomainAllowed(email string, allowedDomains []string) bool {
 	return false
 }
 
-// OauthLoginStep2 finishes the oauth authentication flow by exchanging the code for an access token and
-// fetching the user information.
-func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, code string) (*domain.User, error) {
-	oauthProvider, ok := a.oauthAuthenticators[providerId]
-	if !ok {
-		return nil, fmt.Errorf("missing oauth provider %s", providerId)
+func isAnyAllowedUserGroup(userGroups, allowedUserGroups []string) bool {
+	if len(allowedUserGroups) == 0 {
+		return true
 	}
 
-	oauth2Token, err := oauthProvider.Exchange(ctx, code)
-	if err != nil {
-		return nil, fmt.Errorf("unable to exchange code: %w", err)
+	allowed := make(map[string]struct{}, len(allowedUserGroups))
+	for _, group := range allowedUserGroups {
+		trimmed := strings.TrimSpace(group)
+		if trimmed == "" {
+			continue
+		}
+		allowed[trimmed] = struct{}{}
 	}
+
+	if len(allowed) == 0 {
+		return false
+	}
+
+	for _, group := range userGroups {
+		if _, ok := allowed[strings.TrimSpace(group)]; ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+// OauthLoginStep2 finishes the oauth authentication flow by exchanging the code for an access token and
+// fetching the user information.
+func (a *Authenticator) OauthLoginStep2(
+	ctx context.Context,
+	providerId, nonce, code, codeVerifier string,
+) (*domain.User, string, error) {
+	oauthProvider, ok := a.oauthAuthenticators[providerId]
+	if !ok {
+		return nil, "", fmt.Errorf("missing oauth provider %s", providerId)
+	}
+
+	oauth2Token, err := oauthProvider.Exchange(ctx, code, oauthProvider.PKCETokenOptions(codeVerifier)...)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to exchange code: %w", err)
+	}
+	idTokenHint, _ := oauth2Token.Extra("id_token").(string)
 
 	rawUserInfo, err := oauthProvider.GetUserInfo(ctx, oauth2Token, nonce)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch user information: %w", err)
+		return nil, "", fmt.Errorf("unable to fetch user information: %w", err)
 	}
 
 	userInfo, err := oauthProvider.ParseUserInfo(rawUserInfo)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse user information: %w", err)
+		return nil, "", fmt.Errorf("unable to parse user information: %w", err)
 	}
 
 	if !isDomainAllowed(userInfo.Email, oauthProvider.GetAllowedDomains()) {
-		return nil, fmt.Errorf("user %s is not in allowed domains", userInfo.Email)
+		return nil, "", fmt.Errorf("user %s is not in allowed domains", userInfo.Email)
+	}
+
+	if !isAnyAllowedUserGroup(userInfo.UserGroups, oauthProvider.GetAllowedUserGroups()) {
+		return nil, "", fmt.Errorf("user %s is not in allowed user groups", userInfo.Identifier)
 	}
 
 	ctx = domain.SetUserInfo(ctx,
@@ -537,7 +590,7 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 				Error:    err.Error(),
 			},
 		})
-		return nil, fmt.Errorf("unable to process user information: %w", err)
+		return nil, "", fmt.Errorf("unable to process user information: %w", err)
 	}
 
 	if user.IsLocked() || user.IsDisabled() {
@@ -549,7 +602,7 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 				Error:    "user is locked",
 			},
 		})
-		return nil, errors.New("user is locked")
+		return nil, "", errors.New("user is locked")
 	}
 
 	a.bus.Publish(app.TopicAuthLogin, user.Identifier)
@@ -561,7 +614,16 @@ func (a *Authenticator) OauthLoginStep2(ctx context.Context, providerId, nonce, 
 		},
 	})
 
-	return user, nil
+	return user, idTokenHint, nil
+}
+
+func (a *Authenticator) OauthProviderLogoutUrl(providerId, idTokenHint, postLogoutRedirectUri string) (string, bool) {
+	oauthProvider, ok := a.oauthAuthenticators[providerId]
+	if !ok {
+		return "", false
+	}
+
+	return oauthProvider.GetLogoutUrl(idTokenHint, postLogoutRedirectUri)
 }
 
 func (a *Authenticator) processUserInfo(

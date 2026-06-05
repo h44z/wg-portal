@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted } from "vue";
 import {auditStore} from "@/stores/audit";
+import Pagination from "@/components/Pagination.vue";
 
 const audit = auditStore()
 
@@ -60,28 +61,24 @@ onMounted(async () => {
     </table>
   </div>
   <hr>
-  <div class="mt-3">
     <div class="row">
-      <div class="col-6">
-        <ul class="pagination pagination-sm">
-          <li :class="{disabled:audit.pageOffset===0}" class="page-item">
-            <a class="page-link" @click="audit.previousPage">&laquo;</a>
-          </li>
-
-          <li v-for="page in audit.pages" :key="page" :class="{active:audit.currentPage===page}" class="page-item">
-            <a class="page-link" @click="audit.gotoPage(page)">{{page}}</a>
-          </li>
-
-          <li :class="{disabled:!audit.hasNextPage}" class="page-item">
-            <a class="page-link" @click="audit.nextPage">&raquo;</a>
-          </li>
-        </ul>
+      <div class="col-12 col-md-6">
+        <Pagination
+            :currentPage="audit.currentPage"
+            :totalCount="audit.FilteredCount"
+            :pageSize="audit.pageSize"
+            :hasNextPage="audit.hasNextPage"
+            :hasPrevPage="audit.hasPrevPage"
+            :onGotoPage="audit.gotoPage"
+            :onNextPage="audit.nextPage"
+            :onPrevPage="audit.previousPage"
+        />
       </div>
-      <div class="col-6">
+      <div class="col-12 col-md-6">
         <div class="form-group row">
-          <label class="col-sm-6 col-form-label text-end" for="paginationSelector">{{ $t('general.pagination.size') }}:</label>
+          <label class="col-sm-6 col-form-label text-md-end" for="paginationSelector">{{ $t('general.pagination.size') }}:</label>
           <div class="col-sm-6">
-            <select id="paginationSelector" v-model.number="audit.pageSize" class="form-select" @click="audit.afterPageSizeChange()">
+            <select id="paginationSelector" v-model.number="audit.pageSize" class="form-select" @change="audit.afterPageSizeChange()">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
@@ -92,5 +89,4 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-  </div>
 </template>

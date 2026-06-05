@@ -13,9 +13,12 @@ func parseOauthUserInfo(
 	mapping config.OauthFields,
 	adminMapping *config.OauthAdminMapping,
 	raw map[string]any,
+	providerType string,
+	providerName string,
 ) (*domain.AuthenticatorUserInfo, error) {
 	var isAdmin bool
 	var adminInfoAvailable bool
+	userGroups := internal.MapDefaultStringSlice(raw, mapping.UserGroups, nil)
 
 	// first try to match the is_admin field against the given regex
 	if mapping.IsAdmin != "" {
@@ -26,28 +29,34 @@ func parseOauthUserInfo(
 		}
 	}
 
-	// next try to parse the user's groups
-	if !isAdmin && mapping.UserGroups != "" && adminMapping.AdminGroupRegex != "" {
-		adminInfoAvailable = true
-		userGroups := internal.MapDefaultStringSlice(raw, mapping.UserGroups, nil)
-		re := adminMapping.GetAdminGroupRegex()
-		for _, group := range userGroups {
-			if re.MatchString(strings.TrimSpace(group)) {
-				isAdmin = true
-				break
-			}
-		}
-	}
-
 	userInfo := &domain.AuthenticatorUserInfo{
 		Identifier:         domain.UserIdentifier(internal.MapDefaultString(raw, mapping.UserIdentifier, "")),
 		Email:              internal.MapDefaultString(raw, mapping.Email, ""),
+		UserGroups:         userGroups,
 		Firstname:          internal.MapDefaultString(raw, mapping.Firstname, ""),
 		Lastname:           internal.MapDefaultString(raw, mapping.Lastname, ""),
 		Phone:              internal.MapDefaultString(raw, mapping.Phone, ""),
 		Department:         internal.MapDefaultString(raw, mapping.Department, ""),
 		IsAdmin:            isAdmin,
 		AdminInfoAvailable: adminInfoAvailable,
+	}
+
+	if err := userInfo.Sanitize(providerType, providerName); err != nil {
+		return nil, err
+	}
+
+	// check admin group match after sanitization
+	if !isAdmin && mapping.UserGroups != "" && adminMapping.AdminGroupRegex != "" {
+		adminInfoAvailable = true
+		re := adminMapping.GetAdminGroupRegex()
+		for _, group := range userInfo.UserGroups {
+			if re.MatchString(group) {
+				isAdmin = true
+				break
+			}
+		}
+		userInfo.IsAdmin = isAdmin
+		userInfo.AdminInfoAvailable = adminInfoAvailable
 	}
 
 	return userInfo, nil

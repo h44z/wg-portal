@@ -21,14 +21,17 @@ type Config struct {
 		AdminPassword     string `yaml:"admin_password"`
 		AdminApiToken     string `yaml:"admin_api_token"` // if set, the API access is enabled automatically
 
-		EditableKeys                bool `yaml:"editable_keys"`
-		CreateDefaultPeer           bool `yaml:"create_default_peer"`
-		CreateDefaultPeerOnCreation bool `yaml:"create_default_peer_on_creation"`
-		ReEnablePeerAfterUserEnable bool `yaml:"re_enable_peer_after_user_enable"`
-		DeletePeerAfterUserDeleted  bool `yaml:"delete_peer_after_user_deleted"`
-		SelfProvisioningAllowed     bool `yaml:"self_provisioning_allowed"`
-		ImportExisting              bool `yaml:"import_existing"`
-		RestoreState                bool `yaml:"restore_state"`
+		EditableKeys                         bool `yaml:"editable_keys"`
+		CreateDefaultPeer                    bool `yaml:"create_default_peer"`             // DEPRECATED: in favor of CreateDefaultPeerOnLogin
+		CreateDefaultPeerOnCreation          bool `yaml:"create_default_peer_on_creation"` // DEPRECATED: in favor of CreateDefaultPeerOnUserCreation
+		CreateDefaultPeerOnLogin             bool `yaml:"create_default_peer_on_login"`
+		CreateDefaultPeerOnUserCreation      bool `yaml:"create_default_peer_on_user_creation"`
+		CreateDefaultPeerOnInterfaceCreation bool `yaml:"create_default_peer_on_interface_creation"`
+		ReEnablePeerAfterUserEnable          bool `yaml:"re_enable_peer_after_user_enable"`
+		DeletePeerAfterUserDeleted           bool `yaml:"delete_peer_after_user_deleted"`
+		SelfProvisioningAllowed              bool `yaml:"self_provisioning_allowed"`
+		ImportExisting                       bool `yaml:"import_existing"`
+		RestoreState                         bool `yaml:"restore_state"`
 	} `yaml:"core"`
 
 	Advanced struct {
@@ -78,7 +81,7 @@ func (c *Config) LogStartupValues() {
 
 	slog.Debug("Config Features",
 		"editableKeys", c.Core.EditableKeys,
-		"createDefaultPeerOnCreation", c.Core.CreateDefaultPeerOnCreation,
+		"createDefaultPeerOnCreation", c.Core.CreateDefaultPeerOnUserCreation,
 		"reEnablePeerAfterUserEnable", c.Core.ReEnablePeerAfterUserEnable,
 		"deletePeerAfterUserDeleted", c.Core.DeletePeerAfterUserDeleted,
 		"selfProvisioningAllowed", c.Core.SelfProvisioningAllowed,
@@ -112,6 +115,13 @@ func (c *Config) LogStartupValues() {
 
 }
 
+// DefaultPeerCreationEnabled returns true if at least one default peer generation mechanism is enabled.
+func (c *Config) DefaultPeerCreationEnabled() bool {
+	return c.Core.CreateDefaultPeerOnLogin ||
+		c.Core.CreateDefaultPeerOnInterfaceCreation ||
+		c.Core.CreateDefaultPeerOnUserCreation
+}
+
 // defaultConfig returns the default configuration
 func defaultConfig() *Config {
 	cfg := &Config{}
@@ -122,8 +132,13 @@ func defaultConfig() *Config {
 	cfg.Core.AdminApiToken = getEnvStr("WG_PORTAL_CORE_ADMIN_API_TOKEN", "") // by default, the API access is disabled
 	cfg.Core.ImportExisting = getEnvBool("WG_PORTAL_CORE_IMPORT_EXISTING", true)
 	cfg.Core.RestoreState = getEnvBool("WG_PORTAL_CORE_RESTORE_STATE", true)
-	cfg.Core.CreateDefaultPeer = getEnvBool("WG_PORTAL_CORE_CREATE_DEFAULT_PEER", false)
-	cfg.Core.CreateDefaultPeerOnCreation = getEnvBool("WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION", false)
+	cfg.Core.CreateDefaultPeer = getEnvBool("WG_PORTAL_CORE_CREATE_DEFAULT_PEER", false) // deprecated
+	cfg.Core.CreateDefaultPeerOnCreation = getEnvBool("WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION",
+		false) // deprecated
+	cfg.Core.CreateDefaultPeerOnLogin = getEnvBool("WG_PORTAL_CORE_CREATE_DEFAULT_PEER", false)
+	cfg.Core.CreateDefaultPeerOnUserCreation = getEnvBool("WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_USER_CREATION", false)
+	cfg.Core.CreateDefaultPeerOnInterfaceCreation = getEnvBool("WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_INTERFACE_CREATION",
+		false)
 	cfg.Core.EditableKeys = getEnvBool("WG_PORTAL_CORE_EDITABLE_KEYS", true)
 	cfg.Core.SelfProvisioningAllowed = getEnvBool("WG_PORTAL_CORE_SELF_PROVISIONING_ALLOWED", false)
 	cfg.Core.ReEnablePeerAfterUserEnable = getEnvBool("WG_PORTAL_CORE_RE_ENABLE_PEER_AFTER_USER_ENABLE", true)
@@ -246,6 +261,8 @@ func GetConfig() (*Config, error) {
 		}
 	}
 
+	handleDeprecatedConfigValues(cfg)
+
 	return cfg, nil
 }
 
@@ -338,4 +355,19 @@ func getEnvDuration(name string, fallback time.Duration) time.Duration {
 	}
 
 	return d
+}
+
+func handleDeprecatedConfigValues(cfg *Config) {
+	// deprecated, will be removed in 2.4
+	if cfg.Core.CreateDefaultPeer {
+		slog.Warn("DEPRECATION WARNING: deprecated core config option: create_default_peer (WG_PORTAL_CORE_CREATE_DEFAULT_PEER)")
+		cfg.Core.CreateDefaultPeerOnLogin = true
+	}
+
+	// deprecated, will be removed in 2.4
+	if cfg.Core.CreateDefaultPeerOnCreation {
+		slog.Warn("DEPRECATION WARNING: deprecated core config option: create_default_peer_on_creation (WG_PORTAL_CORE_CREATE_DEFAULT_PEER_ON_CREATION)")
+		cfg.Core.CreateDefaultPeerOnUserCreation = true
+		cfg.Core.CreateDefaultPeerOnInterfaceCreation = true
+	}
 }

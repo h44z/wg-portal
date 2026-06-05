@@ -148,6 +148,18 @@ export const interfaceStore = defineStore('interfaces', {
           throw new Error(error)
         })
     },
+    async CreateDefaultPeers(id) {
+      this.fetching = true
+      return apiWrapper.post(`${baseUrl}/${base64_url_encode(id)}/create-default-peers`)
+        .then(() => {
+          this.fetching = false
+        })
+        .catch(error => {
+          this.fetching = false
+          console.log(error)
+          throw new Error(error)
+        })
+    },
     async SaveConfiguration(id) {
       this.fetching = true
       return apiWrapper.post(`${baseUrl}/${base64_url_encode(id)}/save-config`)

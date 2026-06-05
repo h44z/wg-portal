@@ -6,8 +6,9 @@ advanced:
 core:
   admin_user: test@test.de
   admin_password: secret
-  create_default_peer: true
-  create_default_peer_on_creation: false
+  create_default_peer_on_login: true
+  create_default_peer_on_user_creation: false
+  create_default_peer_on_interface_creation: false
 
 web:
   external_url: http://localhost:8888
@@ -46,7 +47,10 @@ auth:
       extra_scopes:
         - https://www.googleapis.com/auth/userinfo.email
         - https://www.googleapis.com/auth/userinfo.profile
+      use_pkce: true
+      pkce_method: S256
       registration_enabled: true
+      logout_idp_session: true
     - id: oidc2
       provider_name: google2
       display_name: Login with</br>Google2
@@ -57,6 +61,7 @@ auth:
         - https://www.googleapis.com/auth/userinfo.email
         - https://www.googleapis.com/auth/userinfo.profile
       registration_enabled: true
+      logout_idp_session: true
   oauth:
     - id: google_plain_oauth
       provider_name: google3
@@ -76,6 +81,7 @@ auth:
         user_identifier: sub
         is_admin: this-attribute-must-be-true
       registration_enabled: true
+      use_pkce: false
     - id: google_plain_oauth_with_groups
       provider_name: google4
       display_name: Login with</br>Google4

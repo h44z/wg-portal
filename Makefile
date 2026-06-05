@@ -1,7 +1,8 @@
 # Go parameters
 GOCMD=go
+GOVERSION=1.25
 MODULENAME=github.com/h44z/wg-portal
-GOFILES:=$(shell go list ./... | grep -v /vendor/)
+GOFILES=$(shell go list ./... | grep -v /vendor/)
 BUILDDIR=dist
 BINARIES=$(subst cmd/,,$(wildcard cmd/*))
 IMAGE=h44z/wg-portal
@@ -50,6 +51,11 @@ format:
 #> test: Run all kinds of tests, except for integration tests
 .PHONY: test
 test: test-vet test-race
+
+#> test-in-docker: Run tests in Docker (for non-Linux environments e.g. MacOS)
+.PHONY: test-in-docker
+test-in-docker:
+	docker run --rm -u $(shell id -u):$(shell id -g) -e HOME=/tmp -v $(PWD):/app -w /app golang:$(GOVERSION) make test
 
 #< test-vet: Static code analysis
 .PHONY: test-vet

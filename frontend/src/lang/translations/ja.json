@@ -1,0 +1,651 @@
+{
+  "languages": {
+    "en": "日本語"
+  },
+  "general": {
+    "pagination": {
+      "size": "件数",
+      "all": "全件 (低速)"
+    },
+    "search": {
+      "placeholder": "検索...",
+      "button": "検索"
+    },
+    "select-all": "すべて選択",
+    "yes": "はい",
+    "no": "いいえ",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "save": "保存",
+    "delete": "削除"
+  },
+  "login": {
+    "headline": "ログイン",
+    "username": {
+      "label": "ユーザー名",
+      "placeholder": "ユーザー名を入力してください"
+    },
+    "password": {
+      "label": "パスワード",
+      "placeholder": "パスワードを入力してください"
+    },
+    "button": "ログイン",
+    "button-webauthn": "パスキーでログイン"
+  },
+  "menu": {
+    "home": "ホーム",
+    "interfaces": "インターフェース",
+    "users": "ユーザー",
+    "lang": "言語切替",
+    "profile": "マイプロフィール",
+    "settings": "設定",
+    "audit": "監査ログ",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "keygen": "鍵生成",
+    "calculator": "IP計算機"
+  },
+  "home": {
+    "headline": "WireGuard® VPN ポータル",
+    "info-headline": "詳細情報",
+    "abstract": "WireGuard® は最新の暗号技術を活用した、シンプルかつ高速なモダンVPNです。IPsec より高速・シンプル・軽量・実用的な設計を目指し、OpenVPN を大きく上回る性能を発揮します。",
+    "installation": {
+      "box-header": "WireGuard インストール",
+      "headline": "インストール",
+      "content": "クライアントソフトウェアのインストール手順は WireGuard 公式サイトでご確認いただけます。",
+      "button": "インストール手順を開く"
+    },
+    "about-wg": {
+      "box-header": "WireGuard について",
+      "headline": "概要",
+      "content": "WireGuard® は最新の暗号技術を活用したシンプルかつ高速なモダンVPNです。",
+      "button": "詳細"
+    },
+    "about-portal": {
+      "box-header": "WireGuard Portal について",
+      "headline": "WireGuard Portal",
+      "content": "WireGuard Portal は WireGuard を Web から簡単に設定できる管理ポータルです。",
+      "button": "詳細"
+    },
+    "profiles": {
+      "headline": "VPN プロファイル",
+      "abstract": "個人 VPN 設定の確認・ダウンロードはユーザープロファイルから行えます。",
+      "content": "設定済みプロファイルの一覧は下のボタンから開けます。",
+      "button": "マイプロフィールを開く"
+    },
+    "admin": {
+      "headline": "管理エリア",
+      "abstract": "管理エリアでは、WireGuard ピア、サーバーインターフェース、および WireGuard Portal にログイン可能なユーザーを管理できます。",
+      "content": "",
+      "button-admin": "サーバー管理を開く",
+      "button-user": "ユーザー管理を開く"
+    }
+  },
+  "interfaces": {
+    "headline": "インターフェース管理",
+    "headline-peers": "現在の VPN ピア",
+    "headline-endpoints": "現在のエンドポイント",
+    "no-interface": {
+      "default-selection": "利用可能なインターフェースなし",
+      "headline": "インターフェースが見つかりません...",
+      "abstract": "上の「+」ボタンから新しい WireGuard インターフェースを作成してください。"
+    },
+    "no-peer": {
+      "headline": "ピアがありません",
+      "abstract": "選択した WireGuard インターフェースには現在ピアが登録されていません。"
+    },
+    "table-heading": {
+      "name": "名前",
+      "user": "ユーザー",
+      "ip": "IP",
+      "endpoint": "エンドポイント",
+      "status": "ステータス"
+    },
+    "interface": {
+      "headline": "インターフェース状態:",
+      "backend": "バックエンド",
+      "unknown-backend": "不明",
+      "wrong-backend": "バックエンドが無効です。代わりにローカル WireGuard バックエンドを使用します。",
+      "key": "公開鍵",
+      "endpoint": "公開エンドポイント",
+      "port": "待受ポート",
+      "peers": "有効ピア数",
+      "total-peers": "全ピア数",
+      "endpoints": "有効エンドポイント数",
+      "total-endpoints": "全エンドポイント数",
+      "ip": "IPアドレス",
+      "default-allowed-ip": "デフォルト許可IP",
+      "dns": "DNSサーバー",
+      "mtu": "MTU",
+      "default-keep-alive": "デフォルトキープアライブ間隔",
+      "default-dns": "デフォルトDNSサーバー",
+      "button-show-config": "設定を表示",
+      "button-download-config": "設定をダウンロード",
+      "button-store-config": "wg-quick 用に設定を保存",
+      "button-edit": "インターフェースを編集"
+    },
+    "button-add-interface": "インターフェース追加",
+    "button-add-peer": "ピア追加",
+    "button-add-peers": "複数ピアを追加",
+    "button-show-peer": "ピア詳細",
+    "button-edit-peer": "ピア編集",
+    "button-bulk-delete": "選択したピアを削除",
+    "button-bulk-enable": "選択したピアを有効化",
+    "button-bulk-disable": "選択したピアを無効化",
+    "confirm-bulk-delete": "{count} 件のピアを削除してもよろしいですか?",
+    "confirm-bulk-disable": "{count} 件のピアを無効化してもよろしいですか?",
+    "peer-disabled": "ピアは無効化されています。理由:",
+    "peer-expiring": "ピアの有効期限:",
+    "peer-connected": "接続中",
+    "peer-not-connected": "未接続",
+    "peer-handshake": "最終ハンドシェイク:"
+  },
+  "users": {
+    "headline": "ユーザー管理",
+    "table-heading": {
+      "id": "ID",
+      "email": "メール",
+      "firstname": "名",
+      "lastname": "姓",
+      "sources": "ソース",
+      "peers": "ピア",
+      "admin": "管理者"
+    },
+    "no-user": {
+      "headline": "ユーザーがいません",
+      "abstract": "現在 WireGuard Portal に登録されているユーザーはいません。"
+    },
+    "button-add-user": "ユーザー追加",
+    "button-show-user": "ユーザー詳細",
+    "button-edit-user": "ユーザー編集",
+    "button-bulk-delete": "選択したユーザーを削除",
+    "button-bulk-enable": "選択したユーザーを有効化",
+    "button-bulk-disable": "選択したユーザーを無効化",
+    "button-bulk-lock": "選択したユーザーをロック",
+    "button-bulk-unlock": "選択したユーザーのロック解除",
+    "confirm-bulk-delete": "{count} 件のユーザーを削除してもよろしいですか?",
+    "confirm-bulk-disable": "{count} 件のユーザーを無効化してもよろしいですか?",
+    "confirm-bulk-lock": "{count} 件のユーザーをロックしてもよろしいですか?",
+    "user-disabled": "ユーザーは無効化されています。理由:",
+    "user-locked": "アカウントはロックされています。理由:",
+    "admin": "管理者権限あり",
+    "no-admin": "管理者権限なし"
+  },
+  "profile": {
+    "headline": "マイ VPN ピア",
+    "table-heading": {
+      "name": "名前",
+      "ip": "IP",
+      "stats": "ステータス",
+      "interface": "サーバーインターフェース"
+    },
+    "no-peer": {
+      "headline": "ピアがありません",
+      "abstract": "現在、あなたのユーザープロフィールにはピアが関連付けられていません。"
+    },
+    "peer-connected": "接続中",
+    "button-add-peer": "ピア追加",
+    "button-show-peer": "ピア詳細",
+    "button-edit-peer": "ピア編集"
+  },
+  "settings": {
+    "headline": "設定",
+    "abstract": "ここで個人設定を変更できます。",
+    "api": {
+      "headline": "API 設定",
+      "abstract": "RESTful API の設定はこちらで行います。",
+      "active-description": "あなたのアカウントで API は現在有効です。すべての API リクエストは Basic 認証で行います。以下の認証情報を使用してください。",
+      "inactive-description": "API は現在無効です。下のボタンを押して有効化してください。",
+      "user-label": "API ユーザー名:",
+      "user-placeholder": "API ユーザー",
+      "token-label": "API パスワード:",
+      "token-placeholder": "API トークン",
+      "token-created-label": "API アクセス許可日時: ",
+      "button-disable-title": "API を無効化します。現在のトークンは無効になります。",
+      "button-disable-text": "API を無効化",
+      "button-enable-title": "API を有効化します。新しいトークンが生成されます。",
+      "button-enable-text": "API を有効化",
+      "api-link": "API ドキュメント"
+    },
+    "webauthn": {
+      "headline": "パスキー設定",
+      "abstract": "パスキーはパスワード不要でユーザー認証を行う最新の方法です。ブラウザに安全に保存され、WireGuard Portal へのログインに使用できます。",
+      "active-description": "現在、あなたのアカウントには少なくとも 1 つのパスキーが登録されています。",
+      "inactive-description": "あなたのアカウントにはパスキーが登録されていません。下のボタンから新しいパスキーを登録してください。",
+      "table": {
+        "name": "名前",
+        "created": "作成日時",
+        "actions": ""
+      },
+      "credentials-list": "登録済みパスキー",
+      "modal-delete": {
+        "headline": "パスキー削除",
+        "abstract": "このパスキーを削除してもよろしいですか? 削除後はこのパスキーでログインできなくなります。",
+        "created": "作成日時:",
+        "button-delete": "削除",
+        "button-cancel": "キャンセル"
+      },
+      "button-rename-title": "リネーム",
+      "button-rename-text": "パスキーの名前を変更します。",
+      "button-save-title": "保存",
+      "button-save-text": "新しいパスキー名を保存します。",
+      "button-cancel-title": "キャンセル",
+      "button-cancel-text": "リネームをキャンセルします。",
+      "button-delete-title": "削除",
+      "button-delete-text": "パスキーを削除します。削除後はこのパスキーでログインできなくなります。",
+      "button-register-title": "パスキー登録",
+      "button-register-text": "新しいパスキーを登録してアカウントを保護します。"
+    },
+    "password": {
+      "headline": "パスワード設定",
+      "abstract": "ここでパスワードを変更できます。",
+      "current-label": "現在のパスワード",
+      "new-label": "新しいパスワード",
+      "new-confirm-label": "新しいパスワード(確認)",
+      "change-button-text": "パスワード変更",
+      "invalid-confirm-label": "パスワードが一致しません",
+      "weak-label": "パスワードが脆弱です"
+    }
+  },
+  "audit": {
+    "headline": "監査ログ",
+    "abstract": "WireGuard Portal で実行されたすべての操作の監査ログを確認できます。",
+    "no-entries": {
+      "headline": "ログがありません",
+      "abstract": "現在、監査ログは記録されていません。"
+    },
+    "entries-headline": "ログエントリ",
+    "table-heading": {
+      "id": "#",
+      "time": "日時",
+      "user": "ユーザー",
+      "severity": "重要度",
+      "origin": "発生元",
+      "message": "メッセージ"
+    }
+  },
+  "keygen": {
+    "headline": "WireGuard 鍵生成",
+    "abstract": "新しい WireGuard 鍵を生成します。鍵はローカルブラウザで生成され、サーバーには送信されません。",
+    "headline-keypair": "新しい鍵ペア",
+    "headline-preshared-key": "新しい事前共有鍵",
+    "button-generate": "生成",
+    "private-key": {
+      "label": "秘密鍵",
+      "placeholder": "秘密鍵"
+    },
+    "public-key": {
+      "label": "公開鍵",
+      "placeholder": "公開鍵"
+    },
+    "preshared-key": {
+      "label": "事前共有鍵",
+      "placeholder": "事前共有鍵"
+    }
+  },
+  "calculator": {
+    "headline": "WireGuard IP 計算機",
+    "abstract": "WireGuard の Allowed IPs を生成します。IP サブネットはローカルブラウザで生成され、サーバーには送信されません。",
+    "headline-allowed-ip": "新しい Allowed IPs",
+    "button-exclude-private": "プライベートIP範囲を除外",
+    "allowed-ip": {
+      "label": "Allowed IPs",
+      "placeholder": "0.0.0.0/0, ::/0",
+      "empty": "値は必須です"
+    },
+    "dissallowed-ip": {
+      "label": "除外IP",
+      "placeholder": "10.0.0.0/8, 192.168.0.0/16",
+      "invalid": "無効なアドレス: {addr}"
+    },
+    "new-allowed-ip": {
+      "label": "Allowed IPs",
+      "placeholder": ""
+    }
+  },
+  "modals": {
+    "user-view": {
+      "headline": "ユーザーアカウント:",
+      "tab-user": "情報",
+      "tab-peers": "ピア",
+      "headline-info": "ユーザー情報:",
+      "headline-notes": "備考:",
+      "email": "メール",
+      "firstname": "名",
+      "lastname": "姓",
+      "phone": "電話番号",
+      "department": "部署",
+      "api-enabled": "API アクセス",
+      "disabled": "アカウント無効",
+      "locked": "アカウントロック中",
+      "no-peers": "このユーザーには関連するピアがありません。",
+      "peers": {
+        "name": "名前",
+        "interface": "インターフェース",
+        "ip": "IP"
+      }
+    },
+    "user-edit": {
+      "headline-edit": "ユーザー編集:",
+      "headline-new": "新規ユーザー",
+      "header-general": "全般",
+      "header-personal": "ユーザー情報",
+      "header-notes": "備考",
+      "header-state": "状態",
+      "identifier": {
+        "label": "識別子",
+        "placeholder": "一意のユーザー識別子"
+      },
+      "source": {
+        "label": "ソース",
+        "placeholder": "ユーザーのソース"
+      },
+      "password": {
+        "label": "パスワード",
+        "placeholder": "強固なパスワード",
+        "description": "現在のパスワードを保持する場合は空のままにします。",
+        "too-weak": "パスワードが脆弱です。より強固なパスワードを使用してください。"
+      },
+      "email": {
+        "label": "メール",
+        "placeholder": "メールアドレス"
+      },
+      "phone": {
+        "label": "電話",
+        "placeholder": "電話番号"
+      },
+      "department": {
+        "label": "部署",
+        "placeholder": "部署名"
+      },
+      "firstname": {
+        "label": "名",
+        "placeholder": "名"
+      },
+      "lastname": {
+        "label": "姓",
+        "placeholder": "姓"
+      },
+      "notes": {
+        "label": "備考",
+        "placeholder": ""
+      },
+      "disabled": {
+        "label": "無効化 (WireGuard 接続およびログインを禁止)"
+      },
+      "locked": {
+        "label": "ロック (ログイン禁止、WireGuard 接続は引き続き有効)"
+      },
+      "admin": {
+        "label": "管理者"
+      },
+      "persist-local-changes": {
+        "label": "ローカル変更を保持"
+      },
+      "sync-warning": "同期されたユーザーを変更するには、ローカル変更の保持を有効化してください。そうしないと次回の同期時に変更が上書きされます。",
+      "confirm-delete": "ユーザー '{id}' を削除してもよろしいですか?"
+    },
+    "interface-view": {
+      "headline": "インターフェース設定:"
+    },
+    "interface-edit": {
+      "headline-edit": "インターフェース編集:",
+      "headline-new": "新規インターフェース",
+      "tab-interface": "インターフェース",
+      "tab-peerdef": "ピアのデフォルト",
+      "header-general": "全般",
+      "header-network": "ネットワーク",
+      "header-crypto": "暗号化",
+      "header-hooks": "インターフェースフック",
+      "header-peer-hooks": "フック",
+      "header-state": "状態",
+      "identifier": {
+        "label": "識別子",
+        "placeholder": "一意のインターフェース識別子"
+      },
+      "mode": {
+        "label": "インターフェースモード",
+        "server": "サーバーモード",
+        "client": "クライアントモード",
+        "any": "不明モード"
+      },
+      "backend": {
+        "label": "インターフェースバックエンド",
+        "invalid-label": "元のバックエンドが利用できなくなったため、ローカル WireGuard バックエンドを使用します。",
+        "local": "ローカル WireGuard バックエンド"
+      },
+      "display-name": {
+        "label": "表示名",
+        "placeholder": "インターフェースの説明的な名前"
+      },
+      "private-key": {
+        "label": "秘密鍵",
+        "placeholder": "秘密鍵"
+      },
+      "public-key": {
+        "label": "公開鍵",
+        "placeholder": "公開鍵"
+      },
+      "ip": {
+        "label": "IPアドレス",
+        "placeholder": "IPアドレス (CIDR 形式)"
+      },
+      "listen-port": {
+        "label": "待受ポート",
+        "placeholder": "待ち受けポート"
+      },
+      "dns": {
+        "label": "DNSサーバー",
+        "placeholder": "使用するDNSサーバー"
+      },
+      "dns-search": {
+        "label": "DNS 検索ドメイン",
+        "placeholder": "DNS 検索プレフィックス"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "インターフェース MTU (0 = デフォルト)"
+      },
+      "firewall-mark": {
+        "label": "ファイアウォールマーク",
+        "placeholder": "送信トラフィックに付与するファイアウォールマーク (0 = 自動)"
+      },
+      "routing-table": {
+        "label": "ルーティングテーブル",
+        "placeholder": "ルーティングテーブルID",
+        "description": "特殊値: off = 経路を管理しない、0 = 自動"
+      },
+      "pre-up": {
+        "label": "Pre-Up",
+        "placeholder": "; で区切られた1つ以上の bash コマンド"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "; で区切られた1つ以上の bash コマンド"
+      },
+      "pre-down": {
+        "label": "Pre-Down",
+        "placeholder": "; で区切られた1つ以上の bash コマンド"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "; で区切られた1つ以上の bash コマンド"
+      },
+      "disabled": {
+        "label": "インターフェース無効化"
+      },
+      "create-default-peer": {
+        "label": "新規ユーザー用にデフォルトピアを作成"
+      },
+      "save-config": {
+        "label": "wg-quick 設定を自動保存"
+      },
+      "defaults": {
+        "endpoint": {
+          "label": "エンドポイントアドレス",
+          "placeholder": "エンドポイントアドレス",
+          "description": "ピアが接続するエンドポイントアドレス。(例: wg.example.com または wg.example.com:51820)"
+        },
+        "networks": {
+          "label": "IP ネットワーク",
+          "placeholder": "ネットワークアドレス",
+          "description": "ピアにはこれらのサブネットから IP が割り当てられます。"
+        },
+        "allowed-ip": {
+          "label": "Allowed IPs",
+          "placeholder": "デフォルトの Allowed IPs"
+        },
+        "mtu": {
+          "label": "MTU",
+          "placeholder": "クライアント MTU (0 = デフォルト)"
+        },
+        "keep-alive": {
+          "label": "キープアライブ間隔",
+          "placeholder": "Persistent Keepalive (0 = デフォルト)"
+        }
+      },
+      "button-apply-defaults": "ピアのデフォルトを適用",
+      "button-create-default-peers": "デフォルトピアを作成",
+      "confirm-delete": "インターフェース '{id}' を削除してもよろしいですか?"
+    },
+    "peer-view": {
+      "headline-peer": "ピア:",
+      "headline-endpoint": "エンドポイント:",
+      "section-info": "ピア情報",
+      "section-status": "現在の状態",
+      "section-config": "設定",
+      "identifier": "識別子",
+      "ip": "IPアドレス",
+      "allowed-ip": "Allowed IPs",
+      "extra-allowed-ip": "サーバー側 Allowed IPs",
+      "user": "関連ユーザー",
+      "notes": "備考",
+      "expiry-status": "有効期限",
+      "disabled-status": "無効化日時",
+      "traffic": "通信量",
+      "connection-status": "接続統計",
+      "upload": "アップロード(サーバー → ピア、バイト)",
+      "download": "ダウンロード(ピア → サーバー、バイト)",
+      "pingable": "ping 応答",
+      "handshake": "最終ハンドシェイク",
+      "connected-since": "接続開始日時",
+      "endpoint": "エンドポイント",
+      "endpoint-key": "エンドポイント公開鍵",
+      "keepalive": "Persistent Keepalive",
+      "button-download": "設定をダウンロード",
+      "button-email": "設定をメール送信",
+      "style-label": "設定スタイル"
+    },
+    "peer-edit": {
+      "headline-edit-peer": "ピア編集:",
+      "headline-edit-endpoint": "エンドポイント編集:",
+      "headline-new-peer": "ピア作成",
+      "headline-new-endpoint": "エンドポイント作成",
+      "header-general": "全般",
+      "header-network": "ネットワーク",
+      "header-crypto": "暗号化",
+      "header-hooks": "フック (ピア側で実行)",
+      "header-state": "状態",
+      "display-name": {
+        "label": "表示名",
+        "placeholder": "ピアの説明的な名前"
+      },
+      "linked-user": {
+        "label": "関連ユーザー",
+        "placeholder": "このピアを所有するユーザーアカウント"
+      },
+      "private-key": {
+        "label": "秘密鍵",
+        "placeholder": "秘密鍵",
+        "help": "秘密鍵はサーバー上に安全に保存されます。すでにユーザーがコピーを持っている場合は空欄でも構いません。サーバーはピアの公開鍵のみで動作します。"
+      },
+      "public-key": {
+        "label": "公開鍵",
+        "placeholder": "公開鍵"
+      },
+      "preshared-key": {
+        "label": "事前共有鍵",
+        "placeholder": "オプションの事前共有鍵"
+      },
+      "endpoint-public-key": {
+        "label": "エンドポイント公開鍵",
+        "placeholder": "リモートエンドポイントの公開鍵"
+      },
+      "endpoint": {
+        "label": "エンドポイントアドレス",
+        "placeholder": "リモートエンドポイントのアドレス"
+      },
+      "ip": {
+        "label": "IPアドレス",
+        "placeholder": "IPアドレス (CIDR 形式)"
+      },
+      "allowed-ip": {
+        "label": "Allowed IPs",
+        "placeholder": "Allowed IPs (CIDR 形式)"
+      },
+      "extra-allowed-ip": {
+        "label": "追加の Allowed IPs",
+        "placeholder": "追加 Allowed IPs (サーバー側)",
+        "description": "これらの IP はリモート WireGuard インターフェースの Allowed IPs に追加されます。"
+      },
+      "dns": {
+        "label": "DNSサーバー",
+        "placeholder": "使用するDNSサーバー"
+      },
+      "dns-search": {
+        "label": "DNS 検索ドメイン",
+        "placeholder": "DNS 検索プレフィックス"
+      },
+      "keep-alive": {
+        "label": "キープアライブ間隔",
+        "placeholder": "Persistent Keepalive (0 = デフォルト)"
+      },
+      "mtu": {
+        "label": "MTU",
+        "placeholder": "クライアント MTU (0 = デフォルト)"
+      },
+      "pre-up": {
+        "label": "Pre-Up",
+        "placeholder": "; で区切られた1つ以上の bash コマンド"
+      },
+      "post-up": {
+        "label": "Post-Up",
+        "placeholder": "; で区切られた1つ以上の bash コマンド"
+      },
+      "pre-down": {
+        "label": "Pre-Down",
+        "placeholder": "; で区切られた1つ以上の bash コマンド"
+      },
+      "post-down": {
+        "label": "Post-Down",
+        "placeholder": "; で区切られた1つ以上の bash コマンド"
+      },
+      "disabled": {
+        "label": "ピア無効化"
+      },
+      "ignore-global": {
+        "label": "グローバル設定を無視"
+      },
+      "expires-at": {
+        "label": "有効期限"
+      },
+      "confirm-delete": "ピア '{id}' を削除してもよろしいですか?"
+    },
+    "peer-multi-create": {
+      "headline-peer": "複数ピア作成",
+      "headline-endpoint": "複数エンドポイント作成",
+      "identifiers": {
+        "label": "ユーザー識別子",
+        "placeholder": "ユーザー識別子",
+        "description": "ピアを作成するユーザー識別子(ユーザー名)。"
+      },
+      "prefix": {
+        "headline-peer": "ピア:",
+        "headline-endpoint": "エンドポイント:",
+        "label": "表示名プレフィックス",
+        "placeholder": "プレフィックス",
+        "description": "ピア表示名に追加されるプレフィックス。"
+      }
+    }
+  }
+}

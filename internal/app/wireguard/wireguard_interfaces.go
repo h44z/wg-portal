@@ -387,7 +387,7 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 		SaveConfig:                 m.cfg.Advanced.ConfigStoragePath != "",
 		DisplayName:                string(id),
 		Type:                       domain.InterfaceTypeServer,
-		CreateDefaultPeer:          m.cfg.Core.CreateDefaultPeer,
+		CreateDefaultPeer:          m.cfg.DefaultPeerCreationEnabled(),
 		DriverType:                 "",
 		Disabled:                   nil,
 		DisabledReason:             "",
@@ -893,16 +893,7 @@ func (m Manager) importInterface(
 		}
 	}
 
-	// try to predict the interface type based on the number of peers
-	switch len(peers) {
-	case 0:
-		iface.Type = domain.InterfaceTypeAny // no peers means this is an unknown interface
-	case 1:
-		iface.Type = domain.InterfaceTypeClient // one peer means this is a client interface
-	default: // multiple peers means this is a server interface
-
-		iface.Type = domain.InterfaceTypeServer
-	}
+	iface.Type = inferImportedInterfaceType(iface, peers)
 
 	existingInterface, err := m.db.GetInterface(ctx, iface.Identifier)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
@@ -928,6 +919,20 @@ func (m Manager) importInterface(
 	}
 
 	return nil
+}
+
+func inferImportedInterfaceType(iface *domain.Interface, peers []domain.PhysicalPeer) domain.InterfaceType {
+	switch len(peers) {
+	case 0:
+		return domain.InterfaceTypeAny // no peers means this is an unknown interface
+	case 1:
+		if iface.ListenPort > 0 {
+			return domain.InterfaceTypeServer // a listening interface with one peer is commonly a site-to-site server
+		}
+		return domain.InterfaceTypeClient
+	default: // multiple peers means this is a server interface
+		return domain.InterfaceTypeServer
+	}
 }
 
 // extractPfsenseDefaultsFromPeers extracts common endpoint and DNS information from peers

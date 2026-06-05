@@ -145,3 +145,17 @@ func TestUser_HashPassword(t *testing.T) {
 	user.Password = ""
 	assert.NoError(t, user.HashPassword())
 }
+
+func TestUser_CreateDefaultPeers(t *testing.T) {
+	user := &User{}
+	assert.True(t, user.CreateDefaultPeers())
+
+	user2 := &User{Disabled: &time.Time{}}
+	assert.False(t, user2.CreateDefaultPeers())
+
+	user3 := &User{Locked: &time.Time{}}
+	assert.False(t, user3.CreateDefaultPeers())
+
+	user4 := &User{Disabled: &time.Time{}, Locked: &time.Time{}}
+	assert.False(t, user4.CreateDefaultPeers())
+}

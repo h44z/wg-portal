@@ -8,7 +8,7 @@ core:
   admin_password: password
   admin_api_token: super-s3cr3t-api-token-or-a-UUID
   import_existing: false
-  create_default_peer: true
+  create_default_peer_on_login: true
   self_provisioning_allowed: true
 
 backend:
@@ -144,6 +144,9 @@ auth:
       extra_scopes:
         - https://www.googleapis.com/auth/userinfo.email
         - https://www.googleapis.com/auth/userinfo.profile
+      allowed_user_groups:
+        - the-admin-group
+        - vpn-users
       field_map:
         user_identifier: sub
         email: email
@@ -201,6 +204,9 @@ auth:
         - email
         - profile
         - i-want-some-groups
+      allowed_user_groups:
+        - admin-group-name
+        - vpn-users
       field_map:
         email: email
         firstname: name
