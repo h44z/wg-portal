@@ -115,6 +115,31 @@ func TestWebsocketEndpointAllowsOwnPeerStatsForNonAdmin(t *testing.T) {
 	assertWebsocketMessage(t, conn, "peer_stats", "own-peer")
 }
 
+func TestWebsocketEndpointCleansExpiredPeerUserIdentifierCache(t *testing.T) {
+	now := time.Now()
+	endpoint := &WebsocketEndpoint{
+		ownershipCache: map[domain.PeerIdentifier]peerUserIdentifierCacheEntry{
+			"expired-peer": {
+				userIdentifier: "user-a",
+				expiresAt:      now.Add(-time.Second),
+			},
+			"active-peer": {
+				userIdentifier: "user-b",
+				expiresAt:      now.Add(time.Second),
+			},
+		},
+	}
+
+	endpoint.cleanupOwnerCache(now)
+
+	if _, ok := endpoint.ownershipCache["expired-peer"]; ok {
+		t.Fatal("expired peer cache entry was not removed")
+	}
+	if _, ok := endpoint.ownershipCache["active-peer"]; !ok {
+		t.Fatal("active peer cache entry was removed")
+	}
+}
+
 func TestWebsocketEndpointFiltersOtherPeerStatsForNonAdmin(t *testing.T) {
 	bus := evbus.New(10)
 	conn, cleanup := newTestWebsocketConnection(t, bus, &domain.ContextUserInfo{Id: "user-a"},
