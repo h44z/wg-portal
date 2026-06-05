@@ -135,7 +135,7 @@ func main() {
 	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendPeers)
 	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth, wireGuard)
 	apiV0EndpointTest := handlersV0.NewTestEndpoint(apiV0Auth)
-	apiV0EndpointWebsocket := handlersV0.NewWebsocketEndpoint(cfg, apiV0Auth, eventBus)
+	apiV0EndpointWebsocket := handlersV0.NewWebsocketEndpoint(cfg, apiV0Auth, eventBus, apiV0BackendPeers)
 
 	apiFrontend := handlersV0.NewRestApi(apiV0Session,
 		apiV0EndpointAuth,
