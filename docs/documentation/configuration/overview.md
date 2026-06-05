@@ -552,6 +552,7 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 #### `provider_name`
 - **Default:** *(empty)*
 - **Description:** A **unique** name for this provider. Must not conflict with other providers.
+  This name is used to derive the callback URL for the OIDC provider: `<external_url>/api/v0/auth/login/<provider_name>/callback`.
 
 #### `display_name`
 - **Default:** *(empty)*
@@ -639,6 +640,7 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 #### `provider_name`
 - **Default:** *(empty)*
 - **Description:** A **unique** name for this provider. Must not conflict with other providers.
+  This name is used to derive the callback URL for the OAuth provider: `<external_url>/api/v0/auth/login/<provider_name>/callback`.
 
 #### `display_name`
 - **Default:** *(empty)*
