@@ -283,10 +283,13 @@ func (s *Server) updateBasePathInFrontend(useEmbeddedFrontend bool) ([]byte, []b
 	} else {
 		customIndexFile, _ = os.ReadFile(filepath.Join(s.cfg.Web.FrontendFilePath, "index.html"))
 	}
-	newIndexStr := strings.ReplaceAll(string(customIndexFile), "src=\"/", "src=\""+s.cfg.Web.BasePath+"/")
-	newIndexStr = strings.ReplaceAll(newIndexStr, "href=\"/", "href=\""+s.cfg.Web.BasePath+"/")
+	// rewrite relative paths
+	newIndexStr := strings.ReplaceAll(string(customIndexFile), "src=\"./", "src=\""+s.cfg.Web.BasePath+"/app/")
+	newIndexStr = strings.ReplaceAll(newIndexStr, "href=\"./", "href=\""+s.cfg.Web.BasePath+"/app/")
+	// rewrite absolute paths (api calls)
+	newIndexStr = strings.ReplaceAll(newIndexStr, "src=\"/api/", "src=\""+s.cfg.Web.BasePath+"/api/")
 
-	re := regexp.MustCompile(`/app/assets/(index-.+.css)`)
+	re := regexp.MustCompile(`assets/(index-.+.css)`)
 	match := re.FindStringSubmatch(newIndexStr)
 	cssFileName := match[1]
 
@@ -296,7 +299,7 @@ func (s *Server) updateBasePathInFrontend(useEmbeddedFrontend bool) ([]byte, []b
 	} else {
 		customCssFile, _ = os.ReadFile(filepath.Join(s.cfg.Web.FrontendFilePath, "/assets/", cssFileName))
 	}
-	newCssStr := strings.ReplaceAll(string(customCssFile), "/app/assets/", s.cfg.Web.BasePath+"/app/assets/")
+	newCssStr := strings.ReplaceAll(string(customCssFile), "./assets/", s.cfg.Web.BasePath+"/app/assets/")
 
 	return []byte(newIndexStr), []byte(newCssStr), cssFileName
 }

@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build-dev": "vite build --mode development --base=/app/",
-    "build": "vite build --base=/app/",
+    "build-dev": "vite build --mode development",
+    "build": "vite build",
     "preview": "vite preview --port 5050"
   },
   "dependencies": {
