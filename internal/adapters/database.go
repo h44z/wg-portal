@@ -319,15 +319,17 @@ func NewDatabase(cfg config.DatabaseConfig) (*gorm.DB, error) {
 // SqlRepo is a SQL database repository implementation.
 // Currently, it supports MySQL, SQLite, Microsoft SQL and Postgresql database systems.
 type SqlRepo struct {
-	db  *gorm.DB
-	cfg *config.Config
+	db              *gorm.DB
+	cfg             *config.Config
+	metricsCallback func(peerId string) // Optional callback to remove peer metrics
 }
 
 // NewSqlRepository creates a new SqlRepo instance.
 func NewSqlRepository(db *gorm.DB, cfg *config.Config) (*SqlRepo, error) {
 	repo := &SqlRepo{
-		db:  db,
-		cfg: cfg,
+		db:              db,
+		cfg:             cfg,
+		metricsCallback: nil, // Can be set via SetMetricsCallback
 	}
 
 	if err := repo.preCheck(); err != nil {
@@ -790,22 +792,29 @@ func (r *SqlRepo) SavePeer(
 		// This prevents lock contention when stats collection immediately tries to update it
 		// CRITICAL: Reset peer_status if peer was recreated with same ID to avoid inheriting old stats
 		// (e.g., if old peer was online, new peer would show as online until stats update)
+		// IMPORTANT: Also remove metrics for the peer being recreated to avoid duplicate metric values
+		// When a peer is recreated with same ID, old label values remain in Prometheus registry
+		// This causes metrics to show x3 values (old labels + new labels + potential dups)
 		var existingStatus domain.PeerStatus
 		statusExists := tx.Where("identifier = ?", id).First(&existingStatus).Error == nil
-		
+
 		if statusExists {
+			// IMPORTANT: Remove old metrics BEFORE resetting status
+			// This ensures we don't have duplicate label values in Prometheus
+			r.removeMetricsForPeer(string(id))
+
 			// Reset existing status to clean state for new peer
 			cleanStatus := domain.PeerStatus{
-				PeerId:    id,
-				UpdatedAt: time.Now(),
-				IsConnected: false,
-				IsPingable: false,
-				LastHandshake: nil,
-				Endpoint: "",
+				PeerId:           id,
+				UpdatedAt:        time.Now(),
+				IsConnected:      false,
+				IsPingable:       false,
+				LastHandshake:    nil,
+				Endpoint:         "",
 				LastSessionStart: nil,
-				BytesReceived: 0,
+				BytesReceived:    0,
 				BytesTransmitted: 0,
-				OwnerNodeId: "",
+				OwnerNodeId:      "",
 			}
 			err = tx.Where("identifier = ?", id).Save(&cleanStatus).Error
 			if err != nil {
@@ -831,6 +840,22 @@ func (r *SqlRepo) SavePeer(
 	}
 
 	return nil
+}
+
+// removeMetricsForPeer removes metrics from Prometheus registry for a peer being recreated
+// This prevents duplicate metric values when peer is recreated with same ID
+// Calls the registered callback if one exists
+func (r *SqlRepo) removeMetricsForPeer(peerId string) {
+	if r.metricsCallback != nil {
+		r.metricsCallback(peerId)
+	}
+}
+
+// SetMetricsCallback sets the callback for removing peer metrics
+// This is called when a peer is recreated to clean up old metrics in Prometheus
+// Should be called during initialization with the metrics server's RemovePeerMetricsByID function
+func (r *SqlRepo) SetMetricsCallback(callback func(peerId string)) {
+	r.metricsCallback = callback
 }
 
 func (r *SqlRepo) getOrCreatePeer(ui *domain.ContextUserInfo, tx *gorm.DB, id domain.PeerIdentifier) (

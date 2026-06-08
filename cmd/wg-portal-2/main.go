@@ -61,6 +61,10 @@ func main() {
 
 	metricsServer := adapters.NewMetricsServer(cfg, rawDb)
 
+	// Set up the metrics removal callback for when peers are recreated
+	// This prevents duplicate metric values in Prometheus when peer is recreated with same ID
+	database.SetMetricsCallback(metricsServer.RemovePeerMetricsByID)
+
 	cfgFileSystem, err := adapters.NewFileSystemRepository(cfg.Advanced.ConfigStoragePath)
 	internal.AssertNoError(err)
 
