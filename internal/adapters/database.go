@@ -919,10 +919,21 @@ func (r *SqlRepo) DeletePeer(ctx context.Context, id domain.PeerIdentifier) erro
 			return err
 		}
 
+		// Third: delete peer_status to avoid orphaned records
+		if err := tx.Where("identifier = ?", string(id)).Delete(&domain.PeerStatus{}).Error; err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
 		return err
+	}
+
+	// Remove Prometheus metrics AFTER database transaction succeeds
+	// This prevents orphaned metrics for deleted peers
+	if r.metricsCallback != nil {
+		r.metricsCallback(string(id))
 	}
 
 	return nil
@@ -1648,6 +1659,12 @@ func (r *SqlRepo) DeletePeerStatus(ctx context.Context, id domain.PeerIdentifier
 		return err
 	}
 
+	// Remove Prometheus metrics when peer status is deleted
+	// This prevents orphaned metrics for peers that no longer exist
+	if r.metricsCallback != nil {
+		r.metricsCallback(string(id))
+	}
+
 	return nil
 }
 
@@ -1838,6 +1855,14 @@ func (r *SqlRepo) DeletePeersByIDs(ctx context.Context, peerIDs []string) (int64
 	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		return 0, err
+	}
+
+	// Remove Prometheus metrics for all deleted peers
+	// This prevents orphaned metrics for bulk-deleted peers
+	if r.metricsCallback != nil {
+		for _, peerID := range peerIDs {
+			r.metricsCallback(peerID)
+		}
 	}
 
 	return result.RowsAffected, nil
