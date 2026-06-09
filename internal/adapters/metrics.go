@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"sync"
@@ -227,7 +228,7 @@ func (m *MetricsServer) UpdatePeerMetricsValues(peer *domain.Peer, status domain
 	// Lazy registration: metrics are initialized on first use
 	// This ensures metrics exist before we try to set values
 	// WithLabelValues is idempotent - calling multiple times is safe
-	
+
 	// CRITICAL FIX: Recalculate IsConnected based on fresh LastHandshake data
 	// This ensures metrics reflect actual peer status, not stale cached values
 	// CalcConnected() uses: peer is online if handshake is within last 2 minutes OR IsPingable
@@ -416,6 +417,34 @@ func (m *MetricsServer) RemovePeerMetricsByID(peerId string) {
 	}
 
 	slog.Info("Completed removal of metrics for peer by id", "id", peerId, "name", "unknown")
+}
+
+// CleanupOrphanedPeerMetrics removes metrics for all peers that no longer exist in the database.
+// This is called on startup to clean up leftover metrics from deleted peers.
+// Returns the count of metrics cleaned up.
+func (m *MetricsServer) CleanupOrphanedPeerMetrics(ctx context.Context, db *gorm.DB) (int, error) {
+	type PeerStatus struct {
+		PeerId string `gorm:"column:identifier"`
+	}
+
+	// Get all peer_status records that don't have corresponding peers
+	var orphanedStatuses []PeerStatus
+	result := db.WithContext(ctx).Raw(`
+		SELECT ps.identifier FROM peer_statuses ps
+		LEFT JOIN peers p ON ps.identifier = p.identifier
+		WHERE p.identifier IS NULL
+	`).Scan(&orphanedStatuses)
+
+	if result.Error != nil {
+		return 0, fmt.Errorf("failed to find orphaned peer statuses: %w", result.Error)
+	}
+
+	// Remove metrics for each orphaned peer
+	for _, status := range orphanedStatuses {
+		m.RemovePeerMetricsByID(status.PeerId)
+	}
+
+	return len(orphanedStatuses), nil
 }
 
 // SetSyncStatus updates the sync status for the health check

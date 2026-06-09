@@ -695,9 +695,11 @@ func (c *StatisticsCollector) updatePeerMetrics(ctx context.Context, status doma
 	peer, err := c.db.GetPeer(ctx, status.PeerId)
 	if err != nil {
 		// Peer not found in database - it's orphaned.
-		// NOTE: We do NOT delete peer_status here.
-		// The orphaned status will be cleaned up by CleanOrphanedStatuses on all cluster nodes.
-		// This ensures proper cleanup across distributed systems.
+		// NOTE: Orphaned peer_status records are protected from recreation by:
+		// 1. UpdatePeerStatus checks if peer exists before updating status (line 1432 in database.go)
+		// 2. getOrCreatePeerStatus prevents creating records for deleted peers (line 1645 in database.go)
+		// 3. CleanupOrphanedPeerMetrics removes stale metrics on startup (line 460 in metrics.go)
+		// 4. Callback-based cleanup removes metrics when peers are deleted (DeletePeer, DeletePeerStatus, etc.)
 		slog.Debug("skipping metrics update for orphaned peer", "peer", status.PeerId)
 		return
 	}

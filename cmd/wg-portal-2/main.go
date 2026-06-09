@@ -65,6 +65,14 @@ func main() {
 	// This prevents duplicate metric values in Prometheus when peer is recreated with same ID
 	database.SetMetricsCallback(metricsServer.RemovePeerMetricsByID)
 
+	// Clean up metrics for any orphaned peers that may remain in Prometheus registry
+	// This handles leftover metrics from deleted peers before peer_status cleanup was added
+	if orphanedMetricsCount, err := metricsServer.CleanupOrphanedPeerMetrics(context.Background(), rawDb); err != nil {
+		slog.Warn("failed to cleanup orphaned peer metrics", "error", err)
+	} else if orphanedMetricsCount > 0 {
+		slog.Info("cleaned up orphaned peer metrics on startup", "count", orphanedMetricsCount)
+	}
+
 	cfgFileSystem, err := adapters.NewFileSystemRepository(cfg.Advanced.ConfigStoragePath)
 	internal.AssertNoError(err)
 

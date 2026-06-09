@@ -340,6 +340,13 @@ func NewSqlRepository(db *gorm.DB, cfg *config.Config) (*SqlRepo, error) {
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
 
+	// Clean up any orphaned peer_status records from peers that no longer exist
+	// This handles orphaned records left from before peer_status deletion was added to DeletePeer
+	if err := repo.cleanupOrphanedPeerStatuses(context.Background()); err != nil {
+		slog.Warn("failed to cleanup orphaned peer statuses", "error", err)
+		// Don't fail startup, just log warning
+	}
+
 	return repo, nil
 }
 
@@ -410,6 +417,28 @@ func (r *SqlRepo) migrate() error {
 			return fmt.Errorf("failed to write sysstat entry for schema version %d: %w", SchemaVersion, err)
 		}
 		slog.Debug("sys-stat entry written", "schema_version", SchemaVersion)
+	}
+
+	return nil
+}
+
+// cleanupOrphanedPeerStatuses removes peer_status records for peers that no longer exist in the database.
+// This handles orphaned records left from before peer_status deletion was added to DeletePeer().
+// These orphaned records would cause metrics to reappear for deleted peers.
+func (r *SqlRepo) cleanupOrphanedPeerStatuses(ctx context.Context) error {
+	// Find all peer_status records where the corresponding peer does not exist
+	var orphanedCount int64
+	result := r.db.WithContext(ctx).Raw(`
+		DELETE FROM peer_statuses 
+		WHERE identifier NOT IN (SELECT identifier FROM peers)
+	`).Scan(&orphanedCount)
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to delete orphaned peer_statuses: %w", result.Error)
+	}
+
+	if result.RowsAffected > 0 {
+		slog.Info("cleaned up orphaned peer status records", "count", result.RowsAffected)
 	}
 
 	return nil
@@ -902,9 +931,7 @@ func (r *SqlRepo) upsertPeer(ui *domain.ContextUserInfo, tx *gorm.DB, peer *doma
 
 // DeletePeer deletes the peer with the given id.
 // This also deletes the peer_addresses associations (many-to-many relationships with Cidr)
-// NOTE: We do NOT delete peer_status here.
-// The peer_status will be cleaned up by CleanOrphanedStatuses on all cluster nodes.
-// This ensures that other nodes can detect orphaned statuses and clean up their metrics.
+// CRITICAL: Also deletes peer_status and removes Prometheus metrics to prevent orphaned records.
 func (r *SqlRepo) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// First: delete peer_addresses many2many associations to avoid foreign key issues
@@ -1401,6 +1428,18 @@ func (r *SqlRepo) UpdatePeerStatus(
 				in.OwnerNodeId = ""
 			}
 
+			// CRITICAL: Verify peer still exists before updating its status
+			// If peer was deleted, skip status update to avoid recreating orphaned peer_status records
+			// This prevents metrics for deleted peers from being recreated
+			var peerExists int64
+			if err := tx.Model(&domain.Peer{}).Where("identifier = ?", id).Count(&peerExists).Error; err != nil {
+				return err
+			}
+			if peerExists == 0 {
+				slog.Debug("skipping peer status update for deleted peer", "peer", id)
+				return nil // peer was deleted, don't update its status
+			}
+
 			err = r.upsertPeerStatus(tx, in)
 			if err != nil {
 				return err
@@ -1533,6 +1572,17 @@ func (r *SqlRepo) BatchUpdatePeerStatuses(
 
 			// Load all peer statuses we need to update
 			for id := range updates {
+				// Check if peer still exists - skip if deleted
+				var peerExists int64
+				if err := tx.Model(&domain.Peer{}).Where("identifier = ?", id).Count(&peerExists).Error; err != nil {
+					return err
+				}
+				if peerExists == 0 {
+					// Peer was deleted - skip it without error
+					slog.Debug("skipping batch peer status update for deleted peer", "peer", id)
+					continue
+				}
+
 				in, err := r.getOrCreatePeerStatus(tx, id)
 				if err != nil {
 					return err
@@ -1608,6 +1658,17 @@ func (r *SqlRepo) getOrCreatePeerStatus(tx *gorm.DB, id domain.PeerIdentifier) (
 	}
 
 	// Record doesn't exist - create it WITHOUT FOR UPDATE lock
+	// CRITICAL: Verify peer still exists before creating peer_status
+	// If peer was deleted, return error to prevent recreating orphaned peer_status records
+	var peerExists int64
+	if err := tx.Model(&domain.Peer{}).Where("identifier = ?", id).Count(&peerExists).Error; err != nil {
+		return nil, err
+	}
+	if peerExists == 0 {
+		// Peer was deleted - don't create orphaned peer_status record
+		return nil, fmt.Errorf("cannot create peer_status for deleted peer: %s", id)
+	}
+
 	// This is safe because SavePeer pre-creates peer_status, so this is rare
 	// Explicit WHERE clause using correct column name
 	err = tx.Where("identifier = ?", id).Attrs(defaults).FirstOrCreate(&in).Error
