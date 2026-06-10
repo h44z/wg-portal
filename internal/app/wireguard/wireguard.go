@@ -949,6 +949,12 @@ func (m Manager) handlePeerDeletedSyncEvent(peerID domain.PeerIdentifier) {
 		}
 	}
 
+	// CRITICAL: Remove Prometheus metrics for the deleted peer
+	// This prevents metrics from persisting after peer deletion
+	if m.statsCollector != nil && m.statsCollector.ms != nil {
+		m.statsCollector.ms.RemovePeerMetricsByID(string(peerID))
+	}
+
 	totalDuration := time.Since(startProcessTime)
 	slog.Info("[PEER_SYNC] deleted peer from all interfaces - COMPLETED",
 		"peer_id", peerID,
@@ -992,6 +998,12 @@ func (m Manager) handlePeerSyncedLocalEvent(peerID domain.PeerIdentifier) {
 				}
 			}
 		}
+
+		// CRITICAL: Remove Prometheus metrics for the deleted peer
+		if m.statsCollector != nil && m.statsCollector.ms != nil {
+			m.statsCollector.ms.RemovePeerMetricsByID(string(peerID))
+		}
+
 		slog.Info("[PEER_SYNC_LOCAL] completed deletion cleanup - COMPLETED", "peer_id", peerID)
 		return
 	}
