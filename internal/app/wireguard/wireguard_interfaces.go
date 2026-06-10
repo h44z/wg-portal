@@ -258,7 +258,7 @@ func (m Manager) RestoreInterfaceState(
 						"attempt", attempt+1,
 						"max_attempts", maxRetries+1,
 						"error", saveErr)
-					
+
 					// Exponential backoff with max 5 seconds
 					time.Sleep(retryDelay)
 					nextDelay := retryDelay * 2
@@ -308,7 +308,7 @@ func (m Manager) RestoreInterfaceState(
 						"attempt", attempt+1,
 						"max_attempts", maxRetries+1,
 						"error", restoreErr)
-					
+
 					// Exponential backoff with max 5 seconds
 					time.Sleep(retryDelay)
 					nextDelay := retryDelay * 2

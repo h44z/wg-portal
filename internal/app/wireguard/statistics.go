@@ -430,10 +430,19 @@ func (c *StatisticsCollector) updatePeerFromWireGuard(ctx context.Context, iface
 }
 
 func (c *StatisticsCollector) markPeerDisconnected(ctx context.Context, peerID domain.PeerIdentifier) {
+	// Check if peer still exists - skip if already deleted (e.g., by master node)
+	// This prevents trying to mark deleted peers as disconnected on non-master nodes
+	_, err := c.db.GetPeer(ctx, peerID)
+	if err != nil {
+		// Peer was deleted - no need to mark disconnected
+		slog.Debug("skipping markPeerDisconnected for deleted peer", "peer", peerID)
+		return
+	}
+
 	// Capture the updated status and peer for publishing the event
 	var updatedStatus domain.PeerStatus
 
-	err := c.db.UpdatePeerStatus(ctx, peerID,
+	err = c.db.UpdatePeerStatus(ctx, peerID,
 		func(p *domain.PeerStatus) (*domain.PeerStatus, error) {
 			// Set peer as disconnected regardless of current state
 			// We need to clean up metrics even if peer is already marked false

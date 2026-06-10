@@ -1370,6 +1370,18 @@ func (r *SqlRepo) UpdatePeerStatus(
 		}
 
 		err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			// CRITICAL: Check if peer still exists before attempting to update its status
+			// If peer was deleted (e.g., by master node), skip update to avoid recreating orphaned records
+			var peerExists int64
+			if err := tx.Model(&domain.Peer{}).Where("identifier = ?", id).Count(&peerExists).Error; err != nil {
+				return err
+			}
+			if peerExists == 0 {
+				// Peer was deleted - don't try to update or create peer_status
+				slog.Debug("skipping peer status update for already deleted peer", "peer", id)
+				return nil // success - nothing to do
+			}
+
 			in, err := r.getOrCreatePeerStatus(tx, id)
 			if err != nil {
 				return err // return any error will roll back
@@ -1426,18 +1438,6 @@ func (r *SqlRepo) UpdatePeerStatus(
 				slog.Debug("clearing peer ownership on offline transition",
 					"peer", id, "old_owner", in.OwnerNodeId)
 				in.OwnerNodeId = ""
-			}
-
-			// CRITICAL: Verify peer still exists before updating its status
-			// If peer was deleted, skip status update to avoid recreating orphaned peer_status records
-			// This prevents metrics for deleted peers from being recreated
-			var peerExists int64
-			if err := tx.Model(&domain.Peer{}).Where("identifier = ?", id).Count(&peerExists).Error; err != nil {
-				return err
-			}
-			if peerExists == 0 {
-				slog.Debug("skipping peer status update for deleted peer", "peer", id)
-				return nil // peer was deleted, don't update its status
 			}
 
 			err = r.upsertPeerStatus(tx, in)
