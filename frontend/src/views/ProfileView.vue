@@ -155,13 +155,6 @@ onMounted(async () => {
             <span v-if="peer.Disabled" class="text-danger">
               <i class="fa fa-circle-xmark" :title="peer.DisabledReason"></i>
             </span>
-            <span v-else-if="peer.ExpiresAt" class="text-warning">
-              <i class="fas fa-hourglass-end"></i>
-              <small class="ms-1">{{ formatDateTime(peer.ExpiresAt) }}</small>
-            </span>
-            <span v-else class="text-muted">
-              <small>{{ $t('profile.no-expiry') }}</small>
-            </span>
           </td>
           <td><span v-if="peer.DisplayName" :title="peer.Identifier">{{ peer.DisplayName }}</span><span v-else
               :title="peer.Identifier">{{ $filters.truncate(peer.Identifier, 10) }}</span></td>
