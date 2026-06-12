@@ -10,6 +10,7 @@ import { notify } from "@kyvg/vue3-notification";
 import { settingsStore } from "@/stores/settings";
 import { profileStore } from "@/stores/profile";
 import { base64_url_encode } from '@/helpers/encoding';
+import { formatDateTime } from '@/helpers/utils';
 import { apiWrapper } from "@/helpers/fetch-wrapper";
 
 const { t } = useI18n()
@@ -166,8 +167,10 @@ function ConfigQrUrl() {
                     <li v-if="selectedPeer.UserDisplayName"><strong>{{ $t('modals.peer-view.user') }}</strong>: {{ selectedPeer.UserDisplayName }} ({{ selectedPeer.UserIdentifier }})</li>
                     <li v-else><strong>{{ $t('modals.peer-view.user') }}</strong>: {{ selectedPeer.UserIdentifier }}</li>
                     <li v-if="selectedPeer.Notes"><strong>{{ $t('modals.peer-view.notes') }}</strong>: {{ selectedPeer.Notes }}</li>
+                    <li v-if="selectedPeer.CreatedAt"><strong>{{ $t('modals.peer-view.created-at') }}</strong>: {{ formatDateTime(selectedPeer.CreatedAt) }}</li>
                     <li v-if="selectedPeer.ExpiresAt"><strong>{{ $t('modals.peer-view.expiry-status') }}</strong>: {{
-                      selectedPeer.ExpiresAt }}</li>
+                      formatDateTime(selectedPeer.ExpiresAt) }}</li>
+                    <li v-else><strong>{{ $t('modals.peer-view.expiry-status') }}</strong>: {{ $t('modals.peer-view.no-expiry') }}</li>
                     <li v-if="selectedPeer.Disabled"><strong>{{ $t('modals.peer-view.disabled-status') }}</strong>: {{
                       selectedPeer.DisabledReason }}</li>
                   </ul>

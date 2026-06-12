@@ -8,12 +8,13 @@ import (
 )
 
 const ExpiryDateTimeLayout = "\"2006-01-02\""
+const ExpiryDateTimeFullLayout = "\"2006-01-02T15:04:05Z07:00\""
 
 type ExpiryDate struct {
 	*time.Time
 }
 
-// UnmarshalJSON will unmarshal using 2006-01-02 layout
+// UnmarshalJSON will unmarshal using 2006-01-02 layout (date-only input from forms)
 func (d *ExpiryDate) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 || string(b) == "null" || string(b) == "\"\"" {
 		return nil
@@ -29,13 +30,13 @@ func (d *ExpiryDate) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON will marshal using 2006-01-02 layout
+// MarshalJSON will marshal using full RFC3339 layout to preserve time-of-day
 func (d *ExpiryDate) MarshalJSON() ([]byte, error) {
 	if d == nil || d.Time == nil {
 		return []byte("null"), nil
 	}
 
-	s := d.Format(ExpiryDateTimeLayout)
+	s := d.Format(ExpiryDateTimeFullLayout)
 	return []byte(s), nil
 }
 
@@ -47,6 +48,7 @@ type Peer struct {
 	InterfaceIdentifier string     `json:"InterfaceIdentifier"`                  // the interface id
 	Disabled            bool       `json:"Disabled"`                             // flag that specifies if the peer is enabled (up) or not (down)
 	DisabledReason      string     `json:"DisabledReason"`                       // the reason why the peer has been disabled
+	CreatedAt           string     `json:"CreatedAt"`                            // peer creation timestamp
 	ExpiresAt           ExpiryDate `json:"ExpiresAt,omitempty"`                  // expiry dates for peers
 	Notes               string     `json:"Notes"`                                // a note field for peers
 
@@ -88,6 +90,7 @@ func NewPeer(src *domain.Peer) *Peer {
 		InterfaceIdentifier: string(src.InterfaceIdentifier),
 		Disabled:            src.IsDisabled(),
 		DisabledReason:      src.DisabledReason,
+		CreatedAt:           src.CreatedAt.UTC().Format(time.RFC3339),
 		ExpiresAt:           ExpiryDate{src.ExpiresAt},
 		Notes:               src.Notes,
 		Endpoint:            ConfigOptionFromDomain(src.Endpoint),

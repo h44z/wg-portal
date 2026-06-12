@@ -231,6 +231,7 @@ func (r *SqlRepo) migrate() error {
 	slog.Debug("running migration: peer status", "result", r.db.AutoMigrate(&domain.PeerStatus{}))
 	slog.Debug("running migration: interface status", "result", r.db.AutoMigrate(&domain.InterfaceStatus{}))
 	slog.Debug("running migration: audit data", "result", r.db.AutoMigrate(&domain.AuditEntry{}))
+	slog.Debug("running migration: peer notification records", "result", r.db.AutoMigrate(&domain.PeerNotificationRecord{}))
 
 	var existingSysStat SysStat
 	var err error

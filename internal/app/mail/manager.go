@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/mail"
+	"time"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -50,6 +51,8 @@ type TemplateRenderer interface {
 		io.Reader,
 		error,
 	)
+	// GetExpiryNotificationMail returns the text and html template for a peer expiry warning email.
+	GetExpiryNotificationMail(user *domain.User, peer *domain.Peer, expiresAt time.Time, daysLeft int, autoRecreate bool) (io.Reader, io.Reader, error)
 }
 
 // endregion dependencies
@@ -170,13 +173,49 @@ func (m Manager) sendPeerEmail(
 		})
 	}
 
-	txtMailStr, _ := io.ReadAll(txtMail)
-	htmlMailStr, _ := io.ReadAll(htmlMail)
+	txtMailStr, err := io.ReadAll(txtMail)
+	if err != nil {
+		return fmt.Errorf("failed to read text mail body: %w", err)
+	}
+	htmlMailStr, err := io.ReadAll(htmlMail)
+	if err != nil {
+		return fmt.Errorf("failed to read html mail body: %w", err)
+	}
 	mailOptions.HtmlBody = string(htmlMailStr)
 
 	err = m.mailer.Send(ctx, "WireGuard VPN Configuration", string(txtMailStr), []string{user.Email}, &mailOptions)
 	if err != nil {
 		return fmt.Errorf("failed to send mail: %w", err)
+	}
+
+	return nil
+}
+
+// SendExpiryNotification sends a peer expiry warning email to the given user
+func (m Manager) SendExpiryNotification(ctx context.Context, peer *domain.Peer, user *domain.User, daysLeft int) error {
+	expiresAt := *peer.ExpiresAt
+
+	txtMail, htmlMail, err := m.tplHandler.GetExpiryNotificationMail(user, peer, expiresAt, daysLeft, m.cfg.Core.Peer.AutoRecreateOnExpiry)
+	if err != nil {
+		return fmt.Errorf("failed to render expiry notification mail for peer %s: %w", peer.Identifier, err)
+	}
+
+	txtMailStr, err := io.ReadAll(txtMail)
+	if err != nil {
+		return fmt.Errorf("failed to read text template for peer %s: %w", peer.Identifier, err)
+	}
+	htmlMailStr, err := io.ReadAll(htmlMail)
+	if err != nil {
+		return fmt.Errorf("failed to read html template for peer %s: %w", peer.Identifier, err)
+	}
+
+	mailOptions := domain.MailOptions{
+		HtmlBody: string(htmlMailStr),
+	}
+
+	subject := fmt.Sprintf("WireGuard peer '%s' expires in %d day(s)", peer.DisplayName, daysLeft)
+	if err := m.mailer.Send(ctx, subject, string(txtMailStr), []string{user.Email}, &mailOptions); err != nil {
+		return fmt.Errorf("failed to send expiry notification for peer %s: %w", peer.Identifier, err)
 	}
 
 	return nil

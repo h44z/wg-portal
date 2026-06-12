@@ -12,6 +12,7 @@ import {interfaceStore} from "@/stores/interfaces";
 import {notify} from "@kyvg/vue3-notification";
 import {settingsStore} from "@/stores/settings";
 import {humanFileSize} from '@/helpers/utils';
+import {formatDateTime} from '@/helpers/utils';
 import {useI18n} from "vue-i18n";
 
 const settings = settingsStore()
@@ -447,8 +448,8 @@ onMounted(async () => {
             <input class="form-check-input" type="checkbox" v-model="peer.IsSelected">
           </th>
           <td class="text-center">
-            <span v-if="peer.Disabled" class="text-danger" :title="$t('interfaces.peer-disabled') + ' ' + peer.DisabledReason"><i class="fa fa-circle-xmark"></i></span>
-            <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning" :title="$t('interfaces.peer-expiring') + ' ' +  peer.ExpiresAt"><i class="fas fa-hourglass-end expiring-peer"></i></span>
+            <span v-if="peer.Disabled" class="text-danger instant-tip" :data-tip="$t('interfaces.peer-disabled') + ' ' + peer.DisabledReason"><i class="fa fa-circle-xmark"></i></span>
+            <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning instant-tip" :data-tip="$t('interfaces.peer-expiring') + ' ' + formatDateTime(peer.ExpiresAt)"><i class="fas fa-hourglass-end expiring-peer"></i></span>
           </td>
           <td><span v-if="peer.DisplayName" :title="peer.Identifier">{{peer.DisplayName}}</span><span v-else :title="peer.Identifier">{{ $filters.truncate(peer.Identifier, 10)}}</span></td>
           <td><span :title="peer.UserDisplayName">{{peer.UserIdentifier}}</span></td>

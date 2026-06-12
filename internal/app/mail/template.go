@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -150,6 +151,40 @@ func (c TemplateHandler) GetConfigMail(user *domain.User, link string) (io.Reade
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to execute template mail_with_link.gohtml: %w", err)
+	}
+
+	return &tplBuff, &htmlTplBuff, nil
+}
+
+// GetExpiryNotificationMail returns the text and html template for a peer expiry warning email.
+func (c TemplateHandler) GetExpiryNotificationMail(
+	user *domain.User,
+	peer *domain.Peer,
+	expiresAt time.Time,
+	daysLeft int,
+	autoRecreate bool,
+) (io.Reader, io.Reader, error) {
+	var tplBuff bytes.Buffer
+	var htmlTplBuff bytes.Buffer
+
+	data := map[string]any{
+		"User":         user,
+		"Peer":         peer,
+		"ExpiresAt":    expiresAt,
+		"DaysLeft":     daysLeft,
+		"PortalUrl":    c.portalUrl,
+		"PortalName":   c.portalName,
+		"AutoRecreate": autoRecreate,
+	}
+
+	err := c.textTemplates.ExecuteTemplate(&tplBuff, "peer_expiry_notification.gotpl", data)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to execute template peer_expiry_notification.gotpl: %w", err)
+	}
+
+	err = c.htmlTemplates.ExecuteTemplate(&htmlTplBuff, "peer_expiry_notification.gohtml", data)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to execute template peer_expiry_notification.gohtml: %w", err)
 	}
 
 	return &tplBuff, &htmlTplBuff, nil
