@@ -5,7 +5,7 @@ import { interfaceStore } from "@/stores/interfaces";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { freshInterface, freshPeer, freshStats } from '@/helpers/models';
-import Prism from '@/helpers/prism-setup';
+import Prism from "vue-prism-component";
 import { notify } from "@kyvg/vue3-notification";
 import { settingsStore } from "@/stores/settings";
 import { profileStore } from "@/stores/profile";
@@ -80,14 +80,6 @@ const title = computed(() => {
 })
 
 const configStyle = ref("wgquick")
-
-const highlightedConfig = computed(() => {
-  const grammar = Prism.languages.ini
-  if (grammar) {
-    return Prism.highlight(configString.value, grammar, 'ini')
-  }
-  return configString.value
-})
 
 watch(() => props.visible, async (newValue, oldValue) => {
   if (oldValue === false && newValue === true) { // if modal is shown
@@ -225,7 +217,7 @@ function ConfigQrUrl() {
           <div id="collapseConfig" class="accordion-collapse collapse" aria-labelledby="headingConfig"
             data-bs-parent="#peerInformation" style="">
             <div class="accordion-body">
-              <pre class="language-ini"><code class="language-ini" v-html="highlightedConfig"></code></pre>
+              <Prism language="ini" :code="configString"></Prism>
             </div>
           </div>
         </div>

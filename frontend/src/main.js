@@ -22,6 +22,7 @@ import "@fontsource/nunito-sans/600.css";
 import "flag-icons/css/flag-icons.min.css"
 
 // Syntax Highlighting
+import 'prismjs'
 import 'prismjs/themes/prism-okaidia.css'
 
 const app = createApp(App);

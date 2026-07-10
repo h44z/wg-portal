@@ -3,7 +3,8 @@ import Modal from "./Modal.vue";
 import {computed, ref, watch} from "vue";
 import { useI18n } from 'vue-i18n';
 import {interfaceStore} from "@/stores/interfaces";
-import Prism from '@/helpers/prism-setup';
+import Prism from 'vue-prism-component'
+import 'prismjs/components/prism-ini'
 
 const { t } = useI18n()
 
@@ -15,14 +16,6 @@ const props = defineProps({
 })
 
 const configString = ref("")
-
-const highlightedConfig = computed(() => {
-  const grammar = Prism.languages.ini
-  if (grammar) {
-    return Prism.highlight(configString.value, grammar, 'ini')
-  }
-  return configString.value
-})
 
 const emit = defineEmits(['close'])
 
@@ -58,7 +51,7 @@ function close() {
 <template>
   <Modal :title="title" :visible="visible" @close="close">
     <template #default>
-      <pre class="language-ini"><code class="language-ini" v-html="highlightedConfig"></code></pre>
+      <Prism language="ini" :code="configString"></Prism>
     </template>
     <template #footer>
       <button class="btn btn-primary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
