@@ -6,6 +6,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { freshInterface, freshPeer, freshStats } from '@/helpers/models';
 import Prism from "vue-prism-component";
+import 'prismjs/components/prism-ini';
 import { notify } from "@kyvg/vue3-notification";
 import { settingsStore } from "@/stores/settings";
 import { profileStore } from "@/stores/profile";
