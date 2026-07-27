@@ -14,7 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/prometheus-community/pro-bing v0.9.1
-	github.com/prometheus/client_golang v1.24.0
+	github.com/prometheus/client_golang v1.24.1
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/swag v1.16.6
 	github.com/vardius/message-bus v1.1.5
@@ -52,7 +52,6 @@ require (
 	github.com/go-openapi/jsonreference v1.0.0 // indirect
 	github.com/go-openapi/spec v0.22.9 // indirect
 	github.com/go-openapi/swag/conv v0.27.3 // indirect
-	github.com/go-openapi/swag/jsonname v0.27.3 // indirect
 	github.com/go-openapi/swag/jsonutils v0.27.3 // indirect
 	github.com/go-openapi/swag/loading v0.27.3 // indirect
 	github.com/go-openapi/swag/pools v0.27.3 // indirect
@@ -87,7 +86,7 @@ require (
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.70.0 // indirect
+	github.com/prometheus/common v0.70.1 // indirect
 	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
