@@ -158,7 +158,8 @@
         "name": "이름",
         "ip": "IP 주소",
         "stats": "상태",
-        "interface": "서버 인터페이스"
+        "interface": "서버 인터페이스",
+        "expires": "만료"
       },
       "no-peer": {
         "headline": "사용 가능한 피어 없음",
@@ -167,7 +168,8 @@
       "peer-connected": "연결됨",
       "button-add-peer": "피어 추가",
       "button-show-peer": "피어 보기",
-      "button-edit-peer": "피어 편집"
+      "button-edit-peer": "피어 편집",
+      "no-expiry": "만료 없음"
     },
     "settings": {
       "headline": "설정",
@@ -409,6 +411,8 @@
         "user": "연결된 사용자",
         "notes": "메모",
         "expiry-status": "만료 시각",
+        "created-at": "생성 시각",
+        "no-expiry": "만료 없음",
         "disabled-status": "비활성화 시각",
         "traffic": "트래픽",
         "connection-status": "연결 통계",

@@ -165,7 +165,8 @@
       "name": "Имя",
       "ip": "IP-адреса",
       "stats": "Статус",
-      "interface": "Интерфейс сервера"
+      "interface": "Интерфейс сервера",
+      "expires": "Истекает"
     },
     "no-peer": {
       "headline": "Пиров нет",
@@ -174,7 +175,8 @@
     "peer-connected": "Подключено",
     "button-add-peer": "Добавить пира",
     "button-show-peer": "Показать пира",
-    "button-edit-peer": "Редактировать пира"
+    "button-edit-peer": "Редактировать пира",
+    "no-expiry": "Без срока действия"
   },
   "settings": {
     "headline": "Настройки",
@@ -502,6 +504,8 @@
       "user": "Связанный пользователь",
       "notes": "Заметки",
       "expiry-status": "Истекает в",
+      "created-at": "Создан",
+      "no-expiry": "Без срока действия",
       "disabled-status": "Отключено в",
       "traffic": "Трафик",
       "connection-status": "Статус соединения",

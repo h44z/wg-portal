@@ -12,6 +12,25 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// PeerConfig holds peer lifecycle and expiry notification settings.
+type PeerConfig struct {
+	RotationInterval            time.Duration   `yaml:"rotation_interval"`
+	ExpiryAction                string          `yaml:"expiry_action"` // "disable" (default) | "delete"
+	AutoRecreateOnExpiry        bool            `yaml:"auto_recreate_on_expiry"`
+	// RecreateOnExpirySuffix is appended to the display name of auto-recreated peers.
+	// Suggested variants:
+	//   " (recreated)"
+	//   " (renewed)"
+	//   " (rotated)"
+	//   " (auto)"
+	//   " -R"
+	RecreateOnExpirySuffix      string          `yaml:"recreate_on_expiry_suffix"`
+	ExpiryNotificationEnabled   bool            `yaml:"expiry_notification_enabled"`
+	ExpiryNotificationIntervals []time.Duration `yaml:"expiry_notification_intervals"`
+	NotificationCleanupAfter    time.Duration   `yaml:"notification_cleanup_after"`
+	PurgeExpiredAfter           time.Duration   `yaml:"purge_expired_after"` // auto-delete disabled expired peers after this duration (0 = disabled)
+}
+
 // Config is the main configuration struct.
 type Config struct {
 	Core struct {
@@ -32,6 +51,8 @@ type Config struct {
 		SelfProvisioningAllowed              bool `yaml:"self_provisioning_allowed"`
 		ImportExisting                       bool `yaml:"import_existing"`
 		RestoreState                         bool `yaml:"restore_state"`
+
+		Peer PeerConfig `yaml:"peer"`
 	} `yaml:"core"`
 
 	Advanced struct {
@@ -143,6 +164,18 @@ func defaultConfig() *Config {
 	cfg.Core.SelfProvisioningAllowed = getEnvBool("WG_PORTAL_CORE_SELF_PROVISIONING_ALLOWED", false)
 	cfg.Core.ReEnablePeerAfterUserEnable = getEnvBool("WG_PORTAL_CORE_RE_ENABLE_PEER_AFTER_USER_ENABLE", true)
 	cfg.Core.DeletePeerAfterUserDeleted = getEnvBool("WG_PORTAL_CORE_DELETE_PEER_AFTER_USER_DELETED", false)
+
+	cfg.Core.Peer.RotationInterval = getEnvDuration("WG_PORTAL_CORE_PEER_ROTATION_INTERVAL", 0)
+	cfg.Core.Peer.ExpiryAction = getEnvStr("WG_PORTAL_CORE_PEER_EXPIRY_ACTION", "disable")
+	cfg.Core.Peer.AutoRecreateOnExpiry = getEnvBool("WG_PORTAL_CORE_PEER_AUTO_RECREATE_ON_EXPIRY", false)
+	cfg.Core.Peer.RecreateOnExpirySuffix = getEnvStr("WG_PORTAL_CORE_PEER_RECREATE_ON_EXPIRY_SUFFIX", " (recreated)")
+	cfg.Core.Peer.ExpiryNotificationEnabled = getEnvBool("WG_PORTAL_CORE_PEER_EXPIRY_NOTIFICATION_ENABLED", true)
+	cfg.Core.Peer.ExpiryNotificationIntervals = getEnvDurationSlice(
+		"WG_PORTAL_CORE_PEER_EXPIRY_NOTIFICATION_INTERVALS",
+		[]time.Duration{168 * time.Hour, 72 * time.Hour, 24 * time.Hour},
+	)
+	cfg.Core.Peer.NotificationCleanupAfter = getEnvDuration("WG_PORTAL_CORE_PEER_NOTIFICATION_CLEANUP_AFTER", 720*time.Hour)
+	cfg.Core.Peer.PurgeExpiredAfter = getEnvDuration("WG_PORTAL_CORE_PEER_PURGE_EXPIRED_AFTER", 720*time.Hour)
 
 	cfg.Database = DatabaseConfig{
 		Debug:                getEnvBool("WG_PORTAL_DATABASE_DEBUG", false),
@@ -263,6 +296,14 @@ func GetConfig() (*Config, error) {
 
 	handleDeprecatedConfigValues(cfg)
 
+	if cfg.Core.Peer.ExpiryAction != "disable" && cfg.Core.Peer.ExpiryAction != "delete" {
+		slog.Warn("unrecognised peer_expiry_action value, falling back to 'disable'",
+			"value", cfg.Core.Peer.ExpiryAction,
+			"accepted", []string{"disable", "delete"},
+		)
+		cfg.Core.Peer.ExpiryAction = "disable"
+	}
+
 	return cfg, nil
 }
 
@@ -370,4 +411,29 @@ func handleDeprecatedConfigValues(cfg *Config) {
 		cfg.Core.CreateDefaultPeerOnUserCreation = true
 		cfg.Core.CreateDefaultPeerOnInterfaceCreation = true
 	}
+}
+
+func getEnvDurationSlice(name string, fallback []time.Duration) []time.Duration {
+	v, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback
+	}
+
+	parts := strings.Split(v, ",")
+	durations := make([]time.Duration, 0, len(parts))
+
+	for _, s := range parts {
+		trimmed := strings.TrimSpace(s)
+		if trimmed == "" {
+			continue
+		}
+		d, err := time.ParseDuration(trimmed)
+		if err != nil {
+			slog.Warn("invalid duration in slice env, using fallback", "env", name, "value", trimmed, "fallback", fallback)
+			return fallback
+		}
+		durations = append(durations, d)
+	}
+
+	return durations
 }

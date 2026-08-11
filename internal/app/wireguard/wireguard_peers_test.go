@@ -173,10 +173,11 @@ func TestCreatePeer_SetsIdentifier_FromPublicKey(t *testing.T) {
 	db := &mockDB{iface: &domain.Interface{Identifier: "wg0", Type: domain.InterfaceTypeServer}}
 
 	m := Manager{
-		cfg: cfg,
-		bus: bus,
-		db:  db,
-		wg:  ctrlMgr,
+		cfg:       cfg,
+		bus:       bus,
+		db:        db,
+		wg:        ctrlMgr,
+		notifRepo: noopNotificationRepository{},
 	}
 
 	userId := domain.UserIdentifier("user@example.com")
@@ -233,10 +234,11 @@ func TestCreateDefaultPeer_RespectsInterfaceFlag(t *testing.T) {
 	}
 
 	m := Manager{
-		cfg: cfg,
-		bus: bus,
-		db:  db,
-		wg:  ctrlMgr,
+		cfg:       cfg,
+		bus:       bus,
+		db:        db,
+		wg:        ctrlMgr,
+		notifRepo: noopNotificationRepository{},
 	}
 
 	userId := domain.UserIdentifier("user@example.com")

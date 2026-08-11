@@ -156,7 +156,8 @@
       "name": "Tên",
       "ip": "Địa chỉ IP",
       "stats": "Trạng thái",
-      "interface": "Giao diện Máy chủ"
+      "interface": "Giao diện Máy chủ",
+      "expires": "Hết hạn"
     },
     "no-peer": {
       "headline": "Không có peer nào",
@@ -165,7 +166,8 @@
     "peer-connected": "Đã kết nối",
     "button-add-peer": "Thêm Peer",
     "button-show-peer": "Hiển thị Peer",
-    "button-edit-peer": "Chỉnh sửa Peer"
+    "button-edit-peer": "Chỉnh sửa Peer",
+    "no-expiry": "Không hết hạn"
   },
   "modals": {
     "user-view": {
@@ -369,6 +371,8 @@
       "user": "Người dùng Liên kết",
       "notes": "Ghi chú",
       "expiry-status": "Hết hạn vào",
+      "created-at": "Ngày tạo",
+      "no-expiry": "Không hết hạn",
       "disabled-status": "Bị Vô hiệu hóa vào",
       "traffic": "Lưu lượng",
       "connection-status": "Thông tin Kết nối",
