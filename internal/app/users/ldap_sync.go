@@ -90,8 +90,12 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 		}
 	}
 
-	// Update interface allowed users based on LDAP filters
-	err = m.updateInterfaceLdapFilters(ctx, conn, provider)
+	// Update interface allowed users based on LDAP filters. The flag says whether
+	// the directory answered usefully, so it counts entries we could extract an
+	// identifier from: a field map naming an attribute the server does not return
+	// yields entries with empty identifiers, which tells us nothing about who is
+	// entitled and must not be read as "the tier is empty".
+	err = m.updateInterfaceLdapFilters(ctx, conn, provider, hasUsableIdentifiers(rawUsers, &provider.FieldMap))
 	if err != nil {
 		return err
 	}
@@ -283,6 +287,7 @@ func (m Manager) updateInterfaceLdapFilters(
 	ctx context.Context,
 	conn *ldap.Conn,
 	provider *config.LdapProvider,
+	directoryReturnedUsers bool,
 ) error {
 	if len(provider.InterfaceFilter) == 0 {
 		return nil // nothing to do if no interfaces are configured for this provider
@@ -311,7 +316,7 @@ func (m Manager) updateInterfaceLdapFilters(
 			}
 		}
 
-		m.applyInterfaceLdapFilter(ctx, ifaceId, provider.ProviderName, matchedUserIds)
+		m.applyInterfaceLdapFilter(ctx, ifaceId, provider, matchedUserIds, directoryReturnedUsers)
 	}
 
 	return nil
@@ -329,9 +334,11 @@ func (m Manager) updateInterfaceLdapFilters(
 func (m Manager) applyInterfaceLdapFilter(
 	ctx context.Context,
 	ifaceId domain.InterfaceIdentifier,
-	providerName string,
+	provider *config.LdapProvider,
 	matchedUserIds []domain.UserIdentifier,
+	directoryReturnedUsers bool,
 ) {
+	providerName := provider.ProviderName
 	if _, err := m.interfaces.GetInterface(ctx, ifaceId); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			slog.Warn("skipping interface filter for unknown interface",
@@ -358,6 +365,41 @@ func (m Manager) applyInterfaceLdapFilter(
 
 	slog.Debug("updated interface ldap allowed users",
 		"interface", ifaceId, "provider", providerName, "matched_count", len(matchedUserIds))
+
+	if !provider.RevokeOnFilterChange {
+		return
+	}
+
+	// An interface filter matching nobody is ambiguous: the group may genuinely
+	// have emptied, or the filter may be broken, the group renamed, or a replica
+	// unpopulated. The provider-level sync result disambiguates it. If the
+	// directory returned users at all it is answering correctly, so an empty
+	// filter means the tier really is empty. If it returned nothing the whole
+	// sync is suspect and nothing should be revoked on the strength of it.
+	if len(matchedUserIds) == 0 && !directoryReturnedUsers {
+		slog.Error("refusing to reconcile interface access: the directory returned no users at all",
+			"interface", ifaceId, "provider", providerName)
+		return
+	}
+
+	// Publish the resulting entitlement rather than a diff against the previous
+	// one. A diff only fires on the sync that happens to observe the change, so
+	// a demotion while wg-portal is stopped would never be acted on. Handing
+	// over the whole allowed set lets the consumer reconcile from current state,
+	// which is idempotent and repairs existing drift.
+	m.bus.Publish(app.TopicInterfaceLdapFilterApplied, ifaceId, matchedUserIds)
+}
+
+// hasUsableIdentifiers reports whether at least one entry carried an identifier.
+// Entries alone are not enough: they can come back with the identifier attribute
+// missing, in which case the sync knows nothing about who is entitled.
+func hasUsableIdentifiers(rawUsers []internal.RawLdapUser, fields *config.LdapFields) bool {
+	for _, rawUser := range rawUsers {
+		if ldapUserIdentifier(rawUser, fields.UserIdentifier) != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func ldapUserIdentifier(rawUser map[string]any, field string) domain.UserIdentifier {

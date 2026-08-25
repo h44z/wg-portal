@@ -58,10 +58,12 @@ func (f *mockController) PingAddresses(_ context.Context, _ string) (*domain.Pin
 }
 
 type mockDB struct {
-	savedPeers map[domain.PeerIdentifier]*domain.Peer
-	iface      *domain.Interface
-	interfaces []domain.Interface
-	users      []domain.User
+	savedPeers     map[domain.PeerIdentifier]*domain.Peer
+	iface          *domain.Interface
+	interfaces     []domain.Interface
+	users          []domain.User
+	peers          map[domain.PeerIdentifier]*domain.Peer
+	interfacePeers []domain.Peer
 }
 
 func (f *mockDB) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error) {
@@ -108,7 +110,7 @@ func (f *mockDB) DeleteInterface(ctx context.Context, id domain.InterfaceIdentif
 	return nil
 }
 func (f *mockDB) GetInterfacePeers(ctx context.Context, id domain.InterfaceIdentifier) ([]domain.Peer, error) {
-	return nil, nil
+	return f.interfacePeers, nil
 }
 func (f *mockDB) GetUserPeers(ctx context.Context, id domain.UserIdentifier) ([]domain.Peer, error) {
 	return nil, nil
@@ -134,6 +136,9 @@ func (f *mockDB) SavePeer(
 }
 func (f *mockDB) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error { return nil }
 func (f *mockDB) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error) {
+	if peer, ok := f.peers[id]; ok {
+		return peer, nil
+	}
 	return nil, domain.ErrNotFound
 }
 func (f *mockDB) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (
