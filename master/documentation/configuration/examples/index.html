@@ -10,11 +10,11 @@
 <span class=w>  </span><span class=c1># default backend decides where new interfaces are created</span>
 <span class=w>  </span><span class=nt>default</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">mikrotik</span>
 
-<span class=w>  </span><span class=c1># A prefix for resolvconf. Usually it is &quot;tun.&quot;. If you are using systemd, the prefix should be empty.</span>
-<span class=w>  </span><span class=nt>local_resolvconf_prefix</span><span class=p>:</span><span class=w> </span><span class=s>&quot;tun.&quot;</span>
+<span class=w>  </span><span class=c1># A prefix for resolvconf. Usually it is "tun.". If you are using systemd, the prefix should be empty.</span>
+<span class=w>  </span><span class=nt>local_resolvconf_prefix</span><span class=p>:</span><span class=w> </span><span class=s>"tun."</span>
 
 <span class=w>  </span><span class=nt>mikrotik</span><span class=p>:</span>
-<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">mikrotik</span><span class=w>                   </span><span class=c1># unique id, not &quot;local&quot;</span>
+<span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>id</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">mikrotik</span><span class=w>                   </span><span class=c1># unique id, not "local"</span>
 <span class=w>      </span><span class=nt>display_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">RouterOS RB5009</span><span class=w>  </span><span class=c1># optional nice name</span>
 <span class=w>      </span><span class=nt>api_url</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">https://10.10.10.10/rest</span>
 <span class=w>      </span><span class=nt>api_user</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">wgportal</span>
@@ -78,7 +78,7 @@
 <span class=w>      </span><span class=nt>registration_enabled</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class=w>      </span><span class=c1># Restrict interface access based on LDAP filters</span>
 <span class=w>      </span><span class=nt>interface_filter</span><span class=p>:</span>
-<span class=w>        </span><span class=nt>wg0</span><span class=p>:</span><span class=w> </span><span class=s>&quot;(memberOf=CN=VPNUsers,OU=Groups,DC=COMPANY,DC=LOCAL)&quot;</span>
+<span class=w>        </span><span class=nt>wg0</span><span class=p>:</span><span class=w> </span><span class=s>"(memberOf=CN=VPNUsers,OU=Groups,DC=COMPANY,DC=LOCAL)"</span>
 <span class=w>      </span><span class=nt>log_user_info</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div> <h2 id=openid-connect-oidc-authentication>OpenID Connect (OIDC) Authentication</h2> <div class=highlight><pre><span></span><code><span class=c1># ... (basic configuration)</span>
 
@@ -89,11 +89,11 @@
 <span class=w>    </span><span class="p p-Indicator">-</span><span class=w> </span><span class=nt>provider_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">azure</span>
 <span class=w>      </span><span class=nt>display_name</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">Login with&lt;/br&gt;Entra ID</span>
 <span class=w>      </span><span class=nt>registration_enabled</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class=w>      </span><span class=nt>base_url</span><span class=p>:</span><span class=w> </span><span class=s>&quot;https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0&quot;</span>
-<span class=w>      </span><span class=nt>client_id</span><span class=p>:</span><span class=w> </span><span class=s>&quot;${AZURE_CLIENT_ID}&quot;</span>
-<span class=w>      </span><span class=nt>client_secret</span><span class=p>:</span><span class=w> </span><span class=s>&quot;${AZURE_CLIENT_SECRET}&quot;</span>
+<span class=w>      </span><span class=nt>base_url</span><span class=p>:</span><span class=w> </span><span class=s>"https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0"</span>
+<span class=w>      </span><span class=nt>client_id</span><span class=p>:</span><span class=w> </span><span class=s>"${AZURE_CLIENT_ID}"</span>
+<span class=w>      </span><span class=nt>client_secret</span><span class=p>:</span><span class=w> </span><span class=s>"${AZURE_CLIENT_SECRET}"</span>
 <span class=w>      </span><span class=nt>allowed_domains</span><span class=p>:</span>
-<span class=w>        </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&quot;outlook.com&quot;</span>
+<span class=w>        </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>"outlook.com"</span>
 <span class=w>      </span><span class=nt>extra_scopes</span><span class=p>:</span>
 <span class=w>        </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">profile</span>
 <span class=w>        </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">email</span>

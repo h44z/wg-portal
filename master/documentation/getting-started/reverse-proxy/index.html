@@ -3,17 +3,17 @@
 <span class=w>    </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">traefik:v3.3</span>
 <span class=w>    </span><span class=nt>restart</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
 <span class=w>    </span><span class=nt>command</span><span class=p>:</span>
-<span class=w>      </span><span class=c1>#- &#39;--log.level=DEBUG&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;--providers.docker.endpoint=unix:///var/run/docker.sock&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;--providers.docker.exposedbydefault=false&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;--entrypoints.web.address=:80&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;--entrypoints.websecure.address=:443&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;--entrypoints.websecure.http3&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;--certificatesresolvers.letsencryptresolver.acme.httpchallenge=true&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;--certificatesresolvers.letsencryptresolver.acme.httpchallenge.entrypoint=web&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;--certificatesresolvers.letsencryptresolver.acme.email=your.email@domain.com&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;--certificatesresolvers.letsencryptresolver.acme.storage=/letsencrypt/acme.json&#39;</span>
-<span class=w>      </span><span class=c1>#- &#39;--certificatesresolvers.letsencryptresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory&#39;  # just for testing</span>
+<span class=w>      </span><span class=c1>#- '--log.level=DEBUG'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'--providers.docker.endpoint=unix:///var/run/docker.sock'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'--providers.docker.exposedbydefault=false'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'--entrypoints.web.address=:80'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'--entrypoints.websecure.address=:443'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'--entrypoints.websecure.http3'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'--certificatesresolvers.letsencryptresolver.acme.httpchallenge=true'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'--certificatesresolvers.letsencryptresolver.acme.httpchallenge.entrypoint=web'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'--certificatesresolvers.letsencryptresolver.acme.email=your.email@domain.com'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'--certificatesresolvers.letsencryptresolver.acme.storage=/letsencrypt/acme.json'</span>
+<span class=w>      </span><span class=c1>#- '--certificatesresolvers.letsencryptresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory'  # just for testing</span>
 <span class=w>    </span><span class=nt>ports</span><span class=p>:</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">80:80</span><span class=w> </span><span class=c1># for HTTP</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">443:443/tcp</span><span class=w>  </span><span class=c1># for HTTPS</span>
@@ -22,12 +22,12 @@
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">acme-certs:/letsencrypt</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">/var/run/docker.sock:/var/run/docker.sock:ro</span>
 <span class=w>    </span><span class=nt>labels</span><span class=p>:</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.enable=true&#39;</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.enable=true'</span>
 <span class=w>      </span><span class=c1># HTTP Catchall for redirecting HTTP -&gt; HTTPS</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.http.routers.dashboard-catchall.rule=Host(`wg.domain.com`)</span><span class=nv> </span><span class=s>&amp;&amp;</span><span class=nv> </span><span class=s>PathPrefix(`/`)&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.http.routers.dashboard-catchall.entrypoints=web&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.http.routers.dashboard-catchall.middlewares=redirect-to-https&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https&#39;</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.http.routers.dashboard-catchall.rule=Host(`wg.domain.com`)</span><span class=nv> </span><span class=s>&amp;&amp;</span><span class=nv> </span><span class=s>PathPrefix(`/`)'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.http.routers.dashboard-catchall.entrypoints=web'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.http.routers.dashboard-catchall.middlewares=redirect-to-https'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https'</span>
 
 <span class=w>  </span><span class=nt>wg-portal</span><span class=p>:</span>
 <span class=w>    </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">wgportal/wg-portal:v2</span>
@@ -35,16 +35,16 @@
 <span class=w>    </span><span class=nt>restart</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
 <span class=w>    </span><span class=nt>logging</span><span class=p>:</span>
 <span class=w>      </span><span class=nt>options</span><span class=p>:</span>
-<span class=w>        </span><span class=nt>max-size</span><span class=p>:</span><span class=w> </span><span class=s>&quot;10m&quot;</span>
-<span class=w>        </span><span class=nt>max-file</span><span class=p>:</span><span class=w> </span><span class=s>&quot;3&quot;</span>
+<span class=w>        </span><span class=nt>max-size</span><span class=p>:</span><span class=w> </span><span class=s>"10m"</span>
+<span class=w>        </span><span class=nt>max-file</span><span class=p>:</span><span class=w> </span><span class=s>"3"</span>
 <span class=w>    </span><span class=nt>cap_add</span><span class=p>:</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">NET_ADMIN</span>
 <span class=w>    </span><span class=nt>ports</span><span class=p>:</span>
 <span class=w>      </span><span class=c1># host port : container port</span>
 <span class=w>      </span><span class=c1># WireGuard port, needs to match the port in wg-portal interface config (add one port mapping for each interface)</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&quot;51820:51820/udp&quot;</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>"51820:51820/udp"</span>
 <span class=w>      </span><span class=c1># Web UI port (only available on localhost, Traefik will handle the HTTPS)</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&quot;127.0.0.1:8888:8888/tcp&quot;</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>"127.0.0.1:8888:8888/tcp"</span>
 <span class=w>    </span><span class=nt>sysctls</span><span class=p>:</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">net.ipv4.conf.all.src_valid_mark=1</span>
 <span class=w>    </span><span class=nt>volumes</span><span class=p>:</span>
@@ -52,12 +52,12 @@
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">./wg/data:/app/data</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">./wg/config:/app/config</span>
 <span class=w>    </span><span class=nt>labels</span><span class=p>:</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.enable=true&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.http.routers.wgportal.rule=Host(`wg.domain.com`)&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.http.routers.wgportal.entrypoints=websecure&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.http.routers.wgportal.tls.certresolver=letsencryptresolver&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.http.routers.wgportal.service=wgportal&#39;</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&#39;traefik.http.services.wgportal.loadbalancer.server.port=8888&#39;</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.enable=true'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.http.routers.wgportal.rule=Host(`wg.domain.com`)'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.http.routers.wgportal.entrypoints=websecure'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.http.routers.wgportal.tls.certresolver=letsencryptresolver'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.http.routers.wgportal.service=wgportal'</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>'traefik.http.services.wgportal.loadbalancer.server.port=8888'</span>
 
 <span class=nt>volumes</span><span class=p>:</span>
 <span class=w>  </span><span class=nt>acme-certs</span><span class=p>:</span>

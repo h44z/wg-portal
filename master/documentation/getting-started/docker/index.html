@@ -6,12 +6,12 @@
 <span class=w>    </span><span class=nt>restart</span><span class=p>:</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
 <span class=w>    </span><span class=nt>logging</span><span class=p>:</span>
 <span class=w>      </span><span class=nt>options</span><span class=p>:</span>
-<span class=w>        </span><span class=nt>max-size</span><span class=p>:</span><span class=w> </span><span class=s>&quot;10m&quot;</span>
-<span class=w>        </span><span class=nt>max-file</span><span class=p>:</span><span class=w> </span><span class=s>&quot;3&quot;</span>
+<span class=w>        </span><span class=nt>max-size</span><span class=p>:</span><span class=w> </span><span class=s>"10m"</span>
+<span class=w>        </span><span class=nt>max-file</span><span class=p>:</span><span class=w> </span><span class=s>"3"</span>
 <span class=w>    </span><span class=nt>cap_add</span><span class=p>:</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">NET_ADMIN</span>
 <span class=w>    </span><span class=c1># Use host network mode for WireGuard and the UI. Ensure that access to the UI is properly secured.</span>
-<span class=w>    </span><span class=nt>network_mode</span><span class=p>:</span><span class=w> </span><span class=s>&quot;host&quot;</span>
+<span class=w>    </span><span class=nt>network_mode</span><span class=p>:</span><span class=w> </span><span class=s>"host"</span>
 <span class=w>    </span><span class=nt>volumes</span><span class=p>:</span>
 <span class=w>      </span><span class=c1># left side is the host path, right side is the container path</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">/etc/wireguard:/etc/wireguard</span>
@@ -20,7 +20,7 @@
 </code></pre></div> <p>By default, the webserver for the UI is listening on port <strong>8888</strong> on all available interfaces.</p> <p>Volumes for <code>/app/data</code> and <code>/app/config</code> should be used ensure data persistence across container restarts.</p> <h2 id=wireguard-interface-handling>WireGuard Interface Handling</h2> <p>WireGuard Portal supports managing WireGuard interfaces through three distinct deployment methods, providing flexibility based on your system architecture and operational preferences:</p> <ul> <li><strong>Directly on the host system</strong>: WireGuard Portal can control WireGuard interfaces natively on the host, without using containers. This setup is ideal for environments where direct access to system networking is preferred. To use this method, you need to set the network mode to <code>host</code> in your docker-compose.yml file. <div class=highlight><pre><span></span><code><span class=nt>services</span><span class=p>:</span>
 <span class=w>  </span><span class=nt>wg-portal</span><span class=p>:</span>
 <span class=w>    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
-<span class=w>    </span><span class="l l-Scalar l-Scalar-Plain">network_mode</span><span class="p p-Indicator">:</span><span class=w> </span><span class=s>&quot;host&quot;</span>
+<span class=w>    </span><span class="l l-Scalar l-Scalar-Plain">network_mode</span><span class="p p-Indicator">:</span><span class=w> </span><span class=s>"host"</span>
 <span class=w>    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 </code></pre></div><blockquote> <p><img alt=⚠ class=twemoji src=https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg title=:warning:> If host networking is used, the WireGuard Portal UI will be accessible on all the host's IP addresses if the listening address is set to <code>:8888</code> in the configuration file. To avoid this, you can bind the listening address to a specific IP address, for example, the loopback address (<code>127.0.0.1:8888</code>). It is also possible to deploy firewall rules to restrict access to the WireGuard Portal UI.</p> </blockquote> </li> </ul> <blockquote> <p><img alt=⚠ class=twemoji src=https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg title=:warning:> If the host is running <strong>systemd-networkd</strong>, routes managed by WireGuard Portal may be removed whenever systemd-networkd restarts, as it will clean up routes it considers "foreign". To prevent this, add the following to your host's network configuration (e.g. <code>/etc/systemd/networkd.conf</code> or a drop-in file): <div class=highlight><pre><span></span><code><span class=k>[Network]</span>
 <span class=na>ManageForeignRoutingPolicyRules</span><span class=o>=</span><span class=s>no</span>
@@ -35,9 +35,9 @@
 <span class=w>    </span><span class=nt>ports</span><span class=p>:</span>
 <span class=w>      </span><span class=c1># host port : container port</span>
 <span class=w>      </span><span class=c1># WireGuard port, needs to match the port in wg-portal interface config (add one port mapping for each interface)</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&quot;51820:51820/udp&quot;</span><span class=w> </span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>"51820:51820/udp"</span><span class=w> </span>
 <span class=w>      </span><span class=c1># Web UI port</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&quot;8888:8888/tcp&quot;</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>"8888:8888/tcp"</span>
 <span class=w>    </span><span class=nt>sysctls</span><span class=p>:</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">net.ipv4.conf.all.src_valid_mark=1</span>
 <span class=w>    </span><span class=nt>volumes</span><span class=p>:</span>
@@ -51,7 +51,7 @@
 <span class=w>    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 <span class=w>    </span><span class=nt>cap_add</span><span class=p>:</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">NET_ADMIN</span>
-<span class=w>    </span><span class=nt>network_mode</span><span class=p>:</span><span class=w> </span><span class=s>&quot;service:wireguard&quot;</span><span class=w> </span><span class=c1># So we ensure to stay on the same network as the wireguard container.</span>
+<span class=w>    </span><span class=nt>network_mode</span><span class=p>:</span><span class=w> </span><span class=s>"service:wireguard"</span><span class=w> </span><span class=c1># So we ensure to stay on the same network as the wireguard container.</span>
 <span class=w>    </span><span class=nt>volumes</span><span class=p>:</span>
 <span class=w>      </span><span class=c1># host path : container path</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">./wg/etc:/etc/wireguard</span>
@@ -66,8 +66,8 @@
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">NET_ADMIN</span>
 <span class=w>    </span><span class=nt>ports</span><span class=p>:</span>
 <span class=w>      </span><span class=c1># host port : container port</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&quot;51820:51820/udp&quot;</span><span class=w> </span><span class=c1># WireGuard port, needs to match the port in wg-portal interface config</span>
-<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>&quot;8888:8888/tcp&quot;</span><span class=w> </span><span class=c1># Noticed that the port of the web UI is exposed in the wireguard container.</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>"51820:51820/udp"</span><span class=w> </span><span class=c1># WireGuard port, needs to match the port in wg-portal interface config</span>
+<span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class=s>"8888:8888/tcp"</span><span class=w> </span><span class=c1># Noticed that the port of the web UI is exposed in the wireguard container.</span>
 <span class=w>    </span><span class=nt>volumes</span><span class=p>:</span>
 <span class=w>      </span><span class="p p-Indicator">-</span><span class=w> </span><span class="l l-Scalar l-Scalar-Plain">./wg/etc:/config/wg_confs</span><span class=w> </span><span class=c1># We share the configuration (wgx.conf) between wg-portal and wireguard</span>
 <span class=w>    </span><span class=nt>sysctls</span><span class=p>:</span>
