@@ -136,3 +136,21 @@ func (m *MetricsServer) UpdatePeerMetrics(peer *domain.Peer, status domain.PeerS
 	m.peerSendBytesTotal.WithLabelValues(labels...).Set(float64(status.BytesTransmitted))
 	m.peerIsConnected.WithLabelValues(labels...).Set(internal.BoolToFloat64(status.IsConnected))
 }
+
+// DeletePeerMetrics removes all Prometheus series for a peer that was deleted
+// from the WireGuard portal. GaugeVecs retain label values until explicitly
+// deleted, so leaving these behind makes a deleted peer indistinguishable from
+// a retained peer that is currently offline.
+func (m *MetricsServer) DeletePeerMetrics(peer domain.Peer) {
+	labels := []string{
+		string(peer.InterfaceIdentifier),
+		peer.Interface.AddressStr(),
+		string(peer.Identifier),
+		peer.DisplayName,
+		string(peer.UserIdentifier),
+	}
+	m.peerLastHandshakeSeconds.DeleteLabelValues(labels...)
+	m.peerReceivedBytesTotal.DeleteLabelValues(labels...)
+	m.peerSendBytesTotal.DeleteLabelValues(labels...)
+	m.peerIsConnected.DeleteLabelValues(labels...)
+}

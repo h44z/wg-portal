@@ -31,6 +31,7 @@ type StatisticsDatabaseRepo interface {
 type StatisticsMetricsServer interface {
 	UpdateInterfaceMetrics(status domain.InterfaceStatus)
 	UpdatePeerMetrics(peer *domain.Peer, status domain.PeerStatus)
+	DeletePeerMetrics(peer domain.Peer)
 }
 
 type StatisticsEventBus interface {
@@ -433,6 +434,11 @@ func (c *StatisticsCollector) updatePeerMetrics(ctx context.Context, status doma
 
 func (c *StatisticsCollector) connectToMessageBus() {
 	_ = c.bus.Subscribe(app.TopicPeerIdentifierUpdated, c.handlePeerIdentifierChangeEvent)
+	_ = c.bus.Subscribe(app.TopicPeerDeleted, c.handlePeerDeletedEvent)
+}
+
+func (c *StatisticsCollector) handlePeerDeletedEvent(peer domain.Peer) {
+	c.ms.DeletePeerMetrics(peer)
 }
 
 func (c *StatisticsCollector) handlePeerIdentifierChangeEvent(oldIdentifier, newIdentifier domain.PeerIdentifier) {
