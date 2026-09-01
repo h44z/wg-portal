@@ -113,7 +113,7 @@ func main() {
 	internal.AssertNoError(err)
 	webhookManager.StartBackgroundJobs(ctx)
 
-	err = app.Initialize(cfg, wireGuardManager, userManager)
+	err = app.Initialize(ctx, cfg, wireGuardManager, userManager)
 	internal.AssertNoError(err)
 
 	validatorManager := validator.New()

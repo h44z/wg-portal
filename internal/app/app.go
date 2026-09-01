@@ -35,6 +35,7 @@ type App struct {
 
 // Initialize creates a new App instance and initializes it.
 func Initialize(
+	ctx context.Context,
 	cfg *config.Config,
 	wg WireGuardManager,
 	users UserManager,
@@ -46,7 +47,7 @@ func Initialize(
 		users: users,
 	}
 
-	startupContext, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	startupContext, cancel := context.WithTimeout(ctx, cfg.Advanced.StartupTimeout)
 	defer cancel()
 
 	// Switch to admin user context
