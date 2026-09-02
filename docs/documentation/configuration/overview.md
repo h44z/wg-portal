@@ -45,6 +45,7 @@ advanced:
   route_table_offset: 20000
   api_admin_only: true
   limit_additional_user_peers: 0
+  startup_timeout: 5m
 
 database:
   debug: false
@@ -362,6 +363,12 @@ Additional or more specialized configuration options for logging and interface c
 - **Default:** `0`
 - **Environment Variable:** `WG_PORTAL_ADVANCED_LIMIT_ADDITIONAL_USER_PEERS`
 - **Description:** Limit additional peers a normal user can create. `0` means unlimited.
+
+### `startup_timeout`
+- **Default:** `5m`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_STARTUP_TIMEOUT`
+- **Description:** Timeout for the application startup process. 
+  Increase this value if you are using a MikroTik backend with many clients.
 
 ---
 
