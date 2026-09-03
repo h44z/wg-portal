@@ -12,6 +12,7 @@ import { settingsStore } from "@/stores/settings";
 import { profileStore } from "@/stores/profile";
 import { base64_url_encode } from '@/helpers/encoding';
 import { apiWrapper } from "@/helpers/fetch-wrapper";
+import {humanFileSize} from '@/helpers/utils';
 
 const { t } = useI18n()
 
@@ -194,8 +195,8 @@ function ConfigQrUrl() {
                 <div class="col-md-12">
                   <h4>{{ $t('modals.peer-view.traffic') }}</h4>
                   <p><i class="fas fa-long-arrow-alt-down" :title="$t('modals.peer-view.download')"></i> {{
-                    selectedStats.BytesReceived }} Bytes / <i class="fas fa-long-arrow-alt-up"
-                      :title="$t('modals.peer-view.upload')"></i> {{ selectedStats.BytesTransmitted }} Bytes</p>
+                    humanFileSize(selectedStats.BytesReceived) }} / <i class="fas fa-long-arrow-alt-up"
+                      :title="$t('modals.peer-view.upload')"></i> {{ humanFileSize(selectedStats.BytesTransmitted) }}</p>
                   <h4>{{ $t('modals.peer-view.connection-status') }}</h4>
                   <ul>
                     <li>{{ $t('modals.peer-view.pingable') }}: {{ selectedStats.IsPingable }}</li>
