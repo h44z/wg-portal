@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/h44z/wg-portal/internal/config"
+	"github.com/h44z/wg-portal/internal/domain"
 )
 
 type testSession struct {
@@ -113,5 +116,57 @@ func TestAuthEndpointFrontendUrlUsesBasePathAppMount(t *testing.T) {
 
 	if got, want := ep.frontendUrl("/login"), "https://wg.example.com/subpath/app/#/login"; got != want {
 		t.Fatalf("expected frontend URL %q, got %q", want, got)
+	}
+}
+
+type dummyAuthService struct {
+	loginErr error
+	user     *domain.User
+}
+
+func (d dummyAuthService) GetExternalLoginProviders(_ context.Context) []domain.LoginProviderInfo {
+	return nil
+}
+func (d dummyAuthService) PlainLogin(_ context.Context, username, password string) (*domain.User, error) {
+	if d.loginErr != nil {
+		return nil, d.loginErr
+	}
+	return d.user, nil
+}
+func (d dummyAuthService) OauthLoginStep1(_ context.Context, _ string) (string, string, string, string, error) {
+	return "", "", "", "", nil
+}
+func (d dummyAuthService) OauthLoginStep2(_ context.Context, _, _, _, _ string) (*domain.User, string, error) {
+	return nil, "", nil
+}
+func (d dummyAuthService) OauthProviderLogoutUrl(_, _, _ string) (string, bool) {
+	return "", false
+}
+
+type dummyValidator struct{}
+
+func (d dummyValidator) Struct(_ any) error {
+	return nil
+}
+
+func TestAuthEndpointHandleLoginPostRejectsInvalidCredentialsEvenIfSessionDirty(t *testing.T) {
+	session := &testSession{data: SessionData{
+		LoggedIn:       true,
+		UserIdentifier: "previous-user",
+	}}
+	ep := AuthEndpoint{
+		session:     session,
+		authService: dummyAuthService{loginErr: errors.New("auth failed")},
+		validate:    dummyValidator{},
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/auth/login", strings.NewReader(`{"username":"admin","password":"wrongpassword"}`))
+	req.Header.Set("Content-Type", "application/json")
+	res := httptest.NewRecorder()
+
+	ep.handleLoginPost().ServeHTTP(res, req)
+
+	if res.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d (Unauthorized), got %d", http.StatusUnauthorized, res.Code)
 	}
 }

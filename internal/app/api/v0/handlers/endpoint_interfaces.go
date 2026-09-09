@@ -138,7 +138,7 @@ func (e InterfaceEndpoint) handleAllGet() http.HandlerFunc {
 // @Router /interface/get/{id} [get]
 func (e InterfaceEndpoint) handleSingleGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
@@ -170,7 +170,7 @@ func (e InterfaceEndpoint) handleSingleGet() http.HandlerFunc {
 // @Router /interface/config/{id} [get]
 func (e InterfaceEndpoint) handleConfigGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
@@ -212,7 +212,7 @@ func (e InterfaceEndpoint) handleConfigGet() http.HandlerFunc {
 // @Router /interface/{id} [put]
 func (e InterfaceEndpoint) handleUpdatePut() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
@@ -293,7 +293,7 @@ func (e InterfaceEndpoint) handleCreatePost() http.HandlerFunc {
 // @Router /interface/peers/{id} [get]
 func (e InterfaceEndpoint) handlePeersGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
@@ -326,7 +326,7 @@ func (e InterfaceEndpoint) handlePeersGet() http.HandlerFunc {
 // @Router /interface/{id} [delete]
 func (e InterfaceEndpoint) handleDelete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
@@ -358,7 +358,7 @@ func (e InterfaceEndpoint) handleDelete() http.HandlerFunc {
 // @Router /interface/{id}/save-config [post]
 func (e InterfaceEndpoint) handleSaveConfigPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
@@ -391,7 +391,7 @@ func (e InterfaceEndpoint) handleSaveConfigPost() http.HandlerFunc {
 // @Router /interface/{id}/apply-peer-defaults [post]
 func (e InterfaceEndpoint) handleApplyPeerDefaultsPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})
@@ -438,7 +438,7 @@ func (e InterfaceEndpoint) handleApplyPeerDefaultsPost() http.HandlerFunc {
 // @Router /interface/{id}/create-default-peers [post]
 func (e InterfaceEndpoint) handleCreateDefaultPeersPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing interface id"})

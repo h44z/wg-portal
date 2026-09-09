@@ -6,6 +6,8 @@ import {authStore} from '@/stores/auth'
 import {securityStore} from '@/stores/security'
 import {notify} from "@kyvg/vue3-notification";
 
+export const publicPages = ['/', '/login', '/key-generator', '/ip-calculator']
+
 const router = createRouter({
   // No base argument: createWebHashHistory() defaults to location.pathname + location.search,
   // which is correct for /app/, {web.base_path}/app/ and the dev server at /.
@@ -44,6 +46,14 @@ const router = createRouter({
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/ProfileView.vue')
+    },
+    {
+      path: '/peer/config/:id',
+      name: 'peer-config-download',
+      // This is a "deep link" target used by link-only configuration emails. As it is not part of the
+      // public pages, unauthenticated users are redirected to the login page first and are returned here
+      // (starting the download) only after a successful authentication.
+      component: () => import('../views/PeerConfigDownloadView.vue')
     },
     {
       path: '/settings',
@@ -86,12 +96,14 @@ router.beforeEach(async (to) => {
   const auth = authStore()
 
   // check if the request was a successful oauth login
-  if ('wgLoginState' in to.query && !auth.IsAuthenticated) {
-    const state = to.query['wgLoginState']
-    const returnUrl = auth.ReturnUrl
-    console.log("Oauth login callback:", state)
+  const searchParams = new URLSearchParams(window.location.search)
+  const oauthState = to.query['wgLoginState'] || searchParams.get('wgLoginState')
 
-    if (state === "success") {
+  if (oauthState && !auth.IsAuthenticated) {
+    const returnUrl = auth.ReturnUrl
+    console.log("Oauth login callback:", oauthState)
+
+    if (oauthState === "success") {
       try {
         const uid = await auth.LoadSession()
         console.log("Oauth login completed for UID:", uid)
@@ -99,12 +111,16 @@ router.beforeEach(async (to) => {
 
         notify({
           title: "Logged in",
-          text: "Authentication suceeded!",
+          text: "Authentication succeeded!",
           type: 'success',
         })
 
         auth.ResetReturnUrl()
-        return returnUrl
+        if (searchParams.has('wgLoginState')) {
+          const cleanUrl = window.location.pathname + window.location.hash
+          window.history.replaceState(null, '', cleanUrl)
+        }
+        return returnUrl || '/'
       } catch (e) {
         notify({
           title: "Login failed!",
@@ -125,8 +141,26 @@ router.beforeEach(async (to) => {
     }
   }
 
+  // ensure session validity is verified with backend before checking route access
+  if (!auth.sessionChecked) {
+    try {
+      await auth.EnsureSession()
+    } catch (e) {
+      // session is not authenticated
+    }
+  }
+
+  // redirect to returnUrl if already authenticated and accessing login page
+  if (to.path === '/login' && auth.IsAuthenticated) {
+    const returnUrl = auth.ReturnUrl
+    if (returnUrl && returnUrl !== '/login') {
+      auth.ResetReturnUrl()
+      return returnUrl
+    }
+    return '/'
+  }
+
   // redirect to login page if not logged in and trying to access a restricted page
-  const publicPages = ['/', '/login', '/key-generator', '/ip-calculator']
   const authRequired = !publicPages.includes(to.path)
 
   if (authRequired && !auth.IsAuthenticated) {

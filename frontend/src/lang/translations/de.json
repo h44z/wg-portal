@@ -32,6 +32,17 @@
     "button": "Anmelden",
     "button-webauthn": "Passkey verwenden"
   },
+  "peer-config-download": {
+    "headline": "VPN-Konfiguration wird heruntergeladen",
+    "in-progress": "Der Download Ihrer WireGuard-Konfiguration startet automatisch. Bitte warten...",
+    "success-title": "Konfiguration heruntergeladen",
+    "success-message": "Ihre WireGuard-Konfiguration wurde heruntergeladen.",
+    "error-title": "Download fehlgeschlagen",
+    "error-message": "Die WireGuard-Konfiguration konnte nicht heruntergeladen werden.",
+    "manual-hint": "Falls der Download nicht automatisch gestartet wurde, verwenden Sie die Schaltfläche unten.",
+    "button-retry": "Konfiguration herunterladen",
+    "button-home": "Zur Startseite"
+  },
   "menu": {
     "home": "Home",
     "interfaces": "Schnittstellen",

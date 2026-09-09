@@ -12,6 +12,10 @@ const settings = settingsStore()
 const loggingIn = ref(false)
 const username = ref("")
 const password = ref("")
+// Capture the return URL as soon as the login page is opened. The auth store resets the stored return URL
+// during a successful login, so we need to remember the original destination (for example a deep link from a
+// configuration email) before starting the authentication.
+const returnUrl = ref(auth.ReturnUrl || '/')
 
 const usernameInvalid = computed(() => username.value === "")
 const passwordInvalid = computed(() => password.value === "")
@@ -22,12 +26,20 @@ const showLoginForm = computed(() => {
 });
 
 onMounted(async () => {
+  returnUrl.value = auth.ReturnUrl || '/'
+  if (auth.IsAuthenticated) {
+    const dest = returnUrl.value !== '/login' ? returnUrl.value : '/'
+    auth.ResetReturnUrl()
+    router.push(dest)
+    return
+  }
   await settings.LoadSettings()
 })
 
 const login = async function () {
   console.log("Performing login for user:", username.value);
   loggingIn.value = true;
+  const dest = returnUrl.value && returnUrl.value !== '/login' ? returnUrl.value : (auth.ReturnUrl || '/')
   auth.Login(username.value, password.value)
       .then(uid => {
         notify({
@@ -37,7 +49,8 @@ const login = async function () {
         });
         loggingIn.value = false;
         settings.LoadSettings(); // reload full settings
-        router.push(auth.ReturnUrl);
+        auth.ResetReturnUrl();
+        router.push(dest);
       })
       .catch(error => {
         notify({
@@ -55,6 +68,7 @@ const login = async function () {
 const loginWebAuthn = async function () {
   console.log("Performing webauthn login");
   loggingIn.value = true;
+  const dest = returnUrl.value && returnUrl.value !== '/login' ? returnUrl.value : (auth.ReturnUrl || '/')
   auth.LoginWebAuthn()
       .then(uid => {
         notify({
@@ -64,7 +78,8 @@ const loginWebAuthn = async function () {
         });
         loggingIn.value = false;
         settings.LoadSettings(); // reload full settings
-        router.push(auth.ReturnUrl);
+        auth.ResetReturnUrl();
+        router.push(dest);
       })
       .catch(error => {
         notify({
@@ -83,6 +98,9 @@ const externalLogin = function (provider) {
   console.log("Performing external login for provider", provider.Identifier);
   loggingIn.value = true;
   console.log(router.currentRoute.value);
+  if (returnUrl.value && returnUrl.value !== '/login') {
+    auth.SetReturnUrl(returnUrl.value);
+  }
   // Derive the return URL from the live document location, never from the build-time asset base
   // (import.meta.env.BASE_URL): the app is mounted at {web.base_path}/app/ in production and at /
   // under `npm run dev`, so window.location is the only reliable source.

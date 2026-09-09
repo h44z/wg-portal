@@ -125,7 +125,7 @@ func (e UserEndpoint) handleAllGet() http.HandlerFunc {
 // @Router /user/{id} [get]
 func (e UserEndpoint) handleSingleGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
@@ -156,7 +156,7 @@ func (e UserEndpoint) handleSingleGet() http.HandlerFunc {
 // @Router /user/{id} [put]
 func (e UserEndpoint) handleUpdatePut() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
@@ -236,7 +236,7 @@ func (e UserEndpoint) handleCreatePost() http.HandlerFunc {
 // @Router /user/{id}/peers [get]
 func (e UserEndpoint) handlePeersGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -267,7 +267,7 @@ func (e UserEndpoint) handlePeersGet() http.HandlerFunc {
 // @Router /user/{id}/stats [get]
 func (e UserEndpoint) handleStatsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -298,7 +298,7 @@ func (e UserEndpoint) handleStatsGet() http.HandlerFunc {
 // @Router /user/{id}/interfaces [get]
 func (e UserEndpoint) handleInterfacesGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -329,7 +329,7 @@ func (e UserEndpoint) handleInterfacesGet() http.HandlerFunc {
 // @Router /user/{id} [delete]
 func (e UserEndpoint) handleDelete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
@@ -358,7 +358,7 @@ func (e UserEndpoint) handleDelete() http.HandlerFunc {
 // @Router /user/{id}/api/enable [post]
 func (e UserEndpoint) handleApiEnablePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -388,7 +388,7 @@ func (e UserEndpoint) handleApiEnablePost() http.HandlerFunc {
 // @Router /user/{id}/api/disable [post]
 func (e UserEndpoint) handleApiDisablePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -418,7 +418,7 @@ func (e UserEndpoint) handleApiDisablePost() http.HandlerFunc {
 // @Router /user/{id}/change-password [post]
 func (e UserEndpoint) handleChangePasswordPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})

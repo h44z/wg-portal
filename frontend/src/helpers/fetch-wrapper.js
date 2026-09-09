@@ -81,9 +81,9 @@ function handleResponse(response) {
         if (!response.ok) {
             const auth = authStore();
             if ([401, 403].includes(response.status) && auth.IsAuthenticated) {
-                console.log("automatic logout initiated...");
-                // auto logout if 401 Unauthorized or 403 Forbidden response returned from api
-                auth.Logout();
+                console.log("unauthorized response received, redirecting to login...");
+                // handle unauthorized session without clearing return url
+                auth.HandleUnauthorized();
             }
 
             const error = (data && data.Message) || response.statusText;

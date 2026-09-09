@@ -107,7 +107,7 @@ func (e PeerEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 // @Router /peer/iface/{iface}/all [get]
 func (e PeerEndpoint) handleAllGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
+		interfaceId := domain.Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
@@ -138,7 +138,7 @@ func (e PeerEndpoint) handleAllGet() http.HandlerFunc {
 // @Router /peer/{id} [get]
 func (e PeerEndpoint) handleSingleGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		peerId := Base64UrlDecode(request.Path(r, "id"))
+		peerId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if peerId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing id parameter"})
@@ -169,7 +169,7 @@ func (e PeerEndpoint) handleSingleGet() http.HandlerFunc {
 // @Router /peer/iface/{iface}/prepare [get]
 func (e PeerEndpoint) handlePrepareGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
+		interfaceId := domain.Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
@@ -201,7 +201,7 @@ func (e PeerEndpoint) handlePrepareGet() http.HandlerFunc {
 // @Router /peer/iface/{iface}/new [post]
 func (e PeerEndpoint) handleCreatePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
+		interfaceId := domain.Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
@@ -249,7 +249,7 @@ func (e PeerEndpoint) handleCreatePost() http.HandlerFunc {
 // @Router /peer/iface/{iface}/multiplenew [post]
 func (e PeerEndpoint) handleCreateMultiplePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
+		interfaceId := domain.Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
@@ -292,7 +292,7 @@ func (e PeerEndpoint) handleCreateMultiplePost() http.HandlerFunc {
 // @Router /peer/{id} [put]
 func (e PeerEndpoint) handleUpdatePut() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		peerId := Base64UrlDecode(request.Path(r, "id"))
+		peerId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if peerId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing id parameter"})
@@ -339,7 +339,7 @@ func (e PeerEndpoint) handleUpdatePut() http.HandlerFunc {
 // @Router /peer/{id} [delete]
 func (e PeerEndpoint) handleDelete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing peer id"})
 			return
@@ -370,7 +370,7 @@ func (e PeerEndpoint) handleDelete() http.HandlerFunc {
 // @Router /peer/config/{id} [get]
 func (e PeerEndpoint) handleConfigGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
@@ -415,7 +415,7 @@ func (e PeerEndpoint) handleConfigGet() http.HandlerFunc {
 // @Router /peer/config-qr/{id} [get]
 func (e PeerEndpoint) handleQrCodeGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{
 				Code: http.StatusInternalServerError, Message: "missing id parameter",
@@ -504,7 +504,7 @@ func (e PeerEndpoint) handleEmailPost() http.HandlerFunc {
 // @Router /peer/iface/{iface}/stats [get]
 func (e PeerEndpoint) handleStatsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		interfaceId := Base64UrlDecode(request.Path(r, "iface"))
+		interfaceId := domain.Base64UrlDecode(request.Path(r, "iface"))
 		if interfaceId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusBadRequest, Message: "missing iface parameter"})
