@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	"github.com/h44z/wg-portal/internal/app/api/core/request"
 	"github.com/h44z/wg-portal/internal/app/api/core/respond"
@@ -137,10 +138,8 @@ func UserHasScopes(session SessionData, scopes ...Scope) bool {
 	}
 
 	// Check if admin scope is required
-	for _, scope := range scopes {
-		if scope == ScopeAdmin {
-			return false
-		}
+	if slices.Contains(scopes, ScopeAdmin) {
+		return false
 	}
 
 	// For all other scopes, a logged-in user is sufficient (for now)

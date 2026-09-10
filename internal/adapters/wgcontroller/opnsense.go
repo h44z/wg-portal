@@ -168,7 +168,7 @@ func parseCidrsTolerant(value, what, owner string) []domain.Cidr {
 	}
 
 	parsed := make([]domain.Cidr, 0, 1)
-	for _, part := range strings.Split(value, ",") {
+	for part := range strings.SplitSeq(value, ",") {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue
@@ -424,11 +424,9 @@ func (c *OpnsenseController) convertServer(
 	stats := interfaceStats[string(identifier)]
 
 	physicalInterface := &domain.PhysicalInterface{
-		Identifier: identifier,
-		KeyPair: domain.KeyPair{
-			PrivateKey: row.GetString("privkey"),
-			PublicKey:  row.GetString("pubkey"),
-		},
+		Identifier:   identifier,
+		PrivateKey:   row.GetString("privkey"),
+		PublicKey:    row.GetString("pubkey"),
 		ListenPort:   row.GetInt("port"),
 		Addresses:    addresses,
 		Mtu:          row.GetInt("mtu"),
@@ -494,7 +492,7 @@ func clientBelongsToServer(row lowlevel.GenericJsonObject, serverUuid string) bo
 	if serverUuid == "" {
 		return false
 	}
-	for _, uuid := range strings.Split(row.GetString("servers"), ",") {
+	for uuid := range strings.SplitSeq(row.GetString("servers"), ",") {
 		if strings.TrimSpace(uuid) == serverUuid {
 			return true
 		}
@@ -522,12 +520,10 @@ func (c *OpnsenseController) convertClient(
 		Identifier: domain.PeerIdentifier(publicKey),
 		Endpoint:   endpoint,
 		AllowedIPs: allowedIPs,
-		KeyPair: domain.KeyPair{
-			PublicKey: publicKey,
-			// OPNsense stores only the public key for a peer; the private key
-			// stays with the client device.
-			PrivateKey: "",
-		},
+		PublicKey:  publicKey,
+		// OPNsense stores only the public key for a peer; the private key
+		// stays with the client device.
+		PrivateKey:          "",
 		PresharedKey:        domain.PreSharedKey(row.GetString("psk")),
 		PersistentKeepalive: row.GetInt("keepalive"),
 		LastHandshake:       stats.lastHandshake,
@@ -726,7 +722,7 @@ func (c *OpnsenseController) SavePeer(
 	} else {
 		physicalPeer = &domain.PhysicalPeer{
 			Identifier:   id,
-			KeyPair:      domain.KeyPair{PublicKey: string(id)},
+			PublicKey:    string(id),
 			ImportSource: domain.ControllerTypeOpnsense,
 		}
 		physicalPeer.SetExtras(domain.OpnsensePeerExtras{})
@@ -781,7 +777,7 @@ func (c *OpnsenseController) createOrUpdatePeer(
 	// from them.
 	servers := map[string]struct{}{serverUuid: {}}
 	if existingRow != nil {
-		for _, uuid := range strings.Split(existingRow.GetString("servers"), ",") {
+		for uuid := range strings.SplitSeq(existingRow.GetString("servers"), ",") {
 			if uuid = strings.TrimSpace(uuid); uuid != "" {
 				servers[uuid] = struct{}{}
 			}
@@ -912,7 +908,7 @@ func (c *OpnsenseController) DeletePeer(
 	remaining := make([]string, 0)
 	if serverRow != nil {
 		serverUuid := serverRow.GetString("uuid")
-		for _, attached := range strings.Split(row.GetString("servers"), ",") {
+		for attached := range strings.SplitSeq(row.GetString("servers"), ",") {
 			if attached = strings.TrimSpace(attached); attached != "" && attached != serverUuid {
 				remaining = append(remaining, attached)
 			}

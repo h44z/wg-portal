@@ -114,7 +114,7 @@ type Session interface {
 
 type Validator interface {
 	// Struct validates the given struct.
-	Struct(s interface{}) error
+	Struct(s any) error
 }
 
 // endregion handler-interfaces

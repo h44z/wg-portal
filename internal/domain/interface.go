@@ -6,6 +6,7 @@ import (
 	"math"
 	"net"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -60,8 +61,8 @@ type Interface struct {
 	DriverType        string           // the interface driver type (linux, software, ...)
 	IsDynamic         bool             `gorm:"column:is_dynamic;default:false"` // specifies if the interface is a dynamic object
 
-	Disabled          *time.Time       `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
-	DisabledReason    string           // the reason why the interface has been disabled
+	Disabled       *time.Time `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
+	DisabledReason string     // the reason why the interface has been disabled
 
 	// Default settings for the peer, used for new peers, those settings will be published to ConfigOption options of
 	// the peer config
@@ -100,10 +101,8 @@ func (i *Interface) IsUserAllowed(userId UserIdentifier, cfg *config.Config) boo
 	}
 
 	for _, allowedUsers := range i.LdapAllowedUsers {
-		for _, uid := range allowedUsers {
-			if uid == userId {
-				return true
-			}
+		if slices.Contains(allowedUsers, userId) {
+			return true
 		}
 	}
 	return false

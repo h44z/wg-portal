@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/h44z/wg-portal/internal"
@@ -49,11 +50,8 @@ func parseOauthUserInfo(
 	if !isAdmin && mapping.UserGroups != "" && adminMapping.AdminGroupRegex != "" {
 		adminInfoAvailable = true
 		re := adminMapping.GetAdminGroupRegex()
-		for _, group := range userInfo.UserGroups {
-			if re.MatchString(group) {
-				isAdmin = true
-				break
-			}
+		if slices.ContainsFunc(userInfo.UserGroups, re.MatchString) {
+			isAdmin = true
 		}
 		userInfo.IsAdmin = isAdmin
 		userInfo.AdminInfoAvailable = adminInfoAvailable
@@ -65,16 +63,14 @@ func parseOauthUserInfo(
 // getOauthFieldMapping returns the default field mapping for the oauth provider
 func getOauthFieldMapping(f config.OauthFields) config.OauthFields {
 	defaultMap := config.OauthFields{
-		BaseFields: config.BaseFields{
-			UserIdentifier: "sub",
-			Email:          "email",
-			Firstname:      "given_name",
-			Lastname:       "family_name",
-			Phone:          "phone",
-			Department:     "department",
-		},
-		IsAdmin:    "admin_flag",
-		UserGroups: "", // by default, do not use user groups
+		UserIdentifier: "sub",
+		Email:          "email",
+		Firstname:      "given_name",
+		Lastname:       "family_name",
+		Phone:          "phone",
+		Department:     "department",
+		IsAdmin:        "admin_flag",
+		UserGroups:     "", // by default, do not use user groups
 	}
 	if f.UserIdentifier != "" {
 		defaultMap.UserIdentifier = f.UserIdentifier

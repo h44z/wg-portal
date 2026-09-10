@@ -16,14 +16,12 @@ import (
 // makeOauthFieldMapping returns a minimal OauthFields mapping for testing.
 func makeOauthFieldMapping() config.OauthFields {
 	return config.OauthFields{
-		BaseFields: config.BaseFields{
-			UserIdentifier: "sub",
-			Email:          "email",
-			Firstname:      "given_name",
-			Lastname:       "family_name",
-			Phone:          "phone",
-			Department:     "department",
-		},
+		UserIdentifier: "sub",
+		Email:          "email",
+		Firstname:      "given_name",
+		Lastname:       "family_name",
+		Phone:          "phone",
+		Department:     "department",
 	}
 }
 

@@ -122,12 +122,10 @@ func (a *App) createDefaultUser(ctx context.Context) error {
 
 	now := time.Now()
 	defaultAdmin := &domain.User{
-		BaseModel: domain.BaseModel{
-			CreatedBy: domain.CtxSystemAdminId,
-			UpdatedBy: domain.CtxSystemAdminId,
-			CreatedAt: now,
-			UpdatedAt: now,
-		},
+		CreatedBy:       domain.CtxSystemAdminId,
+		UpdatedBy:       domain.CtxSystemAdminId,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 		Identifier:      adminUserId,
 		Email:           "admin@wgportal.local",
 		IsAdmin:         true,

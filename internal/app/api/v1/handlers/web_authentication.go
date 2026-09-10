@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	"github.com/h44z/wg-portal/internal/app/api/core/respond"
 	"github.com/h44z/wg-portal/internal/app/api/v0/model"
@@ -104,11 +105,5 @@ func UserHasScopes(user *domain.User, scopes ...Scope) bool {
 	}
 
 	// Check if admin scope is required
-	for _, scope := range scopes {
-		if scope == ScopeAdmin {
-			return false
-		}
-	}
-
-	return true
+	return !slices.Contains(scopes, ScopeAdmin)
 }

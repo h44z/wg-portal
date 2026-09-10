@@ -166,12 +166,10 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 
 	peerId := domain.PeerIdentifier(kp.PublicKey)
 	freshPeer := &domain.Peer{
-		BaseModel: domain.BaseModel{
-			CreatedBy: string(currentUser.Id),
-			UpdatedBy: string(currentUser.Id),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+		CreatedBy:           string(currentUser.Id),
+		UpdatedBy:           string(currentUser.Id),
+		CreatedAt:           time.Now(),
+		UpdatedAt:           time.Now(),
 		Endpoint:            domain.NewConfigOption(iface.PeerDefEndpoint, true),
 		EndpointPublicKey:   domain.NewConfigOption(iface.PublicKey, true),
 		AllowedIPsStr:       domain.NewConfigOption(iface.PeerDefAllowedIPsStr, true),

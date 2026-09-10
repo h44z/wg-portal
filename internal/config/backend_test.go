@@ -16,9 +16,9 @@ func TestBackendValidate_DefaultsToLocal(t *testing.T) {
 
 func TestBackendValidate_RejectsReservedId(t *testing.T) {
 	tests := map[string]Backend{
-		"mikrotik": {Mikrotik: []BackendMikrotik{{BackendBase: BackendBase{Id: LocalBackendName}}}},
-		"pfsense":  {Pfsense: []BackendPfsense{{BackendBase: BackendBase{Id: LocalBackendName}}}},
-		"opnsense": {Opnsense: []BackendOpnsense{{BackendBase: BackendBase{Id: LocalBackendName}}}},
+		"mikrotik": {Mikrotik: []BackendMikrotik{{Id: LocalBackendName}}},
+		"pfsense":  {Pfsense: []BackendPfsense{{Id: LocalBackendName}}},
+		"opnsense": {Opnsense: []BackendOpnsense{{Id: LocalBackendName}}},
 	}
 
 	for name, backend := range tests {
@@ -35,8 +35,8 @@ func TestBackendValidate_RejectsReservedId(t *testing.T) {
 // controller map would silently keep only one of them.
 func TestBackendValidate_RejectsDuplicateIdAcrossTypes(t *testing.T) {
 	backend := Backend{
-		Pfsense:  []BackendPfsense{{BackendBase: BackendBase{Id: "fw1"}}},
-		Opnsense: []BackendOpnsense{{BackendBase: BackendBase{Id: "fw1"}}},
+		Pfsense:  []BackendPfsense{{Id: "fw1"}},
+		Opnsense: []BackendOpnsense{{Id: "fw1"}},
 	}
 
 	err := backend.Validate()
@@ -47,7 +47,7 @@ func TestBackendValidate_RejectsDuplicateIdAcrossTypes(t *testing.T) {
 func TestBackendValidate_RejectsUnknownDefault(t *testing.T) {
 	backend := Backend{
 		Default:  "does-not-exist",
-		Opnsense: []BackendOpnsense{{BackendBase: BackendBase{Id: "fw1"}}},
+		Opnsense: []BackendOpnsense{{Id: "fw1"}},
 	}
 
 	err := backend.Validate()
@@ -58,7 +58,7 @@ func TestBackendValidate_RejectsUnknownDefault(t *testing.T) {
 func TestBackendValidate_AcceptsOpnsenseAsDefault(t *testing.T) {
 	backend := Backend{
 		Default:  "fw1",
-		Opnsense: []BackendOpnsense{{BackendBase: BackendBase{Id: "fw1"}}},
+		Opnsense: []BackendOpnsense{{Id: "fw1"}},
 	}
 
 	assert.NoError(t, backend.Validate())
@@ -77,7 +77,7 @@ func TestBackendOpnsenseDefaults(t *testing.T) {
 }
 
 func TestBackendOpnsenseDisplayName(t *testing.T) {
-	backend := BackendOpnsense{BackendBase: BackendBase{Id: "fw1"}}
+	backend := BackendOpnsense{Id: "fw1"}
 	assert.Equal(t, "fw1", backend.GetDisplayName(), "display name falls back to the id")
 
 	backend.DisplayName = "Edge firewall"

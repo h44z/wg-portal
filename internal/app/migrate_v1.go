@@ -136,12 +136,10 @@ func migrateV1Users(oldDb, newDb *gorm.DB) error {
 			deletionReason = "disabled prior to migration"
 		}
 		newUser := domain.User{
-			BaseModel: domain.BaseModel{
-				CreatedBy: domain.CtxSystemV1Migrator,
-				UpdatedBy: domain.CtxSystemV1Migrator,
-				CreatedAt: oldUser.CreatedAt,
-				UpdatedAt: oldUser.UpdatedAt,
-			},
+			CreatedBy:       domain.CtxSystemV1Migrator,
+			UpdatedBy:       domain.CtxSystemV1Migrator,
+			CreatedAt:       oldUser.CreatedAt,
+			UpdatedAt:       oldUser.UpdatedAt,
 			Identifier:      domain.UserIdentifier(oldUser.Email),
 			Email:           oldUser.Email,
 			IsAdmin:         oldUser.IsAdmin,
@@ -162,12 +160,10 @@ func migrateV1Users(oldDb, newDb *gorm.DB) error {
 		}
 
 		authentication := domain.UserAuthentication{
-			BaseModel: domain.BaseModel{
-				CreatedBy: domain.CtxSystemV1Migrator,
-				UpdatedBy: domain.CtxSystemV1Migrator,
-				CreatedAt: oldUser.CreatedAt,
-				UpdatedAt: oldUser.UpdatedAt,
-			},
+			CreatedBy:      domain.CtxSystemV1Migrator,
+			UpdatedBy:      domain.CtxSystemV1Migrator,
+			CreatedAt:      oldUser.CreatedAt,
+			UpdatedAt:      oldUser.UpdatedAt,
 			UserIdentifier: domain.UserIdentifier(oldUser.Email),
 			Source:         domain.UserSource(oldUser.Source),
 			ProviderName:   "", // unknown
@@ -223,17 +219,13 @@ func migrateV1Interfaces(oldDb, newDb *gorm.DB) error {
 			networks[i] = domain.CidrFromIpNet(*ip.IpNet())
 		}
 		newInterface := domain.Interface{
-			BaseModel: domain.BaseModel{
-				CreatedBy: domain.CtxSystemV1Migrator,
-				UpdatedBy: domain.CtxSystemV1Migrator,
-				CreatedAt: oldDevice.CreatedAt,
-				UpdatedAt: oldDevice.UpdatedAt,
-			},
-			Identifier: domain.InterfaceIdentifier(oldDevice.DeviceName),
-			KeyPair: domain.KeyPair{
-				PrivateKey: oldDevice.PrivateKey,
-				PublicKey:  oldDevice.PublicKey,
-			},
+			CreatedBy:                  domain.CtxSystemV1Migrator,
+			UpdatedBy:                  domain.CtxSystemV1Migrator,
+			CreatedAt:                  oldDevice.CreatedAt,
+			UpdatedAt:                  oldDevice.UpdatedAt,
+			Identifier:                 domain.InterfaceIdentifier(oldDevice.DeviceName),
+			PrivateKey:                 oldDevice.PrivateKey,
+			PublicKey:                  oldDevice.PublicKey,
 			ListenPort:                 oldDevice.ListenPort,
 			Addresses:                  ips,
 			DnsStr:                     "",
@@ -350,12 +342,10 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 			// create dummy user
 			now := time.Now()
 			user = domain.User{
-				BaseModel: domain.BaseModel{
-					CreatedBy: domain.CtxSystemV1Migrator,
-					UpdatedBy: domain.CtxSystemV1Migrator,
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				CreatedBy:    domain.CtxSystemV1Migrator,
+				UpdatedBy:    domain.CtxSystemV1Migrator,
+				CreatedAt:    now,
+				UpdatedAt:    now,
 				Identifier:   domain.UserIdentifier(oldPeer.Email),
 				Email:        oldPeer.Email,
 				IsAdmin:      false,
@@ -369,12 +359,10 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 			}
 
 			authentication := domain.UserAuthentication{
-				BaseModel: domain.BaseModel{
-					CreatedBy: domain.CtxSystemV1Migrator,
-					UpdatedBy: domain.CtxSystemV1Migrator,
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				CreatedBy:      domain.CtxSystemV1Migrator,
+				UpdatedBy:      domain.CtxSystemV1Migrator,
+				CreatedAt:      now,
+				UpdatedAt:      now,
 				UserIdentifier: domain.UserIdentifier(oldPeer.Email),
 				Source:         domain.UserSourceDatabase,
 				ProviderName:   "", // unknown
@@ -386,12 +374,10 @@ func migrateV1Peers(oldDb, newDb *gorm.DB) error {
 			slog.Debug("dummy user migrated successfully", "identifier", user.Identifier)
 		}
 		newPeer := domain.Peer{
-			BaseModel: domain.BaseModel{
-				CreatedBy: domain.CtxSystemV1Migrator,
-				UpdatedBy: domain.CtxSystemV1Migrator,
-				CreatedAt: oldPeer.CreatedAt,
-				UpdatedAt: oldPeer.UpdatedAt,
-			},
+			CreatedBy:           domain.CtxSystemV1Migrator,
+			UpdatedBy:           domain.CtxSystemV1Migrator,
+			CreatedAt:           oldPeer.CreatedAt,
+			UpdatedAt:           oldPeer.UpdatedAt,
 			Endpoint:            domain.NewConfigOption(oldPeer.Endpoint, !oldPeer.IgnoreGlobalSettings),
 			EndpointPublicKey:   domain.NewConfigOption(iface.PublicKey, !oldPeer.IgnoreGlobalSettings),
 			AllowedIPsStr:       domain.NewConfigOption(oldPeer.AllowedIPsStr, !oldPeer.IgnoreGlobalSettings),

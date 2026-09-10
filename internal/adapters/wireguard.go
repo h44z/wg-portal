@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 
 	"github.com/vishvananda/netlink"
 	"golang.zx2c4.com/wireguard/wgctrl"
@@ -106,11 +107,9 @@ func (r *WgRepo) convertWireGuardInterface(device *wgtypes.Device) (domain.Physi
 	// read data from wgctrl interface
 
 	iface := domain.PhysicalInterface{
-		Identifier: domain.InterfaceIdentifier(device.Name),
-		KeyPair: domain.KeyPair{
-			PrivateKey: device.PrivateKey.String(),
-			PublicKey:  device.PublicKey.String(),
-		},
+		Identifier:    domain.InterfaceIdentifier(device.Name),
+		PrivateKey:    device.PrivateKey.String(),
+		PublicKey:     device.PublicKey.String(),
 		ListenPort:    device.ListenPort,
 		Addresses:     nil,
 		Mtu:           0,
@@ -148,12 +147,10 @@ func (r *WgRepo) convertWireGuardInterface(device *wgtypes.Device) (domain.Physi
 
 func (r *WgRepo) convertWireGuardPeer(peer *wgtypes.Peer) (domain.PhysicalPeer, error) {
 	peerModel := domain.PhysicalPeer{
-		Identifier: domain.PeerIdentifier(peer.PublicKey.String()),
-		Endpoint:   "",
-		AllowedIPs: nil,
-		KeyPair: domain.KeyPair{
-			PublicKey: peer.PublicKey.String(),
-		},
+		Identifier:          domain.PeerIdentifier(peer.PublicKey.String()),
+		Endpoint:            "",
+		AllowedIPs:          nil,
+		PublicKey:           peer.PublicKey.String(),
 		PresharedKey:        "",
 		PersistentKeepalive: int(peer.PersistentKeepaliveInterval.Seconds()),
 		LastHandshake:       peer.LastHandshakeTime,
@@ -241,9 +238,7 @@ func (r *WgRepo) getInterface(id domain.InterfaceIdentifier) (*domain.PhysicalIn
 
 func (r *WgRepo) createLowLevelInterface(id domain.InterfaceIdentifier) error {
 	link := &netlink.GenericLink{
-		LinkAttrs: netlink.LinkAttrs{
-			Name: string(id),
-		},
+		Name:     string(id),
 		LinkType: "wireguard",
 	}
 	err := r.nl.LinkAdd(link)
@@ -279,13 +274,7 @@ func (r *WgRepo) updateLowLevelInterface(pi *domain.PhysicalInterface) error {
 	}
 	for _, rawAddr := range rawAddresses {
 		netlinkAddr := domain.CidrFromNetlinkAddr(rawAddr)
-		remove := true
-		for _, addr := range pi.Addresses {
-			if addr == netlinkAddr {
-				remove = false
-				break
-			}
-		}
+		remove := !slices.Contains(pi.Addresses, netlinkAddr)
 
 		if !remove {
 			continue
@@ -351,8 +340,7 @@ func (r *WgRepo) DeleteInterface(_ context.Context, id domain.InterfaceIdentifie
 func (r *WgRepo) deleteLowLevelInterface(id domain.InterfaceIdentifier) error {
 	link, err := r.nl.LinkByName(string(id))
 	if err != nil {
-		var linkNotFoundError netlink.LinkNotFoundError
-		if errors.As(err, &linkNotFoundError) {
+		if _, ok := errors.AsType[netlink.LinkNotFoundError](err); ok {
 			return nil // ignore not found error
 		}
 		return fmt.Errorf("unable to find low level interface: %w", err)

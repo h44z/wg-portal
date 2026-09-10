@@ -47,7 +47,7 @@ type Peer struct {
 	InterfaceIdentifier string     `json:"InterfaceIdentifier"`                  // the interface id
 	Disabled            bool       `json:"Disabled"`                             // flag that specifies if the peer is enabled (up) or not (down)
 	DisabledReason      string     `json:"DisabledReason"`                       // the reason why the peer has been disabled
-	ExpiresAt           ExpiryDate `json:"ExpiresAt,omitempty"`                  // expiry dates for peers
+	ExpiresAt           ExpiryDate `json:"ExpiresAt"`                            // expiry dates for peers
 	Notes               string     `json:"Notes"`                                // a note field for peers
 	IsDynamic           bool       `json:"IsDynamic"`                            // specifies if the peer is dynamically created by mikrotik
 

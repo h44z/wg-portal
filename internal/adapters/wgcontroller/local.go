@@ -127,11 +127,9 @@ func (c LocalController) convertWireGuardInterface(device *wgtypes.Device) (doma
 	// read data from wgctrl interface
 
 	iface := domain.PhysicalInterface{
-		Identifier: domain.InterfaceIdentifier(device.Name),
-		KeyPair: domain.KeyPair{
-			PrivateKey: device.PrivateKey.String(),
-			PublicKey:  device.PublicKey.String(),
-		},
+		Identifier:    domain.InterfaceIdentifier(device.Name),
+		PrivateKey:    device.PrivateKey.String(),
+		PublicKey:     device.PublicKey.String(),
 		ListenPort:    device.ListenPort,
 		Addresses:     nil,
 		Mtu:           0,
@@ -190,12 +188,10 @@ func (c LocalController) GetPeers(_ context.Context, deviceId domain.InterfaceId
 
 func (c LocalController) convertWireGuardPeer(peer *wgtypes.Peer) (domain.PhysicalPeer, error) {
 	peerModel := domain.PhysicalPeer{
-		Identifier: domain.PeerIdentifier(peer.PublicKey.String()),
-		Endpoint:   "",
-		AllowedIPs: nil,
-		KeyPair: domain.KeyPair{
-			PublicKey: peer.PublicKey.String(),
-		},
+		Identifier:          domain.PeerIdentifier(peer.PublicKey.String()),
+		Endpoint:            "",
+		AllowedIPs:          nil,
+		PublicKey:           peer.PublicKey.String(),
 		PresharedKey:        "",
 		PersistentKeepalive: int(peer.PersistentKeepaliveInterval.Seconds()),
 		LastHandshake:       peer.LastHandshakeTime,
@@ -280,9 +276,7 @@ func (c LocalController) getInterface(id domain.InterfaceIdentifier) (*domain.Ph
 
 func (c LocalController) createLowLevelInterface(id domain.InterfaceIdentifier) error {
 	link := &netlink.GenericLink{
-		LinkAttrs: netlink.LinkAttrs{
-			Name: string(id),
-		},
+		Name:     string(id),
 		LinkType: "wireguard",
 	}
 	err := c.nl.LinkAdd(link)
@@ -318,13 +312,7 @@ func (c LocalController) updateLowLevelInterface(pi *domain.PhysicalInterface) e
 	}
 	for _, rawAddr := range rawAddresses {
 		netlinkAddr := domain.CidrFromNetlinkAddr(rawAddr)
-		remove := true
-		for _, addr := range pi.Addresses {
-			if addr == netlinkAddr {
-				remove = false
-				break
-			}
-		}
+		remove := !slices.Contains(pi.Addresses, netlinkAddr)
 
 		if !remove {
 			continue
@@ -385,8 +373,7 @@ func (c LocalController) DeleteInterface(_ context.Context, id domain.InterfaceI
 func (c LocalController) deleteLowLevelInterface(id domain.InterfaceIdentifier) error {
 	link, err := c.nl.LinkByName(string(id))
 	if err != nil {
-		var linkNotFoundError netlink.LinkNotFoundError
-		if errors.As(err, &linkNotFoundError) {
+		if _, ok := errors.AsType[netlink.LinkNotFoundError](err); ok {
 			return nil // ignore not found error
 		}
 		return fmt.Errorf("unable to find low level interface: %w", err)
