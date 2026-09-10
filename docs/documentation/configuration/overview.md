@@ -219,7 +219,7 @@ The current MikroTik backend is in **BETA** and may not support all features.
 ### `default`
 - **Default:** `local`
 - **Description:** The default backend to use for managing WireGuard interfaces. 
-  Valid options are: `local`, or other backend id's configured in the `mikrotik` section.
+  Valid options are: `local`, or other backend id's configured in the `mikrotik`, `pfsense` or `opnsense` sections.
 
 ### `rekey_timeout_interval`
 - **Default:** `180s`
@@ -292,6 +292,58 @@ Below are the properties for each entry inside `backend.mikrotik`:
 - **Description:** Enable verbose debug logging for the MikroTik backend.
 
 For more details on configuring the MikroTik backend, see the [Backends](../usage/backends.md) documentation.
+
+### OPNsense
+
+The `opnsense` array contains a list of OPNsense backend definitions. Each entry describes how to connect to an OPNsense firewall that hosts WireGuard interfaces.
+The WireGuard API used here is part of OPNsense core, so no add-on package needs to be installed on the firewall.
+
+Below are the properties for each entry inside `backend.opnsense`:
+
+#### `id`
+- **Default:** *(empty)*
+- **Description:** A unique identifier for this backend.
+  This value can be referenced by `backend.default` to use this backend as default.
+  The identifier must be unique across all backends and must not use the reserved keyword `local`.
+
+#### `display_name`
+- **Default:** *(empty)*
+- **Description:** A human-friendly display name for this backend. If omitted, the `id` will be used as the display name.
+
+#### `api_url`
+- **Default:** *(empty)*
+- **Description:** Base URL of the OPNsense appliance, including scheme, e.g., `https://opnsense.example.com`.
+  Do not append `/api`; the backend adds the API paths itself.
+
+#### `api_key`
+- **Default:** *(empty)*
+- **Description:** API key, created under `System -> Access -> Users -> <user> -> API keys`.
+
+#### `api_secret`
+- **Default:** *(empty)*
+- **Description:** The secret belonging to `api_key`. OPNsense authenticates the pair as HTTP Basic credentials.
+  The secret is shown only once, when the key is created.
+
+#### `api_verify_tls`
+- **Default:** `false`
+- **Description:** Whether to verify the TLS certificate of the OPNsense API endpoint. Set to `false` to allow self-signed certificates (not recommended for production).
+
+#### `api_timeout`
+- **Default:** `30s`
+- **Description:** Timeout for API requests to the OPNsense firewall. Uses Go duration format (e.g., `10s`, `1m`). If omitted, a default of 30 seconds is used.
+
+#### `ignored_interfaces`
+- **Default:** *(empty)*
+- **Description:** A list of interface names to exclude during interface enumeration.
+  This is useful if you want to prevent specific interfaces from being imported from the OPNsense firewall.
+
+#### `debug`
+- **Default:** `false`
+- **Description:** Enable verbose debug logging for the OPNsense backend.
+
+> There is deliberately no `concurrency` option for this backend. The MikroTik and pfSense backends issue one request per interface when enumerating details; the OPNsense search endpoints return every record with its fields already populated, so enumeration costs a fixed number of requests regardless of how many tunnels exist.
+
+For more details on configuring the OPNsense backend, see the [Backends](../usage/backends.md) documentation.
 
 ---
 

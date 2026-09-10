@@ -21,6 +21,7 @@ type Backend struct {
 
 	Mikrotik []BackendMikrotik `yaml:"mikrotik"`
 	Pfsense  []BackendPfsense  `yaml:"pfsense"`
+	Opnsense []BackendOpnsense `yaml:"opnsense"`
 }
 
 // Validate checks the backend configuration for errors.
@@ -30,23 +31,31 @@ func (b *Backend) Validate() error {
 	}
 
 	uniqueMap := make(map[string]struct{})
-	for _, backend := range b.Mikrotik {
-		if backend.Id == LocalBackendName {
+	checkBackendId := func(id string) error {
+		if id == LocalBackendName {
 			return fmt.Errorf("backend ID %q is a reserved keyword", LocalBackendName)
 		}
-		if _, exists := uniqueMap[backend.Id]; exists {
-			return fmt.Errorf("backend ID %q is not unique", backend.Id)
+		if _, exists := uniqueMap[id]; exists {
+			return fmt.Errorf("backend ID %q is not unique", id)
 		}
-		uniqueMap[backend.Id] = struct{}{}
+		uniqueMap[id] = struct{}{}
+		return nil
+	}
+
+	for _, backend := range b.Mikrotik {
+		if err := checkBackendId(backend.Id); err != nil {
+			return err
+		}
 	}
 	for _, backend := range b.Pfsense {
-		if backend.Id == LocalBackendName {
-			return fmt.Errorf("backend ID %q is a reserved keyword", LocalBackendName)
+		if err := checkBackendId(backend.Id); err != nil {
+			return err
 		}
-		if _, exists := uniqueMap[backend.Id]; exists {
-			return fmt.Errorf("backend ID %q is not unique", backend.Id)
+	}
+	for _, backend := range b.Opnsense {
+		if err := checkBackendId(backend.Id); err != nil {
+			return err
 		}
-		uniqueMap[backend.Id] = struct{}{}
 	}
 
 	if b.Default != LocalBackendName {
@@ -145,6 +154,41 @@ func (b *BackendPfsense) GetConcurrency() int {
 // GetApiTimeout returns the configured API timeout or a sane default (30 seconds)
 // when the configured value is zero or negative.
 func (b *BackendPfsense) GetApiTimeout() time.Duration {
+	if b == nil {
+		return 30 * time.Second
+	}
+	if b.ApiTimeout <= 0 {
+		return 30 * time.Second
+	}
+	return b.ApiTimeout
+}
+
+type BackendOpnsense struct {
+	BackendBase `yaml:",inline"` // Embed the base fields
+
+	// The base URL of the OPNsense API (e.g., "https://opnsense.example.com").
+	// Unlike the pfSense backend this is the host root, not an /api prefix: the
+	// controller paths already start with /api/wireguard/.
+	ApiUrl string `yaml:"api_url"`
+	// OPNsense authenticates with an API key/secret pair sent as HTTP Basic
+	// credentials, generated under 'System' -> 'Access' -> 'Users' -> 'API keys'.
+	// This differs from pfSense, which uses a single X-API-Key header value.
+	ApiKey       string        `yaml:"api_key"`
+	ApiSecret    string        `yaml:"api_secret"`
+	ApiVerifyTls bool          `yaml:"api_verify_tls"` // Whether to verify the TLS certificate of the OPNsense API
+	ApiTimeout   time.Duration `yaml:"api_timeout"`    // Timeout for API requests (default: 30 seconds)
+
+	Debug bool `yaml:"debug"` // Enable debug logging for the OPNsense backend
+
+	// Note: there is deliberately no concurrency setting here. The Mikrotik and
+	// pfSense backends fan out one request per interface to collect details;
+	// OPNsense's searchXxx endpoints return every record with its fields already
+	// populated, so enumeration costs a fixed three calls regardless of size.
+}
+
+// GetApiTimeout returns the configured API timeout or a sane default (30 seconds)
+// when the configured value is zero or negative.
+func (b *BackendOpnsense) GetApiTimeout() time.Duration {
 	if b == nil {
 		return 30 * time.Second
 	}

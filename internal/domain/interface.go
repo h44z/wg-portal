@@ -283,7 +283,8 @@ func (p *PhysicalInterface) SetExtras(extras any) {
 	switch extras.(type) {
 	case MikrotikInterfaceExtras: // OK
 	case PfsenseInterfaceExtras: // OK
-	default: // we only support MikrotikInterfaceExtras and PfsenseInterfaceExtras for now
+	case OpnsenseInterfaceExtras: // OK
+	default: // we only support Mikrotik, Pfsense and Opnsense interface extras for now
 		panic(fmt.Sprintf("unsupported interface backend extras type %T", extras))
 	}
 
@@ -354,6 +355,14 @@ func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
 		} else {
 			iface.Disabled = nil
 		}
+	case ControllerTypeOpnsense:
+		extras := pi.GetExtras().(OpnsenseInterfaceExtras)
+		iface.DisplayName = extras.Comment
+		if extras.Disabled {
+			iface.Disabled = &now
+		} else {
+			iface.Disabled = nil
+		}
 	}
 
 	return iface
@@ -380,6 +389,19 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 		extras := PfsenseInterfaceExtras{
 			Comment:  i.DisplayName,
 			Disabled: i.IsDisabled(),
+		}
+		pi.SetExtras(extras)
+	case ControllerTypeOpnsense:
+		// Uuid and Instance are OPNsense's identity for this tunnel, not
+		// user-editable data, so carry them across the merge rather than
+		// letting the caller re-inject them afterwards.
+		extras := OpnsenseInterfaceExtras{
+			Comment:  i.DisplayName,
+			Disabled: i.IsDisabled(),
+		}
+		if existing, ok := pi.GetExtras().(OpnsenseInterfaceExtras); ok {
+			extras.Uuid = existing.Uuid
+			extras.Instance = existing.Instance
 		}
 		pi.SetExtras(extras)
 	}
