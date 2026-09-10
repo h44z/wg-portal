@@ -5,8 +5,10 @@ Hello,
 {{end}}
 
 You or your administrator probably requested this VPN configuration.
-Scan the attached Qrcode or open the attached configuration file ({{$.ConfigFileName}})
-in the WireGuard VPN client to establish a secure VPN connection.
+Follow the link below to download your personal WireGuard configuration file and open it
+in the WireGuard VPN client to establish a secure VPN connection:
+
+{{$.Link}}
 
 
 

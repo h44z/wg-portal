@@ -110,7 +110,7 @@ func (h AuthenticationHandler) UserIdMatch(idParameter string) func(next http.Ha
 			}
 
 			sessionUserId := domain.UserIdentifier(session.UserIdentifier)
-			requestUserId := domain.UserIdentifier(Base64UrlDecode(request.Path(r, idParameter)))
+			requestUserId := domain.UserIdentifier(domain.Base64UrlDecode(request.Path(r, idParameter)))
 
 			if sessionUserId != requestUserId {
 				// Abort the request with the appropriate error code

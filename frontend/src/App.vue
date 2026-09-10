@@ -1,5 +1,6 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router';
+import router, { publicPages } from '@/router';
 import {computed, getCurrentInstance, nextTick, onMounted, ref} from "vue";
 import { authStore } from "./stores/auth";
 import { securityStore } from "./stores/security";
@@ -24,14 +25,27 @@ onMounted(async () => {
 
   let wasLoggedIn = auth.IsAuthenticated;
   try {
-    await auth.LoadSession();
+    await auth.EnsureSession();
     await settings.LoadSettings(); // only logs errors, does not throw
 
     console.log("WireGuard Portal session is valid");
+
+    // redirect to originally stored return-url (if set)
+    if (!wasLoggedIn && router.currentRoute.value.path === '/login') {
+      const returnUrl = auth.ReturnUrl;
+      if (returnUrl && returnUrl !== '/login') {
+        auth.ResetReturnUrl();
+        router.push(returnUrl);
+      }
+    }
   } catch (e) {
     if (wasLoggedIn) {
-      console.log("WireGuard Portal invalid - logging out");
-      await auth.Logout();
+      console.log("WireGuard Portal session invalid");
+      const currentRoute = router.currentRoute.value;
+      if (currentRoute && !publicPages.includes(currentRoute.path)) {
+        auth.SetReturnUrl(currentRoute.fullPath);
+        router.push('/login');
+      }
     }
   }
 

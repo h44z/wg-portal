@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/mail"
+	"net/url"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -135,7 +136,8 @@ func (m Manager) sendPeerEmail(
 		mailOptions       domain.MailOptions
 	)
 	if linkOnly {
-		txtMail, htmlMail, err = m.tplHandler.GetConfigMail(user, "deep link TBD")
+		configDownloadLink := m.getPeerConfigDownloadLink(peer.Identifier, style)
+		txtMail, htmlMail, err = m.tplHandler.GetConfigMail(user, configDownloadLink)
 		if err != nil {
 			return fmt.Errorf("failed to get mail body: %w", err)
 		}
@@ -180,6 +182,22 @@ func (m Manager) sendPeerEmail(
 	}
 
 	return nil
+}
+
+// getPeerConfigDownloadLink builds an absolute link that points to the peer configuration download
+// page of the WireGuard Portal web frontend. The link is used in link-only emails.
+//
+// The link is a "deep link" into the single-page application (hash based routing). When the recipient
+// opens the link while not being authenticated, the frontend redirects them to the login page first and
+// only starts the configuration download after a successful authentication.
+func (m Manager) getPeerConfigDownloadLink(peerId domain.PeerIdentifier, style string) string {
+	encodedId := domain.Base64UrlEncode(string(peerId))
+	link := fmt.Sprintf("%s%s/app/#/peer/config/%s",
+		m.cfg.Web.ExternalUrl, m.cfg.Web.BasePath, encodedId)
+	if style != "" {
+		link += "?style=" + url.QueryEscape(style)
+	}
+	return link
 }
 
 func (m Manager) resolveEmail(ctx context.Context, peer *domain.Peer) (string, domain.User) {

@@ -383,12 +383,6 @@ func (e AuthEndpoint) setAuthenticatedUser(r *http.Request, user *domain.User, o
 // @Router /auth/login [post]
 func (e AuthEndpoint) handleLoginPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentSession := e.session.GetData(r.Context())
-		if currentSession.LoggedIn {
-			respond.JSON(w, http.StatusOK, model.Error{Code: http.StatusOK, Message: "already logged in"})
-			return
-		}
-
 		var loginData struct {
 			Username string `json:"username" binding:"required,min=2"`
 			Password string `json:"password" binding:"required,min=4"`
@@ -570,7 +564,7 @@ func (e AuthEndpoint) handleWebAuthnCredentialsDelete() http.HandlerFunc {
 
 		userIdentifier := domain.UserIdentifier(currentSession.UserIdentifier)
 
-		credentialId := Base64UrlDecode(request.Path(r, "id"))
+		credentialId := domain.Base64UrlDecode(request.Path(r, "id"))
 
 		credentials, err := e.webAuthn.RemoveCredential(r.Context(), userIdentifier, credentialId)
 		if err != nil {
@@ -605,7 +599,7 @@ func (e AuthEndpoint) handleWebAuthnCredentialsPut() http.HandlerFunc {
 
 		userIdentifier := domain.UserIdentifier(currentSession.UserIdentifier)
 
-		credentialId := Base64UrlDecode(request.Path(r, "id"))
+		credentialId := domain.Base64UrlDecode(request.Path(r, "id"))
 		var req model.WebAuthnCredentialRequest
 		if err := request.BodyJson(r, &req); err != nil {
 			respond.JSON(w, http.StatusBadRequest,
