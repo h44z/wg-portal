@@ -36,7 +36,7 @@ type StatisticsMetricsServer interface {
 
 type StatisticsEventBus interface {
 	// Subscribe subscribes to a topic
-	Subscribe(topic string, fn interface{}) error
+	Subscribe(topic string, fn any) error
 	// Publish sends a message to the message bus.
 	Publish(topic string, args ...any)
 }

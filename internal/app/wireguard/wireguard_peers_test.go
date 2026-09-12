@@ -12,8 +12,8 @@ import (
 
 type mockBus struct{}
 
-func (f *mockBus) Publish(topic string, args ...any)            {}
-func (f *mockBus) Subscribe(topic string, fn interface{}) error { return nil }
+func (f *mockBus) Publish(topic string, args ...any)    {}
+func (f *mockBus) Subscribe(topic string, fn any) error { return nil }
 
 type mockController struct{}
 

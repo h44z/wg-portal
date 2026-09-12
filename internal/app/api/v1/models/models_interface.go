@@ -159,12 +159,10 @@ func NewDomainInterface(src *Interface) *domain.Interface {
 	cidrs, _ := domain.CidrsFromArray(src.Addresses)
 
 	res := &domain.Interface{
-		BaseModel:  domain.BaseModel{},
-		Identifier: domain.InterfaceIdentifier(src.Identifier),
-		KeyPair: domain.KeyPair{
-			PrivateKey: src.PrivateKey,
-			PublicKey:  src.PublicKey,
-		},
+		BaseModel:                  domain.BaseModel{},
+		Identifier:                 domain.InterfaceIdentifier(src.Identifier),
+		PrivateKey:                 src.PrivateKey,
+		PublicKey:                  src.PublicKey,
 		ListenPort:                 src.ListenPort,
 		Addresses:                  cidrs,
 		DnsStr:                     internal.SliceToString(src.Dns),

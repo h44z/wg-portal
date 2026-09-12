@@ -156,7 +156,7 @@ func (m Manager) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	wg := sync.WaitGroup{}
 	workers := int(math.Min(float64(len(users)), 10))
 	wg.Add(workers)
-	for i := 0; i < workers; i++ {
+	for range workers {
 		go func() {
 			defer wg.Done()
 			for user := range ch {
@@ -500,12 +500,10 @@ func (m Manager) create(ctx context.Context, user *domain.User) (*domain.User, e
 		now := time.Now()
 		user.Authentications = []domain.UserAuthentication{
 			{
-				BaseModel: domain.BaseModel{
-					CreatedBy: ctxUserInfo.UserId(),
-					UpdatedBy: ctxUserInfo.UserId(),
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				CreatedBy:      ctxUserInfo.UserId(),
+				UpdatedBy:      ctxUserInfo.UserId(),
+				CreatedAt:      now,
+				UpdatedAt:      now,
 				UserIdentifier: user.Identifier,
 				Source:         domain.UserSourceDatabase,
 				ProviderName:   "",

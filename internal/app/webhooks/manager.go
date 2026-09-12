@@ -19,7 +19,7 @@ type EventBus interface {
 	// Publish sends a message to the message bus.
 	Publish(topic string, args ...any)
 	// Subscribe subscribes to a topic
-	Subscribe(topic string, fn interface{}) error
+	Subscribe(topic string, fn any) error
 }
 
 // endregion dependencies

@@ -54,10 +54,8 @@ func TestUpsertUser_PreservesExistingCreatedAt(t *testing.T) {
 	user := &domain.User{
 		Identifier: "test-user",
 		Email:      "test@example.com",
-		BaseModel: domain.BaseModel{
-			CreatedAt: originalTime,
-			CreatedBy: "original-creator",
-		},
+		CreatedAt:  originalTime,
+		CreatedBy:  "original-creator",
 	}
 
 	err := repo.upsertUser(ui, db, user)

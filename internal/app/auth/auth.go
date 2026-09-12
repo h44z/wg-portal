@@ -673,12 +673,10 @@ func (a *Authenticator) registerNewUser(
 		Department: userInfo.Department,
 		Authentications: []domain.UserAuthentication{
 			{
-				BaseModel: domain.BaseModel{
-					CreatedBy: ctxUserInfo.UserId(),
-					UpdatedBy: ctxUserInfo.UserId(),
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				CreatedBy:      ctxUserInfo.UserId(),
+				UpdatedBy:      ctxUserInfo.UserId(),
+				CreatedAt:      now,
+				UpdatedAt:      now,
 				UserIdentifier: userInfo.Identifier,
 				Source:         source,
 				ProviderName:   provider,
@@ -742,12 +740,10 @@ func (a *Authenticator) updateExternalUser(
 		ctxUserInfo := domain.GetUserInfo(ctx)
 		now := time.Now()
 		existingUser.Authentications = append(existingUser.Authentications, domain.UserAuthentication{
-			BaseModel: domain.BaseModel{
-				CreatedBy: ctxUserInfo.UserId(),
-				UpdatedBy: ctxUserInfo.UserId(),
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
+			CreatedBy:      ctxUserInfo.UserId(),
+			UpdatedBy:      ctxUserInfo.UserId(),
+			CreatedAt:      now,
+			UpdatedAt:      now,
 			UserIdentifier: existingUser.Identifier,
 			Source:         source,
 			ProviderName:   provider,

@@ -375,12 +375,10 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 	}
 
 	freshInterface := &domain.Interface{
-		BaseModel: domain.BaseModel{
-			CreatedBy: string(currentUser.Id),
-			UpdatedBy: string(currentUser.Id),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+		CreatedBy:                  string(currentUser.Id),
+		UpdatedBy:                  string(currentUser.Id),
+		CreatedAt:                  time.Now(),
+		UpdatedAt:                  time.Now(),
 		Identifier:                 id,
 		KeyPair:                    kp,
 		ListenPort:                 port,

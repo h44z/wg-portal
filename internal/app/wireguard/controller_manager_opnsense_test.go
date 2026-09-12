@@ -23,7 +23,8 @@ func TestRegisterOpnsenseControllers(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.Backend.Opnsense = []config.BackendOpnsense{
 		{
-			BackendBase: config.BackendBase{Id: "opn1", DisplayName: "Edge firewall"},
+			Id:          "opn1",
+			DisplayName: "Edge firewall",
 			ApiUrl:      "https://127.0.0.1",
 			ApiKey:      "key",
 			ApiSecret:   "secret",
@@ -51,10 +52,10 @@ func TestRegisterOpnsenseControllersSkipsReservedId(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.Backend.Opnsense = []config.BackendOpnsense{
 		{
-			BackendBase: config.BackendBase{Id: config.LocalBackendName},
-			ApiUrl:      "https://127.0.0.1",
-			ApiKey:      "key",
-			ApiSecret:   "secret",
+			Id:        config.LocalBackendName,
+			ApiUrl:    "https://127.0.0.1",
+			ApiKey:    "key",
+			ApiSecret: "secret",
 		},
 	}
 

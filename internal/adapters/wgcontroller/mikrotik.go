@@ -263,11 +263,9 @@ func (c *MikrotikController) convertWireGuardInterface(
 	error,
 ) {
 	pi := domain.PhysicalInterface{
-		Identifier: domain.InterfaceIdentifier(wg.GetString("name")),
-		KeyPair: domain.KeyPair{
-			PrivateKey: wg.GetString("private-key"),
-			PublicKey:  wg.GetString("public-key"),
-		},
+		Identifier:    domain.InterfaceIdentifier(wg.GetString("name")),
+		PrivateKey:    wg.GetString("private-key"),
+		PublicKey:     wg.GetString("public-key"),
 		ListenPort:    wg.GetInt("listen-port"),
 		Addresses:     addresses,
 		Mtu:           wg.GetInt("mtu"),
@@ -354,13 +352,11 @@ func (c *MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObjec
 	}
 
 	peerModel := domain.PhysicalPeer{
-		Identifier: domain.PeerIdentifier(peer.GetString("public-key")),
-		Endpoint:   currentEndpoint,
-		AllowedIPs: allowedAddresses,
-		KeyPair: domain.KeyPair{
-			PublicKey:  peer.GetString("public-key"),
-			PrivateKey: peer.GetString("private-key"),
-		},
+		Identifier:          domain.PeerIdentifier(peer.GetString("public-key")),
+		Endpoint:            currentEndpoint,
+		AllowedIPs:          allowedAddresses,
+		PublicKey:           peer.GetString("public-key"),
+		PrivateKey:          peer.GetString("private-key"),
 		PresharedKey:        domain.PreSharedKey(peer.GetString("preshared-key")),
 		PersistentKeepalive: keepAliveSeconds,
 		LastHandshake:       lastHandshakeTime,
@@ -792,7 +788,7 @@ func (c *MikrotikController) ExecuteInterfaceHook(
 	}
 
 	scriptName := fmt.Sprintf("wg-portal-hook-%s-%d", id, time.Now().UnixNano())
-	
+
 	// Replace %i with the interface ID to mimic wg-quick behavior
 	scriptSource := strings.ReplaceAll(hookCmd, "%i", string(id))
 	// Inject the interface ID as a local variable for convenience in RouterOS scripts
@@ -1076,13 +1072,7 @@ func (c *MikrotikController) setRoutesForFamily(
 			continue
 		}
 
-		valid := false
-		for _, cidr := range cidrs {
-			if existingRoute.EqualPrefix(cidr) {
-				valid = true
-				break
-			}
-		}
+		valid := slices.ContainsFunc(cidrs, existingRoute.EqualPrefix)
 		if valid {
 			continue // route is still valid, nothing to do
 		}

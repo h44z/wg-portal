@@ -16,14 +16,12 @@ import (
 // makeTestLdapFields returns a minimal LdapFields config for testing.
 func makeTestLdapFields() *config.LdapFields {
 	return &config.LdapFields{
-		BaseFields: config.BaseFields{
-			UserIdentifier: "uid",
-			Email:          "mail",
-			Firstname:      "givenName",
-			Lastname:       "sn",
-			Phone:          "telephoneNumber",
-			Department:     "department",
-		},
+		UserIdentifier:  "uid",
+		Email:           "mail",
+		Firstname:       "givenName",
+		Lastname:        "sn",
+		Phone:           "telephoneNumber",
+		Department:      "department",
 		GroupMembership: "memberOf",
 	}
 }

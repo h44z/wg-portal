@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,24 @@ import (
 )
 
 // region test-helper
+
+type syncEventBus struct {
+	bus         evbus.MessageBus
+	onSubscribe func(topic string)
+}
+
+func (s *syncEventBus) Subscribe(topic string, fn any) error {
+	defer func() {
+		if s.onSubscribe != nil {
+			s.onSubscribe(topic)
+		}
+	}()
+	return s.bus.Subscribe(topic, fn)
+}
+
+func (s *syncEventBus) Unsubscribe(topic string, fn any) error {
+	return s.bus.Unsubscribe(topic, fn)
+}
 
 type websocketTestPeerService struct {
 	peers map[domain.PeerIdentifier]*domain.Peer
@@ -39,8 +58,17 @@ func newTestWebsocketConnection(
 ) (*websocket.Conn, func()) {
 	t.Helper()
 
+	var wg sync.WaitGroup
+	wg.Add(2) // TopicPeerStatsUpdated and TopicInterfaceStatsUpdated
+	wrappedBus := &syncEventBus{
+		bus: bus,
+		onSubscribe: func(topic string) {
+			wg.Done()
+		},
+	}
+
 	cfg := &config.Config{}
-	endpoint := NewWebsocketEndpoint(cfg, nil, bus, websocketTestPeerService{peers: peers})
+	endpoint := NewWebsocketEndpoint(cfg, nil, wrappedBus, websocketTestPeerService{peers: peers})
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r = r.WithContext(domain.SetUserInfo(r.Context(), userInfo))
@@ -54,6 +82,8 @@ func newTestWebsocketConnection(
 		server.Close()
 		t.Fatalf("failed to dial websocket: %v", err)
 	}
+
+	wg.Wait() // wait for eventbus to be ready
 
 	cleanup := func() {
 		conn.Close()

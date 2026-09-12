@@ -279,12 +279,10 @@ func (r *SqlRepo) migrate() error {
 			now := time.Now()
 			for _, user := range users {
 				auth := domain.UserAuthentication{
-					BaseModel: domain.BaseModel{
-						CreatedBy: domain.CtxSystemDBMigrator,
-						UpdatedBy: domain.CtxSystemDBMigrator,
-						CreatedAt: now,
-						UpdatedAt: now,
-					},
+					CreatedBy:      domain.CtxSystemDBMigrator,
+					UpdatedBy:      domain.CtxSystemDBMigrator,
+					CreatedAt:      now,
+					UpdatedAt:      now,
 					UserIdentifier: user.Identifier,
 					Source:         user.Source,
 					ProviderName:   user.ProviderName,
@@ -493,12 +491,10 @@ func (r *SqlRepo) getOrCreateInterface(
 
 	// interfaceDefaults will be applied to newly created interface records
 	interfaceDefaults := domain.Interface{
-		BaseModel: domain.BaseModel{
-			CreatedBy: ui.UserId(),
-			UpdatedBy: ui.UserId(),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+		CreatedBy:  ui.UserId(),
+		UpdatedBy:  ui.UserId(),
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 		Identifier: id,
 	}
 
@@ -702,12 +698,10 @@ func (r *SqlRepo) getOrCreatePeer(ui *domain.ContextUserInfo, tx *gorm.DB, id do
 
 	// interfaceDefaults will be applied to newly created interface records
 	interfaceDefaults := domain.Peer{
-		BaseModel: domain.BaseModel{
-			CreatedBy: ui.UserId(),
-			UpdatedBy: ui.UserId(),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+		CreatedBy:  ui.UserId(),
+		UpdatedBy:  ui.UserId(),
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 		Identifier: id,
 	}
 
@@ -995,12 +989,10 @@ func (r *SqlRepo) getOrCreateUser(ui *domain.ContextUserInfo, tx *gorm.DB, id do
 
 	// create a new user record if no user record exists yet
 	userDefaults := domain.User{
-		BaseModel: domain.BaseModel{
-			CreatedBy: ui.UserId(),
-			UpdatedBy: ui.UserId(),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+		CreatedBy:  ui.UserId(),
+		UpdatedBy:  ui.UserId(),
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 		Identifier: id,
 		IsAdmin:    false,
 	}

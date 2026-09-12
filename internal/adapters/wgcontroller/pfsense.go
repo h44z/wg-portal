@@ -340,11 +340,9 @@ func (c *PfsenseController) convertWireGuardInterface(
 	var rxBytes, txBytes uint64
 
 	pi := domain.PhysicalInterface{
-		Identifier: domain.InterfaceIdentifier(wg.GetString("name")),
-		KeyPair: domain.KeyPair{
-			PrivateKey: privateKey,
-			PublicKey:  publicKey,
-		},
+		Identifier:    domain.InterfaceIdentifier(wg.GetString("name")),
+		PrivateKey:    privateKey,
+		PublicKey:     publicKey,
 		ListenPort:    listenPort,
 		Addresses:     addresses,
 		Mtu:           mtu,
@@ -559,13 +557,11 @@ func (c *PfsenseController) convertWireGuardPeer(peer lowlevel.GenericJsonObject
 	txBytes := uint64(0)
 
 	peerModel := domain.PhysicalPeer{
-		Identifier: domain.PeerIdentifier(publicKey),
-		Endpoint:   endpoint,
-		AllowedIPs: allowedAddresses,
-		KeyPair: domain.KeyPair{
-			PublicKey:  publicKey,
-			PrivateKey: privateKey,
-		},
+		Identifier:          domain.PeerIdentifier(publicKey),
+		Endpoint:            endpoint,
+		AllowedIPs:          allowedAddresses,
+		PublicKey:           publicKey,
+		PrivateKey:          privateKey,
 		PresharedKey:        domain.PreSharedKey(presharedKey),
 		PersistentKeepalive: keepAliveSeconds,
 		LastHandshake:       lastHandshakeTime,
@@ -794,7 +790,7 @@ func (c *PfsenseController) SavePeer(
 	if physicalPeer == nil {
 		physicalPeer = &domain.PhysicalPeer{
 			Identifier:   id,
-			KeyPair:      domain.KeyPair{PublicKey: string(id)},
+			PublicKey:    string(id),
 			ImportSource: domain.ControllerTypePfsense,
 		}
 		physicalPeer.SetExtras(domain.PfsensePeerExtras{})

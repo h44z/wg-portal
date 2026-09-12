@@ -32,14 +32,12 @@ func Test_parseOauthUserInfo_no_admin(t *testing.T) {
 	require.NoError(t, err)
 
 	fieldMapping := getOauthFieldMapping(config.OauthFields{
-		BaseFields: config.BaseFields{
-			UserIdentifier: "email",
-			Email:          "email",
-			Firstname:      "name",
-			Lastname:       "family_name",
-		},
-		IsAdmin:    "is_admin",
-		UserGroups: "groups",
+		UserIdentifier: "email",
+		Email:          "email",
+		Firstname:      "name",
+		Lastname:       "family_name",
+		IsAdmin:        "is_admin",
+		UserGroups:     "groups",
 	})
 	adminMapping := &config.OauthAdminMapping{}
 
@@ -78,13 +76,11 @@ func Test_parseOauthUserInfo_admin_group(t *testing.T) {
 	require.NoError(t, err)
 
 	fieldMapping := getOauthFieldMapping(config.OauthFields{
-		BaseFields: config.BaseFields{
-			UserIdentifier: "email",
-			Email:          "email",
-			Firstname:      "name",
-			Lastname:       "family_name",
-		},
-		UserGroups: "groups",
+		UserIdentifier: "email",
+		Email:          "email",
+		Firstname:      "name",
+		Lastname:       "family_name",
+		UserGroups:     "groups",
 	})
 	adminMapping := &config.OauthAdminMapping{
 		AdminGroupRegex: "^wgportal-admins@mydomain.net$",
@@ -122,13 +118,11 @@ func Test_parseOauthUserInfo_admin_value(t *testing.T) {
 	require.NoError(t, err)
 
 	fieldMapping := getOauthFieldMapping(config.OauthFields{
-		BaseFields: config.BaseFields{
-			UserIdentifier: "email",
-			Email:          "email",
-			Firstname:      "name",
-			Lastname:       "family_name",
-		},
-		IsAdmin: "is_admin",
+		UserIdentifier: "email",
+		Email:          "email",
+		Firstname:      "name",
+		Lastname:       "family_name",
+		IsAdmin:        "is_admin",
 	})
 	adminMapping := &config.OauthAdminMapping{} // test with default regex
 
@@ -163,13 +157,11 @@ func Test_parseOauthUserInfo_admin_value_custom(t *testing.T) {
 	require.NoError(t, err)
 
 	fieldMapping := getOauthFieldMapping(config.OauthFields{
-		BaseFields: config.BaseFields{
-			UserIdentifier: "email",
-			Email:          "email",
-			Firstname:      "name",
-			Lastname:       "family_name",
-		},
-		IsAdmin: "is_admin",
+		UserIdentifier: "email",
+		Email:          "email",
+		Firstname:      "name",
+		Lastname:       "family_name",
+		IsAdmin:        "is_admin",
 	})
 	adminMapping := &config.OauthAdminMapping{
 		AdminValueRegex: "^1$",
