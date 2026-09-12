@@ -218,6 +218,14 @@ type LdapProvider struct {
 	// Map key is the interface identifier (e.g., "wg0"), value is the filter string.
 	InterfaceFilter map[string]string `yaml:"interface_filter"`
 
+	// RevokeOnFilterChange disables a user's peers on an interface once they no
+	// longer match that interface's InterfaceFilter. Without it the filter is
+	// only an admission check: it prevents new peers, but peers issued while the
+	// user still matched keep working indefinitely.
+	// Opt-in, because enabling it by default would start disabling peers in
+	// existing deployments on upgrade.
+	RevokeOnFilterChange bool `yaml:"revoke_on_filter_change"`
+
 	// If LogUserInfo is set to true, the user info retrieved from the LDAP provider will be logged in trace level.
 	LogUserInfo bool `yaml:"log_user_info"`
 }

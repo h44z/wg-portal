@@ -857,6 +857,29 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
     wg0: "(memberOf=CN=VPNUsers,OU=Groups,DC=COMPANY,DC=LOCAL)"
     wg1: "(description=special-access)"
   ```
+  Note that this is an *admission* check: it decides whether a user may obtain a
+  peer on the interface. On its own it does not withdraw peers a user already
+  holds if they later stop matching the filter — see `revoke_on_filter_change`.
+  An interface with no entry in this map is unrestricted.
+
+#### `revoke_on_filter_change`
+- **Default:** `false`
+- **Description:** If `true`, a user's peers on an interface are disabled once
+  they no longer match that interface's `interface_filter`. Without it the
+  filter only prevents *new* peers, and peers issued while the user still
+  matched keep working indefinitely, which matters if you use one interface per
+  access tier.
+  Only peers that belong to a user are affected; peers imported from a device or
+  created by an administrator have no owner and are left alone.
+  The reverse also applies: if the user matches the filter again later, peers
+  that were revoked this way are re-enabled on the next sync. Peers disabled for
+  any other reason are not touched.
+  Nothing is revoked if the provider's synchronization returned no usable user
+  identifiers at all, so a broken `base_dn`, an unreachable replica or a
+  `field_map` naming an attribute the server does not return cannot disable a
+  whole interface. Note this is judged per provider, not per filter: a filter
+  that matches nobody while the directory is otherwise answering is treated as
+  an empty tier, and its peers are revoked.
 
 #### `admin_group`
 - **Default:** *(empty)*

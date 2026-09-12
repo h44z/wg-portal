@@ -18,6 +18,7 @@ const TopicUserApiDisabled = "user:api:disabled"
 const TopicUserRegistered = "user:registered"
 const TopicUserDisabled = "user:disabled"
 const TopicUserEnabled = "user:enabled"
+const TopicInterfaceLdapFilterApplied = "interface:ldapfilter:applied"
 
 // endregion user-events
 
