@@ -9,8 +9,8 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.14
 	github.com/go-pkgz/routegroup v1.6.1
-	github.com/go-playground/validator/v10 v10.30.4
-	github.com/go-webauthn/webauthn v0.18.1
+	github.com/go-playground/validator/v10 v10.30.5
+	github.com/go-webauthn/webauthn v0.18.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/prometheus-community/pro-bing v0.9.1
@@ -29,7 +29,7 @@ require (
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.6.0
-	gorm.io/driver/postgres v1.6.2
+	gorm.io/driver/postgres v1.6.3
 	gorm.io/driver/sqlserver v1.6.4
 	gorm.io/gorm v1.31.2
 	pgregory.net/rapid v1.3.0
@@ -42,7 +42,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/fxamacker/cbor/v2 v2.9.3 // indirect
+	github.com/fxamacker/cbor/v2 v2.9.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.15 // indirect
 	github.com/glebarez/go-sqlite v1.23.0 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.8 // indirect
