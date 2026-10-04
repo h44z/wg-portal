@@ -6,6 +6,14 @@ function b64urlToB64(input) {
   return b64
 }
 
+function bytesToBase64(bytes) {
+  let binary = ''
+  for (let i = 0; i < bytes.byteLength; ++i) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
+}
+
 export async function generateWireGuardKeypair() {
   const keyPair = await crypto.subtle.generateKey(
     { name: 'X25519', namedCurve: 'X25519' },
@@ -20,6 +28,12 @@ export async function generateWireGuardKeypair() {
     publicKey: b64urlToB64(publicJwk.x),
     privateKey: b64urlToB64(privateJwk.d),
   }
+}
+
+export function generateWireGuardPresharedKey() {
+  const key = new Uint8Array(32)
+  crypto.getRandomValues(key)
+  return bytesToBase64(key)
 }
 
 function optionValue(option) {
