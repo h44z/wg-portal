@@ -6,11 +6,14 @@ import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
 import { freshPeer, freshInterface } from '@/helpers/models';
 import { profileStore } from "@/stores/profile";
+import { settingsStore } from "@/stores/settings";
+import { downloadWgQuickConfig, generateWireGuardKeypair } from '@/helpers/wireguard';
 
 const { t } = useI18n()
 
 const peers = peerStore()
 const profile = profileStore()
+const settings = settingsStore()
 
 const props = defineProps({
   peerId: String,
@@ -57,11 +60,14 @@ const title = computed(() => {
 const formData = ref(freshPeer())
 const isSaving = ref(false)
 const isDeleting = ref(false)
+const clientSideKeyGenerated = ref(false)
 
 // functions
 
 watch(() => props.visible, async (newValue, oldValue) => {
   if (oldValue === false && newValue === true) { // if modal is shown
+    clientSideKeyGenerated.value = false
+
     if (!selectedPeer.value) {
       await peers.PreparePeer(selectedInterface.value.Identifier)
 
@@ -161,7 +167,24 @@ watch(() => formData.value.Disabled, async (newValue, oldValue) => {
 
 function close() {
   formData.value = freshPeer()
+  clientSideKeyGenerated.value = false
   emit('close')
+}
+
+async function generateClientSideKeyPair() {
+  try {
+    const keypair = await generateWireGuardKeypair()
+    formData.value.PrivateKey = keypair.privateKey
+    formData.value.PublicKey = keypair.publicKey
+    formData.value.Identifier = keypair.publicKey
+    clientSideKeyGenerated.value = true
+  } catch (e) {
+    notify({
+      title: "Failed to generate WireGuard key pair!",
+      text: e.toString(),
+      type: 'error',
+    })
+  }
 }
 
 async function save() {
@@ -170,6 +193,22 @@ async function save() {
   try {
     if (props.peerId !== '#NEW#') {
       await peers.UpdatePeer(selectedPeer.value.Identifier, formData.value)
+    } else if (clientSideKeyGenerated.value) {
+      const privateKey = formData.value.PrivateKey
+      const publicKey = formData.value.PublicKey
+      const payload = JSON.parse(JSON.stringify(formData.value))
+
+      // The client private key must never leave the browser.
+      payload.PrivateKey = ""
+
+      await peers.CreatePeer(selectedInterface.value.Identifier, payload)
+
+      const createdPeer = peers.Find(publicKey)
+      if (!createdPeer) {
+        throw new Error("Peer was created but could not be found for local configuration generation")
+      }
+
+      downloadWgQuickConfig(createdPeer, privateKey)
     } else {
       await peers.CreatePeer(selectedInterface.value.Identifier, formData.value)
     }
@@ -221,7 +260,8 @@ async function del() {
           <label class="form-label mt-4">{{ $t('modals.peer-edit.private-key.label') }}</label>
           <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.private-key.placeholder')" required
             v-model="formData.PrivateKey">
-          <small id="privateKeyHelp" class="form-text text-muted">{{ $t('modals.peer-edit.private-key.help') }}</small>
+          <small id="privateKeyHelp" class="form-text text-muted" v-if="!clientSideKeyGenerated">{{ $t('modals.peer-edit.private-key.help') }}</small>
+          <small class="form-text text-muted" v-else>{{ $t('keygen.abstract') }}</small>
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.public-key.label') }}</label>
@@ -232,6 +272,12 @@ async function del() {
           <label class="form-label mt-4">{{ $t('modals.peer-edit.preshared-key.label') }}</label>
           <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.preshared-key.placeholder')"
             v-model="formData.PresharedKey">
+        </div>
+        <div class="form-group mt-3" v-if="props.peerId === '#NEW#' && settings.Setting('EditableKeys')">
+          <button class="btn btn-outline-primary" type="button" @click.prevent="generateClientSideKeyPair">
+            {{ $t('keygen.button-generate') }}
+          </button>
+          <small class="form-text text-muted d-block mt-1">{{ $t('keygen.abstract') }}</small>
         </div>
       </fieldset>
       <fieldset>
