@@ -7,7 +7,7 @@ import { notify } from "@kyvg/vue3-notification";
 import { freshPeer, freshInterface } from '@/helpers/models';
 import { profileStore } from "@/stores/profile";
 import { settingsStore } from "@/stores/settings";
-import { downloadWgQuickConfig, generateWireGuardKeypair } from '@/helpers/wireguard';
+import { downloadWgQuickConfig, generateKeypair } from '@/helpers/wireguard';
 
 const { t } = useI18n()
 
@@ -172,19 +172,10 @@ function close() {
 }
 
 async function generateClientSideKeyPair() {
-  try {
-    const keypair = await generateWireGuardKeypair()
-    formData.value.PrivateKey = keypair.privateKey
-    formData.value.PublicKey = keypair.publicKey
-    formData.value.Identifier = keypair.publicKey
-    clientSideKeyGenerated.value = true
-  } catch (e) {
-    notify({
-      title: "Failed to generate WireGuard key pair!",
-      text: e.toString(),
-      type: 'error',
-    })
-  }
+  const keypair = await generateKeypair()
+  formData.value.PrivateKey = keypair.privateKey
+  formData.value.PublicKey = keypair.publicKey
+  clientSideKeyGenerated.value = true
 }
 
 async function save() {
@@ -194,21 +185,9 @@ async function save() {
     if (props.peerId !== '#NEW#') {
       await peers.UpdatePeer(selectedPeer.value.Identifier, formData.value)
     } else if (clientSideKeyGenerated.value) {
-      const privateKey = formData.value.PrivateKey
-      const publicKey = formData.value.PublicKey
-      const payload = JSON.parse(JSON.stringify(formData.value))
-
       // The client private key must never leave the browser.
-      payload.PrivateKey = ""
-
-      await peers.CreatePeer(selectedInterface.value.Identifier, payload)
-
-      const createdPeer = peers.Find(publicKey)
-      if (!createdPeer) {
-        throw new Error("Peer was created but could not be found for local configuration generation")
-      }
-
-      downloadWgQuickConfig(createdPeer, privateKey)
+      await peers.CreatePeer(selectedInterface.value.Identifier, { ...formData.value, PrivateKey: "" })
+      downloadWgQuickConfig(peers.Find(formData.value.PublicKey), formData.value.PrivateKey)
     } else {
       await peers.CreatePeer(selectedInterface.value.Identifier, formData.value)
     }
@@ -259,14 +238,13 @@ async function del() {
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.private-key.label') }}</label>
           <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.private-key.placeholder')" required
-            v-model="formData.PrivateKey">
-          <small id="privateKeyHelp" class="form-text text-muted" v-if="!clientSideKeyGenerated">{{ $t('modals.peer-edit.private-key.help') }}</small>
-          <small class="form-text text-muted" v-else>{{ $t('keygen.abstract') }}</small>
+            v-model="formData.PrivateKey" :readonly="clientSideKeyGenerated">
+          <small id="privateKeyHelp" class="form-text text-muted">{{ $t('modals.peer-edit.private-key.help') }}</small>
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.public-key.label') }}</label>
           <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.public-key.placeholder')" required
-            v-model="formData.PublicKey">
+            v-model="formData.PublicKey" :readonly="clientSideKeyGenerated">
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.preshared-key.label') }}</label>

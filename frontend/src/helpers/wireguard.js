@@ -1,129 +1,99 @@
+/**
+ * Convert a Base64URL-encoded string to standard Base64 with padding.
+ * @function b64urlToB64
+ * @param {string} input - The Base64URL string.
+ * @returns {string} The padded, standard Base64 string.
+ */
 function b64urlToB64(input) {
-  let b64 = input.replace(/-/g, '+').replace(/_/g, '/')
+  let b64 = input.replace(/-/g, '+').replace(/_/g, '/');
   while (b64.length % 4) {
-    b64 += '='
+    b64 += '=';
   }
-  return b64
+  return b64;
 }
 
-function bytesToBase64(bytes) {
-  let binary = ''
-  for (let i = 0; i < bytes.byteLength; ++i) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  return btoa(binary)
-}
-
-export async function generateWireGuardKeypair() {
+/**
+ * Generate an X25519 keypair using the Web Crypto API and return Base64-encoded strings.
+ * @async
+ * @function generateKeypair
+ * @returns {Promise<{ publicKey: string, privateKey: string }>} Resolves with an object containing
+ *   - publicKey: the Base64-encoded public key
+ *   - privateKey: the Base64-encoded private key
+ */
+export async function generateKeypair() {
+  // 1. Generate an X25519 key pair
   const keyPair = await crypto.subtle.generateKey(
-    { name: 'X25519', namedCurve: 'X25519' },
-    true,
-    ['deriveBits'],
-  )
+      { name: 'X25519', namedCurve: 'X25519' },
+      true,                 // extractable
+      ['deriveBits']        // allowed usage for ECDH
+  );
 
-  const publicJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
-  const privateJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey)
+  // 2. Export keys as JWK to access raw key material
+  const pubJwk  = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+  const privJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
 
+  // 3. Convert Base64URL to standard Base64 with padding
   return {
-    publicKey: b64urlToB64(publicJwk.x),
-    privateKey: b64urlToB64(privateJwk.d),
-  }
+    publicKey:  b64urlToB64(pubJwk.x),
+    privateKey: b64urlToB64(privJwk.d)
+  };
 }
 
-export function generateWireGuardPresharedKey() {
-  const key = new Uint8Array(32)
-  crypto.getRandomValues(key)
-  return bytesToBase64(key)
-}
-
-function optionValue(option) {
-  if (!option || option.Value === undefined || option.Value === null) {
-    return ''
-  }
-  return option.Value
-}
-
-function listValue(value) {
-  if (Array.isArray(value)) {
-    return value.filter(Boolean).join(', ')
-  }
-  return value || ''
-}
-
-export function buildWgQuickConfig(peer, privateKey) {
+/**
+ * Build a wg-quick configuration for a peer, mirroring internal/app/configfile/tpl_files/wg_peer.tpl.
+ * @function buildWgQuickConfig
+ * @param {object} peer - The peer as returned by the API.
+ * @param {string} privateKey - The Base64-encoded private key that only exists in the browser.
+ * @returns {string} The wg-quick configuration.
+ */
+function buildWgQuickConfig(peer, privateKey) {
   const lines = [
     '[Interface]',
     `PrivateKey = ${privateKey}`,
+    `Address = ${peer.Addresses.join(', ')}`,
   ]
 
-  const addresses = listValue(peer.Addresses)
-  if (addresses) {
-    lines.push(`Address = ${addresses}`)
+  if (peer.Dns.Value.length) {
+    lines.push(`DNS = ${[...peer.Dns.Value, ...peer.DnsSearch.Value].join(', ')}`)
   }
+  if (peer.Mtu.Value !== 0) lines.push(`MTU = ${peer.Mtu.Value}`)
+  if (peer.RoutingTable.Value !== '') lines.push(`Table = ${peer.RoutingTable.Value}`)
+  if (peer.FirewallMark.Value !== 0) lines.push(`FwMark = ${peer.FirewallMark.Value}`)
+  if (peer.PreUp.Value) lines.push(`PreUp = ${peer.PreUp.Value}`)
+  if (peer.PostUp.Value) lines.push(`PostUp = ${peer.PostUp.Value}`)
+  if (peer.PreDown.Value) lines.push(`PreDown = ${peer.PreDown.Value}`)
+  if (peer.PostDown.Value) lines.push(`PostDown = ${peer.PostDown.Value}`)
 
-  const dns = optionValue(peer.Dns)
-  const dnsSearch = optionValue(peer.DnsSearch)
-  const dnsValues = []
-  if (Array.isArray(dns)) dnsValues.push(...dns)
-  else if (dns) dnsValues.push(dns)
-  if (Array.isArray(dnsSearch)) dnsValues.push(...dnsSearch)
-  else if (dnsSearch) dnsValues.push(dnsSearch)
-  if (dnsValues.length) {
-    lines.push(`DNS = ${dnsValues.join(', ')}`)
-  }
+  lines.push(
+    '',
+    '[Peer]',
+    `PublicKey = ${peer.EndpointPublicKey.Value}`,
+    `Endpoint = ${peer.Endpoint.Value}`,
+  )
 
-  const mtu = optionValue(peer.Mtu)
-  if (mtu) lines.push(`MTU = ${mtu}`)
-
-  const table = optionValue(peer.RoutingTable)
-  if (table) lines.push(`Table = ${table}`)
-
-  const fwMark = optionValue(peer.FirewallMark)
-  if (fwMark) lines.push(`FwMark = ${fwMark}`)
-
-  const hooks = [
-    ['PreUp', optionValue(peer.PreUp)],
-    ['PostUp', optionValue(peer.PostUp)],
-    ['PreDown', optionValue(peer.PreDown)],
-    ['PostDown', optionValue(peer.PostDown)],
-  ]
-  for (const [name, value] of hooks) {
-    if (value) lines.push(`${name} = ${value}`)
-  }
-
-  lines.push('', '[Peer]')
-
-  const endpointPublicKey = optionValue(peer.EndpointPublicKey)
-  if (endpointPublicKey) lines.push(`PublicKey = ${endpointPublicKey}`)
-
-  const endpoint = optionValue(peer.Endpoint)
-  if (endpoint) lines.push(`Endpoint = ${endpoint}`)
-
-  const allowedIPs = listValue(optionValue(peer.AllowedIPs))
-  if (allowedIPs) lines.push(`AllowedIPs = ${allowedIPs}`)
-
+  if (peer.AllowedIPs.Value.length) lines.push(`AllowedIPs = ${peer.AllowedIPs.Value.join(', ')}`)
   if (peer.PresharedKey) lines.push(`PresharedKey = ${peer.PresharedKey}`)
-
-  const keepalive = optionValue(peer.PersistentKeepalive)
-  if (keepalive && peer.Mode === 'client') {
-    lines.push(`PersistentKeepalive = ${keepalive}`)
+  if (peer.PersistentKeepalive.Value !== 0 && peer.Mode === 'client') {
+    lines.push(`PersistentKeepalive = ${peer.PersistentKeepalive.Value}`)
   }
 
-  return `${lines.join('\n')}\n`
+  return lines.join('\n') + '\n'
 }
 
+/**
+ * Download a wg-quick configuration for a peer whose private key only exists in the browser.
+ * @function downloadWgQuickConfig
+ * @param {object} peer - The peer as returned by the API.
+ * @param {string} privateKey - The Base64-encoded private key.
+ */
 export function downloadWgQuickConfig(peer, privateKey) {
-  const config = buildWgQuickConfig(peer, privateKey)
-  const blob = new Blob([config], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const element = document.createElement('a')
+  let element = document.createElement('a')
+  element.setAttribute('href', 'data:application/octet-stream;charset=utf-8,' + encodeURIComponent(buildWgQuickConfig(peer, privateKey)))
+  element.setAttribute('download', peer.Filename)
 
-  element.href = url
-  element.download = peer.Filename || 'wireguard.conf'
   element.style.display = 'none'
   document.body.appendChild(element)
+
   element.click()
   document.body.removeChild(element)
-
-  setTimeout(() => URL.revokeObjectURL(url), 0)
 }

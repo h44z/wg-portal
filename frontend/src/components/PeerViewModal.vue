@@ -97,9 +97,6 @@ watch(() => props.visible, async (newValue, oldValue) => {
 })
 
 watch(() => configStyle.value, async () => {
-  if (!props.visible || !hasStoredPrivateKey.value) {
-    return
-  }
   await peers.LoadPeerConfig(selectedPeer.value.Identifier, configStyle.value)
   configString.value = peers.configuration
 })

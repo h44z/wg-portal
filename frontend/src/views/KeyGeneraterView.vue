@@ -1,11 +1,38 @@
 <script setup>
 
 import {ref} from "vue";
-import { generateWireGuardKeypair, generateWireGuardPresharedKey } from '@/helpers/wireguard';
+import { generateKeypair } from "@/helpers/wireguard";
 
 const privateKey = ref("")
 const publicKey = ref("")
 const presharedKey = ref("")
+
+/**
+ * Generate a 32-byte pre-shared key using crypto.getRandomValues.
+ * @function generatePresharedKey
+ * @returns {Uint8Array} A Uint8Array of length 32 with random bytes.
+ */
+function generatePresharedKey() {
+  let privateKey = new Uint8Array(32);
+  window.crypto.getRandomValues(privateKey);
+  return privateKey;
+}
+
+/**
+ * Convert an ArrayBuffer or TypedArray buffer to a Base64-encoded string.
+ * @function arrayBufferToBase64
+ * @param {ArrayBuffer|Uint8Array} buffer - The buffer to convert.
+ * @returns {string} Base64-encoded representation of the buffer.
+ */
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; ++i) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  // Window.btoa handles binary → Base64
+  return btoa(binary);
+}
 
 /**
  * Generate a new keypair and update the corresponding Vue refs.
@@ -14,7 +41,7 @@ const presharedKey = ref("")
  * @returns {Promise<void>}
  */
 async function generateNewKeyPair() {
-  const keypair = await generateWireGuardKeypair();
+  const keypair = await generateKeypair();
 
   privateKey.value = keypair.privateKey;
   publicKey.value = keypair.publicKey;
@@ -25,7 +52,8 @@ async function generateNewKeyPair() {
  * @function generateNewPresharedKey
  */
 function generateNewPresharedKey() {
-  presharedKey.value = generateWireGuardPresharedKey();
+  const rawPsk = generatePresharedKey();
+  presharedKey.value = arrayBufferToBase64(rawPsk);
 }
 
 </script>
