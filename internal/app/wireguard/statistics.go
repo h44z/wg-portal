@@ -123,9 +123,11 @@ func (c *StatisticsCollector) collectInterfaceData(ctx context.Context) {
 					continue
 				}
 				now := time.Now()
+				var td domain.TrafficDelta
+				var committedStatus domain.InterfaceStatus
 				err = c.db.UpdateInterfaceStatus(ctx, in.Identifier,
 					func(i *domain.InterfaceStatus) (*domain.InterfaceStatus, error) {
-						td := domain.CalculateTrafficDelta(
+						td = domain.CalculateTrafficDelta(
 							string(in.Identifier),
 							i.UpdatedAt, now,
 							i.BytesTransmitted, physicalInterface.BytesUpload,
@@ -135,17 +137,18 @@ func (c *StatisticsCollector) collectInterfaceData(ctx context.Context) {
 						i.BytesReceived = physicalInterface.BytesDownload
 						i.BytesTransmitted = physicalInterface.BytesUpload
 
-						// Update prometheus metrics
-						go c.updateInterfaceMetrics(*i)
-
-						// Publish stats update event
-						c.bus.Publish(app.TopicInterfaceStatsUpdated, td)
+						committedStatus = *i
 
 						return i, nil
 					})
 				if err != nil {
 					slog.Warn("failed to update interface status", "interface", in.Identifier, "error", err)
+					continue
 				}
+				// Subscribers may access SQLite or block on a slow websocket. Never
+				// publish while the status transaction owns the only DB connection.
+				go c.updateInterfaceMetrics(committedStatus)
+				c.bus.Publish(app.TopicInterfaceStatsUpdated, td)
 				slog.Debug("updated interface status", "interface", in.Identifier)
 			}
 		}
@@ -187,6 +190,7 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 				for _, peer := range peers {
 					var connectionStateChanged bool
 					var newPeerStatus domain.PeerStatus
+					var td domain.TrafficDelta
 					err = c.db.UpdatePeerStatus(ctx, peer.Identifier,
 						func(p *domain.PeerStatus) (*domain.PeerStatus, error) {
 							wasConnected := p.IsConnected
@@ -196,7 +200,7 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 								lastHandshake = &peer.LastHandshake
 							}
 
-							td := domain.CalculateTrafficDelta(
+							td = domain.CalculateTrafficDelta(
 								string(peer.Identifier),
 								p.UpdatedAt, now,
 								p.BytesTransmitted, peer.BytesDownload,
@@ -217,22 +221,20 @@ func (c *StatisticsCollector) collectPeerData(ctx context.Context) {
 								slog.Debug("peer connection state changed",
 									"peer", peer.Identifier, "connected", p.IsConnected)
 								connectionStateChanged = true
-								newPeerStatus = *p // store new status for event publishing
 							}
 
-							// Update prometheus metrics
-							go c.updatePeerMetrics(ctx, *p)
-
-							// Publish stats update event
-							c.bus.Publish(app.TopicPeerStatsUpdated, td)
+							newPeerStatus = *p
 
 							return p, nil
 						})
 					if err != nil {
 						slog.Warn("failed to update peer status", "peer", peer.Identifier, "error", err)
-					} else {
-						slog.Debug("updated peer status", "peer", peer.Identifier)
+						continue
 					}
+					// Release the SQLite transaction before notifying subscribers.
+					go c.updatePeerMetrics(ctx, newPeerStatus)
+					c.bus.Publish(app.TopicPeerStatsUpdated, td)
+					slog.Debug("updated peer status", "peer", peer.Identifier)
 
 					if connectionStateChanged {
 						peerModel, err := c.db.GetPeer(ctx, peer.Identifier)
