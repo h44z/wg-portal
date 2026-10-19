@@ -22,7 +22,8 @@ func LdapFindAllUsers(conn *ldap.Conn, baseDn, filter string, fields *config.Lda
 		filter, attrs, nil,
 	)
 
-	sr, err := conn.Search(searchRequest)
+	// paged: Active Directory returns at most MaxPageSize (1000) entries per search
+	sr, err := conn.SearchWithPaging(searchRequest, 500)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search: %w", err)
 	}
