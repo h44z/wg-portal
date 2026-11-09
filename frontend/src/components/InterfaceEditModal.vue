@@ -618,7 +618,7 @@ async function del() {
             <div class="row">
               <div class="form-group col-md-6">
                 <label class="form-label mt-4">{{ $t('modals.interface-edit.routing-table.label') }}</label>
-                <input v-model="formData.PeerDefRoutingTable" class="form-control" :placeholder="$t('modals.interface-edit.routing-table.placeholder')" type="number">
+                <input v-model="formData.PeerDefRoutingTable" class="form-control" :placeholder="$t('modals.interface-edit.routing-table.placeholder')" type="text">
               </div>
               <div class="form-group col-md-6">
                 <label class="form-label mt-4">{{ $t('modals.interface-edit.defaults.keep-alive.label') }}</label>
