@@ -150,6 +150,11 @@ router.beforeEach(async (to) => {
     }
   }
 
+  // Keep restricted views from mounting and loading data until the password is changed.
+  if (auth.IsAuthenticated && auth.DefaultPasswordInUse && to.path !== '/') {
+    return { name: 'home', replace: true }
+  }
+
   // redirect to returnUrl if already authenticated and accessing login page
   if (to.path === '/login' && auth.IsAuthenticated) {
     const returnUrl = auth.ReturnUrl

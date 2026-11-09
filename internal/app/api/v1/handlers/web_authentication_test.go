@@ -12,11 +12,16 @@ import (
 )
 
 type stubUserAuthenticator struct {
-	valid bool
+	valid                bool
+	defaultPasswordInUse bool
 }
 
 func (s stubUserAuthenticator) IsUserValid(ctx context.Context, id domain.UserIdentifier) bool {
 	return s.valid
+}
+
+func (s stubUserAuthenticator) IsDefaultPasswordInUse(ctx context.Context) bool {
+	return s.defaultPasswordInUse
 }
 
 type stubUserRepository struct {
@@ -112,5 +117,37 @@ func TestAuthenticationHandler_LoggedInAllowsValidUser(t *testing.T) {
 
 	if !nextCalled {
 		t.Fatal("expected downstream handler to be called")
+	}
+}
+
+func TestAuthenticationHandler_LoggedInRejectsDefaultPassword(t *testing.T) {
+	user := &domain.User{
+		Identifier: "test-user",
+		ApiToken:   "token",
+	}
+
+	handler := NewAuthenticationHandler(stubUserAuthenticator{valid: true, defaultPasswordInUse: true}, stubUserRepository{user: user})
+	nextCalled := false
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.SetBasicAuth(string(user.Identifier), user.ApiToken)
+	rr := httptest.NewRecorder()
+
+	handler.LoggedIn()(next).ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d", http.StatusForbidden, rr.Code)
+	}
+
+	if nextCalled {
+		t.Fatal("expected downstream handler not to be called")
+	}
+
+	if !strings.Contains(rr.Body.String(), "default admin password must be changed first") {
+		t.Fatalf("expected error message to mention default password, got %q", rr.Body.String())
 	}
 }

@@ -31,6 +31,8 @@ type UserManager interface {
 	RegisterUser(ctx context.Context, user *domain.User) error
 	// UpdateUserInternal updates an existing user in the database.
 	UpdateUserInternal(ctx context.Context, user *domain.User) (*domain.User, error)
+	// IsDefaultPasswordInUse checks if the default admin password is still in use.
+	IsDefaultPasswordInUse(ctx context.Context) bool
 }
 
 type EventBus interface {
@@ -133,6 +135,11 @@ func NewAuthenticator(cfg *config.Auth, extUrl, basePath string, bus EventBus, u
 	a.callbackUrl = parsedExtUrl
 
 	return a, nil
+}
+
+// IsDefaultPasswordInUse checks if the default admin password is still in use.
+func (a *Authenticator) IsDefaultPasswordInUse(ctx context.Context) bool {
+	return a.users.IsDefaultPasswordInUse(ctx)
 }
 
 // StartBackgroundJobs starts the background jobs for the authenticator.

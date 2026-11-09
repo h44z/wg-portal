@@ -65,6 +65,7 @@ func (e InterfaceEndpoint) GetName() string {
 func (e InterfaceEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/interface")
 	apiGroup.Use(e.authenticator.LoggedIn(ScopeAdmin))
+	apiGroup.Use(e.authenticator.RequireNonDefaultPassword())
 
 	apiGroup.HandleFunc("GET /prepare", e.handlePrepareGet())
 	apiGroup.HandleFunc("GET /all", e.handleAllGet())

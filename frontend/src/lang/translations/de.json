@@ -32,6 +32,23 @@
     "button": "Anmelden",
     "button-webauthn": "Passkey verwenden"
   },
+  "default-password": {
+    "banner-title": "Sicherheitswarnung: Standardpasswort wird verwendet",
+    "banner-message": "Das Standard-Administratorpasswort ist noch in Verwendung. Solange das Passwort nicht geändert wird, sind keine weiteren Aktionen möglich.",
+    "modal-title": "Standard-Administratorpasswort ändern",
+    "modal-warning-heading": "Standardpasswort in Verwendung",
+    "modal-warning-text": "Das Standard-Administratorpasswort ist derzeit noch in Verwendung. Um Ihre Installation zu schützen, müssen Sie das Passwort jetzt ändern.",
+    "modal-warning-note": "Hinweis: Solange das Passwort nicht geändert wird, sind keine weiteren Aktionen möglich.",
+    "current-label": "Aktuelles Passwort",
+    "new-label": "Neues Passwort",
+    "confirm-label": "Neues Passwort bestätigen",
+    "weak-label": "Das Passwort ist zu kurz.",
+    "mismatch-label": "Passwörter stimmen nicht überein.",
+    "same-label": "Das neue Passwort muss sich vom aktuellen Passwort unterscheiden.",
+    "change-button-text": "Passwort ändern",
+    "success-title": "Passwort geändert!",
+    "success-text": "Das Passwort wurde erfolgreich geändert. Alle Aktionen sind nun freigeschaltet."
+  },
   "peer-config-download": {
     "headline": "VPN-Konfiguration wird heruntergeladen",
     "in-progress": "Der Download Ihrer WireGuard-Konfiguration startet automatisch. Bitte warten...",

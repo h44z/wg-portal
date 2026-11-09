@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -19,11 +20,12 @@ type User struct {
 	Department string `json:"Department"`
 	Notes      string `json:"Notes"`
 
-	Password       string `json:"Password,omitempty"`
-	Disabled       bool   `json:"Disabled"`       // if this field is set, the user is disabled
-	DisabledReason string `json:"DisabledReason"` // the reason why the user has been disabled
-	Locked         bool   `json:"Locked"`         // if this field is set, the user is locked
-	LockedReason   string `json:"LockedReason"`   // the reason why the user has been locked
+	Password             string `json:"Password,omitempty"`
+	DefaultPasswordInUse bool   `json:"DefaultPasswordInUse"`
+	Disabled             bool   `json:"Disabled"`       // if this field is set, the user is disabled
+	DisabledReason       string `json:"DisabledReason"` // the reason why the user has been disabled
+	Locked               bool   `json:"Locked"`         // if this field is set, the user is locked
+	LockedReason         string `json:"LockedReason"`   // the reason why the user has been locked
 
 	ApiToken        string     `json:"ApiToken"`
 	ApiTokenCreated *time.Time `json:"ApiTokenCreated,omitempty"`
@@ -43,21 +45,22 @@ func NewUser(src *domain.User, exposeCreds bool) *User {
 		AuthSources: internal.Map(src.Authentications, func(authentication domain.UserAuthentication) string {
 			return string(authentication.Source)
 		}),
-		IsAdmin:             src.IsAdmin,
-		Firstname:           src.Firstname,
-		Lastname:            src.Lastname,
-		Phone:               src.Phone,
-		Department:          src.Department,
-		Notes:               src.Notes,
-		Password:            "", // never fill password
-		Disabled:            src.IsDisabled(),
-		DisabledReason:      src.DisabledReason,
-		Locked:              src.IsLocked(),
-		LockedReason:        src.LockedReason,
-		ApiToken:            "", // by default, do not expose API token
-		ApiTokenCreated:     src.ApiTokenCreated,
-		ApiEnabled:          src.IsApiEnabled(),
-		PersistLocalChanges: src.PersistLocalChanges,
+		IsAdmin:              src.IsAdmin,
+		Firstname:            src.Firstname,
+		Lastname:             src.Lastname,
+		Phone:                src.Phone,
+		Department:           src.Department,
+		Notes:                src.Notes,
+		Password:             "", // never fill password
+		DefaultPasswordInUse: src.CheckPassword(config.DefaultAdminPassword) == nil,
+		Disabled:             src.IsDisabled(),
+		DisabledReason:       src.DisabledReason,
+		Locked:               src.IsLocked(),
+		LockedReason:         src.LockedReason,
+		ApiToken:             "", // by default, do not expose API token
+		ApiTokenCreated:      src.ApiTokenCreated,
+		ApiEnabled:           src.IsApiEnabled(),
+		PersistLocalChanges:  src.PersistLocalChanges,
 
 		PeerCount: src.LinkedPeerCount,
 	}

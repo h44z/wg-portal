@@ -17,6 +17,7 @@ export const authStore = defineStore('auth',{
         fetching: false,
         sessionChecked: false,
         sessionPromise: null,
+        defaultPasswordInUse: JSON.parse(localStorage.getItem('user'))?.DefaultPasswordInUse || false,
     }),
     getters: {
         UserIdentifier: (state) => state.user?.Identifier || 'unknown',
@@ -24,6 +25,7 @@ export const authStore = defineStore('auth',{
         LoginProviders: (state) => state.providers,
         IsAuthenticated: (state) => state.user != null,
         IsAdmin: (state) => state.user?.IsAdmin || false,
+        DefaultPasswordInUse: (state) => state.defaultPasswordInUse || false,
         ReturnUrl: (state) => state.returnUrl || '/',
         IsWebAuthnEnabled: (state) => {
             if (state.webAuthnCredentials) {
@@ -317,17 +319,32 @@ export const authStore = defineStore('auth',{
                     return Promise.reject(new Error("login failed"))
                 })
         },
+        SetDefaultPasswordInUse(inUse) {
+            this.defaultPasswordInUse = inUse;
+            if (this.user) {
+                this.user.DefaultPasswordInUse = inUse;
+                localStorage.setItem('user', JSON.stringify(this.user));
+                if (inUse) {
+                    websocketWrapper.disconnect();
+                } else {
+                    websocketWrapper.connect();
+                }
+            }
+        },
         // -- internal setters
         setUserInfo(userInfo) {
             // store user details and jwt in local storage to keep user logged in between page refreshes
             if (userInfo && (userInfo.Identifier || userInfo.UserIdentifier)) {
+                const defaultPw = !!userInfo['DefaultPasswordInUse'];
+                this.defaultPasswordInUse = defaultPw;
                 if ('UserIdentifier' in userInfo && userInfo.UserIdentifier) { // session object
                     this.user = {
                         Identifier: userInfo['UserIdentifier'],
                         Firstname: userInfo['UserFirstname'] || '',
                         Lastname: userInfo['UserLastname'] || '',
                         Email: userInfo['UserEmail'] || '',
-                        IsAdmin: userInfo['IsAdmin'] || false
+                        IsAdmin: userInfo['IsAdmin'] || false,
+                        DefaultPasswordInUse: defaultPw
                     }
                 } else if ('Identifier' in userInfo && userInfo.Identifier) { // user object
                     this.user = {
@@ -335,13 +352,16 @@ export const authStore = defineStore('auth',{
                         Firstname: userInfo['Firstname'] || '',
                         Lastname: userInfo['Lastname'] || '',
                         Email: userInfo['Email'] || '',
-                        IsAdmin: userInfo['IsAdmin'] || false
+                        IsAdmin: userInfo['IsAdmin'] || false,
+                        DefaultPasswordInUse: defaultPw
                     }
                 } else {
                     this.user = null
+                    this.defaultPasswordInUse = false
                 }
             } else {
                 this.user = null
+                this.defaultPasswordInUse = false
             }
 
             if (this.user) {

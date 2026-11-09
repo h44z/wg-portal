@@ -281,6 +281,34 @@ func (m Manager) DeactivateApi(ctx context.Context, id domain.UserIdentifier) (*
 	return user, nil
 }
 
+// IsDefaultPasswordInUse checks if the default admin user or any admin user is still using the default password.
+func (m Manager) IsDefaultPasswordInUse(ctx context.Context) bool {
+	adminCtx := domain.SetUserInfo(ctx, domain.SystemAdminContextUserInfo())
+
+	adminUserId := domain.UserIdentifier(m.cfg.Core.AdminUser)
+	if adminUserId == "" {
+		adminUserId = config.DefaultAdminUser
+	}
+
+	adminUser, err := m.users.GetUser(adminCtx, adminUserId)
+	if err == nil && adminUser != nil {
+		if adminUser.CheckPassword(config.DefaultAdminPassword) == nil {
+			return true
+		}
+	}
+
+	allUsers, err := m.users.GetAllUsers(adminCtx)
+	if err == nil {
+		for _, u := range allUsers {
+			if u.IsAdmin && u.CheckPassword(config.DefaultAdminPassword) == nil {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 func (m Manager) validateModifications(ctx context.Context, old, new *domain.User) error {
 	currentUser := domain.GetUserInfo(ctx)
 

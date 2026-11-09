@@ -80,7 +80,8 @@ function handleResponse(response) {
 
         if (!response.ok) {
             const auth = authStore();
-            if ([401, 403].includes(response.status) && auth.IsAuthenticated) {
+            const isDefaultPasswordError = data && data.Message && data.Message.toLowerCase().includes("default admin password");
+            if ([401, 403].includes(response.status) && auth.IsAuthenticated && !isDefaultPasswordError) {
                 console.log("unauthorized response received, redirecting to login...");
                 // handle unauthorized session without clearing return url
                 auth.HandleUnauthorized();

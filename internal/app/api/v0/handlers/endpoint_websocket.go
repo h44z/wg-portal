@@ -68,7 +68,7 @@ func (e *WebsocketEndpoint) GetName() string {
 }
 
 func (e *WebsocketEndpoint) RegisterRoutes(g *routegroup.Bundle) {
-	g.With(e.authenticator.LoggedIn()).HandleFunc("GET /ws", e.handleWebsocket())
+	g.With(e.authenticator.LoggedIn(), e.authenticator.RequireNonDefaultPassword()).HandleFunc("GET /ws", e.handleWebsocket())
 }
 
 // StartBackgroundJobs starts background jobs like the expired peers check.

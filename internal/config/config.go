@@ -12,6 +12,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	DefaultAdminUser     = "admin@wgportal.local"
+	DefaultAdminPassword = "wgportal-default"
+)
+
 // Config is the main configuration struct.
 type Config struct {
 	Core struct {
@@ -128,8 +133,8 @@ func defaultConfig() *Config {
 	cfg := &Config{}
 
 	cfg.Core.AdminUserDisabled = getEnvBool("WG_PORTAL_CORE_DISABLE_ADMIN_USER", false)
-	cfg.Core.AdminUser = getEnvStr("WG_PORTAL_CORE_ADMIN_USER", "admin@wgportal.local")
-	cfg.Core.AdminPassword = getEnvStr("WG_PORTAL_CORE_ADMIN_PASSWORD", "wgportal-default")
+	cfg.Core.AdminUser = getEnvStr("WG_PORTAL_CORE_ADMIN_USER", DefaultAdminUser)
+	cfg.Core.AdminPassword = getEnvStr("WG_PORTAL_CORE_ADMIN_PASSWORD", DefaultAdminPassword)
 	cfg.Core.AdminApiToken = getEnvStr("WG_PORTAL_CORE_ADMIN_API_TOKEN", "") // by default, the API access is disabled
 	cfg.Core.ImportExisting = getEnvBool("WG_PORTAL_CORE_IMPORT_EXISTING", true)
 	cfg.Core.RestoreState = getEnvBool("WG_PORTAL_CORE_RESTORE_STATE", true)

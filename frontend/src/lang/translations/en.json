@@ -32,6 +32,23 @@
     "button": "Sign in",
     "button-webauthn": "Use Passkey"
   },
+  "default-password": {
+    "banner-title": "Security Warning: Default Password in Use",
+    "banner-message": "The default administrator password is still in use. Unless the password gets changed, no further actions are possible.",
+    "modal-title": "Change Default Administrator Password",
+    "modal-warning-heading": "Default Password In Use",
+    "modal-warning-text": "The default administrator password is currently in use. To protect your installation from unauthorized access, you must change the password now.",
+    "modal-warning-note": "Note: Unless the password gets changed, no further actions are possible.",
+    "current-label": "Current Password",
+    "new-label": "New Password",
+    "confirm-label": "Confirm New Password",
+    "weak-label": "The password is too short.",
+    "mismatch-label": "Passwords do not match.",
+    "same-label": "The new password must be different from the current password.",
+    "change-button-text": "Change Password",
+    "success-title": "Password Changed!",
+    "success-text": "Password changed successfully. All actions are now unlocked."
+  },
   "peer-config-download": {
     "headline": "Downloading VPN Configuration",
     "in-progress": "Your WireGuard configuration download will start automatically. Please wait...",

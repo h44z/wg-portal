@@ -142,6 +142,9 @@ func (d dummyAuthService) OauthLoginStep2(_ context.Context, _, _, _, _ string) 
 func (d dummyAuthService) OauthProviderLogoutUrl(_, _, _ string) (string, bool) {
 	return "", false
 }
+func (d dummyAuthService) IsDefaultPasswordInUse(_ context.Context) bool {
+	return false
+}
 
 type dummyValidator struct{}
 

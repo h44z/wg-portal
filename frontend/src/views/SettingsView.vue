@@ -57,6 +57,7 @@ const passwordChangeAllowed = computed(() => {
 const updatePassword = async () => {
   try {
     await profile.changePassword(pwFormData.value);
+    auth.SetDefaultPasswordInUse(false);
 
     pwFormData.value.OldPassword = '';
     pwFormData.value.Password = '';
@@ -85,7 +86,7 @@ const updatePassword = async () => {
 
   <p class="lead">{{ $t('settings.abstract') }}</p>
 
-  <div class="card border-secondary p-5 mt-5" v-if="profile.user.Source === 'db'">
+  <div class="card border-secondary p-5 mt-5" v-if="profile.user.AuthSources?.includes('db')">
     <h2 class="display-7">{{ $t('settings.password.headline') }}</h2>
     <p class="lead">{{ $t('settings.password.abstract') }}</p>
     <hr class="my-4">
