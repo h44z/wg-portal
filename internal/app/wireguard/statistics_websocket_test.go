@@ -30,6 +30,12 @@ func (statisticsWebsocketAuth) LoggedIn(...handlers.Scope) func(http.Handler) ht
 	}
 }
 
+func (statisticsWebsocketAuth) RequireNonDefaultPassword() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return next
+	}
+}
+
 type statisticsWebsocketBus struct {
 	evbus.MessageBus
 	ready chan struct{}
