@@ -570,6 +570,8 @@
       "private-key": {
         "label": "Private Key",
         "placeholder": "The private key",
+        "local-label": "Generated locally",
+        "local-help": "The private key was generated in this browser and is not sent to the server. The configuration is downloaded once when you save.",
         "help": "The private key is stored securely on the server. If the user already holds a copy, you may omit this field. The server still functions exclusively with the peer’s public key."
       },
       "public-key": {

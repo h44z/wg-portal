@@ -570,6 +570,8 @@
       "private-key": {
         "label": "Privater Schlüssel",
         "placeholder": "Der private Schlüssel",
+        "local-label": "Lokal erzeugt",
+        "local-help": "Der private Schlüssel wurde in diesem Browser erzeugt und wird nicht an den Server gesendet. Die Konfiguration wird beim Speichern einmalig heruntergeladen.",
         "help": "Der private Schlüssel wird sicher auf dem Server gespeichert. Wenn der Benutzer bereits eine Kopie besitzt, kann dieses Feld entfallen. Der Server funktioniert auch ausschließlich mit dem öffentlichen Schlüssel des Peers."
       },
       "public-key": {
