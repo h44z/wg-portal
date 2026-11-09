@@ -27,7 +27,10 @@ func (e TestEndpoint) GetName() string {
 
 func (e TestEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	g.HandleFunc("GET /now", e.handleCurrentTimeGet())
-	g.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /hostname", e.handleHostnameGet())
+	g.With(
+		e.authenticator.LoggedIn(ScopeAdmin),
+		e.authenticator.RequireNonDefaultPassword(),
+	).HandleFunc("GET /hostname", e.handleHostnameGet())
 }
 
 // handleCurrentTimeGet represents the GET endpoint that responds the current time

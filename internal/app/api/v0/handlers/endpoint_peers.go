@@ -76,6 +76,7 @@ func (e PeerEndpoint) GetName() string {
 func (e PeerEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/peer")
 	apiGroup.Use(e.authenticator.LoggedIn())
+	apiGroup.Use(e.authenticator.RequireNonDefaultPassword())
 
 	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /iface/{iface}/all", e.handleAllGet())
 	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /iface/{iface}/stats", e.handleStatsGet())

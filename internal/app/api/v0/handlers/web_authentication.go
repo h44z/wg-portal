@@ -19,6 +19,7 @@ const (
 
 type UserAuthenticator interface {
 	IsUserValid(ctx context.Context, id domain.UserIdentifier) bool
+	IsDefaultPasswordInUse(ctx context.Context) bool
 }
 
 type AuthenticationHandler struct {
@@ -121,6 +122,21 @@ func (h AuthenticationHandler) UserIdMatch(idParameter string) func(next http.Ha
 			}
 
 			// Continue down the chain to Handler etc
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// RequireNonDefaultPassword prohibits actions if the default admin password is still in use.
+func (h AuthenticationHandler) RequireNonDefaultPassword() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if h.authenticator.IsDefaultPasswordInUse(r.Context()) {
+				respond.JSON(w, http.StatusForbidden,
+					model.Error{Code: http.StatusForbidden, Message: "default admin password must be changed first"})
+				return
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}

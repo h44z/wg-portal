@@ -6,6 +6,7 @@ import { authStore } from "./stores/auth";
 import { securityStore } from "./stores/security";
 import { settingsStore } from "@/stores/settings";
 import { Notifications } from "@kyvg/vue3-notification";
+import DefaultPasswordModal from "@/components/DefaultPasswordModal.vue";
 
 const appGlobal = getCurrentInstance().appContext.config.globalProperties
 const auth = authStore()
@@ -197,8 +198,14 @@ const userDisplayName = computed(() => {
   </nav>
 
   <div class="container mt-5 flex-shrink-0">
+    <div class="alert alert-warning mb-4" v-if="auth.IsAuthenticated && auth.DefaultPasswordInUse">
+      <h4 class="alert-heading"><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ $t('default-password.banner-title') }}</h4>
+      <p class="mb-0">{{ $t('default-password.banner-message') }}</p>
+    </div>
     <RouterView />
   </div>
+
+  <DefaultPasswordModal />
 
   <footer class="page-footer mt-auto">
     <div class="container mt-5">

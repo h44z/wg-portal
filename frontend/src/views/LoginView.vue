@@ -42,11 +42,20 @@ const login = async function () {
   const dest = returnUrl.value && returnUrl.value !== '/login' ? returnUrl.value : (auth.ReturnUrl || '/')
   auth.Login(username.value, password.value)
       .then(uid => {
-        notify({
-          title: "Logged in",
-          text: "Authentication succeeded!",
-          type: 'success',
-        });
+        if (auth.DefaultPasswordInUse) {
+          notify({
+            title: "Default Password in Use!",
+            text: "Please change the default administrator password immediately. Unless the password gets changed, no further actions are possible.",
+            type: 'warn',
+            duration: 10000,
+          });
+        } else {
+          notify({
+            title: "Logged in",
+            text: "Authentication succeeded!",
+            type: 'success',
+          });
+        }
         loggingIn.value = false;
         settings.LoadSettings(); // reload full settings
         auth.ResetReturnUrl();
@@ -71,11 +80,20 @@ const loginWebAuthn = async function () {
   const dest = returnUrl.value && returnUrl.value !== '/login' ? returnUrl.value : (auth.ReturnUrl || '/')
   auth.LoginWebAuthn()
       .then(uid => {
-        notify({
-          title: "Logged in",
-          text: "Authentication succeeded!",
-          type: 'success',
-        });
+        if (auth.DefaultPasswordInUse) {
+          notify({
+            title: "Default Password in Use!",
+            text: "Please change the default administrator password immediately. Unless the password gets changed, no further actions are possible.",
+            type: 'warn',
+            duration: 10000,
+          });
+        } else {
+          notify({
+            title: "Logged in",
+            text: "Authentication succeeded!",
+            type: 'success',
+          });
+        }
         loggingIn.value = false;
         settings.LoadSettings(); // reload full settings
         auth.ResetReturnUrl();

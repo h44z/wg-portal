@@ -8,6 +8,12 @@ let failureCount = 0;
 
 export const websocketWrapper = {
     connect() {
+        const auth = authStore();
+        if (!auth.IsAuthenticated || auth.DefaultPasswordInUse) {
+            this.disconnect();
+            return;
+        }
+
         if (socket) {
             console.log('WebSocket already connected, re-using existing connection.');
             return;
@@ -69,7 +75,8 @@ export const websocketWrapper = {
 
     scheduleReconnect() {
         if (reconnectTimer) return;
-        if (!authStore().IsAuthenticated) return; // Don't reconnect if not logged in
+        const auth = authStore();
+        if (!auth.IsAuthenticated || auth.DefaultPasswordInUse) return;
 
         reconnectTimer = setInterval(() => {
             if (failureCount > 2) {

@@ -32,12 +32,13 @@ func NewLoginProviderInfos(src []domain.LoginProviderInfo) []LoginProviderInfo {
 }
 
 type SessionInfo struct {
-	LoggedIn       bool    `json:"LoggedIn"`
-	IsAdmin        bool    `json:"IsAdmin,omitempty"`
-	UserIdentifier *string `json:"UserIdentifier,omitempty"`
-	UserFirstname  *string `json:"UserFirstname,omitempty"`
-	UserLastname   *string `json:"UserLastname,omitempty"`
-	UserEmail      *string `json:"UserEmail,omitempty"`
+	LoggedIn             bool    `json:"LoggedIn"`
+	IsAdmin              bool    `json:"IsAdmin,omitempty"`
+	UserIdentifier       *string `json:"UserIdentifier,omitempty"`
+	UserFirstname        *string `json:"UserFirstname,omitempty"`
+	UserLastname         *string `json:"UserLastname,omitempty"`
+	UserEmail            *string `json:"UserEmail,omitempty"`
+	DefaultPasswordInUse bool    `json:"DefaultPasswordInUse"`
 }
 
 type OauthInitiationResponse struct {

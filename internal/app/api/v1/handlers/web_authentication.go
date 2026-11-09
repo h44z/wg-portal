@@ -18,6 +18,7 @@ const (
 
 type UserAuthenticator interface {
 	IsUserValid(ctx context.Context, id domain.UserIdentifier) bool
+	IsDefaultPasswordInUse(ctx context.Context) bool
 }
 
 type UserRepository interface {
@@ -71,6 +72,12 @@ func (h AuthenticationHandler) LoggedIn(scopes ...Scope) func(next http.Handler)
 			if valid := h.authenticator.IsUserValid(r.Context(), domain.UserIdentifier(user.Identifier)); !valid {
 				respond.JSON(w, http.StatusForbidden,
 					model.Error{Code: http.StatusForbidden, Message: "account disabled or locked"})
+				return
+			}
+
+			if h.authenticator.IsDefaultPasswordInUse(r.Context()) {
+				respond.JSON(w, http.StatusForbidden,
+					model.Error{Code: http.StatusForbidden, Message: "default admin password must be changed first"})
 				return
 			}
 
