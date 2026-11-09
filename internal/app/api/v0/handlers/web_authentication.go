@@ -18,7 +18,7 @@ const (
 )
 
 type UserAuthenticator interface {
-	IsUserValid(ctx context.Context, id domain.UserIdentifier) bool
+	GetValidUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, bool)
 	IsDefaultPasswordInUse(ctx context.Context) bool
 }
 
@@ -47,18 +47,16 @@ func (h AuthenticationHandler) LoggedIn(scopes ...Scope) func(next http.Handler)
 				return
 			}
 
+			if !h.refreshSession(r.Context(), &session) {
+				respond.JSON(w, http.StatusUnauthorized,
+					model.Error{Code: http.StatusUnauthorized, Message: "session no longer available"})
+				return
+			}
+
 			if !UserHasScopes(session, scopes...) {
 				// Abort the request with the appropriate error code
 				respond.JSON(w, http.StatusForbidden,
 					model.Error{Code: http.StatusForbidden, Message: "not enough permissions"})
-				return
-			}
-
-			// Check if logged-in user is still valid
-			if !h.authenticator.IsUserValid(r.Context(), domain.UserIdentifier(session.UserIdentifier)) {
-				h.session.DestroyData(r.Context())
-				respond.JSON(w, http.StatusUnauthorized,
-					model.Error{Code: http.StatusUnauthorized, Message: "session no longer available"})
 				return
 			}
 
@@ -74,8 +72,8 @@ func (h AuthenticationHandler) LoggedIn(scopes ...Scope) func(next http.Handler)
 	}
 }
 
-// InfoOnly only checks if the user is logged in and adds the user id to the context.
-// If the user is not logged in, the context user id is set to domain.CtxUnknownUserId.
+// InfoOnly adds current user info to the context without requiring a login.
+// If the user is not logged in or no longer valid, the context user id is set to domain.CtxUnknownUserId.
 func (h AuthenticationHandler) InfoOnly() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +81,7 @@ func (h AuthenticationHandler) InfoOnly() func(next http.Handler) http.Handler {
 
 			var newContext context.Context
 
-			if !session.LoggedIn {
+			if !h.refreshSession(r.Context(), &session) {
 				newContext = domain.SetUserInfo(r.Context(), domain.DefaultContextUserInfo())
 			} else {
 				newContext = domain.SetUserInfo(r.Context(), &domain.ContextUserInfo{
@@ -100,7 +98,26 @@ func (h AuthenticationHandler) InfoOnly() func(next http.Handler) http.Handler {
 	}
 }
 
+// refreshSession validates the account and refreshes its role before authorization.
+func (h AuthenticationHandler) refreshSession(ctx context.Context, session *SessionData) bool {
+	if !session.LoggedIn {
+		return false
+	}
+
+	user, valid := h.authenticator.GetValidUser(ctx, domain.UserIdentifier(session.UserIdentifier))
+	if !valid {
+		h.session.DestroyData(ctx)
+		return false
+	}
+	if session.IsAdmin != user.IsAdmin {
+		session.IsAdmin = user.IsAdmin
+		h.session.SetData(ctx, *session)
+	}
+	return true
+}
+
 // UserIdMatch checks if the user id in the session matches the user id in the request. If not, the request is aborted.
+// It must run after LoggedIn has refreshed the session role.
 func (h AuthenticationHandler) UserIdMatch(idParameter string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

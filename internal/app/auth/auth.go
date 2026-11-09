@@ -310,21 +310,27 @@ func (a *Authenticator) GetExternalLoginProviders(_ context.Context) []domain.Lo
 
 // IsUserValid checks if a user is valid and not locked or disabled.
 func (a *Authenticator) IsUserValid(ctx context.Context, id domain.UserIdentifier) bool {
+	_, valid := a.GetValidUser(ctx, id)
+	return valid
+}
+
+// GetValidUser returns the current user if the account exists and is not locked or disabled.
+func (a *Authenticator) GetValidUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, bool) {
 	ctx = domain.SetUserInfo(ctx, domain.SystemAdminContextUserInfo()) // switch to admin user context
 	user, err := a.users.GetUser(ctx, id)
-	if err != nil {
-		return false
+	if err != nil || user == nil {
+		return nil, false
 	}
 
 	if user.IsDisabled() {
-		return false
+		return nil, false
 	}
 
 	if user.IsLocked() {
-		return false
+		return nil, false
 	}
 
-	return true
+	return user, true
 }
 
 // region password authentication

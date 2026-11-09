@@ -109,7 +109,7 @@ func (e AuthEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/auth")
 
 	apiGroup.HandleFunc("GET /providers", e.handleExternalLoginProvidersGet())
-	apiGroup.HandleFunc("GET /session", e.handleSessionInfoGet())
+	apiGroup.With(e.authenticator.InfoOnly()).HandleFunc("GET /session", e.handleSessionInfoGet())
 
 	apiGroup.HandleFunc("GET /login/{provider}/init", e.handleOauthInitiateGet())
 	apiGroup.HandleFunc("GET /login/{provider}/callback", e.handleOauthCallbackGet())

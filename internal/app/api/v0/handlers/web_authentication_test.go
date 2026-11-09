@@ -15,8 +15,8 @@ type stubV0UserAuthenticator struct {
 	defaultPasswordInUse bool
 }
 
-func (s stubV0UserAuthenticator) IsUserValid(_ context.Context, _ domain.UserIdentifier) bool {
-	return s.valid
+func (s stubV0UserAuthenticator) GetValidUser(_ context.Context, id domain.UserIdentifier) (*domain.User, bool) {
+	return &domain.User{Identifier: id}, s.valid
 }
 
 func (s stubV0UserAuthenticator) IsDefaultPasswordInUse(_ context.Context) bool {
