@@ -96,6 +96,7 @@ func (m Manager) connectToMessageBus() {
 	_ = m.bus.Subscribe(app.TopicUserDisabled, m.handleUserDisabledEvent)
 	_ = m.bus.Subscribe(app.TopicUserEnabled, m.handleUserEnabledEvent)
 	_ = m.bus.Subscribe(app.TopicUserDeleted, m.handleUserDeletedEvent)
+	_ = m.bus.Subscribe(app.TopicInterfaceLdapFilterApplied, m.handleInterfaceLdapFilterAppliedEvent)
 	_ = m.bus.Subscribe(app.TopicInterfaceCreated, m.handleInterfaceCreatedEvent)
 }
 
@@ -181,6 +182,80 @@ func (m Manager) handleUserDisabledEvent(user domain.User) {
 				"peer", peer.Identifier,
 				"user", user.Identifier,
 				"error", err)
+		}
+	}
+}
+
+// handleInterfaceLdapFilterAppliedEvent reconciles the peers on one interface
+// against the users its LDAP filter currently permits, disabling any that are
+// no longer entitled.
+//
+// It works from the resulting allowed set rather than a diff of what changed,
+// so it is idempotent and also repairs drift that occurred while wg-portal was
+// not running: a demotion during downtime is invisible to a transition-based
+// check but is caught by the next reconcile.
+//
+// Only peers owned by a user are considered. Peers imported from a device or
+// created by an administrator have no owner and are not governed by the filter.
+func (m Manager) handleInterfaceLdapFilterAppliedEvent(
+	interfaceId domain.InterfaceIdentifier,
+	allowedUserIds []domain.UserIdentifier,
+) {
+	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+
+	peers, err := m.db.GetInterfacePeers(ctx, interfaceId)
+	if err != nil {
+		slog.Error("failed to retrieve peers while reconciling interface access",
+			"interface", interfaceId, "error", err)
+		return
+	}
+
+	allowed := make(map[domain.UserIdentifier]struct{}, len(allowedUserIds))
+	for _, id := range allowedUserIds {
+		allowed[id] = struct{}{}
+	}
+
+	now := time.Now()
+	for _, peer := range peers {
+		if peer.UserIdentifier == "" {
+			continue // not owned by a user, so no filter governs it
+		}
+		if _, ok := allowed[peer.UserIdentifier]; ok {
+			// Entitled again. Undo a revocation this handler performed earlier,
+			// so that moving a user back into the group restores their access;
+			// peers disabled for any other reason are left to their own owner.
+			if peer.DisabledReason != domain.DisabledReasonAccessRevoked {
+				continue
+			}
+
+			slog.Info("re-enabling peer, user is permitted on this interface again",
+				"peer", peer.Identifier, "user", peer.UserIdentifier, "interface", interfaceId)
+
+			peer.Disabled = nil
+			peer.DisabledReason = ""
+
+			if _, err := m.UpdatePeer(ctx, &peer); err != nil {
+				slog.Error("failed to re-enable peer after interface access was restored",
+					"peer", peer.Identifier, "user", peer.UserIdentifier,
+					"interface", interfaceId, "error", err)
+			}
+
+			continue
+		}
+		if peer.IsDisabled() {
+			continue
+		}
+
+		slog.Info("disabling peer, user no longer permitted on this interface",
+			"peer", peer.Identifier, "user", peer.UserIdentifier, "interface", interfaceId)
+
+		peer.Disabled = &now
+		peer.DisabledReason = domain.DisabledReasonAccessRevoked
+
+		if _, err := m.UpdatePeer(ctx, &peer); err != nil {
+			slog.Error("failed to disable peer after interface access was revoked",
+				"peer", peer.Identifier, "user", peer.UserIdentifier,
+				"interface", interfaceId, "error", err)
 		}
 	}
 }
