@@ -6,11 +6,14 @@ import { useI18n } from 'vue-i18n';
 import { notify } from "@kyvg/vue3-notification";
 import { freshPeer, freshInterface } from '@/helpers/models';
 import { profileStore } from "@/stores/profile";
+import { settingsStore } from "@/stores/settings";
+import { downloadWgQuickConfig, generateKeypair } from '@/helpers/wireguard';
 
 const { t } = useI18n()
 
 const peers = peerStore()
 const profile = profileStore()
+const settings = settingsStore()
 
 const props = defineProps({
   peerId: String,
@@ -55,15 +58,29 @@ const title = computed(() => {
 })
 
 const formData = ref(freshPeer())
+const isPreparing = ref(false)
 const isSaving = ref(false)
 const isDeleting = ref(false)
+const isGeneratingKeys = ref(false)
+const clientSideKeyGenerated = ref(false)
+const isBusy = computed(() => isPreparing.value || isSaving.value || isGeneratingKeys.value)
 
 // functions
 
 watch(() => props.visible, async (newValue, oldValue) => {
   if (oldValue === false && newValue === true) { // if modal is shown
+    clientSideKeyGenerated.value = false
+
     if (!selectedPeer.value) {
-      await peers.PreparePeer(selectedInterface.value.Identifier)
+      const preparingForm = formData.value
+      isPreparing.value = true
+      try {
+        await peers.PreparePeer(selectedInterface.value.Identifier)
+      } finally {
+        if (formData.value === preparingForm) isPreparing.value = false
+      }
+      // A closed dialog must not populate a later editing session.
+      if (formData.value !== preparingForm) return
 
       formData.value.Identifier = peers.Prepared.Identifier
       formData.value.DisplayName = peers.Prepared.DisplayName
@@ -160,29 +177,57 @@ watch(() => formData.value.Disabled, async (newValue, oldValue) => {
 )
 
 function close() {
+  if (isSaving.value || isGeneratingKeys.value) return
   formData.value = freshPeer()
+  isPreparing.value = false
+  clientSideKeyGenerated.value = false
   emit('close')
 }
 
+async function generateClientSideKeyPair() {
+  if (isBusy.value) return
+  isGeneratingKeys.value = true
+  try {
+    const keypair = await generateKeypair()
+    formData.value.PrivateKey = keypair.privateKey
+    formData.value.PublicKey = keypair.publicKey
+    clientSideKeyGenerated.value = true
+  } catch (e) {
+    notify({
+      title: "Failed to generate key pair!",
+      text: e.toString(),
+      type: 'error',
+    })
+  } finally {
+    isGeneratingKeys.value = false
+  }
+}
+
 async function save() {
-  if (isSaving.value) return
+  if (isBusy.value) return
   isSaving.value = true
   try {
     if (props.peerId !== '#NEW#') {
       await peers.UpdatePeer(selectedPeer.value.Identifier, formData.value)
+    } else if (clientSideKeyGenerated.value) {
+      const { PublicKey, PrivateKey } = formData.value
+      // The client private key must never leave the browser.
+      await peers.CreatePeer(selectedInterface.value.Identifier, { ...formData.value, PrivateKey: "" })
+      downloadWgQuickConfig(peers.Find(PublicKey), PrivateKey)
     } else {
       await peers.CreatePeer(selectedInterface.value.Identifier, formData.value)
     }
-    close()
   } catch (e) {
     notify({
       title: "Failed to save peer!",
       text: e.toString(),
       type: 'error',
     })
+    return
   } finally {
     isSaving.value = false
   }
+  close()
 }
 
 async function del() {
@@ -218,15 +263,28 @@ async function del() {
       <fieldset>
         <legend class="mt-4">{{ $t('modals.peer-edit.header-crypto') }}</legend>
         <div class="form-group">
-          <label class="form-label mt-4">{{ $t('modals.peer-edit.private-key.label') }}</label>
-          <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.private-key.placeholder')" required
-            v-model="formData.PrivateKey">
-          <small id="privateKeyHelp" class="form-text text-muted">{{ $t('modals.peer-edit.private-key.help') }}</small>
+          <label class="form-label mt-4" for="userPeerPrivateKey">{{ $t('modals.peer-edit.private-key.label') }}</label>
+          <span v-if="clientSideKeyGenerated" class="badge text-bg-success ms-2" role="status">
+            <i class="fas fa-lock me-1" aria-hidden="true"></i>{{ $t('modals.peer-edit.private-key.local-label') }}
+          </span>
+          <div class="input-group">
+            <input id="userPeerPrivateKey" type="text" class="form-control" :class="{ 'border-success': clientSideKeyGenerated }"
+              :placeholder="$t('modals.peer-edit.private-key.placeholder')" required aria-describedby="privateKeyHelp"
+              v-model="formData.PrivateKey" :readonly="clientSideKeyGenerated">
+            <button v-if="props.peerId === '#NEW#' && settings.Setting('EditableKeys')" class="btn btn-outline-primary" type="button"
+              @click.prevent="generateClientSideKeyPair" :disabled="isBusy" :title="$t('keygen.abstract')">
+              <span v-if="isGeneratingKeys" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              {{ $t('keygen.button-generate') }}
+            </button>
+          </div>
+          <small id="privateKeyHelp" class="form-text" :class="clientSideKeyGenerated ? 'text-success' : 'text-muted'">
+            {{ $t(clientSideKeyGenerated ? 'modals.peer-edit.private-key.local-help' : 'modals.peer-edit.private-key.help') }}
+          </small>
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.public-key.label') }}</label>
           <input type="text" class="form-control" :placeholder="$t('modals.peer-edit.public-key.placeholder')" required
-            v-model="formData.PublicKey">
+            v-model="formData.PublicKey" :readonly="clientSideKeyGenerated">
         </div>
         <div class="form-group">
           <label class="form-label mt-4">{{ $t('modals.peer-edit.preshared-key.label') }}</label>
@@ -296,11 +354,11 @@ async function del() {
           {{ $t('general.delete') }}
         </button>
       </div>
-      <button class="btn btn-primary me-1" type="button" @click.prevent="save" :disabled="isSaving">
+      <button class="btn btn-primary me-1" type="button" @click.prevent="save" :disabled="isBusy">
         <span v-if="isSaving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
         {{ $t('general.save') }}
       </button>
-      <button class="btn btn-secondary" type="button" @click.prevent="close">{{ $t('general.close') }}</button>
+      <button class="btn btn-secondary" type="button" @click.prevent="close" :disabled="isSaving || isGeneratingKeys">{{ $t('general.close') }}</button>
     </template>
   </Modal>
 </template>

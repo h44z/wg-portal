@@ -2633,6 +2633,9 @@
                         "$ref": "#/definitions/model.SettingsBackendNames"
                     }
                 },
+                "EditableKeys": {
+                    "type": "boolean"
+                },
                 "LoginFormVisible": {
                     "type": "boolean"
                 },

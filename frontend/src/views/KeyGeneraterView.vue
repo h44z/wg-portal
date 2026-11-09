@@ -1,37 +1,11 @@
 <script setup>
 
 import {ref} from "vue";
+import { generateKeypair } from "@/helpers/wireguard";
 
 const privateKey = ref("")
 const publicKey = ref("")
 const presharedKey = ref("")
-
-/**
- * Generate an X25519 keypair using the Web Crypto API and return Base64-encoded strings.
- * @async
- * @function generateKeypair
- * @returns {Promise<{ publicKey: string, privateKey: string }>} Resolves with an object containing
- *   - publicKey: the Base64-encoded public key
- *   - privateKey: the Base64-encoded private key
- */
-async function generateKeypair() {
-  // 1. Generate an X25519 key pair
-  const keyPair = await crypto.subtle.generateKey(
-      { name: 'X25519', namedCurve: 'X25519' },
-      true,                 // extractable
-      ['deriveBits']        // allowed usage for ECDH
-  );
-
-  // 2. Export keys as JWK to access raw key material
-  const pubJwk  = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
-  const privJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
-
-  // 3. Convert Base64URL to standard Base64 with padding
-  return {
-    publicKey:  b64urlToB64(pubJwk.x),
-    privateKey: b64urlToB64(privJwk.d)
-  };
-}
 
 /**
  * Generate a 32-byte pre-shared key using crypto.getRandomValues.
@@ -42,20 +16,6 @@ function generatePresharedKey() {
   let privateKey = new Uint8Array(32);
   window.crypto.getRandomValues(privateKey);
   return privateKey;
-}
-
-/**
- * Convert a Base64URL-encoded string to standard Base64 with padding.
- * @function b64urlToB64
- * @param {string} input - The Base64URL string.
- * @returns {string} The padded, standard Base64 string.
- */
-function b64urlToB64(input) {
-  let b64 = input.replace(/-/g, '+').replace(/_/g, '/');
-  while (b64.length % 4) {
-    b64 += '=';
-  }
-  return b64;
 }
 
 /**

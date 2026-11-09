@@ -154,7 +154,7 @@ More advanced options are found in the subsequent `Advanced` section.
 ### `editable_keys`
 - **Default:** `true`
 - **Environment Variable:** `WG_PORTAL_CORE_EDITABLE_KEYS`
-- **Description:** Allow editing of WireGuard key-pairs directly in the UI.
+- **Description:** Allow editing of WireGuard key-pairs directly in the UI. When enabled, users creating their own peers (self-provisioning) can also generate the key-pair in the browser: the private key is never sent to the server, and the WireGuard configuration file is downloaded once right after creation. It cannot be downloaded or shown again later.
 
 ### `create_default_peer` (deprecated)
 - **Default:** `false`
