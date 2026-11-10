@@ -118,6 +118,9 @@ func (s InterfaceService) Update(ctx context.Context, id domain.InterfaceIdentif
 	iface.IsDynamic = existingInterface.IsDynamic
 	iface.DriverType = existingInterface.DriverType
 	iface.LdapAllowedUsers = existingInterface.LdapAllowedUsers
+	if iface.AmneziaWG == nil {
+		iface.AmneziaWG = existingInterface.AmneziaWG
+	}
 
 	updatedInterface, updatedPeers, err := s.interfaces.UpdateInterface(ctx, iface)
 	if err != nil {
@@ -134,6 +137,7 @@ func (s InterfaceService) validateBackend(backend domain.InterfaceBackend) error
 
 	// Empty is the legacy representation of the local backend in domain objects.
 	if id == "" || id == config.LocalBackendName ||
+		(id == config.AmneziaWGBackendName && s.cfg.Backend.AmneziaWG.Enabled) ||
 		slices.ContainsFunc(s.cfg.Backend.Mikrotik, func(b config.BackendMikrotik) bool { return b.Id == id }) ||
 		slices.ContainsFunc(s.cfg.Backend.Pfsense, func(b config.BackendPfsense) bool { return b.Id == id }) ||
 		slices.ContainsFunc(s.cfg.Backend.Opnsense, func(b config.BackendOpnsense) bool { return b.Id == id }) {

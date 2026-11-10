@@ -23,6 +23,9 @@
 
 # Core settings
 PrivateKey = {{ .Peer.Interface.KeyPair.PrivateKey }}
+{{- if .Peer.Interface.AmneziaWG }}
+{{ .Peer.Interface.AmneziaWG.ConfigLines -}}
+{{- end }}
 {{- if eq .Style "wgquick"}}
 Address = {{ CidrsToString .Peer.Interface.Addresses }}
 {{- end}}

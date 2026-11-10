@@ -115,6 +115,20 @@ WireGuard Portal supports managing WireGuard interfaces through three distinct d
      config_storage_path: /etc/wireguard/
    ```
 
+## AmneziaWG image
+
+The optional AmneziaWG variant is built with `docker build --target amneziawg -t wg-portal:amneziawg .`.
+It is published on the same registries with an `-amneziawg` tag suffix, for example
+`wgportal/wg-portal:master-amneziawg` and `ghcr.io/h44z/wg-portal:latest-amneziawg`.
+It includes the official `awg` and `awg-quick` tools for manual diagnostics.
+The portal manages AmneziaWG directly via Generic Netlink and does not invoke these tools.
+
+Install and load the AmneziaWG kernel module **on the Docker host**, then enable
+`backend.amneziawg.enabled` in the [backend configuration](../usage/backends.md#configuring-the-amneziawg-backend).
+The image shares the host kernel; it cannot provide a portable, precompiled kernel module.
+Use the same `NET_ADMIN`, port mappings, persistent volumes, and network mode as the ordinary image.
+The portal checks kernel support on startup when this backend is enabled.
+
 ## Image Versioning
 
 All images are hosted on Docker Hub at [https://hub.docker.com/r/wgportal/wg-portal](https://hub.docker.com/r/wgportal/wg-portal) or in the [GitHub Container Registry](https://github.com/h44z/wg-portal/pkgs/container/wg-portal).

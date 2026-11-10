@@ -3,6 +3,7 @@ package domain
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"math"
 	"net"
 	"regexp"
@@ -29,6 +30,12 @@ type InterfaceIdentifier string
 type InterfaceType string
 type InterfaceBackend string
 
+// IsLocal includes both kernel backends, which share Linux routing and peer
+// disable/restore behavior. The empty backend is the legacy local backend.
+func (b InterfaceBackend) IsLocal() bool {
+	return b == "" || b == config.LocalBackendName || b == config.AmneziaWGBackendName
+}
+
 type Interface struct {
 	BaseModel
 
@@ -37,6 +44,7 @@ type Interface struct {
 	Identifier InterfaceIdentifier `gorm:"primaryKey"` // device name, for example: wg0
 	KeyPair                        // private/public Key of the server interface
 	ListenPort int                 // the listening port, for example: 51820
+	AmneziaWG  AmneziaWGOptions    `gorm:"serializer:json"` // AmneziaWG obfuscation options, nil for ordinary WireGuard.
 
 	Addresses    []Cidr `gorm:"many2many:interface_addresses;"` // the interface ip addresses
 	DnsStr       string // the dns server that should be set if the interface is up, comma separated
@@ -121,6 +129,12 @@ func (i *Interface) PublicInfo() Interface {
 
 // Validate performs checks to ensure that the interface is valid.
 func (i *Interface) Validate() error {
+	if len(i.AmneziaWG) > 0 && i.Backend != config.AmneziaWGBackendName {
+		return fmt.Errorf("AmneziaWG options require the amneziawg backend: %w", ErrInvalidData)
+	}
+	if err := i.AmneziaWG.Validate(); err != nil {
+		return err
+	}
 	// validate peer default endpoint, add port if needed
 	if i.PeerDefEndpoint != "" {
 		host, port, err := net.SplitHostPort(i.PeerDefEndpoint)
@@ -210,7 +224,7 @@ func (i *Interface) GetRoutingTable() int {
 	case routingTableStr == "off":
 		return -1
 	case strings.HasPrefix(routingTableStr, "0x"):
-		if i.Backend != config.LocalBackendName {
+		if !i.Backend.IsLocal() {
 			return 0 // ignore numeric routing table numbers for non-local controllers
 		}
 		numberStr := strings.ReplaceAll(routingTableStr, "0x", "")
@@ -225,7 +239,7 @@ func (i *Interface) GetRoutingTable() int {
 		}
 		return int(routingTable)
 	default:
-		if i.Backend != config.LocalBackendName {
+		if !i.Backend.IsLocal() {
 			return 0 // ignore numeric routing table numbers for non-local controllers
 		}
 		routingTable, err := strconv.Atoi(routingTableStr)
@@ -283,7 +297,8 @@ func (p *PhysicalInterface) SetExtras(extras any) {
 	case MikrotikInterfaceExtras: // OK
 	case PfsenseInterfaceExtras: // OK
 	case OpnsenseInterfaceExtras: // OK
-	default: // we only support Mikrotik, Pfsense and Opnsense interface extras for now
+	case AmneziaWGInterfaceExtras: // OK
+	default:
 		panic(fmt.Sprintf("unsupported interface backend extras type %T", extras))
 	}
 
@@ -362,6 +377,9 @@ func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
 		} else {
 			iface.Disabled = nil
 		}
+	case ControllerTypeAmneziaWG:
+		extras := pi.GetExtras().(AmneziaWGInterfaceExtras)
+		iface.AmneziaWG = maps.Clone(extras.Options)
 	}
 
 	return iface
@@ -402,6 +420,13 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 			extras.Uuid = existing.Uuid
 			extras.Instance = existing.Instance
 		}
+		pi.SetExtras(extras)
+	case ControllerTypeAmneziaWG:
+		extras := AmneziaWGInterfaceExtras{Options: AmneziaWGOptions{}}
+		if existing, ok := pi.GetExtras().(AmneziaWGInterfaceExtras); ok && existing.Options != nil {
+			extras.Options = maps.Clone(existing.Options)
+		}
+		maps.Copy(extras.Options, i.AmneziaWG)
 		pi.SetExtras(extras)
 	}
 }

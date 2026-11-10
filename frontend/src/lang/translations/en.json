@@ -425,6 +425,7 @@
       "tab-peerdef": "Peer Defaults",
       "header-general": "General",
       "header-network": "Network",
+      "amneziawg": {"label": "Obfuscation options", "help": "One option per line (for example H1 = 123456789). Omitted options keep their current kernel values. Use explicit values to reset options. These settings are included in client configurations; clients need AmneziaWG support.", "invalid": "Use one AmneziaWG option per line as Name = Value, without duplicate names."},
       "header-crypto": "Cryptography",
       "header-hooks": "Interface Hooks",
       "header-peer-hooks": "Hooks",

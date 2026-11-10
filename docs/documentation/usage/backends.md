@@ -7,14 +7,72 @@ A global default backend determines where newly created interfaces go (unless yo
 
 **Supported backends:**
 - **Local** (default): Manages interfaces on the host running WireGuard Portal (Linux WireGuard via wgctrl). Use this when the portal should directly configure wg devices on the same server.
+- **AmneziaWG** (optional): Manages local AmneziaWG kernel interfaces directly via Generic Netlink, alongside ordinary WireGuard.
 - **MikroTik** RouterOS (_beta_): Manages interfaces and peers on MikroTik devices via the RouterOS REST API. Use this to control WG interfaces on RouterOS v7+.
 - **pfSense** (_alpha_): Manages interfaces and peers on pfSense firewalls via the pfSense REST API.
 - **OPNsense** (_alpha_): Manages interfaces and peers on OPNsense firewalls via the WireGuard API built into OPNsense core. Unlike the pfSense backend, no add-on package is required on the firewall.
 
 How backend selection works:
-- The default backend is configured at `backend.default` (_local_ or the id of a defined MikroTik, pfSense or OPNsense backend). 
+- The default backend is configured at `backend.default` (`local`, enabled `amneziawg`, or the id of a defined remote backend).
   New interfaces created in the UI will use this backend by default.
 - Each interface stores its backend. You can select a different backend when creating a new interface.
+
+## Configuring the AmneziaWG backend
+
+Install the official [AmneziaWG kernel module](https://github.com/amnezia-vpn/amneziawg-linux-kernel-module)
+for the running **host** kernel and load it with `modprobe amneziawg` before starting the portal.
+The portal communicates with the kernel directly, following the same client contract as `wgctrl`.
+No `awg`, `awg-quick`, or other AmneziaWG userspace executable is required.
+The ordinary Docker image supports this backend too; the separate
+[AmneziaWG Docker image](../getting-started/docker.md#amneziawg-image) includes optional diagnostic tools.
+The portal needs `NET_ADMIN` in the network namespace containing the interfaces.
+
+```yaml
+backend:
+  default: amneziawg  # optional; local remains available
+  amneziawg:
+    enabled: true
+    ignored_interfaces: []
+```
+
+The backend is disabled by default. `WG_PORTAL_BACKEND_AMNEZIAWG_ENABLED=true` can also enable it.
+When enabled, the portal checks for the kernel's `amneziawg` Generic Netlink family and its version (1, 2, or 3).
+Startup fails with a diagnostic if kernel support is missing or its interface version is unsupported. It does not install or load kernel modules,
+and does not fall back to a userspace implementation. Ordinary WireGuard and AmneziaWG interfaces
+are discovered and managed by their respective backends. `local` and `amneziawg` are reserved backend IDs.
+
+Select **Local AmneziaWG Controller** when creating an interface. In its **AmneziaWG** section,
+enter [obfuscation options](https://docs.amnezia.org/documentation/amnezia-wg#configuration-parameters) as `Name = Value`, one per line. For example:
+
+```ini
+Jc = 4
+Jmin = 40
+Jmax = 70
+S1 = 86
+S2 = 94
+H1 = 123456789
+H2 = 234567890
+H3 = 345678901
+H4 = 456789012
+```
+
+Choose suitable values for your deployment. An empty options section keeps the kernel defaults;
+enabling the backend alone does not select an obfuscation profile.
+The supported interface options include `Jc`, `Jmin`, `Jmax`, `S1`–`S4`, `H1`–`H4`, `I1`–`I5`,
+and the header protection, padding, timer, and boolean options in the official tools.
+Header and timer ranges are preserved as strings. The installed kernel must support the options used:
+v1 uses fixed headers, v2 adds header ranges and CPS packets, and v3 adds header protection and timer ranges.
+Options requiring a newer kernel interface are rejected before configuration is applied.
+Peer keepalive intervals are represented as single values in the portal; importing a keepalive range
+reports its lower bound, and editing that peer replaces the range with a single interval.
+
+Existing interface settings are imported and stored in the database. Updates apply supplied options
+and retain omitted kernel values; use explicit values to reset an option. Both API versions expose
+the same options through an `AmneziaWG` object, for example `{"Jc":"4","H1":"100-200"}`.
+The portal includes these settings in saved interface configurations, peer downloads, QR codes,
+and emailed configurations. Clients must support AmneziaWG and the configured protocol version.
+These files can be consumed by AmneziaWG clients or, optionally, `awg`/`awg-quick`. Linux routing, DNS, hooks, interface enable/disable,
+peer management, and handshake/traffic statistics follow the local backend's behavior.
 
 ## Configuring MikroTik backends (RouterOS v7+)
 

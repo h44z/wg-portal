@@ -12,7 +12,6 @@ import (
 
 	"github.com/h44z/wg-portal/internal/app"
 	"github.com/h44z/wg-portal/internal/app/audit"
-	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -284,7 +283,7 @@ func (m Manager) RestoreInterfaceState(
 		// restore peers
 		for _, peer := range peers {
 			switch {
-			case iface.IsDisabled() && iface.Backend == config.LocalBackendName: // if interface is disabled, delete all peers
+			case iface.IsDisabled() && iface.Backend.IsLocal(): // if interface is disabled, delete all peers
 				if err := controller.DeletePeer(ctx, iface.Identifier,
 					peer.Identifier); err != nil {
 					return fmt.Errorf("failed to remove peer %s for disabled interface %s: %w",
@@ -380,6 +379,7 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 		CreatedAt:                  time.Now(),
 		UpdatedAt:                  time.Now(),
 		Identifier:                 id,
+		Backend:                    domain.InterfaceBackend(m.cfg.Backend.Default),
 		KeyPair:                    kp,
 		ListenPort:                 port,
 		Addresses:                  ips,
@@ -563,6 +563,9 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 		err := m.wg.GetController(*iface).SaveInterface(ctx, iface.Identifier,
 			func(pi *domain.PhysicalInterface) (*domain.PhysicalInterface, error) {
 				domain.MergeToPhysicalInterface(pi, iface)
+				if extras, ok := pi.GetExtras().(domain.AmneziaWGInterfaceExtras); ok {
+					iface.AmneziaWG = extras.Options
+				}
 				return pi, nil
 			})
 		if err != nil {
@@ -633,7 +636,7 @@ func (m Manager) saveInterface(ctx context.Context, iface *domain.Interface) (
 	}
 
 	// If the interface has just been enabled, restore its peers on the physical controller
-	if !oldEnabled && newEnabled && iface.Backend == config.LocalBackendName {
+	if !oldEnabled && newEnabled && iface.Backend.IsLocal() {
 		peers, err := m.db.GetInterfacePeers(ctx, iface.Identifier)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load peers for interface %s: %w", iface.Identifier, err)

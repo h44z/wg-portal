@@ -38,6 +38,9 @@ func newTemplateHandler() (*TemplateHandler, error) {
 
 // GetInterfaceConfig returns the rendered configuration file for a WireGuard interface.
 func (c TemplateHandler) GetInterfaceConfig(cfg *domain.Interface, peers []domain.Peer) (io.Reader, error) {
+	if err := cfg.AmneziaWG.Validate(); err != nil {
+		return nil, err
+	}
 	var tplBuff bytes.Buffer
 
 	err := c.templates.ExecuteTemplate(&tplBuff, "wg_interface.tpl", map[string]any{
@@ -56,6 +59,9 @@ func (c TemplateHandler) GetInterfaceConfig(cfg *domain.Interface, peers []domai
 
 // GetPeerConfig returns the rendered configuration file for a WireGuard peer.
 func (c TemplateHandler) GetPeerConfig(peer *domain.Peer, style string) (io.Reader, error) {
+	if err := peer.Interface.AmneziaWG.Validate(); err != nil {
+		return nil, err
+	}
 	var tplBuff bytes.Buffer
 
 	err := c.templates.ExecuteTemplate(&tplBuff, "wg_peer.tpl", map[string]any{

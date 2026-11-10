@@ -6,6 +6,7 @@ import (
 )
 
 const LocalBackendName = "local"
+const AmneziaWGBackendName = "amneziawg"
 
 type Backend struct {
 	Default string `yaml:"default"` // The default backend to use (defaults to the internal backend)
@@ -19,9 +20,10 @@ type Backend struct {
 
 	// External Backend-specific configuration
 
-	Mikrotik []BackendMikrotik `yaml:"mikrotik"`
-	Pfsense  []BackendPfsense  `yaml:"pfsense"`
-	Opnsense []BackendOpnsense `yaml:"opnsense"`
+	Mikrotik  []BackendMikrotik `yaml:"mikrotik"`
+	Pfsense   []BackendPfsense  `yaml:"pfsense"`
+	Opnsense  []BackendOpnsense `yaml:"opnsense"`
+	AmneziaWG BackendAmneziaWG  `yaml:"amneziawg"`
 }
 
 // Validate checks the backend configuration for errors.
@@ -31,9 +33,12 @@ func (b *Backend) Validate() error {
 	}
 
 	uniqueMap := make(map[string]struct{})
+	if b.AmneziaWG.Enabled {
+		uniqueMap[AmneziaWGBackendName] = struct{}{}
+	}
 	checkBackendId := func(id string) error {
-		if id == LocalBackendName {
-			return fmt.Errorf("backend ID %q is a reserved keyword", LocalBackendName)
+		if id == LocalBackendName || id == AmneziaWGBackendName {
+			return fmt.Errorf("backend ID %q is a reserved keyword", id)
 		}
 		if _, exists := uniqueMap[id]; exists {
 			return fmt.Errorf("backend ID %q is not unique", id)
@@ -196,4 +201,9 @@ func (b *BackendOpnsense) GetApiTimeout() time.Duration {
 		return 30 * time.Second
 	}
 	return b.ApiTimeout
+}
+
+type BackendAmneziaWG struct {
+	Enabled           bool     `yaml:"enabled"` // Requires a loaded AmneziaWG host kernel module.
+	IgnoredInterfaces []string `yaml:"ignored_interfaces"`
 }

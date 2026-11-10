@@ -2033,6 +2033,12 @@
         }
     },
     "definitions": {
+        "domain.AmneziaWGOptions": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            }
+        },
         "model.AuditEntry": {
             "type": "object",
             "properties": {
@@ -2149,6 +2155,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "AmneziaWG": {
+                    "$ref": "#/definitions/domain.AmneziaWGOptions"
                 },
                 "Backend": {
                     "description": "the backend used for this interface e.g., local, mikrotik, ...",

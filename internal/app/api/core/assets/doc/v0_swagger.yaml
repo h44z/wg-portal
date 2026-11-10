@@ -1,5 +1,9 @@
 basePath: /api/v0
 definitions:
+  domain.AmneziaWGOptions:
+    additionalProperties:
+      type: string
+    type: object
   model.AuditEntry:
     properties:
       ContextUser:
@@ -76,6 +80,8 @@ definitions:
         items:
           type: string
         type: array
+      AmneziaWG:
+        $ref: '#/definitions/domain.AmneziaWGOptions'
       Backend:
         description: the backend used for this interface e.g., local, mikrotik, ...
         example: local

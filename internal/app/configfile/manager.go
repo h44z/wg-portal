@@ -195,6 +195,9 @@ func (m Manager) GetPeerConfig(ctx context.Context, id domain.PeerIdentifier, st
 	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
 		return nil, err
 	}
+	if err := m.loadAmneziaWGOptions(ctx, peer); err != nil {
+		return nil, err
+	}
 
 	return m.tplHandler.GetPeerConfig(peer, style)
 }
@@ -207,6 +210,9 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 	}
 
 	if err := domain.ValidateUserAccessRights(ctx, peer.UserIdentifier); err != nil {
+		return nil, err
+	}
+	if err := m.loadAmneziaWGOptions(ctx, peer); err != nil {
 		return nil, err
 	}
 
@@ -248,6 +254,17 @@ func (m Manager) GetPeerConfigQrCode(ctx context.Context, id domain.PeerIdentifi
 	}
 
 	return buf, nil
+}
+
+func (m Manager) loadAmneziaWGOptions(ctx context.Context, peer *domain.Peer) error {
+	iface, err := m.wg.GetInterface(ctx, peer.InterfaceIdentifier)
+	if err != nil {
+		return fmt.Errorf("failed to load parent interface: %w", err)
+	}
+	if iface.Backend == config.AmneziaWGBackendName {
+		peer.Interface.AmneziaWG = iface.AmneziaWG
+	}
+	return nil
 }
 
 // PersistInterfaceConfig writes the configuration file for the given interface to the file system.

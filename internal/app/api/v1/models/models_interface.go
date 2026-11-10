@@ -83,6 +83,10 @@ type Interface struct {
 	// PeerDefPostDown specifies the default action that is executed after the device is down for a new peer.
 	PeerDefPostDown string `json:"PeerDefPostDown"`
 
+	// AmneziaWG contains per-interface obfuscation options for the amneziawg backend.
+	// Omitted options preserve the current kernel settings. Values use awg configuration syntax.
+	AmneziaWG domain.AmneziaWGOptions `json:"AmneziaWG,omitempty" swaggertype:"object,string"`
+
 	// Calculated values
 
 	// EnabledPeers is the number of enabled peers for this interface. Only enabled peers are able to connect.
@@ -134,6 +138,8 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 		PeerDefPostUp:              src.PeerDefPostUp,
 		PeerDefPreDown:             src.PeerDefPreDown,
 		PeerDefPostDown:            src.PeerDefPostDown,
+
+		AmneziaWG: src.AmneziaWG,
 
 		EnabledPeers: 0,
 		TotalPeers:   0,
@@ -204,6 +210,7 @@ func NewDomainInterface(src *Interface) *domain.Interface {
 		PeerDefPostUp:              src.PeerDefPostUp,
 		PeerDefPreDown:             src.PeerDefPreDown,
 		PeerDefPostDown:            src.PeerDefPostDown,
+		AmneziaWG:                  src.AmneziaWG,
 	}
 
 	if src.Disabled {

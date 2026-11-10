@@ -89,6 +89,38 @@ jobs:
           build-args: |
             BUILD_VERSION=${{ env.BUILD_VERSION }}
 
+      - name: Extract metadata for AmneziaWG image
+        id: meta-awg
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: |
+            wgportal/wg-portal
+            ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=auto
+            suffix=-amneziawg,onlatest=true
+          tags: |
+            type=ref,event=tag
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+
+      - name: Build and push AmneziaWG Docker image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: amneziawg
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-awg.outputs.tags }}
+          labels: ${{ steps.meta-awg.outputs.labels }}
+          annotations: ${{ steps.meta-awg.outputs.annotations }}
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          build-args: |
+            BUILD_VERSION=${{ env.BUILD_VERSION }}
+
       - name: Rename binaries
         run: |
           for file in binaries/linux*/wg-portal; do

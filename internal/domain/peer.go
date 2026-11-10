@@ -167,6 +167,8 @@ type PeerInterfaceConfig struct {
 	PostUp   ConfigOption[string] `gorm:"embedded;embeddedPrefix:iface_post_up_"`   // action that is executed after the device is up
 	PreDown  ConfigOption[string] `gorm:"embedded;embeddedPrefix:iface_pre_down_"`  // action that is executed before the device is down
 	PostDown ConfigOption[string] `gorm:"embedded;embeddedPrefix:iface_post_down_"` // action that is executed after the device is down
+
+	AmneziaWG AmneziaWGOptions `gorm:"-" json:"-"` // Filled from the parent interface when exporting a client configuration.
 }
 
 func (p *PeerInterfaceConfig) AddressStr() string {
@@ -298,7 +300,7 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 			peer.Disabled = nil
 			peer.DisabledReason = ""
 		}
-	case ControllerTypeLocal:
+	case ControllerTypeLocal, ControllerTypeAmneziaWG:
 		extras := pp.GetExtras().(LocalPeerExtras)
 		if extras.Disabled {
 			peer.Disabled = &now
@@ -397,7 +399,7 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 			Dynamic:         p.IsDynamic,
 		}
 		pp.SetExtras(extras)
-	case ControllerTypeLocal:
+	case ControllerTypeLocal, ControllerTypeAmneziaWG:
 		extras := LocalPeerExtras{
 			Disabled: p.IsDisabled(),
 		}

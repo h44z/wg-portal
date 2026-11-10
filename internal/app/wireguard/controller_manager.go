@@ -40,6 +40,10 @@ func (c *ControllerManager) init() error {
 		return err
 	}
 
+	if err := c.registerAmneziaWGController(); err != nil {
+		return err
+	}
+
 	if err := c.registerMikrotikControllers(); err != nil {
 		return err
 	}
@@ -132,6 +136,26 @@ func (c *ControllerManager) registerOpnsenseControllers() error {
 			Config:         backendConfig.BackendBase,
 			Implementation: controller,
 		}
+	}
+	return nil
+}
+
+func (c *ControllerManager) registerAmneziaWGController() error {
+	if !c.cfg.Backend.AmneziaWG.Enabled {
+		return nil
+	}
+	controller, err := wgcontroller.NewAmneziaWGController(c.cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create AmneziaWG controller: %w", err)
+	}
+	c.controllers[config.AmneziaWGBackendName] = backendInstance{
+		Config: config.BackendBase{
+			Id:                config.AmneziaWGBackendName,
+			DisplayName:       "AmneziaWG",
+			Type:              "amneziawg",
+			IgnoredInterfaces: c.cfg.Backend.AmneziaWG.IgnoredInterfaces,
+		},
+		Implementation: controller,
 	}
 	return nil
 }

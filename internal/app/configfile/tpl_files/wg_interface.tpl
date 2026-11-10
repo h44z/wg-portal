@@ -17,6 +17,9 @@
 
 # Core settings
 PrivateKey = {{ .Interface.KeyPair.PrivateKey }}
+{{- if .Interface.AmneziaWG }}
+{{ .Interface.AmneziaWG.ConfigLines -}}
+{{- end }}
 Address = {{ CidrsToString .Interface.Addresses }}
 
 # Misc. settings (optional)

@@ -50,6 +50,8 @@ const currentTags = ref({
   PeerDefDnsSearch: ""
 })
 const formData = ref(freshInterface())
+const amneziaWGText = ref("")
+const isAmneziaWG = computed(() => formData.value.Backend === 'amneziawg')
 const isSaving = ref(false)
 const isDeleting = ref(false)
 const isApplyingDefaults = ref(false)
@@ -77,7 +79,7 @@ const isHookSupported = computed(() => {
   let availableBackends = settings.Setting('AvailableBackends') || [];
   let backend = availableBackends.find(b => b.Id === formData.value.Backend);
   if (!backend) return false;
-  return backend.Type === 'local' || backend.Type === 'mikrotik';
+  return backend.Type === 'local' || backend.Type === 'amneziawg' || backend.Type === 'mikrotik';
 })
 
 // functions
@@ -169,6 +171,8 @@ watch(() => props.visible, async (newValue, oldValue) => {
           formData.value.PeerDefPostDown = selectedInterface.value.PeerDefPostDown
 
         }
+        const options = (selectedInterface.value ? selectedInterface.value.AmneziaWG : interfaces.Prepared?.AmneziaWG) || {}
+        amneziaWGText.value = Object.entries(options).map(([key, value]) => `${key} = ${value}`).join('\n')
       }
     }
 )
@@ -275,6 +279,18 @@ async function save() {
   if (isSaving.value) return
   isSaving.value = true
   try {
+    const options = {}
+    if (isAmneziaWG.value) {
+      for (const line of amneziaWGText.value.split('\n')) {
+        if (!line.trim() || line.trim().startsWith('#')) continue
+        const match = line.match(/^\s*([A-Za-z][A-Za-z0-9]*)\s*=\s*(.*?)\s*$/)
+        if (!match || Object.hasOwn(options, match[1])) {
+          throw new Error(t('modals.interface-edit.amneziawg.invalid'))
+        }
+        options[match[1]] = match[2]
+      }
+    }
+    formData.value.AmneziaWG = options
     if (props.interfaceId!=='#NEW#') {
       await interfaces.UpdateInterface(selectedInterface.value.Identifier, formData.value)
     } else {
@@ -426,6 +442,12 @@ async function del() {
               <label class="form-label mt-4">{{ $t('modals.interface-edit.display-name.label') }}</label>
               <input v-model="formData.DisplayName" class="form-control" :placeholder="$t('modals.interface-edit.display-name.placeholder')" type="text">
             </div>
+          </fieldset>
+          <fieldset v-if="isAmneziaWG">
+            <legend class="mt-4">AmneziaWG</legend>
+            <label class="form-label" for="amneziaWGOptions">{{ $t('modals.interface-edit.amneziawg.label') }}</label>
+            <textarea id="amneziaWGOptions" v-model="amneziaWGText" class="form-control font-monospace" rows="8" placeholder="Jc = 4&#10;Jmin = 40&#10;Jmax = 70&#10;S1 = 86&#10;S2 = 94&#10;H1 = 123456789&#10;H2 = 234567890&#10;H3 = 345678901&#10;H4 = 456789012"></textarea>
+            <small class="form-text">{{ $t('modals.interface-edit.amneziawg.help') }}</small>
           </fieldset>
           <fieldset>
             <legend class="mt-4">{{ $t('modals.interface-edit.header-crypto') }}</legend>

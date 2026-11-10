@@ -7,6 +7,7 @@ export function freshInterface() {
     CreateDefaultPeer: false,
     Mode: "server",
     Backend: "local",
+    AmneziaWG: {},
 
     PublicKey: "",
     PrivateKey: "",

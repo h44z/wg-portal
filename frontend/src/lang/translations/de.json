@@ -425,6 +425,7 @@
       "tab-peerdef": "Peer-Standardeinstellungen",
       "header-general": "Allgemein",
       "header-network": "Netzwerk",
+      "amneziawg": {"label": "Verschleierungsoptionen", "help": "Eine Option pro Zeile (zum Beispiel H1 = 123456789). Ausgelassene Optionen behalten ihren aktuellen Kernelwert. Zum Zurücksetzen explizite Werte angeben. Diese Einstellungen werden in Client-Konfigurationen übernommen; Clients benötigen AmneziaWG-Unterstützung.", "invalid": "Eine AmneziaWG-Option pro Zeile als Name = Wert angeben, ohne doppelte Namen."},
       "header-crypto": "Kryptografie",
       "header-hooks": "Schnittstellen-Hooks",
       "header-peer-hooks": "Hooks",

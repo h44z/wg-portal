@@ -49,6 +49,8 @@ type Interface struct {
 	PeerDefPreDown  string `json:"PeerDefPreDown"`  // default action that is executed before the device is down
 	PeerDefPostDown string `json:"PeerDefPostDown"` // default action that is executed after the device is down
 
+	AmneziaWG domain.AmneziaWGOptions `json:"AmneziaWG,omitempty"`
+
 	// Calculated values
 
 	EnabledPeers int    `json:"EnabledPeers"`
@@ -93,6 +95,8 @@ func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
 		PeerDefPostUp:              src.PeerDefPostUp,
 		PeerDefPreDown:             src.PeerDefPreDown,
 		PeerDefPostDown:            src.PeerDefPostDown,
+
+		AmneziaWG: src.AmneziaWG,
 
 		EnabledPeers: 0,
 		TotalPeers:   0,
@@ -174,6 +178,7 @@ func NewDomainInterface(src *Interface) *domain.Interface {
 		PeerDefPostUp:              src.PeerDefPostUp,
 		PeerDefPreDown:             src.PeerDefPreDown,
 		PeerDefPostDown:            src.PeerDefPostDown,
+		AmneziaWG:                  src.AmneziaWG,
 	}
 
 	if src.Disabled {

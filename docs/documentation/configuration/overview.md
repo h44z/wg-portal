@@ -30,6 +30,9 @@ backend:
   default: local
   rekey_timeout_interval: 125s
   local_resolvconf_prefix: tun.
+  amneziawg:
+    enabled: false
+    ignored_interfaces: []
 
 advanced:
   log_level: info
@@ -219,7 +222,7 @@ The current MikroTik backend is in **BETA** and may not support all features.
 ### `default`
 - **Default:** `local`
 - **Description:** The default backend to use for managing WireGuard interfaces. 
-  Valid options are: `local`, or other backend id's configured in the `mikrotik`, `pfsense` or `opnsense` sections.
+  Valid options are: `local`, `amneziawg` when enabled, or other backend IDs configured in the `mikrotik`, `pfsense` or `opnsense` sections.
 
 ### `rekey_timeout_interval`
 - **Default:** `180s`
@@ -240,6 +243,22 @@ The current MikroTik backend is in **BETA** and may not support all features.
   (comma-separated values)
 - **Description:** A list of interface names to exclude when enumerating local interfaces.
   This is useful if you want to prevent certain interfaces from being imported from the local system.
+
+### AmneziaWG
+
+#### `enabled`
+- **Default:** `false`
+- **Environment Variable:** `WG_PORTAL_BACKEND_AMNEZIAWG_ENABLED`
+- **Description:** Enable the optional local `amneziawg` backend. Requires a loaded AmneziaWG host
+  kernel module. The portal checks its Generic Netlink interface at startup and communicates
+  with it directly; no AmneziaWG userspace tools are required.
+
+#### `ignored_interfaces`
+- **Default:** *(empty)*
+- **Environment Variable:** `WG_PORTAL_BACKEND_IGNORED_AMNEZIAWG_INTERFACES`
+- **Description:** AmneziaWG interface names excluded from automatic import.
+
+See [AmneziaWG backend setup](../usage/backends.md#configuring-the-amneziawg-backend) for details.
 
 ### Mikrotik
 

@@ -48,9 +48,22 @@ FROM scratch AS binaries
 COPY --from=builder /build/dist/wg-portal /
 
 ######
+# Build the optional official AmneziaWG tools for the target architecture.
+# These are diagnostic tools; the portal's native backend does not need them.
+# The kernel module belongs on the host and is not built into this image.
+######
+FROM alpine:3.24 AS amneziawg-tools
+RUN apk add --no-cache build-base linux-headers
+ADD --checksum=sha256:22438f231d39ea27e4bdc69707ec3103357f3cecc9ad3eecba18a61e5b39c9b9 \
+    https://codeload.github.com/amnezia-vpn/amneziawg-tools/tar.gz/ee0f0a9aa34ff0a0da4b3433b9512781cfe02843 /tmp/amneziawg-tools.tar.gz
+RUN mkdir /build && tar -xzf /tmp/amneziawg-tools.tar.gz -C /build --strip-components=1 \
+    && make -C /build/src \
+    && make -C /build/src install DESTDIR=/out PREFIX=/usr WITH_WGQUICK=yes WITH_BASHCOMPLETION=no WITH_SYSTEMDUNITS=no
+
+######
 # Final image
 ######
-FROM alpine:3.24
+FROM alpine:3.24 AS runtime
 # Install OS-level dependencies
 RUN apk add --no-cache bash curl iptables nftables openresolv wireguard-tools tzdata
 # Setup timezone
@@ -67,3 +80,13 @@ EXPOSE 51820/udp
 VOLUME [ "/app/data", "/app/config" ]
 # Command to run the executable
 ENTRYPOINT [ "/app/wg-portal" ]
+
+# Optional image, built with --target amneziawg and published as *-amneziawg.
+FROM runtime AS amneziawg
+RUN apk add --no-cache iproute2
+COPY --from=amneziawg-tools /out/usr/bin/awg /usr/bin/awg
+COPY --from=amneziawg-tools /out/usr/bin/awg-quick /usr/bin/awg-quick
+COPY --from=amneziawg-tools /build/COPYING /usr/share/licenses/amneziawg-tools/COPYING
+
+# Keep the default image and its dependencies unchanged.
+FROM runtime AS standard

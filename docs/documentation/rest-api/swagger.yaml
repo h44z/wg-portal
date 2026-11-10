@@ -51,6 +51,13 @@ definitions:
                 items:
                     type: string
                 type: array
+            AmneziaWG:
+                additionalProperties:
+                    type: string
+                description: |-
+                    AmneziaWG contains per-interface obfuscation options for the amneziawg backend.
+                    Omitted options preserve the current kernel settings. Values use awg configuration syntax.
+                type: object
             Backend:
                 description: Backend is the configured backend ID used to manage this interface. Omit it on create to use the local backend, or on update to preserve the current backend.
                 example: local

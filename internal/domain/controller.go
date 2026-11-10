@@ -3,10 +3,11 @@ package domain
 // ControllerType defines the type of controller used to manage interfaces.
 
 const (
-	ControllerTypeMikrotik = "mikrotik"
-	ControllerTypeLocal    = "wgctrl"
-	ControllerTypePfsense  = "pfsense"
-	ControllerTypeOpnsense = "opnsense"
+	ControllerTypeMikrotik  = "mikrotik"
+	ControllerTypeLocal     = "wgctrl"
+	ControllerTypeAmneziaWG = "amneziawg"
+	ControllerTypePfsense   = "pfsense"
+	ControllerTypeOpnsense  = "opnsense"
 )
 
 // Controller extras can be used to store additional information available for specific controllers only.
@@ -15,6 +16,10 @@ type MikrotikInterfaceExtras struct {
 	Id       string // internal mikrotik ID
 	Comment  string
 	Disabled bool
+}
+
+type AmneziaWGInterfaceExtras struct {
+	Options AmneziaWGOptions
 }
 
 type MikrotikPeerExtras struct {
