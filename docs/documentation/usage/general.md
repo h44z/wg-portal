@@ -145,7 +145,7 @@ When peer rotation is enabled, WireGuard Portal can send warning emails to users
 
 The notification manager runs on the same schedule as the expiry checker (`advanced.expiry_check_interval`). For each active peer with a non-null `ExpiresAt`, it checks whether the peer falls within any of the configured notification windows (`core.peer.expiry_notification_intervals`). If so, and if no email has already been sent for that peer/interval combination, a warning email is dispatched via the configured SMTP server.
 
-Sent-notification records are persisted to the database so that emails are not re-sent after a Portal restart. Records older than `core.peer.notification_cleanup_after` are pruned automatically.
+Sent-notification records are persisted to the database so that emails are not re-sent after a Portal restart. Records are pruned automatically once they are older than `core.peer.notification_cleanup_after` plus the largest configured notification interval, i.e. only after the associated peer expiry has passed by at least `core.peer.notification_cleanup_after`. This way a warning is never sent twice, even if its lead time is longer than the retention period.
 
 ### Enabling Expiry Notifications
 

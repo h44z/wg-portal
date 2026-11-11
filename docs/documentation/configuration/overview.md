@@ -267,7 +267,7 @@ The `peer` sub-section groups peer lifecycle and expiry notification settings.
 #### `notification_cleanup_after`
 - **Default:** `720h` (30 days)
 - **Environment Variable:** `WG_PORTAL_CORE_PEER_NOTIFICATION_CLEANUP_AFTER`
-- **Description:** How long sent-notification records are kept in storage. Records older than this duration are pruned at the end of each notification check cycle. This prevents unbounded growth of the notification history table.
+- **Description:** How long sent-notification records are kept in storage. Records are pruned at the end of each notification check cycle once they are older than this duration plus the largest value of `expiry_notification_intervals`. This guarantees that a record is only deleted after the associated peer expiry has passed by at least this duration, so a warning whose lead time exceeds the retention (e.g. `1440h` with the default `720h`) is not sent twice. This prevents unbounded growth of the notification history table.
   Format uses `s`, `m`, `h` for seconds, minutes, hours, see [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration).
 
 ---

@@ -449,14 +449,18 @@ func TestProperty12_ContextCancellation_ManagerStops(t *testing.T) {
 // Validates: Requirements 3.7 (notification state hygiene)
 // ---------------------------------------------------------------------------
 
-// Feature: peer-rotation-interval, Property 15: records older than retention period are pruned
+// Feature: peer-rotation-interval, Property 15: records older than retention period
+// (plus the largest notification interval) are pruned
 func TestProperty15_OldRecordsPruned(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		// Generate a retention period between 1h and 720h.
 		retentionHours := rapid.Int64Range(1, 720).Draw(t, "retentionHours")
 		retention := time.Duration(retentionHours) * time.Hour
 
-		// Generate 1–5 old records whose SentAt is older than now - retention.
+		// Records are kept for retention + largest configured interval.
+		maxInterval := 24 * time.Hour
+
+		// Generate 1–5 old records whose SentAt is older than now - retention - maxInterval.
 		numOldRecords := rapid.IntRange(1, 5).Draw(t, "numOldRecords")
 
 		db := newNMDB()
@@ -465,14 +469,14 @@ func TestProperty15_OldRecordsPruned(t *testing.T) {
 
 		notifRepo := newMockNotifRepo()
 
-		// Insert old records (SentAt = now - retention - 1h, guaranteed stale).
+		// Insert old records (SentAt = now - retention - maxInterval - 1h, guaranteed stale).
 		stalePeerID := domain.PeerIdentifier("stale-peer")
 		for i := 0; i < numOldRecords; i++ {
 			rec := domain.PeerNotificationRecord{
 				ID:              uint(i + 1),
 				PeerIdentifier:  stalePeerID,
 				IntervalSeconds: int64((i + 1) * 3600),
-				SentAt:          time.Now().Add(-retention - time.Hour),
+				SentAt:          time.Now().Add(-retention - maxInterval - time.Hour),
 			}
 			notifRepo.records[stalePeerID] = append(notifRepo.records[stalePeerID], rec)
 		}
@@ -486,7 +490,7 @@ func TestProperty15_OldRecordsPruned(t *testing.T) {
 		mailer := &mockMailer{}
 		// Notifications must be enabled with at least one interval so checkAndNotify
 		// doesn't early-return before reaching the pruning step.
-		cfg := buildNMConfig(true, []time.Duration{24 * time.Hour}, time.Hour, retention)
+		cfg := buildNMConfig(true, []time.Duration{maxInterval}, time.Hour, retention)
 		nm := newNMForTest(cfg, db, notifRepo, mailer)
 
 		nm.checkAndNotify(context.Background())
@@ -495,6 +499,86 @@ func TestProperty15_OldRecordsPruned(t *testing.T) {
 		if len(notifRepo.records[stalePeerID]) != 0 {
 			t.Fatalf("Property 15: expected 0 records after pruning, got %d",
 				len(notifRepo.records[stalePeerID]))
+		}
+	})
+}
+
+// ---------------------------------------------------------------------------
+// Regression: notification lead time longer than the retention period
+// ---------------------------------------------------------------------------
+
+// A 60-day warning with the default 30-day retention must not be re-sent once the
+// retention period has passed since sending: the record is kept until the expiry has passed.
+func TestNotificationCleanup_LeadTimeLongerThanRetention_NoDuplicate(t *testing.T) {
+	const day = 24 * time.Hour
+	interval := 60 * day
+	retention := 30 * day
+
+	now := time.Now()
+	// The warning was sent 31 days ago, exactly when it became due; the peer expires in 29 days.
+	sentAt := now.Add(-31 * day)
+	expiresAt := sentAt.Add(interval)
+
+	db := newNMDB()
+	db.addInterface(domain.Interface{Identifier: "wg0", Type: domain.InterfaceTypeServer})
+	db.addUser(buildNMUser("user1", "user1@example.com"))
+	peer := buildNMPeer("peer1", &expiresAt, "user1")
+	db.addPeer("wg0", peer)
+
+	notifRepo := newMockNotifRepo()
+	notifRepo.records[peer.Identifier] = []domain.PeerNotificationRecord{{
+		ID:              1,
+		PeerIdentifier:  peer.Identifier,
+		IntervalSeconds: int64(interval.Seconds()),
+		SentAt:          sentAt,
+		Status:          "sent",
+	}}
+
+	mailer := &mockMailer{}
+	cfg := buildNMConfig(true, []time.Duration{interval}, time.Hour, retention)
+	nm := newNMForTest(cfg, db, notifRepo, mailer)
+
+	// Run several cycles: pruning happens at the end of each cycle, so a prematurely
+	// deleted record would cause a duplicate in the following cycle.
+	for i := 0; i < 3; i++ {
+		nm.checkAndNotify(context.Background())
+	}
+
+	if mailer.calls() != 0 {
+		t.Fatalf("expected no duplicate notification, got %d sent", mailer.calls())
+	}
+	if len(notifRepo.records[peer.Identifier]) != 1 {
+		t.Fatalf("expected the notification record to be kept, got %d records",
+			len(notifRepo.records[peer.Identifier]))
+	}
+}
+
+// Property: a record is never pruned before the associated expiry has passed by the retention period.
+// For any record created when its warning became due (SentAt >= ExpiresAt - interval), the pruning
+// cutoff must be earlier than SentAt as long as now < ExpiresAt + retention.
+func TestProperty_NotificationCleanupCutoff_KeepsRecordsUntilExpiry(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		numIntervals := rapid.IntRange(1, 5).Draw(t, "numIntervals")
+		intervals := make([]time.Duration, numIntervals)
+		for i := range intervals {
+			intervals[i] = time.Duration(rapid.Int64Range(1, 24*365).Draw(t, "intervalHours")) * time.Hour
+		}
+		interval := intervals[rapid.IntRange(0, numIntervals-1).Draw(t, "intervalIdx")]
+		retention := time.Duration(rapid.Int64Range(1, 24*365).Draw(t, "retentionHours")) * time.Hour
+
+		expiresAt := time.Now()
+		// The record is created somewhere between the due moment and the expiry.
+		sentAt := expiresAt.Add(-time.Duration(rapid.Int64Range(0, int64(interval)).Draw(t, "sentBeforeExpiry")))
+		// Evaluate cleanup at any moment between sending and expiry + retention.
+		now := sentAt.Add(time.Duration(rapid.Int64Range(0, int64(expiresAt.Add(retention).Sub(sentAt))-1).
+			Draw(t, "nowAfterSent")))
+
+		cfg := buildNMConfig(true, intervals, time.Hour, retention)
+		nm := newNMForTest(cfg, newNMDB(), newMockNotifRepo(), &mockMailer{})
+
+		if cutoff := nm.notificationCleanupCutoff(now); sentAt.Before(cutoff) {
+			t.Fatalf("record sent at %s would be pruned at %s (cutoff %s) before expiry %s + retention %s",
+				sentAt, now, cutoff, expiresAt, retention)
 		}
 	})
 }

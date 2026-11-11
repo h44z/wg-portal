@@ -30,7 +30,8 @@ core:
       - 72h
       - 24h
     # notification_cleanup_after controls how long sent-notification records are kept.
-    # Records older than this duration are pruned at the end of each check cycle.
+    # Records are pruned at the end of each check cycle once they are older than this
+    # duration plus the largest notification interval (i.e. after the peer expiry has passed).
     # Defaults to 720h (30 days).
     notification_cleanup_after: 720h
     # purge_expired_after controls automatic deletion of disabled expired peers.

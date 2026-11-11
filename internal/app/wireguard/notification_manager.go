@@ -111,10 +111,26 @@ func (nm *NotificationManager) checkAndNotify(ctx context.Context) {
 	}
 
 	// Prune old notification records
-	cutoff := time.Now().Add(-nm.cfg.Core.Peer.NotificationCleanupAfter)
-	if err := nm.notifRepo.DeleteNotificationRecordsBefore(ctx, cutoff); err != nil {
+	if err := nm.notifRepo.DeleteNotificationRecordsBefore(ctx, nm.notificationCleanupCutoff(time.Now())); err != nil {
 		slog.Warn("notification manager: failed to prune old notification records", "error", err)
 	}
+}
+
+// notificationCleanupCutoff returns the SentAt cutoff for pruning notification records.
+//
+// A record is the only guard against re-sending a warning, and a warning stays due until
+// the peer expires. Pruning by retention alone would delete records of warnings whose lead
+// time exceeds the retention (e.g. a 60-day warning with 30-day retention) and cause duplicates.
+// A record is created no earlier than ExpiresAt - interval, so ExpiresAt <= SentAt + maxInterval.
+// Extending the cutoff by the largest configured interval guarantees that a record is only
+// deleted once the associated expiry has passed by at least the retention period.
+func (nm *NotificationManager) notificationCleanupCutoff(now time.Time) time.Time {
+	var maxInterval time.Duration
+	for _, interval := range nm.cfg.Core.Peer.ExpiryNotificationIntervals {
+		maxInterval = max(maxInterval, interval)
+	}
+
+	return now.Add(-nm.cfg.Core.Peer.NotificationCleanupAfter - maxInterval)
 }
 
 // processPeerNotifications checks whether any notification intervals are due for the given peer
