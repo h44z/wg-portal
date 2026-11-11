@@ -69,7 +69,7 @@ When `core.peer.rotation_interval` is set to a non-zero duration, the Portal set
 
 The existing expiry checker (controlled by `advanced.expiry_check_interval`) periodically scans all peers. When a peer's `ExpiresAt` is reached, the action defined by `core.peer.expiry_action` is applied:
 
-- `disable` (default) — the peer is disabled and a human-readable reason is recorded (e.g. `expired on 2026-04-06T15:04:05Z`).
+- `disable` (default) — the peer is disabled and a human-readable reason is recorded (e.g. `expired on 06.04.2026 15:04 UTC`).
 - `delete` — the peer record is permanently removed from storage.
 
 ### Enabling Peer Rotation

@@ -6,8 +6,8 @@ import (
 	"io"
 	"log/slog"
 	"net/mail"
-	"time"
 	"net/url"
+	"time"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"

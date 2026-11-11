@@ -19,9 +19,9 @@ const (
 
 // PeerConfig holds peer lifecycle and expiry notification settings.
 type PeerConfig struct {
-	RotationInterval            time.Duration   `yaml:"rotation_interval"`
-	ExpiryAction                string          `yaml:"expiry_action"` // "disable" (default) | "delete"
-	AutoRecreateOnExpiry        bool            `yaml:"auto_recreate_on_expiry"`
+	RotationInterval     time.Duration `yaml:"rotation_interval"`
+	ExpiryAction         string        `yaml:"expiry_action"` // "disable" (default) | "delete"
+	AutoRecreateOnExpiry bool          `yaml:"auto_recreate_on_expiry"`
 	// RecreateOnExpirySuffix is appended to the display name of auto-recreated peers.
 	// Suggested variants:
 	//   " (recreated)"

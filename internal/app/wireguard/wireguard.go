@@ -380,7 +380,7 @@ func (m Manager) checkExpiredPeers(ctx context.Context, peers []domain.Peer) {
 					"action", "disable",
 				)
 				peer.Disabled = &now
-				peer.DisabledReason = fmt.Sprintf("expired on %s", expiryStr)
+				peer.DisabledReason = fmt.Sprintf("expired on %s", domain.FormatExpiryDate(*peer.ExpiresAt))
 				if _, err := m.UpdatePeer(ctx, &peer); err != nil {
 					slog.Error("failed to disable expired peer",
 						"peer", peer.Identifier,

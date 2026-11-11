@@ -11,6 +11,7 @@ import isCidr from "is-cidr";
 import { isIP } from 'is-ip';
 import { freshPeer, freshInterface } from '@/helpers/models';
 import { profileStore } from "@/stores/profile";
+import { rfc3339DateInputModel } from '@/helpers/utils';
 
 const { t } = useI18n()
 
@@ -73,6 +74,12 @@ const currentTags = ref({
   DnsSearch: ""
 })
 const formData = ref(freshPeer())
+
+// ExpiresAt is transferred as RFC3339, the date input only works with YYYY-MM-DD
+const expiresAtDate = computed(rfc3339DateInputModel(
+  () => formData.value.ExpiresAt,
+  (v) => { formData.value.ExpiresAt = v },
+))
 const isSaving = ref(false)
 const isDeleting = ref(false)
 
@@ -472,7 +479,7 @@ async function del() {
           <div class="form-group col-md-6">
             <label class="form-label">{{ $t('modals.peer-edit.expires-at.label') }}</label>
             <input type="date" pattern="\d{4}-\d{2}-\d{2}" class="form-control" min="2023-01-01"
-              v-model="formData.ExpiresAt">
+              v-model="expiresAtDate">
           </div>
         </div>
       </fieldset>

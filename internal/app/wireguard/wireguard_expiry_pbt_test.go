@@ -105,12 +105,12 @@ func newExpiryManager(expiryAction string, db *expiryMockDB) (Manager, context.C
 	return m, ctx
 }
 
-// rfc3339Regex matches an RFC3339 timestamp embedded in a string.
-var rfc3339Regex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`)
+// expiryReasonRegex matches the short expiry date (domain.ExpiryDisplayLayout) embedded in a string.
+var expiryReasonRegex = regexp.MustCompile(`^expired on \d{2}\.\d{2}\.\d{4} \d{2}:\d{2} UTC$`)
 
-// Feature: peer-rotation-interval, Property 13: action=disable → peer disabled with RFC3339 reason
+// Feature: peer-rotation-interval, Property 13: action=disable → peer disabled with short expiry date reason
 // Validates: Requirements 1.8
-func TestProperty13_DisableAction_PeerDisabledWithRFC3339Reason(t *testing.T) {
+func TestProperty13_DisableAction_PeerDisabledWithExpiryReason(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		// Generate a past expiry time (between 1 second and 365 days ago)
 		expiredSecsAgo := rapid.Int64Range(1, 365*24*3600).Draw(t, "expiredSecsAgo")
@@ -139,9 +139,12 @@ func TestProperty13_DisableAction_PeerDisabledWithRFC3339Reason(t *testing.T) {
 			t.Fatalf("expected peer.Disabled to be set after disable action, got nil")
 		}
 
-		// Assert: DisabledReason contains an RFC3339 timestamp
-		if !rfc3339Regex.MatchString(saved.DisabledReason) {
-			t.Fatalf("expected DisabledReason to contain RFC3339 timestamp, got %q", saved.DisabledReason)
+		// Assert: DisabledReason contains the expiry date in the short display format
+		if !expiryReasonRegex.MatchString(saved.DisabledReason) {
+			t.Fatalf("expected DisabledReason in short display format, got %q", saved.DisabledReason)
+		}
+		if want := "expired on " + domain.FormatExpiryDate(expiresAt); saved.DisabledReason != want {
+			t.Fatalf("DisabledReason = %q, want %q", saved.DisabledReason, want)
 		}
 	})
 }

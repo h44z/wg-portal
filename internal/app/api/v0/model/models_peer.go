@@ -7,14 +7,14 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-const ExpiryDateTimeLayout = "\"2006-01-02\""
-const ExpiryDateTimeFullLayout = "\"2006-01-02T15:04:05Z07:00\""
+// ExpiryDateTimeLayout is the (quoted) JSON layout of peer expiry dates: RFC3339, time-of-day is preserved.
+const ExpiryDateTimeLayout = "\"" + time.RFC3339 + "\""
 
 type ExpiryDate struct {
 	*time.Time
 }
 
-// UnmarshalJSON will unmarshal using 2006-01-02 layout (date-only input from forms)
+// UnmarshalJSON will unmarshal using the RFC3339 layout
 func (d *ExpiryDate) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 || string(b) == "null" || string(b) == "\"\"" {
 		return nil
@@ -30,13 +30,13 @@ func (d *ExpiryDate) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON will marshal using full RFC3339 layout to preserve time-of-day
+// MarshalJSON will marshal using the RFC3339 layout
 func (d *ExpiryDate) MarshalJSON() ([]byte, error) {
 	if d == nil || d.Time == nil {
 		return []byte("null"), nil
 	}
 
-	s := d.Format(ExpiryDateTimeFullLayout)
+	s := d.Format(ExpiryDateTimeLayout)
 	return []byte(s), nil
 }
 

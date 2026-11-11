@@ -75,8 +75,8 @@ func TestProperty9_ExpiryNotificationMail_ContainsRequiredContent(t *testing.T) 
 		txtOutput := string(txtBytes)
 		htmlOutput := string(htmlBytes)
 
-		// The date format used in the templates.
-		expectedDate := expiresAt.UTC().Format("2006-01-02 15:04:05 UTC")
+		// The date format used in the templates must match the shared display layout.
+		expectedDate := domain.FormatExpiryDate(expiresAt)
 		expectedDays := fmt.Sprintf("%d", daysLeft)
 
 		// Assert text template contains all required fields.

@@ -233,7 +233,7 @@ The `peer` sub-section groups peer lifecycle and expiry notification settings.
 - **Default:** `disable`
 - **Environment Variable:** `WG_PORTAL_CORE_PEER_EXPIRY_ACTION`
 - **Description:** The action taken when a peer reaches its expiry date. Valid values are:
-  - `disable` — the peer is disabled and its `DisabledReason` is set to a human-readable string that includes the expiry timestamp (e.g. `expired on 2026-04-06T15:04:05Z`).
+  - `disable` — the peer is disabled and its `DisabledReason` is set to a human-readable string that includes the expiry timestamp (e.g. `expired on 06.04.2026 15:04 UTC`).
   - `delete` — the peer record is permanently removed from storage.
 
 #### `auto_recreate_on_expiry`
