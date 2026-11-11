@@ -29,12 +29,10 @@ func convertRawLdapUser(
 	uid := domain.UserIdentifier(internal.MapDefaultString(rawUser, fields.UserIdentifier, ""))
 
 	user := &domain.User{
-		BaseModel: domain.BaseModel{
-			CreatedBy: domain.CtxSystemLdapSyncer,
-			UpdatedBy: domain.CtxSystemLdapSyncer,
-			CreatedAt: now,
-			UpdatedAt: now,
-		},
+		CreatedBy:  domain.CtxSystemLdapSyncer,
+		UpdatedBy:  domain.CtxSystemLdapSyncer,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 		Identifier: uid,
 		Email:      strings.ToLower(internal.MapDefaultString(rawUser, fields.Email, "")),
 		IsAdmin:    isAdmin,

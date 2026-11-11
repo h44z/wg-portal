@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/go-pkgz/routegroup"
@@ -146,6 +147,7 @@ func (e InterfaceEndpoint) handlePrepareGet() http.HandlerFunc {
 // @Tags Interfaces
 // @Summary Create a new interface record.
 // @Description This endpoint creates a new interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
+// @Description Backend must be a configured backend ID. When omitted, the local backend is used.
 // @Param request body models.Interface true "The interface data."
 // @Produce json
 // @Success 200 {object} models.Interface
@@ -163,7 +165,7 @@ func (e InterfaceEndpoint) handleCreatePost() http.HandlerFunc {
 			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
-		if err := e.validator.Struct(iface); err != nil {
+		if err := e.validateInterfaceInput(&iface); err != nil {
 			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
@@ -185,6 +187,7 @@ func (e InterfaceEndpoint) handleCreatePost() http.HandlerFunc {
 // @Tags Interfaces
 // @Summary Update an interface record.
 // @Description This endpoint updates an existing interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
+// @Description Backend must be a configured backend ID. Omitted Backend and CreateDefaultPeer fields preserve their existing values. Server-managed metadata is preserved.
 // @Param id path string true "The interface identifier."
 // @Param request body models.Interface true "The interface data."
 // @Produce json
@@ -210,7 +213,7 @@ func (e InterfaceEndpoint) handleUpdatePut() http.HandlerFunc {
 			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
-		if err := e.validator.Struct(iface); err != nil {
+		if err := e.validateInterfaceInput(&iface); err != nil {
 			respond.JSON(w, http.StatusBadRequest, models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 			return
 		}
@@ -221,10 +224,26 @@ func (e InterfaceEndpoint) handleUpdatePut() http.HandlerFunc {
 			return
 		}
 
+		domainInterface := models.NewDomainInterface(&iface)
+		if iface.Backend == nil || iface.CreateDefaultPeer == nil {
+			existing, _, err := e.interfaces.GetById(r.Context(), domain.InterfaceIdentifier(id))
+			if err != nil {
+				status, model := ParseServiceError(err)
+				respond.JSON(w, status, model)
+				return
+			}
+			if iface.Backend == nil {
+				domainInterface.Backend = existing.Backend
+			}
+			if iface.CreateDefaultPeer == nil {
+				domainInterface.CreateDefaultPeer = existing.CreateDefaultPeer
+			}
+		}
+
 		updatedInterface, updatedInterfacePeers, err := e.interfaces.Update(
 			r.Context(),
 			domain.InterfaceIdentifier(id),
-			models.NewDomainInterface(&iface),
+			domainInterface,
 		)
 		if err != nil {
 			status, model := ParseServiceError(err)
@@ -234,6 +253,13 @@ func (e InterfaceEndpoint) handleUpdatePut() http.HandlerFunc {
 
 		respond.JSON(w, http.StatusOK, models.NewInterface(updatedInterface, updatedInterfacePeers))
 	}
+}
+
+func (e InterfaceEndpoint) validateInterfaceInput(iface *models.Interface) error {
+	if iface.Backend != nil && *iface.Backend == "" {
+		return errors.New("interface backend must not be empty")
+	}
+	return e.validator.Struct(iface)
 }
 
 // handleDelete returns a gorm handler function.

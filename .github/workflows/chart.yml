@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -35,16 +35,16 @@ jobs:
       # ct lint requires Python 3.x to run following packages:
       #  - yamale (https://github.com/23andMe/Yamale)
       #  - yamllint (https://github.com/adrienverge/yamllint)
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.x'
 
-      - uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+      - uses: helm/chart-testing-action@720270857a28afd41e2426521a7801db09e9b510 # v2.9.0
 
       - name: Run chart-testing (lint)
         run: ct lint --config ct.yaml
 
-      - uses: nolar/setup-k3d-k3s@8bf8d22160e8b1d184dcb780e390d6952a7eec65 # v1.0.10
+      - uses: nolar/setup-k3d-k3s@62c9d1bd2bc843275c85d2e7dcd696edc1160eee # v1.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -60,9 +60,9 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

@@ -501,3 +501,39 @@ func TestPropertySanitizeIdentifierRejectsReservedValues(t *testing.T) {
 		}
 	})
 }
+
+// ---------------------------------------------------------------------------
+// Regression: normalization must run after control characters are stripped
+// ---------------------------------------------------------------------------
+
+// Found by TestPropertySanitizeStringIdempotent. Normalizing before stripping
+// control characters is not idempotent: "A\t̀" is already NFC because the
+// tab separates the letter from the combining grave, but removing the tab
+// leaves "À", which a second call composes to "À".
+func TestSanitizeStringNormalizesAfterStripping(t *testing.T) {
+	const input = "A\t\u0300" // "A", tab, combining grave accent
+
+	got := SanitizeString(input, 2)
+
+	if got != "À" {
+		t.Errorf("expected the combining mark to be composed after the tab is stripped, got %q (% x)",
+			got, []rune(got))
+	}
+	if again := SanitizeString(got, 2); again != got {
+		t.Errorf("not idempotent: once=%q twice=%q", got, again)
+	}
+}
+
+// The same hazard exists for format characters (category Cf), not just controls.
+func TestSanitizeStringStripsFormatCharsBeforeNormalizing(t *testing.T) {
+	const input = "A\u00ad\u0300" // "A", soft hyphen (Cf), combining grave accent
+
+	got := SanitizeString(input, 2)
+
+	if again := SanitizeString(got, 2); again != got {
+		t.Errorf("not idempotent: once=%q twice=%q", got, again)
+	}
+	if got != "À" {
+		t.Errorf("expected %q, got %q", "À", got)
+	}
+}

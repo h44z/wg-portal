@@ -32,6 +32,34 @@
     "button": "Sign in",
     "button-webauthn": "Use Passkey"
   },
+  "default-password": {
+    "banner-title": "Security Warning: Default Password in Use",
+    "banner-message": "The default administrator password is still in use. Unless the password gets changed, no further actions are possible.",
+    "modal-title": "Change Default Administrator Password",
+    "modal-warning-heading": "Default Password In Use",
+    "modal-warning-text": "The default administrator password is currently in use. To protect your installation from unauthorized access, you must change the password now.",
+    "modal-warning-note": "Note: Unless the password gets changed, no further actions are possible.",
+    "current-label": "Current Password",
+    "new-label": "New Password",
+    "confirm-label": "Confirm New Password",
+    "weak-label": "The password is too short.",
+    "mismatch-label": "Passwords do not match.",
+    "same-label": "The new password must be different from the current password.",
+    "change-button-text": "Change Password",
+    "success-title": "Password Changed!",
+    "success-text": "Password changed successfully. All actions are now unlocked."
+  },
+  "peer-config-download": {
+    "headline": "Downloading VPN Configuration",
+    "in-progress": "Your WireGuard configuration download will start automatically. Please wait...",
+    "success-title": "Configuration downloaded",
+    "success-message": "Your WireGuard configuration has been downloaded.",
+    "error-title": "Download failed",
+    "error-message": "Failed to download the WireGuard configuration.",
+    "manual-hint": "If the download did not start automatically, use the button below.",
+    "button-retry": "Download configuration",
+    "button-home": "Go to start page"
+  },
   "menu": {
     "home": "Home",
     "interfaces": "Interfaces",
@@ -138,7 +166,9 @@
     "peer-expiring": "Peer is expiring at",
     "peer-connected": "Connected",
     "peer-not-connected": "Not Connected",
-    "peer-handshake": "Last handshake:"
+    "peer-handshake": "Last handshake:",
+    "peer-dynamic": "Dynamic Peer",
+    "peer-dynamic-no-edit": "This peer is dynamically created and cannot be edited or deleted."
   },
   "users": {
     "headline": "User Administration",
@@ -561,6 +591,8 @@
       "private-key": {
         "label": "Private Key",
         "placeholder": "The private key",
+        "local-label": "Generated locally",
+        "local-help": "The private key was generated in this browser and is not sent to the server. The configuration is downloaded once when you save.",
         "help": "The private key is stored securely on the server. If the user already holds a copy, you may omit this field. The server still functions exclusively with the peer’s public key."
       },
       "public-key": {

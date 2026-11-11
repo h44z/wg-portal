@@ -52,7 +52,7 @@ func maskToken(token, key []byte) []byte {
 	// masked contains the key in the first half and the XOR masked token in the second half
 	tokenLength := len(token)
 	masked := make([]byte, tokenLength*2)
-	for i := 0; i < len(token); i++ {
+	for i := range token {
 		masked[i] = key[i]
 		masked[i+tokenLength] = token[i] ^ key[i] // XOR mask
 	}
@@ -65,7 +65,7 @@ func maskToken(token, key []byte) []byte {
 func unmaskToken(masked []byte) []byte {
 	tokenLength := len(masked) / 2
 	token := make([]byte, tokenLength)
-	for i := 0; i < tokenLength; i++ {
+	for i := range tokenLength {
 		token[i] = masked[i] ^ masked[i+tokenLength] // XOR unmask
 	}
 

@@ -47,16 +47,25 @@ var reservedUserIdentifiers = map[string]struct{}{
 	CtxSystemDBMigrator: {},
 }
 
-// SanitizeString normalizes to NFC, trims leading and trailing whitespace, strips Unicode
-// control and format characters, drops invalid UTF-8 bytes, and truncates the result to
+// SanitizeString trims leading and trailing whitespace, strips Unicode control and format
+// characters, drops invalid UTF-8 bytes, normalizes to NFC, and truncates the result to
 // maxLen runes. If maxLen <= 0, returns "".
+//
+// The order matters and is load-bearing for idempotency: see the comments in the body.
+// SanitizeString(SanitizeString(s, n), n) == SanitizeString(s, n) for all s and n.
 func SanitizeString(s string, maxLen int) string {
 	if maxLen <= 0 {
 		return ""
 	}
 
-	s = norm.NFC.String(strings.TrimSpace(s))
+	s = strings.TrimSpace(s)
 
+	// Strip control/format characters and invalid UTF-8 *before* normalizing.
+	// Normalizing first is not idempotent: removing a character can leave a
+	// base letter next to a combining mark that the earlier normalization never
+	// saw as a pair. For example "A\t̀" is already NFC (the tab keeps the
+	// letter and the combining grave apart), but stripping the tab yields
+	// "À", which a second call would compose to "À".
 	var b strings.Builder
 	b.Grow(len(s))
 	for len(s) > 0 {
@@ -69,7 +78,10 @@ func SanitizeString(s string, maxLen int) string {
 			b.WriteRune(r)
 		}
 	}
-	s = b.String()
+
+	// Normalize before truncating, not after: composition can change the rune
+	// count, so normalizing afterwards could push the result back over maxLen.
+	s = norm.NFC.String(b.String())
 
 	if utf8.RuneCountInString(s) > maxLen {
 		runes := []rune(s)

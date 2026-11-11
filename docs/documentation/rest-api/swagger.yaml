@@ -51,6 +51,15 @@ definitions:
                 items:
                     type: string
                 type: array
+            Backend:
+                description: Backend is the configured backend ID used to manage this interface. Omit it on create to use the local backend, or on update to preserve the current backend.
+                example: local
+                minLength: 1
+                type: string
+            CreateDefaultPeer:
+                description: CreateDefaultPeer enables default peer creation for this interface. Defaults to false when omitted on create; preserves the current setting when omitted on update.
+                example: false
+                type: boolean
             Disabled:
                 description: Disabled is a flag that specifies if the interface is enabled (up) or not (down). Disabled interfaces are not able to accept connections.
                 example: false
@@ -699,7 +708,9 @@ paths:
             tags:
                 - Interfaces
         put:
-            description: This endpoint updates an existing interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
+            description: |-
+                This endpoint updates an existing interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
+                Backend must be a configured backend ID. Omitted Backend and CreateDefaultPeer fields preserve their existing values. Server-managed metadata is preserved.
             operationId: interfaces_handleUpdatePut
             parameters:
                 - description: The interface identifier.
@@ -747,7 +758,9 @@ paths:
                 - Interfaces
     /interface/new:
         post:
-            description: This endpoint creates a new interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
+            description: |-
+                This endpoint creates a new interface with the provided data. All required fields must be filled (e.g. name, private key, public key, ...).
+                Backend must be a configured backend ID. When omitted, the local backend is used. CreateDefaultPeer defaults to false when omitted, preserving legacy create behavior.
             operationId: interfaces_handleCreatePost
             parameters:
                 - description: The interface data.

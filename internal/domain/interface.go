@@ -6,6 +6,7 @@ import (
 	"math"
 	"net"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -58,8 +59,10 @@ type Interface struct {
 	CreateDefaultPeer bool             // if true, default peers will be created for this interface
 	Backend           InterfaceBackend // the backend that is used to manage the interface (wgctrl, mikrotik, ...)
 	DriverType        string           // the interface driver type (linux, software, ...)
-	Disabled          *time.Time       `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
-	DisabledReason    string           // the reason why the interface has been disabled
+	IsDynamic         bool             `gorm:"column:is_dynamic;default:false"` // specifies if the interface is a dynamic object
+
+	Disabled       *time.Time `gorm:"index"` // flag that specifies if the interface is enabled (up) or not (down)
+	DisabledReason string     // the reason why the interface has been disabled
 
 	// Default settings for the peer, used for new peers, those settings will be published to ConfigOption options of
 	// the peer config
@@ -98,10 +101,8 @@ func (i *Interface) IsUserAllowed(userId UserIdentifier, cfg *config.Config) boo
 	}
 
 	for _, allowedUsers := range i.LdapAllowedUsers {
-		for _, uid := range allowedUsers {
-			if uid == userId {
-				return true
-			}
+		if slices.Contains(allowedUsers, userId) {
+			return true
 		}
 	}
 	return false
@@ -281,7 +282,8 @@ func (p *PhysicalInterface) SetExtras(extras any) {
 	switch extras.(type) {
 	case MikrotikInterfaceExtras: // OK
 	case PfsenseInterfaceExtras: // OK
-	default: // we only support MikrotikInterfaceExtras and PfsenseInterfaceExtras for now
+	case OpnsenseInterfaceExtras: // OK
+	default: // we only support Mikrotik, Pfsense and Opnsense interface extras for now
 		panic(fmt.Sprintf("unsupported interface backend extras type %T", extras))
 	}
 
@@ -352,6 +354,14 @@ func ConvertPhysicalInterface(pi *PhysicalInterface) *Interface {
 		} else {
 			iface.Disabled = nil
 		}
+	case ControllerTypeOpnsense:
+		extras := pi.GetExtras().(OpnsenseInterfaceExtras)
+		iface.DisplayName = extras.Comment
+		if extras.Disabled {
+			iface.Disabled = &now
+		} else {
+			iface.Disabled = nil
+		}
 	}
 
 	return iface
@@ -378,6 +388,19 @@ func MergeToPhysicalInterface(pi *PhysicalInterface, i *Interface) {
 		extras := PfsenseInterfaceExtras{
 			Comment:  i.DisplayName,
 			Disabled: i.IsDisabled(),
+		}
+		pi.SetExtras(extras)
+	case ControllerTypeOpnsense:
+		// Uuid and Instance are OPNsense's identity for this tunnel, not
+		// user-editable data, so carry them across the merge rather than
+		// letting the caller re-inject them afterwards.
+		extras := OpnsenseInterfaceExtras{
+			Comment:  i.DisplayName,
+			Disabled: i.IsDisabled(),
+		}
+		if existing, ok := pi.GetExtras().(OpnsenseInterfaceExtras); ok {
+			extras.Uuid = existing.Uuid
+			extras.Instance = existing.Instance
 		}
 		pi.SetExtras(extras)
 	}

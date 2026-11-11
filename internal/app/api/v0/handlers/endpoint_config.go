@@ -119,6 +119,7 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 				names = append(names, model.SettingsBackendNames{
 					Id:   controller.Id,
 					Name: displayName,
+					Type: controller.Type,
 				})
 			}
 
@@ -140,6 +141,7 @@ func (e ConfigEndpoint) handleSettingsGet() http.HandlerFunc {
 				MailLinkOnly:              e.cfg.Mail.LinkOnly,
 				PersistentConfigSupported: e.cfg.Advanced.ConfigStoragePath != "",
 				SelfProvisioning:          e.cfg.Core.SelfProvisioningAllowed,
+				EditableKeys:              e.cfg.Core.EditableKeys,
 				ApiAdminOnly:              e.cfg.Advanced.ApiAdminOnly,
 				WebAuthnEnabled:           e.cfg.Auth.WebAuthn.Enabled,
 				MinPasswordLength:         e.cfg.Auth.MinPasswordLength,

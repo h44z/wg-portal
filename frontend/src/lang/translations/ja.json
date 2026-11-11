@@ -138,7 +138,9 @@
     "peer-expiring": "ピアの有効期限:",
     "peer-connected": "接続中",
     "peer-not-connected": "未接続",
-    "peer-handshake": "最終ハンドシェイク:"
+    "peer-handshake": "最終ハンドシェイク:",
+    "peer-dynamic": "動的ピア",
+    "peer-dynamic-no-edit": "このピアは動的に作成されており、編集または削除することはできません。"
   },
   "users": {
     "headline": "ユーザー管理",

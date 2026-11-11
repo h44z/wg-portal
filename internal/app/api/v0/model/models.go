@@ -9,6 +9,7 @@ type Settings struct {
 	MailLinkOnly              bool                   `json:"MailLinkOnly"`
 	PersistentConfigSupported bool                   `json:"PersistentConfigSupported"`
 	SelfProvisioning          bool                   `json:"SelfProvisioning"`
+	EditableKeys              bool                   `json:"EditableKeys"`
 	ApiAdminOnly              bool                   `json:"ApiAdminOnly"`
 	WebAuthnEnabled           bool                   `json:"WebAuthnEnabled"`
 	MinPasswordLength         int                    `json:"MinPasswordLength"`
@@ -20,4 +21,5 @@ type Settings struct {
 type SettingsBackendNames struct {
 	Id   string `json:"Id"`
 	Name string `json:"Name"`
+	Type string `json:"Type"`
 }

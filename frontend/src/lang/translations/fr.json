@@ -126,7 +126,9 @@
     "peer-expiring": "Le pair expire le",
     "peer-connected": "Connecté",
     "peer-not-connected": "Non connecté",
-    "peer-handshake": "Dernière négociation :"
+    "peer-handshake": "Dernière négociation :",
+    "peer-dynamic": "Peer dynamique",
+    "peer-dynamic-no-edit": "Ce peer est créé dynamiquement et ne peut être ni modifié ni supprimé."
   },
   "users": {
     "headline": "Administration des utilisateurs",

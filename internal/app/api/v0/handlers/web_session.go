@@ -26,6 +26,8 @@ type SessionData struct {
 	Lastname  string
 	Email     string
 
+	DefaultPasswordInUse bool
+
 	OauthState        string
 	OauthNonce        string
 	OauthCodeVerifier string
@@ -81,17 +83,18 @@ func (s *SessionWrapper) DestroyData(ctx context.Context) {
 
 func (s *SessionWrapper) defaultSessionData() SessionData {
 	return SessionData{
-		LoggedIn:          false,
-		IsAdmin:           false,
-		UserIdentifier:    "",
-		Firstname:         "",
-		Lastname:          "",
-		Email:             "",
-		OauthState:        "",
-		OauthNonce:        "",
-		OauthCodeVerifier: "",
-		OauthProvider:     "",
-		OauthReturnTo:     "",
-		OauthIdToken:      "",
+		LoggedIn:             false,
+		IsAdmin:              false,
+		UserIdentifier:       "",
+		Firstname:            "",
+		Lastname:             "",
+		Email:                "",
+		DefaultPasswordInUse: false,
+		OauthState:           "",
+		OauthNonce:           "",
+		OauthCodeVerifier:    "",
+		OauthProvider:        "",
+		OauthReturnTo:        "",
+		OauthIdToken:         "",
 	}
 }

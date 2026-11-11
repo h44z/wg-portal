@@ -153,7 +153,9 @@
     "peer-expiring": "El peer expira en",
     "peer-connected": "Conectado",
     "peer-not-connected": "No conectado",
-    "peer-handshake": "Último handshake:"
+    "peer-handshake": "Último handshake:",
+    "peer-dynamic": "Peer dinámico",
+    "peer-dynamic-no-edit": "Este peer se ha creado de forma dinámica y no se puede editar ni eliminar."
   },
   "users": {
     "headline": "Administración de usuarios",

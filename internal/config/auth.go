@@ -130,14 +130,12 @@ type LdapFields struct {
 // If specific fields are not set, the default values are used.
 func (f LdapFields) getMappingWithDefaults() LdapFields {
 	defaultMap := LdapFields{
-		BaseFields: BaseFields{
-			UserIdentifier: "mail",
-			Email:          "mail",
-			Firstname:      "givenName",
-			Lastname:       "sn",
-			Phone:          "telephoneNumber",
-			Department:     "department",
-		},
+		UserIdentifier:  "mail",
+		Email:           "mail",
+		Firstname:       "givenName",
+		Lastname:        "sn",
+		Phone:           "telephoneNumber",
+		Department:      "department",
 		GroupMembership: "memberOf",
 	}
 	if f.UserIdentifier != "" {

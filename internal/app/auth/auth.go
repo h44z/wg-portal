@@ -31,6 +31,8 @@ type UserManager interface {
 	RegisterUser(ctx context.Context, user *domain.User) error
 	// UpdateUserInternal updates an existing user in the database.
 	UpdateUserInternal(ctx context.Context, user *domain.User) (*domain.User, error)
+	// IsDefaultPasswordInUse checks if the default admin password is still in use.
+	IsDefaultPasswordInUse(ctx context.Context) bool
 }
 
 type EventBus interface {
@@ -133,6 +135,11 @@ func NewAuthenticator(cfg *config.Auth, extUrl, basePath string, bus EventBus, u
 	a.callbackUrl = parsedExtUrl
 
 	return a, nil
+}
+
+// IsDefaultPasswordInUse checks if the default admin password is still in use.
+func (a *Authenticator) IsDefaultPasswordInUse(ctx context.Context) bool {
+	return a.users.IsDefaultPasswordInUse(ctx)
 }
 
 // StartBackgroundJobs starts the background jobs for the authenticator.
@@ -303,21 +310,27 @@ func (a *Authenticator) GetExternalLoginProviders(_ context.Context) []domain.Lo
 
 // IsUserValid checks if a user is valid and not locked or disabled.
 func (a *Authenticator) IsUserValid(ctx context.Context, id domain.UserIdentifier) bool {
+	_, valid := a.GetValidUser(ctx, id)
+	return valid
+}
+
+// GetValidUser returns the current user if the account exists and is not locked or disabled.
+func (a *Authenticator) GetValidUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, bool) {
 	ctx = domain.SetUserInfo(ctx, domain.SystemAdminContextUserInfo()) // switch to admin user context
 	user, err := a.users.GetUser(ctx, id)
-	if err != nil {
-		return false
+	if err != nil || user == nil {
+		return nil, false
 	}
 
 	if user.IsDisabled() {
-		return false
+		return nil, false
 	}
 
 	if user.IsLocked() {
-		return false
+		return nil, false
 	}
 
-	return true
+	return user, true
 }
 
 // region password authentication
@@ -673,12 +686,10 @@ func (a *Authenticator) registerNewUser(
 		Department: userInfo.Department,
 		Authentications: []domain.UserAuthentication{
 			{
-				BaseModel: domain.BaseModel{
-					CreatedBy: ctxUserInfo.UserId(),
-					UpdatedBy: ctxUserInfo.UserId(),
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				CreatedBy:      ctxUserInfo.UserId(),
+				UpdatedBy:      ctxUserInfo.UserId(),
+				CreatedAt:      now,
+				UpdatedAt:      now,
 				UserIdentifier: userInfo.Identifier,
 				Source:         source,
 				ProviderName:   provider,
@@ -742,12 +753,10 @@ func (a *Authenticator) updateExternalUser(
 		ctxUserInfo := domain.GetUserInfo(ctx)
 		now := time.Now()
 		existingUser.Authentications = append(existingUser.Authentications, domain.UserAuthentication{
-			BaseModel: domain.BaseModel{
-				CreatedBy: ctxUserInfo.UserId(),
-				UpdatedBy: ctxUserInfo.UserId(),
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
+			CreatedBy:      ctxUserInfo.UserId(),
+			UpdatedBy:      ctxUserInfo.UserId(),
+			CreatedAt:      now,
+			UpdatedAt:      now,
 			UserIdentifier: existingUser.Identifier,
 			Source:         source,
 			ProviderName:   provider,

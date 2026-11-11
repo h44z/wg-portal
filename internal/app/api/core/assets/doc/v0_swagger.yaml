@@ -403,6 +403,8 @@ definitions:
         items:
           $ref: '#/definitions/model.SettingsBackendNames'
         type: array
+      EditableKeys:
+        type: boolean
       LoginFormVisible:
         type: boolean
       MailLinkOnly:

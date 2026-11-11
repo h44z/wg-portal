@@ -114,7 +114,7 @@ func TestImportPeer_AddressMapping(t *testing.T) {
 
 			p := &domain.PhysicalPeer{
 				Identifier: "peer1",
-				KeyPair:    domain.KeyPair{PublicKey: "peer1-public-key-is-long-enough"},
+				PublicKey:  "peer1-public-key-is-long-enough",
 				AllowedIPs: allowedIPs,
 			}
 

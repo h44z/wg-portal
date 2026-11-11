@@ -6,12 +6,14 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { freshInterface, freshPeer, freshStats } from '@/helpers/models';
 import Prism from "vue-prism-component";
+import 'prismjs/components/prism-ini';
 import { notify } from "@kyvg/vue3-notification";
 import { settingsStore } from "@/stores/settings";
 import { profileStore } from "@/stores/profile";
 import { base64_url_encode } from '@/helpers/encoding';
 import { formatDateTime } from '@/helpers/utils';
 import { apiWrapper } from "@/helpers/fetch-wrapper";
+import {humanFileSize} from '@/helpers/utils';
 
 const { t } = useI18n()
 
@@ -45,6 +47,8 @@ const selectedPeer = computed(() => {
   }
   return p
 })
+
+const hasStoredPrivateKey = computed(() => !!selectedPeer.value?.PrivateKey)
 
 const selectedStats = computed(() => {
   let s = peers.Statistics(props.peerId)
@@ -84,8 +88,12 @@ const configStyle = ref("wgquick")
 
 watch(() => props.visible, async (newValue, oldValue) => {
   if (oldValue === false && newValue === true) { // if modal is shown
-    await peers.LoadPeerConfig(selectedPeer.value.Identifier, configStyle.value)
-    configString.value = peers.configuration
+    if (hasStoredPrivateKey.value) {
+      await peers.LoadPeerConfig(selectedPeer.value.Identifier, configStyle.value)
+      configString.value = peers.configuration
+    } else {
+      configString.value = ""
+    }
   }
 })
 
@@ -131,7 +139,7 @@ function ConfigQrUrl() {
 <template>
   <Modal :title="title" :visible="visible" @close="close">
     <template #default>
-      <div class="d-flex justify-content-end align-items-center mb-1" v-if="selectedInterface.Mode !== 'client'">
+      <div class="d-flex justify-content-end align-items-center mb-1" v-if="selectedInterface.Mode !== 'client' && hasStoredPrivateKey">
         <span class="me-2">{{ $t('modals.peer-view.style-label') }}: </span>
         <div class="btn-group btn-switch-group" role="group" aria-label="Configuration Style">
           <input type="radio" class="btn-check" name="configstyle" id="raw" value="raw" autocomplete="off" checked="" v-model="configStyle">
@@ -175,7 +183,7 @@ function ConfigQrUrl() {
                       selectedPeer.DisabledReason }}</li>
                   </ul>
                 </div>
-                <div class="col-md-4" v-if="selectedInterface.Mode !== 'client'">
+                <div class="col-md-4" v-if="selectedInterface.Mode !== 'client' && hasStoredPrivateKey">
                   <img class="config-qr-img" :src="ConfigQrUrl()" loading="lazy" alt="Configuration QR Code">
                 </div>
               </div>
@@ -196,8 +204,8 @@ function ConfigQrUrl() {
                 <div class="col-md-12">
                   <h4>{{ $t('modals.peer-view.traffic') }}</h4>
                   <p><i class="fas fa-long-arrow-alt-down" :title="$t('modals.peer-view.download')"></i> {{
-                    selectedStats.BytesReceived }} Bytes / <i class="fas fa-long-arrow-alt-up"
-                      :title="$t('modals.peer-view.upload')"></i> {{ selectedStats.BytesTransmitted }} Bytes</p>
+                    humanFileSize(selectedStats.BytesReceived) }} / <i class="fas fa-long-arrow-alt-up"
+                      :title="$t('modals.peer-view.upload')"></i> {{ humanFileSize(selectedStats.BytesTransmitted) }}</p>
                   <h4>{{ $t('modals.peer-view.connection-status') }}</h4>
                   <ul>
                     <li>{{ $t('modals.peer-view.pingable') }}: {{ selectedStats.IsPingable }}</li>
@@ -210,7 +218,7 @@ function ConfigQrUrl() {
             </div>
           </div>
         </div>
-        <div v-if="selectedInterface.Mode !== 'client'" class="accordion-item">
+        <div v-if="selectedInterface.Mode !== 'client' && hasStoredPrivateKey" class="accordion-item">
           <h2 class="accordion-header" id="headingConfig">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
               data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig">
@@ -228,9 +236,9 @@ function ConfigQrUrl() {
     </template>
     <template #footer>
       <div class="flex-fill text-start">
-        <button v-if="selectedInterface.Mode !== 'client'" @click.prevent="download" type="button" class="btn btn-primary me-1">{{
+        <button v-if="selectedInterface.Mode !== 'client' && hasStoredPrivateKey" @click.prevent="download" type="button" class="btn btn-primary me-1">{{
           $t('modals.peer-view.button-download') }}</button>
-        <button v-if="selectedInterface.Mode !== 'client'" @click.prevent="email" type="button" class="btn btn-primary me-1">{{
+        <button v-if="selectedInterface.Mode !== 'client' && hasStoredPrivateKey" @click.prevent="email" type="button" class="btn btn-primary me-1">{{
           $t('modals.peer-view.button-email') }}</button>
       </div>
       <button @click.prevent="close" type="button" class="btn btn-secondary">{{ $t('general.close') }}</button>

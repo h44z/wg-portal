@@ -166,12 +166,10 @@ func (m Manager) PreparePeer(ctx context.Context, id domain.InterfaceIdentifier)
 
 	peerId := domain.PeerIdentifier(kp.PublicKey)
 	freshPeer := &domain.Peer{
-		BaseModel: domain.BaseModel{
-			CreatedBy: string(currentUser.Id),
-			UpdatedBy: string(currentUser.Id),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+		CreatedBy:           string(currentUser.Id),
+		UpdatedBy:           string(currentUser.Id),
+		CreatedAt:           time.Now(),
+		UpdatedAt:           time.Now(),
 		Endpoint:            domain.NewConfigOption(iface.PeerDefEndpoint, true),
 		EndpointPublicKey:   domain.NewConfigOption(iface.PublicKey, true),
 		AllowedIPsStr:       domain.NewConfigOption(iface.PeerDefAllowedIPsStr, true),
@@ -654,7 +652,11 @@ func (m Manager) getFreshPeerIpConfig(ctx context.Context, iface *domain.Interfa
 	return
 }
 
-func (m Manager) validatePeerModifications(ctx context.Context, _, _ *domain.Peer) error {
+func (m Manager) validatePeerModifications(ctx context.Context, old, _ *domain.Peer) error {
+	if old != nil && old.IsDynamic {
+		return fmt.Errorf("cannot modify dynamic peer: %w", domain.ErrInvalidData)
+	}
+
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin && !m.cfg.Core.SelfProvisioningAllowed {
@@ -683,7 +685,11 @@ func (m Manager) validatePeerCreation(ctx context.Context, _, new *domain.Peer) 
 	return nil
 }
 
-func (m Manager) validatePeerDeletion(ctx context.Context, _ *domain.Peer) error {
+func (m Manager) validatePeerDeletion(ctx context.Context, peer *domain.Peer) error {
+	if peer != nil && peer.IsDynamic {
+		return fmt.Errorf("cannot delete dynamic peer: %w", domain.ErrInvalidData)
+	}
+
 	currentUser := domain.GetUserInfo(ctx)
 
 	if !currentUser.IsAdmin && !m.cfg.Core.SelfProvisioningAllowed {

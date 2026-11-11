@@ -80,7 +80,7 @@
                 <tr>
                     <td class="td container" style="width:650px; min-width:650px; font-size:0pt; line-height:0pt; margin:0; font-weight:normal; padding:55px 0px;">
 
-                        <!-- Article / Image On The Left - Copy On The Right -->
+                        <!-- Article / Copy + Download Link -->
                         <table width="100%" border="0" cellspacing="0" cellpadding="0">
                             <tr>
                                 <td style="padding-bottom: 10px;">
@@ -89,28 +89,28 @@
                                             <td class="tbrr p30-15" style="padding: 60px 30px; border-radius:26px 26px 0px 0px;" bgcolor="#ffffff">
                                                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                                     <tr>
-                                                        <th class="column-top" width="210" style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;">
-                                                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                        {{if $.User.Firstname}}
+                                                            <td class="h4 pb20" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello {{$.User.Firstname}} {{$.User.Lastname}}</td>
+                                                        {{else}}
+                                                            <td class="h4 pb20" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello</td>
+                                                        {{end}}
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text pb20" style="color:#000000; font-family:Arial,sans-serif; font-size:14px; line-height:26px; text-align:left; padding-bottom:20px;">You or your administrator probably requested this VPN configuration. Use the button below to download your personal WireGuard configuration file and open it in the WireGuard VPN client to establish a secure VPN connection.</td>
+                                                    </tr>
+                                                    <!-- Button -->
+                                                    <tr>
+                                                        <td align="left">
+                                                            <table border="0" cellspacing="0" cellpadding="0">
                                                                 <tr>
-                                                                    <td class="fluid-img" style="font-size:0pt; line-height:0pt; text-align:left;"><img src="cid:{{$.QrcodePngName}}" width="210" height="210" border="0" alt="" /></td>
+                                                                    <td class="blue-button text-button" style="background:#000000; color:#ffffff; font-family:'Muli', Arial,sans-serif; font-size:14px; line-height:18px; padding:12px 30px; text-align:center; border-radius:0px 22px 22px 22px; font-weight:bold;"><a href="{{$.Link}}" target="_blank" rel="noopener noreferrer" class="link-white" style="color:#ffffff; text-decoration:none;"><span class="link-white" style="color:#ffffff; text-decoration:none;">Download VPN Configuration</span></a></td>
                                                                 </tr>
                                                             </table>
-                                                        </th>
-                                                        <th class="column-empty2" width="30" style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;"></th>
-                                                        <th class="column-top" width="280" style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;">
-                                                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                                                                <tr>
-                                                                    {{if $.User.Firstname}}
-                                                                        <td class="h4 pb20" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello {{$.User.Firstname}} {{$.User.Lastname}}</td>
-                                                                    {{else}}
-                                                                        <td class="h4 pb20" style="color:#000000; font-family:'Muli', Arial,sans-serif; font-size:20px; line-height:28px; text-align:left; padding-bottom:20px;">Hello</td>
-                                                                    {{end}}
-                                                                </tr>
-                                                                <tr>
-                                                                    <td class="text pb20" style="color:#000000; font-family:Arial,sans-serif; font-size:14px; line-height:26px; text-align:left; padding-bottom:20px;">You or your administrator probably requested this VPN configuration. Scan the Qrcode or open the attached configuration file ({{$.Peer.GetConfigFileName}}) in the WireGuard VPN client to establish a secure VPN connection.</td>
-                                                                </tr>
-                                                            </table>
-                                                        </th>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- END Button -->
+                                                    <tr>
+                                                        <td class="text" style="color:#000000; font-family:Arial,sans-serif; font-size:12px; line-height:22px; text-align:left; padding-top:20px; word-break:break-all;">If the button does not work, copy and paste the following link into your browser:<br /><a href="{{$.Link}}" target="_blank" rel="noopener noreferrer" class="link" style="color:#000000; text-decoration:underline;">{{$.Link}}</a></td>
                                                     </tr>
                                                 </table>
                                             </td>
@@ -119,7 +119,7 @@
                                 </td>
                             </tr>
                         </table>
-                        <!-- END Article / Image On The Left - Copy On The Right -->
+                        <!-- END Article / Copy + Download Link -->
 
                         <!-- Two Columns / Articles -->
                         <table width="100%" border="0" cellspacing="0" cellpadding="0">

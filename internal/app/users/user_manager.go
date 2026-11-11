@@ -40,6 +40,8 @@ type PeerDatabaseRepo interface {
 }
 
 type InterfaceDatabaseRepo interface {
+	// GetInterface returns the interface with the given identifier.
+	GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error)
 	// SaveInterface saves the interface with the given identifier.
 	SaveInterface(ctx context.Context, id domain.InterfaceIdentifier, updateFunc func(i *domain.Interface) (*domain.Interface, error)) error
 }
@@ -154,7 +156,7 @@ func (m Manager) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	wg := sync.WaitGroup{}
 	workers := int(math.Min(float64(len(users)), 10))
 	wg.Add(workers)
-	for i := 0; i < workers; i++ {
+	for range workers {
 		go func() {
 			defer wg.Done()
 			for user := range ch {
@@ -277,6 +279,34 @@ func (m Manager) DeactivateApi(ctx context.Context, id domain.UserIdentifier) (*
 	m.bus.Publish(app.TopicUserApiDisabled, *user)
 
 	return user, nil
+}
+
+// IsDefaultPasswordInUse checks if the default admin user or any admin user is still using the default password.
+func (m Manager) IsDefaultPasswordInUse(ctx context.Context) bool {
+	adminCtx := domain.SetUserInfo(ctx, domain.SystemAdminContextUserInfo())
+
+	adminUserId := domain.UserIdentifier(m.cfg.Core.AdminUser)
+	if adminUserId == "" {
+		adminUserId = config.DefaultAdminUser
+	}
+
+	adminUser, err := m.users.GetUser(adminCtx, adminUserId)
+	if err == nil && adminUser != nil {
+		if adminUser.CheckPassword(config.DefaultAdminPassword) == nil {
+			return true
+		}
+	}
+
+	allUsers, err := m.users.GetAllUsers(adminCtx)
+	if err == nil {
+		for _, u := range allUsers {
+			if u.IsAdmin && u.CheckPassword(config.DefaultAdminPassword) == nil {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (m Manager) validateModifications(ctx context.Context, old, new *domain.User) error {
@@ -498,12 +528,10 @@ func (m Manager) create(ctx context.Context, user *domain.User) (*domain.User, e
 		now := time.Now()
 		user.Authentications = []domain.UserAuthentication{
 			{
-				BaseModel: domain.BaseModel{
-					CreatedBy: ctxUserInfo.UserId(),
-					UpdatedBy: ctxUserInfo.UserId(),
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				CreatedBy:      ctxUserInfo.UserId(),
+				UpdatedBy:      ctxUserInfo.UserId(),
+				CreatedAt:      now,
+				UpdatedAt:      now,
 				UserIdentifier: user.Identifier,
 				Source:         domain.UserSourceDatabase,
 				ProviderName:   "",

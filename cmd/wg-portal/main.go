@@ -113,7 +113,7 @@ func main() {
 	internal.AssertNoError(err)
 	webhookManager.StartBackgroundJobs(ctx)
 
-	err = app.Initialize(cfg, wireGuardManager, userManager)
+	err = app.Initialize(ctx, cfg, wireGuardManager, userManager)
 	internal.AssertNoError(err)
 
 	validatorManager := validator.New()
@@ -135,7 +135,8 @@ func main() {
 	apiV0EndpointPeers := handlersV0.NewPeerEndpoint(cfg, apiV0Auth, validatorManager, apiV0BackendPeers)
 	apiV0EndpointConfig := handlersV0.NewConfigEndpoint(cfg, apiV0Auth, wireGuard)
 	apiV0EndpointTest := handlersV0.NewTestEndpoint(apiV0Auth)
-	apiV0EndpointWebsocket := handlersV0.NewWebsocketEndpoint(cfg, apiV0Auth, eventBus)
+	apiV0EndpointWebsocket := handlersV0.NewWebsocketEndpoint(cfg, apiV0Auth, eventBus, apiV0BackendPeers)
+	apiV0EndpointWebsocket.StartBackgroundJobs(ctx)
 
 	apiFrontend := handlersV0.NewRestApi(apiV0Session,
 		apiV0EndpointAuth,
@@ -152,7 +153,7 @@ func main() {
 
 	// region API v1 (User REST API)
 
-	apiV1Auth := handlersV1.NewAuthenticationHandler(userManager)
+	apiV1Auth := handlersV1.NewAuthenticationHandler(authenticator, userManager)
 	apiV1BackendUsers := backendV1.NewUserService(cfg, userManager)
 	apiV1BackendPeers := backendV1.NewPeerService(cfg, wireGuardManager, userManager)
 	apiV1BackendInterfaces := backendV1.NewInterfaceService(cfg, wireGuardManager)

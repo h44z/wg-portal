@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -79,6 +80,10 @@ func (s InterfaceService) Create(ctx context.Context, iface *domain.Interface) (
 		return nil, err
 	}
 
+	if err := s.validateBackend(iface.Backend); err != nil {
+		return nil, err
+	}
+
 	createdInterface, err := s.interfaces.CreateInterface(ctx, iface)
 	if err != nil {
 		return nil, err
@@ -101,12 +106,41 @@ func (s InterfaceService) Update(ctx context.Context, id domain.InterfaceIdentif
 			iface.Identifier, id, domain.ErrInvalidData)
 	}
 
+	existingInterface, _, err := s.interfaces.GetInterfaceAndPeers(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := s.validateBackend(iface.Backend); err != nil {
+		return nil, nil, err
+	}
+	// These fields are managed by the server and cannot be changed through v1.
+	iface.IsDynamic = existingInterface.IsDynamic
+	iface.DriverType = existingInterface.DriverType
+	iface.LdapAllowedUsers = existingInterface.LdapAllowedUsers
+
 	updatedInterface, updatedPeers, err := s.interfaces.UpdateInterface(ctx, iface)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return updatedInterface, updatedPeers, nil
+}
+
+// validateBackend validates against configured IDs so a typo cannot silently use
+// the controller manager's fallback to the local backend.
+func (s InterfaceService) validateBackend(backend domain.InterfaceBackend) error {
+	id := string(backend)
+
+	// Empty is the legacy representation of the local backend in domain objects.
+	if id == "" || id == config.LocalBackendName ||
+		slices.ContainsFunc(s.cfg.Backend.Mikrotik, func(b config.BackendMikrotik) bool { return b.Id == id }) ||
+		slices.ContainsFunc(s.cfg.Backend.Pfsense, func(b config.BackendPfsense) bool { return b.Id == id }) ||
+		slices.ContainsFunc(s.cfg.Backend.Opnsense, func(b config.BackendOpnsense) bool { return b.Id == id }) {
+		return nil
+	}
+
+	return fmt.Errorf("unknown interface backend %q: %w", id, domain.ErrInvalidData)
 }
 
 func (s InterfaceService) Delete(ctx context.Context, id domain.InterfaceIdentifier) error {

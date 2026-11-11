@@ -307,9 +307,19 @@ func (m Manager) RestoreInterfaceState(
 		physicalPeers, _ := controller.GetPeers(ctx, iface.Identifier)
 		for _, physicalPeer := range physicalPeers {
 			isWgPortalPeer := false
-			for _, peer := range peers {
-				if peer.Identifier == domain.PeerIdentifier(physicalPeer.PublicKey) {
+			for i := range peers {
+				if peers[i].Identifier == domain.PeerIdentifier(physicalPeer.PublicKey) {
 					isWgPortalPeer = true
+
+					// Sync IsDynamic flag if it was changed on the backend
+					physConverted := domain.ConvertPhysicalPeer(&physicalPeer)
+					if peers[i].IsDynamic != physConverted.IsDynamic {
+						peers[i].IsDynamic = physConverted.IsDynamic
+						_ = m.db.SavePeer(ctx, peers[i].Identifier, func(p *domain.Peer) (*domain.Peer, error) {
+							p.IsDynamic = physConverted.IsDynamic
+							return p, nil
+						})
+					}
 					break
 				}
 			}
@@ -365,12 +375,10 @@ func (m Manager) PrepareInterface(ctx context.Context) (*domain.Interface, error
 	}
 
 	freshInterface := &domain.Interface{
-		BaseModel: domain.BaseModel{
-			CreatedBy: string(currentUser.Id),
-			UpdatedBy: string(currentUser.Id),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+		CreatedBy:                  string(currentUser.Id),
+		UpdatedBy:                  string(currentUser.Id),
+		CreatedAt:                  time.Now(),
+		UpdatedAt:                  time.Now(),
 		Identifier:                 id,
 		KeyPair:                    kp,
 		ListenPort:                 port,

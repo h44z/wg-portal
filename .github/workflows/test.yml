@@ -1,0 +1,40 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  # Allow running manually from the Actions tab against any branch or tag.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: make test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      # internal/app/api/core/assets.go embeds frontend-dist/, which is gitignored.
+      # Without this the Go build fails before any test runs.
+      - name: Build frontend
+        run: make frontend
+
+      - name: Run tests
+        run: make test

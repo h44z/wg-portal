@@ -29,6 +29,8 @@ type AuthenticationService interface {
 	OauthLoginStep2(ctx context.Context, providerId, nonce, code, codeVerifier string) (*domain.User, string, error)
 	// OauthProviderLogoutUrl returns an IdP logout URL for the given provider if supported.
 	OauthProviderLogoutUrl(providerId, idTokenHint, postLogoutRedirectUri string) (string, bool)
+	// IsDefaultPasswordInUse checks if the default admin password is still in use.
+	IsDefaultPasswordInUse(ctx context.Context) bool
 }
 
 type WebAuthnService interface {
@@ -107,23 +109,20 @@ func (e AuthEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/auth")
 
 	apiGroup.HandleFunc("GET /providers", e.handleExternalLoginProvidersGet())
-	apiGroup.HandleFunc("GET /session", e.handleSessionInfoGet())
+	apiGroup.With(e.authenticator.InfoOnly()).HandleFunc("GET /session", e.handleSessionInfoGet())
 
 	apiGroup.HandleFunc("GET /login/{provider}/init", e.handleOauthInitiateGet())
 	apiGroup.HandleFunc("GET /login/{provider}/callback", e.handleOauthCallbackGet())
 
 	apiGroup.HandleFunc("POST /webauthn/login/start", e.handleWebAuthnLoginStart())
 	apiGroup.HandleFunc("POST /webauthn/login/finish", e.handleWebAuthnLoginFinish())
-	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("GET /webauthn/credentials",
-		e.handleWebAuthnCredentialsGet())
-	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("POST /webauthn/register/start",
-		e.handleWebAuthnRegisterStart())
-	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("POST /webauthn/register/finish",
-		e.handleWebAuthnRegisterFinish())
-	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("DELETE /webauthn/credential/{id}",
-		e.handleWebAuthnCredentialsDelete())
-	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("PUT /webauthn/credential/{id}",
-		e.handleWebAuthnCredentialsPut())
+
+	authenticatedApiGroup := apiGroup.With(e.authenticator.LoggedIn(), e.authenticator.RequireNonDefaultPassword())
+	authenticatedApiGroup.HandleFunc("GET /webauthn/credentials", e.handleWebAuthnCredentialsGet())
+	authenticatedApiGroup.HandleFunc("POST /webauthn/register/start", e.handleWebAuthnRegisterStart())
+	authenticatedApiGroup.HandleFunc("POST /webauthn/register/finish", e.handleWebAuthnRegisterFinish())
+	authenticatedApiGroup.HandleFunc("DELETE /webauthn/credential/{id}", e.handleWebAuthnCredentialsDelete())
+	authenticatedApiGroup.HandleFunc("PUT /webauthn/credential/{id}", e.handleWebAuthnCredentialsPut())
 
 	apiGroup.HandleFunc("POST /login", e.handleLoginPost())
 	apiGroup.With(e.authenticator.LoggedIn()).HandleFunc("POST /logout", e.handleLogoutPost())
@@ -174,13 +173,19 @@ func (e AuthEndpoint) handleSessionInfoGet() http.HandlerFunc {
 			email = &e
 		}
 
+		isDefault := false
+		if e.authService != nil {
+			isDefault = e.authService.IsDefaultPasswordInUse(r.Context())
+		}
+
 		respond.JSON(w, http.StatusOK, model.SessionInfo{
-			LoggedIn:       currentSession.LoggedIn,
-			IsAdmin:        currentSession.IsAdmin,
-			UserIdentifier: loggedInUid,
-			UserFirstname:  firstname,
-			UserLastname:   lastname,
-			UserEmail:      email,
+			LoggedIn:             currentSession.LoggedIn,
+			IsAdmin:              currentSession.IsAdmin,
+			UserIdentifier:       loggedInUid,
+			UserFirstname:        firstname,
+			UserLastname:         lastname,
+			UserEmail:            email,
+			DefaultPasswordInUse: isDefault,
 		})
 	}
 }
@@ -208,6 +213,8 @@ func (e AuthEndpoint) handleOauthInitiateGet() http.HandlerFunc {
 
 		if returnTo != "" {
 			if !e.isValidReturnUrl(returnTo) {
+				slog.Debug("rejected invalid oauth return URL",
+					"provider", provider, "returnTo", returnTo, "expectedPrefix", e.frontendUrl(""))
 				respond.JSON(w, http.StatusBadRequest,
 					model.Error{Code: http.StatusBadRequest, Message: "invalid return URL"})
 				return
@@ -343,7 +350,7 @@ func (e AuthEndpoint) handleOauthCallbackGet() http.HandlerFunc {
 		if returnUrl != nil {
 			redirectToReturn("success")
 		} else {
-			respond.JSON(w, http.StatusOK, user)
+			respond.JSON(w, http.StatusOK, model.NewUser(user, false))
 		}
 	}
 }
@@ -360,6 +367,9 @@ func (e AuthEndpoint) setAuthenticatedUser(r *http.Request, user *domain.User, o
 	currentSession.Firstname = user.Firstname
 	currentSession.Lastname = user.Lastname
 	currentSession.Email = user.Email
+	if e.authService != nil {
+		currentSession.DefaultPasswordInUse = e.authService.IsDefaultPasswordInUse(r.Context())
+	}
 
 	currentSession.OauthState = ""
 	currentSession.OauthNonce = ""
@@ -381,12 +391,6 @@ func (e AuthEndpoint) setAuthenticatedUser(r *http.Request, user *domain.User, o
 // @Router /auth/login [post]
 func (e AuthEndpoint) handleLoginPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentSession := e.session.GetData(r.Context())
-		if currentSession.LoggedIn {
-			respond.JSON(w, http.StatusOK, model.Error{Code: http.StatusOK, Message: "already logged in"})
-			return
-		}
-
 		var loginData struct {
 			Username string `json:"username" binding:"required,min=2"`
 			Password string `json:"password" binding:"required,min=4"`
@@ -411,7 +415,7 @@ func (e AuthEndpoint) handleLoginPost() http.HandlerFunc {
 
 		e.setAuthenticatedUser(r, user, "", "")
 
-		respond.JSON(w, http.StatusOK, user)
+		respond.JSON(w, http.StatusOK, model.NewUser(user, false))
 	}
 }
 
@@ -568,7 +572,7 @@ func (e AuthEndpoint) handleWebAuthnCredentialsDelete() http.HandlerFunc {
 
 		userIdentifier := domain.UserIdentifier(currentSession.UserIdentifier)
 
-		credentialId := Base64UrlDecode(request.Path(r, "id"))
+		credentialId := domain.Base64UrlDecode(request.Path(r, "id"))
 
 		credentials, err := e.webAuthn.RemoveCredential(r.Context(), userIdentifier, credentialId)
 		if err != nil {
@@ -603,7 +607,7 @@ func (e AuthEndpoint) handleWebAuthnCredentialsPut() http.HandlerFunc {
 
 		userIdentifier := domain.UserIdentifier(currentSession.UserIdentifier)
 
-		credentialId := Base64UrlDecode(request.Path(r, "id"))
+		credentialId := domain.Base64UrlDecode(request.Path(r, "id"))
 		var req model.WebAuthnCredentialRequest
 		if err := request.BodyJson(r, &req); err != nil {
 			respond.JSON(w, http.StatusBadRequest,

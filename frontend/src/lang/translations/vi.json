@@ -125,7 +125,9 @@
     "peer-expiring": "Peer sẽ hết hạn vào",
     "peer-connected": "Đã kết nối",
     "peer-not-connected": "Chưa kết nối",
-    "peer-handshake": "Lần bắt tay cuối cùng:"
+    "peer-handshake": "Lần bắt tay cuối cùng:",
+    "peer-dynamic": "Peer động",
+    "peer-dynamic-no-edit": "Peer này được tạo động và không thể chỉnh sửa hoặc xóa."
   },
   "users": {
     "headline": "Quản trị Người dùng",

@@ -20,7 +20,7 @@ type DatabaseRepo interface {
 
 type EventBus interface {
 	// Subscribe subscribes to a topic
-	Subscribe(topic string, fn interface{}) error
+	Subscribe(topic string, fn any) error
 }
 
 // endregion dependencies

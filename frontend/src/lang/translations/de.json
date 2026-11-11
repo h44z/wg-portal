@@ -32,6 +32,34 @@
     "button": "Anmelden",
     "button-webauthn": "Passkey verwenden"
   },
+  "default-password": {
+    "banner-title": "Sicherheitswarnung: Standardpasswort wird verwendet",
+    "banner-message": "Das Standard-Administratorpasswort ist noch in Verwendung. Solange das Passwort nicht geändert wird, sind keine weiteren Aktionen möglich.",
+    "modal-title": "Standard-Administratorpasswort ändern",
+    "modal-warning-heading": "Standardpasswort in Verwendung",
+    "modal-warning-text": "Das Standard-Administratorpasswort ist derzeit noch in Verwendung. Um Ihre Installation zu schützen, müssen Sie das Passwort jetzt ändern.",
+    "modal-warning-note": "Hinweis: Solange das Passwort nicht geändert wird, sind keine weiteren Aktionen möglich.",
+    "current-label": "Aktuelles Passwort",
+    "new-label": "Neues Passwort",
+    "confirm-label": "Neues Passwort bestätigen",
+    "weak-label": "Das Passwort ist zu kurz.",
+    "mismatch-label": "Passwörter stimmen nicht überein.",
+    "same-label": "Das neue Passwort muss sich vom aktuellen Passwort unterscheiden.",
+    "change-button-text": "Passwort ändern",
+    "success-title": "Passwort geändert!",
+    "success-text": "Das Passwort wurde erfolgreich geändert. Alle Aktionen sind nun freigeschaltet."
+  },
+  "peer-config-download": {
+    "headline": "VPN-Konfiguration wird heruntergeladen",
+    "in-progress": "Der Download Ihrer WireGuard-Konfiguration startet automatisch. Bitte warten...",
+    "success-title": "Konfiguration heruntergeladen",
+    "success-message": "Ihre WireGuard-Konfiguration wurde heruntergeladen.",
+    "error-title": "Download fehlgeschlagen",
+    "error-message": "Die WireGuard-Konfiguration konnte nicht heruntergeladen werden.",
+    "manual-hint": "Falls der Download nicht automatisch gestartet wurde, verwenden Sie die Schaltfläche unten.",
+    "button-retry": "Konfiguration herunterladen",
+    "button-home": "Zur Startseite"
+  },
   "menu": {
     "home": "Home",
     "interfaces": "Schnittstellen",
@@ -138,7 +166,9 @@
     "peer-expiring": "Peer läuft ab am",
     "peer-connected": "Verbunden",
     "peer-not-connected": "Nicht verbunden",
-    "peer-handshake": "Letzter Handshake:"
+    "peer-handshake": "Letzter Handshake:",
+    "peer-dynamic": "Dynamischer Peer",
+    "peer-dynamic-no-edit": "Dieser Peer wurde dynamisch erstellt und kann nicht bearbeitet oder gelöscht werden."
   },
   "users": {
     "headline": "Benutzerverwaltung",
@@ -561,6 +591,8 @@
       "private-key": {
         "label": "Privater Schlüssel",
         "placeholder": "Der private Schlüssel",
+        "local-label": "Lokal erzeugt",
+        "local-help": "Der private Schlüssel wurde in diesem Browser erzeugt und wird nicht an den Server gesendet. Die Konfiguration wird beim Speichern einmalig heruntergeladen.",
         "help": "Der private Schlüssel wird sicher auf dem Server gespeichert. Wenn der Benutzer bereits eine Kopie besitzt, kann dieses Feld entfallen. Der Server funktioniert auch ausschließlich mit dem öffentlichen Schlüssel des Peers."
       },
       "public-key": {

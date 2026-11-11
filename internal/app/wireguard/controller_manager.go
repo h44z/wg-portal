@@ -44,6 +44,9 @@ func (c *ControllerManager) init() error {
 		return err
 	}
 
+	if err := c.registerOpnsenseControllers(); err != nil {
+		return err
+	}
 	if err := c.registerPfsenseControllers(); err != nil {
 		return err
 	}
@@ -63,6 +66,7 @@ func (c *ControllerManager) registerLocalController() error {
 		Config: config.BackendBase{
 			Id:                config.LocalBackendName,
 			DisplayName:       "Local WireGuard Controller",
+			Type:              "local",
 			IgnoredInterfaces: c.cfg.Backend.IgnoredLocalInterfaces,
 		},
 		Implementation: localController,
@@ -82,6 +86,7 @@ func (c *ControllerManager) registerMikrotikControllers() error {
 			return fmt.Errorf("failed to create Mikrotik controller for backend %s: %w", backendConfig.Id, err)
 		}
 
+		backendConfig.BackendBase.Type = "mikrotik"
 		c.controllers[domain.InterfaceBackend(backendConfig.Id)] = backendInstance{
 			Config:         backendConfig.BackendBase,
 			Implementation: controller,
@@ -100,6 +105,27 @@ func (c *ControllerManager) registerPfsenseControllers() error {
 		controller, err := wgcontroller.NewPfsenseController(c.cfg, &backendConfig)
 		if err != nil {
 			return fmt.Errorf("failed to create pfSense controller for backend %s: %w", backendConfig.Id, err)
+		}
+
+		backendConfig.BackendBase.Type = "pfsense"
+		c.controllers[domain.InterfaceBackend(backendConfig.Id)] = backendInstance{
+			Config:         backendConfig.BackendBase,
+			Implementation: controller,
+		}
+	}
+	return nil
+}
+
+func (c *ControllerManager) registerOpnsenseControllers() error {
+	for _, backendConfig := range c.cfg.Backend.Opnsense {
+		if backendConfig.Id == config.LocalBackendName {
+			slog.Warn("skipping registration of OPNsense controller with reserved ID", "id", config.LocalBackendName)
+			continue
+		}
+
+		controller, err := wgcontroller.NewOpnsenseController(c.cfg, &backendConfig)
+		if err != nil {
+			return fmt.Errorf("failed to create OPNsense controller for backend %s: %w", backendConfig.Id, err)
 		}
 
 		c.controllers[domain.InterfaceBackend(backendConfig.Id)] = backendInstance{

@@ -101,6 +101,8 @@ type Authenticator interface {
 	UserIdMatch(idParameter string) func(next http.Handler) http.Handler
 	// InfoOnly only add user info to the request context. No login check is performed.
 	InfoOnly() func(next http.Handler) http.Handler
+	// RequireNonDefaultPassword prohibits actions if the default admin password is still in use.
+	RequireNonDefaultPassword() func(next http.Handler) http.Handler
 }
 
 type Session interface {
@@ -114,7 +116,7 @@ type Session interface {
 
 type Validator interface {
 	// Struct validates the given struct.
-	Struct(s interface{}) error
+	Struct(s any) error
 }
 
 // endregion handler-interfaces

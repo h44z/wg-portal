@@ -54,6 +54,7 @@ advanced:
   route_table_offset: 20000
   api_admin_only: true
   limit_additional_user_peers: 0
+  startup_timeout: 5m
 
 database:
   debug: false
@@ -162,7 +163,7 @@ More advanced options are found in the subsequent `Advanced` section.
 ### `editable_keys`
 - **Default:** `true`
 - **Environment Variable:** `WG_PORTAL_CORE_EDITABLE_KEYS`
-- **Description:** Allow editing of WireGuard key-pairs directly in the UI.
+- **Description:** Allow editing of WireGuard key-pairs directly in the UI. When enabled, users creating their own peers (self-provisioning) can also generate the key-pair in the browser: the private key is never sent to the server, and the WireGuard configuration file is downloaded once right after creation. It cannot be downloaded or shown again later.
 
 ### `create_default_peer` (deprecated)
 - **Default:** `false`
@@ -279,7 +280,7 @@ The current MikroTik backend is in **BETA** and may not support all features.
 ### `default`
 - **Default:** `local`
 - **Description:** The default backend to use for managing WireGuard interfaces. 
-  Valid options are: `local`, or other backend id's configured in the `mikrotik` section.
+  Valid options are: `local`, or other backend id's configured in the `mikrotik`, `pfsense` or `opnsense` sections.
 
 ### `rekey_timeout_interval`
 - **Default:** `180s`
@@ -353,6 +354,58 @@ Below are the properties for each entry inside `backend.mikrotik`:
 
 For more details on configuring the MikroTik backend, see the [Backends](../usage/backends.md) documentation.
 
+### OPNsense
+
+The `opnsense` array contains a list of OPNsense backend definitions. Each entry describes how to connect to an OPNsense firewall that hosts WireGuard interfaces.
+The WireGuard API used here is part of OPNsense core, so no add-on package needs to be installed on the firewall.
+
+Below are the properties for each entry inside `backend.opnsense`:
+
+#### `id`
+- **Default:** *(empty)*
+- **Description:** A unique identifier for this backend.
+  This value can be referenced by `backend.default` to use this backend as default.
+  The identifier must be unique across all backends and must not use the reserved keyword `local`.
+
+#### `display_name`
+- **Default:** *(empty)*
+- **Description:** A human-friendly display name for this backend. If omitted, the `id` will be used as the display name.
+
+#### `api_url`
+- **Default:** *(empty)*
+- **Description:** Base URL of the OPNsense appliance, including scheme, e.g., `https://opnsense.example.com`.
+  Do not append `/api`; the backend adds the API paths itself.
+
+#### `api_key`
+- **Default:** *(empty)*
+- **Description:** API key, created under `System -> Access -> Users -> <user> -> API keys`.
+
+#### `api_secret`
+- **Default:** *(empty)*
+- **Description:** The secret belonging to `api_key`. OPNsense authenticates the pair as HTTP Basic credentials.
+  The secret is shown only once, when the key is created.
+
+#### `api_verify_tls`
+- **Default:** `false`
+- **Description:** Whether to verify the TLS certificate of the OPNsense API endpoint. Set to `false` to allow self-signed certificates (not recommended for production).
+
+#### `api_timeout`
+- **Default:** `30s`
+- **Description:** Timeout for API requests to the OPNsense firewall. Uses Go duration format (e.g., `10s`, `1m`). If omitted, a default of 30 seconds is used.
+
+#### `ignored_interfaces`
+- **Default:** *(empty)*
+- **Description:** A list of interface names to exclude during interface enumeration.
+  This is useful if you want to prevent specific interfaces from being imported from the OPNsense firewall.
+
+#### `debug`
+- **Default:** `false`
+- **Description:** Enable verbose debug logging for the OPNsense backend.
+
+> There is deliberately no `concurrency` option for this backend. The MikroTik and pfSense backends issue one request per interface when enumerating details; the OPNsense search endpoints return every record with its fields already populated, so enumeration costs a fixed number of requests regardless of how many tunnels exist.
+
+For more details on configuring the OPNsense backend, see the [Backends](../usage/backends.md) documentation.
+
 ---
 
 ## Advanced
@@ -423,6 +476,12 @@ Additional or more specialized configuration options for logging and interface c
 - **Default:** `0`
 - **Environment Variable:** `WG_PORTAL_ADVANCED_LIMIT_ADDITIONAL_USER_PEERS`
 - **Description:** Limit additional peers a normal user can create. `0` means unlimited.
+
+### `startup_timeout`
+- **Default:** `5m`
+- **Environment Variable:** `WG_PORTAL_ADVANCED_STARTUP_TIMEOUT`
+- **Description:** Timeout for the application startup process. 
+  Increase this value if you are using a MikroTik backend with many clients.
 
 ---
 
@@ -613,6 +672,7 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 #### `provider_name`
 - **Default:** *(empty)*
 - **Description:** A **unique** name for this provider. Must not conflict with other providers.
+  This name is used to derive the callback URL for the OIDC provider: `<external_url>/api/v0/auth/login/<provider_name>/callback`.
 
 #### `display_name`
 - **Default:** *(empty)*
@@ -700,6 +760,7 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 #### `provider_name`
 - **Default:** *(empty)*
 - **Description:** A **unique** name for this provider. Must not conflict with other providers.
+  This name is used to derive the callback URL for the OAuth provider: `<external_url>/api/v0/auth/login/<provider_name>/callback`.
 
 #### `display_name`
 - **Default:** *(empty)*
@@ -886,6 +947,14 @@ Below are the properties for each LDAP provider entry inside `auth.ldap`:
 #### `disable_missing`
 - **Default:** `false`
 - **Description:** If `true`, any user **not** found in LDAP (during sync) is disabled in WireGuard Portal.
+- **Important**: As a safeguard, a synchronization that returns no usable user identifiers at all disables
+  nobody. LDAP cannot distinguish a directory that legitimately holds no matching users from a wrong `base_dn`,
+  a `sync_filter` whose group was renamed, a replica that is reachable but not yet populated, or a bind account
+  that has lost read access — all of them answer with success and zero entries. Disabling every user on that
+  signal would lock administrators out of a portal they may only reach over the VPN, so the sync logs an error
+  and skips the disable step instead.
+  If you intend to empty a group, keep one account matching `sync_filter`: the remaining users are then disabled
+  normally, and the account doubles as a canary, since its disappearance means the query itself is broken.
 
 #### `auto_re_enable`
 - **Default:** `false`

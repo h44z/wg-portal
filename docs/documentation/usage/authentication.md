@@ -51,6 +51,15 @@ To add OIDC or OAuth2 authentication to WireGuard Portal, create a Client-ID and
 configure a new authentication provider in the [`auth`](../configuration/overview.md#auth) section of the configuration file.
 Make sure that each configured provider has a unique `provider_name` property set. Samples can be seen [here](../configuration/examples.md).
 
+When registering the OAuth2 or OIDC application with your provider, configure the callback/redirect URL as follows:
+
+```text
+<external_url>/api/v0/auth/login/<provider_name>/callback
+```
+
+Replace `<external_url>` with the value configured in [`external_url`](../configuration/overview.md#external_url) and
+`<provider_name>` with the exact `provider_name` from the matching OAuth2 or OIDC provider configuration.
+
 #### Limiting Login to Specific Domains
 
 You can limit the login to specific domains by setting the `allowed_domains` property for OAuth2 or OIDC providers.

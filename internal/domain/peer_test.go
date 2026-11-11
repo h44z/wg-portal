@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/h44z/wg-portal/internal/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPeer_IsDisabled(t *testing.T) {
@@ -69,10 +69,8 @@ func TestPeer_ApplyInterfaceDefaults(t *testing.T) {
 		},
 	}
 	iface := &Interface{
-		PeerDefEndpoint: "192.168.1.1",
-		KeyPair: KeyPair{
-			PublicKey: "publicKey",
-		},
+		PeerDefEndpoint:      "192.168.1.1",
+		PublicKey:            "publicKey",
 		PeerDefAllowedIPsStr: "8.8.8.8/32",
 	}
 

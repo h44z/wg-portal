@@ -12,8 +12,8 @@ import (
 
 type mockBus struct{}
 
-func (f *mockBus) Publish(topic string, args ...any)            {}
-func (f *mockBus) Subscribe(topic string, fn interface{}) error { return nil }
+func (f *mockBus) Publish(topic string, args ...any)    {}
+func (f *mockBus) Subscribe(topic string, fn any) error { return nil }
 
 type mockController struct{}
 
@@ -210,6 +210,61 @@ func TestCreatePeer_SetsIdentifier_FromPublicKey(t *testing.T) {
 	// Ensure the saved peer in DB also has the expected identifier
 	if db.savedPeers[expectedId] == nil {
 		t.Fatalf("expected peer with identifier %q to be saved in DB", expectedId)
+	}
+}
+
+// TestCreatePeer_KeepsBrowserGeneratedKeyWithoutPrivateKey covers the browser-side key generation flow of
+// frontend/src/components/UserPeerEditModal.vue: the client only sends its public key, so the server must
+// neither store a private key nor replace the key pair with a server-generated one.
+func TestCreatePeer_KeepsBrowserGeneratedKeyWithoutPrivateKey(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.Core.SelfProvisioningAllowed = true
+	cfg.Core.EditableKeys = true
+
+	ctrlMgr := &ControllerManager{
+		controllers: map[domain.InterfaceBackend]backendInstance{
+			config.LocalBackendName: {Implementation: &mockController{}},
+		},
+	}
+
+	db := &mockDB{iface: &domain.Interface{Identifier: "wg0", Type: domain.InterfaceTypeServer}}
+
+	m := Manager{
+		cfg: cfg,
+		bus: &mockBus{},
+		db:  db,
+		wg:  ctrlMgr,
+	}
+
+	userId := domain.UserIdentifier("user@example.com")
+	ctx := domain.SetUserInfo(context.Background(), &domain.ContextUserInfo{Id: userId, IsAdmin: false})
+
+	pubKey := "BROWSER_GENERATED_PUBLIC_KEY"
+
+	input := &domain.Peer{
+		UserIdentifier:      userId,
+		InterfaceIdentifier: domain.InterfaceIdentifier("wg0"),
+		Interface: domain.PeerInterfaceConfig{
+			KeyPair: domain.KeyPair{PublicKey: pubKey},
+		},
+	}
+
+	out, err := m.CreatePeer(ctx, input)
+	if err != nil {
+		t.Fatalf("CreatePeer returned error: %v", err)
+	}
+
+	saved := db.savedPeers[domain.PeerIdentifier(pubKey)]
+	if saved == nil {
+		t.Fatalf("expected peer with identifier %q to be saved in DB", pubKey)
+	}
+	for name, peer := range map[string]*domain.Peer{"returned": out, "saved": saved} {
+		if peer.Interface.PublicKey != pubKey {
+			t.Fatalf("expected %s peer to keep public key %q, got %q", name, pubKey, peer.Interface.PublicKey)
+		}
+		if peer.Interface.PrivateKey != "" {
+			t.Fatalf("expected %s peer to have no private key, got %q", name, peer.Interface.PrivateKey)
+		}
 	}
 }
 

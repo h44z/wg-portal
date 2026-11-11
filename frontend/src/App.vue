@@ -1,10 +1,12 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router';
+import router, { publicPages } from '@/router';
 import {computed, getCurrentInstance, nextTick, onMounted, ref} from "vue";
 import { authStore } from "./stores/auth";
 import { securityStore } from "./stores/security";
 import { settingsStore } from "@/stores/settings";
 import { Notifications } from "@kyvg/vue3-notification";
+import DefaultPasswordModal from "@/components/DefaultPasswordModal.vue";
 
 const appGlobal = getCurrentInstance().appContext.config.globalProperties
 const auth = authStore()
@@ -24,14 +26,27 @@ onMounted(async () => {
 
   let wasLoggedIn = auth.IsAuthenticated;
   try {
-    await auth.LoadSession();
+    await auth.EnsureSession();
     await settings.LoadSettings(); // only logs errors, does not throw
 
     console.log("WireGuard Portal session is valid");
+
+    // redirect to originally stored return-url (if set)
+    if (!wasLoggedIn && router.currentRoute.value.path === '/login') {
+      const returnUrl = auth.ReturnUrl;
+      if (returnUrl && returnUrl !== '/login') {
+        auth.ResetReturnUrl();
+        router.push(returnUrl);
+      }
+    }
   } catch (e) {
     if (wasLoggedIn) {
-      console.log("WireGuard Portal invalid - logging out");
-      await auth.Logout();
+      console.log("WireGuard Portal session invalid");
+      const currentRoute = router.currentRoute.value;
+      if (currentRoute && !publicPages.includes(currentRoute.path)) {
+        auth.SetReturnUrl(currentRoute.fullPath);
+        router.push('/login');
+      }
     }
   }
 
@@ -183,8 +198,14 @@ const userDisplayName = computed(() => {
   </nav>
 
   <div class="container mt-5 flex-shrink-0">
+    <div class="alert alert-warning mb-4" v-if="auth.IsAuthenticated && auth.DefaultPasswordInUse">
+      <h4 class="alert-heading"><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ $t('default-password.banner-title') }}</h4>
+      <p class="mb-0">{{ $t('default-password.banner-message') }}</p>
+    </div>
     <RouterView />
   </div>
+
+  <DefaultPasswordModal />
 
   <footer class="page-footer mt-auto">
     <div class="container mt-5">

@@ -3,8 +3,10 @@
     <module name="wg-portal" />
     <working_directory value="$PROJECT_DIR$" />
     <envs>
-      <env name="SESSION_SECRET" value="extremlybad" />
       <env name="LOG_LEVEL" value="trace" />
+      <env name="SESSION_SECRET" value="extremlybad" />
+      <env name="WG_PORTAL_MAIL_PORT" value="1025" />
+      <env name="WG_PORTAL_MAIL_LINK_ONLY" value="true" />
     </envs>
     <sudo value="true" />
     <kind value="PACKAGE" />

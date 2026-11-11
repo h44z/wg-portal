@@ -12,6 +12,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	DefaultAdminUser     = "admin@wgportal.local"
+	DefaultAdminPassword = "wgportal-default"
+)
+
 // PeerConfig holds peer lifecycle and expiry notification settings.
 type PeerConfig struct {
 	RotationInterval            time.Duration   `yaml:"rotation_interval"`
@@ -69,6 +74,7 @@ type Config struct {
 		RouteTableOffset         int           `yaml:"route_table_offset"`
 		ApiAdminOnly             bool          `yaml:"api_admin_only"` // if true, only admin users can access the API
 		LimitAdditionalUserPeers int           `yaml:"limit_additional_user_peers"`
+		StartupTimeout           time.Duration `yaml:"startup_timeout"`
 	} `yaml:"advanced"`
 
 	Backend Backend `yaml:"backend"`
@@ -148,8 +154,8 @@ func defaultConfig() *Config {
 	cfg := &Config{}
 
 	cfg.Core.AdminUserDisabled = getEnvBool("WG_PORTAL_CORE_DISABLE_ADMIN_USER", false)
-	cfg.Core.AdminUser = getEnvStr("WG_PORTAL_CORE_ADMIN_USER", "admin@wgportal.local")
-	cfg.Core.AdminPassword = getEnvStr("WG_PORTAL_CORE_ADMIN_PASSWORD", "wgportal-default")
+	cfg.Core.AdminUser = getEnvStr("WG_PORTAL_CORE_ADMIN_USER", DefaultAdminUser)
+	cfg.Core.AdminPassword = getEnvStr("WG_PORTAL_CORE_ADMIN_PASSWORD", DefaultAdminPassword)
 	cfg.Core.AdminApiToken = getEnvStr("WG_PORTAL_CORE_ADMIN_API_TOKEN", "") // by default, the API access is disabled
 	cfg.Core.ImportExisting = getEnvBool("WG_PORTAL_CORE_IMPORT_EXISTING", true)
 	cfg.Core.RestoreState = getEnvBool("WG_PORTAL_CORE_RESTORE_STATE", true)
@@ -223,6 +229,7 @@ func defaultConfig() *Config {
 	cfg.Advanced.RouteTableOffset = getEnvInt("WG_PORTAL_ADVANCED_ROUTE_TABLE_OFFSET", 20000)
 	cfg.Advanced.ApiAdminOnly = getEnvBool("WG_PORTAL_ADVANCED_API_ADMIN_ONLY", true)
 	cfg.Advanced.LimitAdditionalUserPeers = getEnvInt("WG_PORTAL_ADVANCED_LIMIT_ADDITIONAL_USER_PEERS", 0)
+	cfg.Advanced.StartupTimeout = getEnvDuration("WG_PORTAL_ADVANCED_STARTUP_TIMEOUT", 5*time.Minute)
 
 	cfg.Statistics.UsePingChecks = getEnvBool("WG_PORTAL_STATISTICS_USE_PING_CHECKS", true)
 	cfg.Statistics.PingCheckWorkers = getEnvInt("WG_PORTAL_STATISTICS_PING_CHECK_WORKERS", 10)

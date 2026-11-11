@@ -263,11 +263,9 @@ func (c *MikrotikController) convertWireGuardInterface(
 	error,
 ) {
 	pi := domain.PhysicalInterface{
-		Identifier: domain.InterfaceIdentifier(wg.GetString("name")),
-		KeyPair: domain.KeyPair{
-			PrivateKey: wg.GetString("private-key"),
-			PublicKey:  wg.GetString("public-key"),
-		},
+		Identifier:    domain.InterfaceIdentifier(wg.GetString("name")),
+		PrivateKey:    wg.GetString("private-key"),
+		PublicKey:     wg.GetString("public-key"),
 		ListenPort:    wg.GetInt("listen-port"),
 		Addresses:     addresses,
 		Mtu:           wg.GetInt("mtu"),
@@ -296,7 +294,7 @@ func (c *MikrotikController) GetPeers(ctx context.Context, deviceId domain.Inter
 		PropList: []string{
 			".id", "name", "allowed-address", "client-address", "client-endpoint", "client-keepalive", "comment",
 			"current-endpoint-address", "current-endpoint-port", "last-handshake", "persistent-keepalive",
-			"public-key", "private-key", "preshared-key", "mtu", "disabled", "rx", "tx", "responder", "client-dns",
+			"public-key", "private-key", "preshared-key", "mtu", "disabled", "rx", "tx", "responder", "client-dns", "dynamic",
 		},
 		Filters: map[string]string{
 			"interface": string(deviceId),
@@ -354,13 +352,11 @@ func (c *MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObjec
 	}
 
 	peerModel := domain.PhysicalPeer{
-		Identifier: domain.PeerIdentifier(peer.GetString("public-key")),
-		Endpoint:   currentEndpoint,
-		AllowedIPs: allowedAddresses,
-		KeyPair: domain.KeyPair{
-			PublicKey:  peer.GetString("public-key"),
-			PrivateKey: peer.GetString("private-key"),
-		},
+		Identifier:          domain.PeerIdentifier(peer.GetString("public-key")),
+		Endpoint:            currentEndpoint,
+		AllowedIPs:          allowedAddresses,
+		PublicKey:           peer.GetString("public-key"),
+		PrivateKey:          peer.GetString("private-key"),
 		PresharedKey:        domain.PreSharedKey(peer.GetString("preshared-key")),
 		PersistentKeepalive: keepAliveSeconds,
 		LastHandshake:       lastHandshakeTime,
@@ -376,6 +372,7 @@ func (c *MikrotikController) convertWireGuardPeer(peer lowlevel.GenericJsonObjec
 		Comment:         peer.GetString("comment"),
 		IsResponder:     peer.GetBool("responder"),
 		Disabled:        peer.GetBool("disabled"),
+		Dynamic:         peer.GetBool("dynamic"),
 		ClientEndpoint:  peer.GetString("client-endpoint"),
 		ClientAddress:   peer.GetString("client-address"),
 		ClientDns:       peer.GetString("client-dns"),
@@ -614,14 +611,23 @@ func (c *MikrotikController) SavePeer(
 		return err
 	}
 
-	peerId := physicalPeer.GetExtras().(domain.MikrotikPeerExtras).Id
+	oldExtras := physicalPeer.GetExtras().(domain.MikrotikPeerExtras)
+	peerId := oldExtras.Id
+	dynamic := oldExtras.Dynamic
+
 	physicalPeer, err = updateFunc(physicalPeer)
 	if err != nil {
 		return err
 	}
 	newExtras := physicalPeer.GetExtras().(domain.MikrotikPeerExtras)
-	newExtras.Id = peerId // ensure the ID is not changed
+	newExtras.Id = peerId       // ensure the ID is not changed
+	newExtras.Dynamic = dynamic // ensure the dynamic flag is preserved
 	physicalPeer.SetExtras(newExtras)
+
+	if newExtras.Dynamic {
+		slog.Debug("skipping update for dynamic Mikrotik peer", "peer", id, "interface", deviceId)
+		return nil
+	}
 
 	if err := c.updatePeer(ctx, deviceId, physicalPeer); err != nil {
 		return err
@@ -638,7 +644,7 @@ func (c *MikrotikController) getOrCreatePeer(
 	wgReply := c.client.Query(ctx, "/interface/wireguard/peers", &lowlevel.MikrotikRequestOptions{
 		PropList: []string{
 			".id", "name", "public-key", "private-key", "preshared-key", "persistent-keepalive", "client-address",
-			"client-endpoint", "client-keepalive", "allowed-address", "client-dns", "comment", "disabled", "responder",
+			"client-endpoint", "client-keepalive", "allowed-address", "client-dns", "comment", "disabled", "responder", "dynamic",
 		},
 		Filters: map[string]string{
 			"public-key": string(id),
@@ -742,7 +748,7 @@ func (c *MikrotikController) DeletePeer(
 	defer mutex.Unlock()
 
 	wgReply := c.client.Query(ctx, "/interface/wireguard/peers", &lowlevel.MikrotikRequestOptions{
-		PropList: []string{".id"},
+		PropList: []string{".id", "dynamic"},
 		Filters: map[string]string{
 			"public-key": string(id),
 			"interface":  string(deviceId),
@@ -753,6 +759,10 @@ func (c *MikrotikController) DeletePeer(
 	}
 	if len(wgReply.Data) == 0 {
 		return nil // peer does not exist, nothing to delete
+	}
+	if wgReply.Data[0].GetBool("dynamic") {
+		slog.Debug("skipping deletion of dynamic Mikrotik peer", "peer", id, "interface", deviceId)
+		return nil
 	}
 
 	peerId := wgReply.Data[0].GetString(".id")
@@ -769,12 +779,51 @@ func (c *MikrotikController) DeletePeer(
 // region wg-quick-related
 
 func (c *MikrotikController) ExecuteInterfaceHook(
-	_ context.Context,
-	_ domain.InterfaceIdentifier,
-	_ string,
+	ctx context.Context,
+	id domain.InterfaceIdentifier,
+	hookCmd string,
 ) error {
-	// TODO implement me
-	slog.Error("interface hooks are not yet supported for Mikrotik backends, please open an issue on GitHub")
+	if hookCmd == "" {
+		return nil
+	}
+
+	scriptName := fmt.Sprintf("wg-portal-hook-%s-%d", id, time.Now().UnixNano())
+
+	// Replace %i with the interface ID to mimic wg-quick behavior
+	scriptSource := strings.ReplaceAll(hookCmd, "%i", string(id))
+	// Inject the interface ID as a local variable for convenience in RouterOS scripts
+	scriptSource = fmt.Sprintf(":local WGInterface \"%s\";\n%s", id, scriptSource)
+
+	slog.Debug("executing Mikrotik script for interface hook", "interface", id, "script", scriptSource)
+
+	createReply := c.client.Create(ctx, "/system/script", lowlevel.GenericJsonObject{
+		"name":   scriptName,
+		"source": scriptSource,
+		"policy": "ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon",
+	})
+	if createReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("failed to create temporary script for hook: %v", createReply.Error)
+	}
+
+	scriptId := createReply.Data.GetString(".id")
+	if scriptId == "" {
+		scriptId = scriptName
+	}
+
+	defer func() {
+		cleanupReply := c.client.Delete(ctx, "/system/script/"+scriptId)
+		if cleanupReply.Status != lowlevel.MikrotikApiStatusOk {
+			slog.Warn("failed to remove temporary Mikrotik script", "scriptId", scriptId, "error", cleanupReply.Error)
+		}
+	}()
+
+	runReply := c.client.ExecList(ctx, "/system/script/run", lowlevel.GenericJsonObject{
+		"number": scriptId,
+	})
+	if runReply.Status != lowlevel.MikrotikApiStatusOk {
+		return fmt.Errorf("failed to execute hook script %s: %v", scriptName, runReply.Error)
+	}
+
 	return nil
 }
 
@@ -1023,13 +1072,7 @@ func (c *MikrotikController) setRoutesForFamily(
 			continue
 		}
 
-		valid := false
-		for _, cidr := range cidrs {
-			if existingRoute.EqualPrefix(cidr) {
-				valid = true
-				break
-			}
-		}
+		valid := slices.ContainsFunc(cidrs, existingRoute.EqualPrefix)
 		if valid {
 			continue // route is still valid, nothing to do
 		}

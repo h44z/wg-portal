@@ -40,7 +40,9 @@ templates and receive the following data fields, depending on the email type:
   - `PortalName` (string) - site title/company name
   - `User` (*domain.User) - the recipient user (may be partially populated when sending to a peer email)
 - Link email (`mail_with_link.*`):
-  - `Link` (string) - the download link
+  - `Link` (string) - a deep link to the WireGuard Portal web UI that starts the configuration download.
+    Recipients who are not logged in are redirected to the login page first; the download starts automatically
+    once they have authenticated successfully.
 - Attachment email (`mail_with_attachment.*`):
   - `ConfigFileName` (string) - filename of the attached WireGuard config
   - `QrcodePngName` (string) - CID content-id of the embedded QR code image

@@ -152,7 +152,9 @@ async function bulkDisable() {
 
 function toggleSelectAll() {
   peers.FilteredAndPaged.forEach(peer => {
-    peer.IsSelected = selectAll.value;
+    if (!peer.IsDynamic) {
+      peer.IsSelected = selectAll.value;
+    }
   });
 }
 
@@ -445,13 +447,17 @@ onMounted(async () => {
       <tbody>
         <tr v-for="peer in peers.FilteredAndPaged" :key="peer.Identifier">
           <th scope="row">
-            <input class="form-check-input" type="checkbox" v-model="peer.IsSelected">
+            <input class="form-check-input" type="checkbox" v-model="peer.IsSelected" :disabled="peer.IsDynamic" :title="peer.IsDynamic ? $t('interfaces.peer-dynamic-no-edit') : ''">
           </th>
           <td class="text-center">
             <span v-if="peer.Disabled" class="text-danger instant-tip" :data-tip="$t('interfaces.peer-disabled') + ' ' + peer.DisabledReason"><i class="fa fa-circle-xmark"></i></span>
             <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning instant-tip" :data-tip="$t('interfaces.peer-expiring') + ' ' + formatDateTime(peer.ExpiresAt)"><i class="fas fa-hourglass-end expiring-peer"></i></span>
           </td>
-          <td><span v-if="peer.DisplayName" :title="peer.Identifier">{{peer.DisplayName}}</span><span v-else :title="peer.Identifier">{{ $filters.truncate(peer.Identifier, 10)}}</span></td>
+          <td>
+            <span v-if="peer.DisplayName" :title="peer.Identifier">{{peer.DisplayName}}</span>
+            <span v-else :title="peer.Identifier">{{ $filters.truncate(peer.Identifier, 10)}}</span>
+            <span v-if="peer.IsDynamic" class="badge bg-info-subtle text-info-emphasis ms-1 border border-info-subtle" :title="$t('interfaces.peer-dynamic')"><i class="fa-solid fa-robot me-1"></i>{{ $t('interfaces.peer-dynamic') }}</span>
+          </td>
           <td><span :title="peer.UserDisplayName">{{peer.UserIdentifier}}</span></td>
           <td>
             <span v-for="ip in peer.Addresses" :key="ip" class="badge bg-light me-1">{{ ip }}</span>
@@ -475,7 +481,13 @@ onMounted(async () => {
           </td>
           <td class="text-center">
             <a href="#" :title="$t('interfaces.button-show-peer')" @click.prevent="viewedPeerId=peer.Identifier"><i class="fas fa-eye me-2"></i></a>
-            <a href="#" :title="$t('interfaces.button-edit-peer')" @click.prevent="editPeerId=peer.Identifier"><i class="fas fa-cog"></i></a>
+            
+            <span v-if="peer.IsDynamic" :title="$t('interfaces.peer-dynamic-no-edit')" class="text-muted" style="cursor: not-allowed;">
+              <i class="fas fa-cog"></i>
+            </span>
+            <a v-else href="#" :title="$t('interfaces.button-edit-peer')" @click.prevent="editPeerId=peer.Identifier">
+              <i class="fas fa-cog"></i>
+            </a>
           </td>
         </tr>
       </tbody>

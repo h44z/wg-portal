@@ -42,6 +42,7 @@ func (e AuditEndpoint) GetName() string {
 func (e AuditEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/audit")
 	apiGroup.Use(e.authenticator.LoggedIn(ScopeAdmin))
+	apiGroup.Use(e.authenticator.RequireNonDefaultPassword())
 
 	apiGroup.HandleFunc("GET /entries", e.handleEntriesGet())
 }

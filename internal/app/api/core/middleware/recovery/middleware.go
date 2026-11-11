@@ -85,7 +85,7 @@ func addPrefix(o options, message string) string {
 // enabled, the stack trace is included in the response.
 func getDefaultErrCallback(o options) func(err error, stack []byte, w http.ResponseWriter, r *http.Request) {
 	return func(err error, stack []byte, w http.ResponseWriter, r *http.Request) {
-		responseBody := map[string]interface{}{
+		responseBody := map[string]any{
 			"error": "Internal Server Error",
 		}
 		if o.exposeStackTrace && len(stack) > 0 {
@@ -120,8 +120,7 @@ func getDefaultLogCallback(o options) func(error, []byte, bool) {
 }
 
 func isBrokenPipeError(err error) bool {
-	var syscallErr *os.SyscallError
-	if errors.As(err, &syscallErr) {
+	if syscallErr, ok := errors.AsType[*os.SyscallError](err); ok {
 		errMsg := strings.ToLower(syscallErr.Err.Error())
 		if strings.Contains(errMsg, "broken pipe") ||
 			strings.Contains(errMsg, "connection reset by peer") {

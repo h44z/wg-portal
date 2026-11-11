@@ -1,6 +1,6 @@
 # Go parameters
 GOCMD=go
-GOVERSION=1.25
+GOVERSION=1.27
 MODULENAME=github.com/h44z/wg-portal
 GOFILES=$(shell go list ./... | grep -v /vendor/)
 BUILDDIR=dist

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/h44z/wg-portal/internal"
+	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
@@ -15,6 +16,10 @@ type Interface struct {
 	DisplayName string `json:"DisplayName" binding:"omitempty,max=64" example:"My Interface"`
 	// Mode is the interface type, either 'server', 'client' or 'any'. The mode specifies how WireGuard Portal handles peers for this interface.
 	Mode string `json:"Mode" example:"server" binding:"required,oneof=server client any"`
+	// Backend is the configured backend ID used to manage this interface. Omit it on create to use the local backend, or on update to preserve the current backend.
+	Backend *string `json:"Backend,omitempty" example:"local" binding:"omitempty,min=1"`
+	// CreateDefaultPeer enables default peer creation for this interface. Defaults to false when omitted on create; preserves the current setting when omitted on update.
+	CreateDefaultPeer *bool `json:"CreateDefaultPeer,omitempty" example:"false"`
 	// PrivateKey is the private key of the interface.
 	PrivateKey string `json:"PrivateKey" example:"gI6EdUSYvn8ugXOt8QQD6Yc+JyiZxIhp3GInSWRfWGE=" binding:"required,len=44"`
 	// PublicKey is the public key of the server interface. The public key is used by peers to connect to the server.
@@ -90,10 +95,16 @@ type Interface struct {
 }
 
 func NewInterface(src *domain.Interface, peers []domain.Peer) *Interface {
+	backend := string(src.Backend)
+	if backend == "" {
+		backend = config.LocalBackendName
+	}
 	iface := &Interface{
 		Identifier:                 string(src.Identifier),
 		DisplayName:                src.DisplayName,
 		Mode:                       string(src.Type),
+		Backend:                    &backend,
+		CreateDefaultPeer:          new(src.CreateDefaultPeer),
 		PrivateKey:                 src.PrivateKey,
 		PublicKey:                  src.PublicKey,
 		Disabled:                   src.IsDisabled(),
@@ -159,12 +170,10 @@ func NewDomainInterface(src *Interface) *domain.Interface {
 	cidrs, _ := domain.CidrsFromArray(src.Addresses)
 
 	res := &domain.Interface{
-		BaseModel:  domain.BaseModel{},
-		Identifier: domain.InterfaceIdentifier(src.Identifier),
-		KeyPair: domain.KeyPair{
-			PrivateKey: src.PrivateKey,
-			PublicKey:  src.PublicKey,
-		},
+		BaseModel:                  domain.BaseModel{},
+		Identifier:                 domain.InterfaceIdentifier(src.Identifier),
+		PrivateKey:                 src.PrivateKey,
+		PublicKey:                  src.PublicKey,
 		ListenPort:                 src.ListenPort,
 		Addresses:                  cidrs,
 		DnsStr:                     internal.SliceToString(src.Dns),
@@ -199,6 +208,12 @@ func NewDomainInterface(src *Interface) *domain.Interface {
 
 	if src.Disabled {
 		res.Disabled = &now
+	}
+	if src.Backend != nil {
+		res.Backend = domain.InterfaceBackend(*src.Backend)
+	}
+	if src.CreateDefaultPeer != nil {
+		res.CreateDefaultPeer = *src.CreateDefaultPeer
 	}
 
 	return res

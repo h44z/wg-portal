@@ -72,23 +72,23 @@ func (e UserEndpoint) RegisterRoutes(g *routegroup.Bundle) {
 	apiGroup := g.Mount("/user")
 	apiGroup.Use(e.authenticator.LoggedIn())
 
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("GET /all", e.handleAllGet())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin), e.authenticator.RequireNonDefaultPassword()).HandleFunc("GET /all", e.handleAllGet())
 	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("GET /{id}", e.handleSingleGet())
-	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("PUT /{id}", e.handleUpdatePut())
-	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("DELETE /{id}", e.handleDelete())
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /new", e.handleCreatePost())
-	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("GET /{id}/peers", e.handlePeersGet())
-	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("GET /{id}/stats", e.handleStatsGet())
-	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("GET /{id}/interfaces", e.handleInterfacesGet())
-	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/api/enable", e.handleApiEnablePost())
-	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/api/disable", e.handleApiDisablePost())
+	apiGroup.With(e.authenticator.UserIdMatch("id"), e.authenticator.RequireNonDefaultPassword()).HandleFunc("PUT /{id}", e.handleUpdatePut())
+	apiGroup.With(e.authenticator.UserIdMatch("id"), e.authenticator.RequireNonDefaultPassword()).HandleFunc("DELETE /{id}", e.handleDelete())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin), e.authenticator.RequireNonDefaultPassword()).HandleFunc("POST /new", e.handleCreatePost())
+	apiGroup.With(e.authenticator.UserIdMatch("id"), e.authenticator.RequireNonDefaultPassword()).HandleFunc("GET /{id}/peers", e.handlePeersGet())
+	apiGroup.With(e.authenticator.UserIdMatch("id"), e.authenticator.RequireNonDefaultPassword()).HandleFunc("GET /{id}/stats", e.handleStatsGet())
+	apiGroup.With(e.authenticator.UserIdMatch("id"), e.authenticator.RequireNonDefaultPassword()).HandleFunc("GET /{id}/interfaces", e.handleInterfacesGet())
+	apiGroup.With(e.authenticator.UserIdMatch("id"), e.authenticator.RequireNonDefaultPassword()).HandleFunc("POST /{id}/api/enable", e.handleApiEnablePost())
+	apiGroup.With(e.authenticator.UserIdMatch("id"), e.authenticator.RequireNonDefaultPassword()).HandleFunc("POST /{id}/api/disable", e.handleApiDisablePost())
 	apiGroup.With(e.authenticator.UserIdMatch("id")).HandleFunc("POST /{id}/change-password",
 		e.handleChangePasswordPost())
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-delete", e.handleBulkDelete())
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-enable", e.handleBulkEnable())
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-disable", e.handleBulkDisable())
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-lock", e.handleBulkLock())
-	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin)).HandleFunc("POST /bulk-unlock", e.handleBulkUnlock())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin), e.authenticator.RequireNonDefaultPassword()).HandleFunc("POST /bulk-delete", e.handleBulkDelete())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin), e.authenticator.RequireNonDefaultPassword()).HandleFunc("POST /bulk-enable", e.handleBulkEnable())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin), e.authenticator.RequireNonDefaultPassword()).HandleFunc("POST /bulk-disable", e.handleBulkDisable())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin), e.authenticator.RequireNonDefaultPassword()).HandleFunc("POST /bulk-lock", e.handleBulkLock())
+	apiGroup.With(e.authenticator.LoggedIn(ScopeAdmin), e.authenticator.RequireNonDefaultPassword()).HandleFunc("POST /bulk-unlock", e.handleBulkUnlock())
 }
 
 // handleAllGet returns a gorm Handler function.
@@ -125,7 +125,7 @@ func (e UserEndpoint) handleAllGet() http.HandlerFunc {
 // @Router /user/{id} [get]
 func (e UserEndpoint) handleSingleGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
@@ -156,7 +156,7 @@ func (e UserEndpoint) handleSingleGet() http.HandlerFunc {
 // @Router /user/{id} [put]
 func (e UserEndpoint) handleUpdatePut() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
@@ -236,7 +236,7 @@ func (e UserEndpoint) handleCreatePost() http.HandlerFunc {
 // @Router /user/{id}/peers [get]
 func (e UserEndpoint) handlePeersGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -267,7 +267,7 @@ func (e UserEndpoint) handlePeersGet() http.HandlerFunc {
 // @Router /user/{id}/stats [get]
 func (e UserEndpoint) handleStatsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -298,7 +298,7 @@ func (e UserEndpoint) handleStatsGet() http.HandlerFunc {
 // @Router /user/{id}/interfaces [get]
 func (e UserEndpoint) handleInterfacesGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -329,7 +329,7 @@ func (e UserEndpoint) handleInterfacesGet() http.HandlerFunc {
 // @Router /user/{id} [delete]
 func (e UserEndpoint) handleDelete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := Base64UrlDecode(request.Path(r, "id"))
+		id := domain.Base64UrlDecode(request.Path(r, "id"))
 		if id == "" {
 			respond.JSON(w, http.StatusBadRequest, model.Error{Code: http.StatusBadRequest, Message: "missing user id"})
 			return
@@ -358,7 +358,7 @@ func (e UserEndpoint) handleDelete() http.HandlerFunc {
 // @Router /user/{id}/api/enable [post]
 func (e UserEndpoint) handleApiEnablePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -388,7 +388,7 @@ func (e UserEndpoint) handleApiEnablePost() http.HandlerFunc {
 // @Router /user/{id}/api/disable [post]
 func (e UserEndpoint) handleApiDisablePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})
@@ -418,7 +418,7 @@ func (e UserEndpoint) handleApiDisablePost() http.HandlerFunc {
 // @Router /user/{id}/change-password [post]
 func (e UserEndpoint) handleChangePasswordPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := Base64UrlDecode(request.Path(r, "id"))
+		userId := domain.Base64UrlDecode(request.Path(r, "id"))
 		if userId == "" {
 			respond.JSON(w, http.StatusBadRequest,
 				model.Error{Code: http.StatusInternalServerError, Message: "missing id parameter"})

@@ -56,6 +56,8 @@ type Peer struct {
 
 	// Interface settings for the peer, used to generate the [interface] section in the peer config file
 	Interface PeerInterfaceConfig `gorm:"embedded"`
+
+	IsDynamic bool `gorm:"column:is_dynamic;default:false"` // specifies if the peer is a dynamic object (from Mikrotik)
 }
 
 func (p *Peer) IsDisabled() bool {
@@ -241,7 +243,8 @@ func (p *PhysicalPeer) SetExtras(extras any) {
 	case MikrotikPeerExtras: // OK
 	case LocalPeerExtras: // OK
 	case PfsensePeerExtras: // OK
-	default: // we only support MikrotikPeerExtras, LocalPeerExtras, and PfsensePeerExtras for now
+	case OpnsensePeerExtras: // OK
+	default: // we only support Mikrotik, Local, Pfsense and Opnsense peer extras for now
 		panic(fmt.Sprintf("unsupported peer backend extras type %T", extras))
 	}
 
@@ -264,6 +267,7 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 		Interface: PeerInterfaceConfig{
 			KeyPair: pp.KeyPair,
 		},
+		IsDynamic: false,
 	}
 
 	if pp.GetExtras() == nil {
@@ -277,6 +281,7 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 		extras := pp.GetExtras().(MikrotikPeerExtras)
 		peer.Notes = extras.Comment
 		peer.DisplayName = extras.Name
+		peer.IsDynamic = extras.Dynamic
 		if extras.ClientEndpoint != "" { // if the client endpoint is set, we assume that this is a client peer
 			peer.Endpoint = NewConfigOption(extras.ClientEndpoint, true)
 			peer.Interface.Type = InterfaceTypeClient
@@ -318,6 +323,26 @@ func ConvertPhysicalPeer(pp *PhysicalPeer) *Peer {
 		if extras.Disabled {
 			peer.Disabled = &now
 			peer.DisabledReason = "Disabled by pfSense controller"
+		} else {
+			peer.Disabled = nil
+			peer.DisabledReason = ""
+		}
+	case ControllerTypeOpnsense:
+		extras := pp.GetExtras().(OpnsensePeerExtras)
+		peer.Notes = extras.Comment
+		peer.DisplayName = extras.Name
+		if extras.ClientEndpoint != "" { // if the client endpoint is set, we assume that this is a client peer
+			peer.Endpoint = NewConfigOption(extras.ClientEndpoint, true)
+			peer.Interface.Type = InterfaceTypeClient
+			peer.Interface.Addresses, _ = CidrsFromString(extras.ClientAddress)
+			peer.Interface.DnsStr = NewConfigOption(extras.ClientDns, true)
+			peer.PersistentKeepalive = NewConfigOption(extras.ClientKeepalive, true)
+		} else {
+			peer.Interface.Type = InterfaceTypeServer
+		}
+		if extras.Disabled {
+			peer.Disabled = &now
+			peer.DisabledReason = "Disabled by OPNsense controller"
 		} else {
 			peer.Disabled = nil
 			peer.DisabledReason = ""
@@ -369,6 +394,7 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 			ClientAddress:   CidrsToString(p.Interface.Addresses),
 			ClientDns:       p.Interface.DnsStr.GetValue(),
 			ClientKeepalive: p.PersistentKeepalive.GetValue(),
+			Dynamic:         p.IsDynamic,
 		}
 		pp.SetExtras(extras)
 	case ControllerTypeLocal:
@@ -386,6 +412,22 @@ func MergeToPhysicalPeer(pp *PhysicalPeer, p *Peer) {
 			ClientAddress:   CidrsToString(p.Interface.Addresses),
 			ClientDns:       p.Interface.DnsStr.GetValue(),
 			ClientKeepalive: p.PersistentKeepalive.GetValue(),
+		}
+		pp.SetExtras(extras)
+	case ControllerTypeOpnsense:
+		extras := OpnsensePeerExtras{
+			Name:            p.DisplayName,
+			Comment:         p.Notes,
+			Disabled:        p.IsDisabled(),
+			ClientEndpoint:  p.Endpoint.GetValue(),
+			ClientAddress:   CidrsToString(p.Interface.Addresses),
+			ClientDns:       p.Interface.DnsStr.GetValue(),
+			ClientKeepalive: p.PersistentKeepalive.GetValue(),
+		}
+		// The UUID identifies the existing OPNsense client; losing it here would
+		// turn every update into a duplicate create.
+		if existing, ok := pp.GetExtras().(OpnsensePeerExtras); ok {
+			extras.Uuid = existing.Uuid
 		}
 		pp.SetExtras(extras)
 	}

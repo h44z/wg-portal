@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { notify } from "@kyvg/vue3-notification";
 import { apiWrapper } from '@/helpers/fetch-wrapper'
 import { websocketWrapper } from '@/helpers/websocket-wrapper'
-import router from '../router'
+import router, { publicPages } from '../router'
 import { browserSupportsWebAuthn,startRegistration,startAuthentication } from '@simplewebauthn/browser';
 import {base64_url_encode} from "@/helpers/encoding";
 
@@ -15,6 +15,9 @@ export const authStore = defineStore('auth',{
         returnUrl: localStorage.getItem('returnUrl'),
         webAuthnCredentials: [],
         fetching: false,
+        sessionChecked: false,
+        sessionPromise: null,
+        defaultPasswordInUse: JSON.parse(localStorage.getItem('user'))?.DefaultPasswordInUse || false,
     }),
     getters: {
         UserIdentifier: (state) => state.user?.Identifier || 'unknown',
@@ -22,6 +25,7 @@ export const authStore = defineStore('auth',{
         LoginProviders: (state) => state.providers,
         IsAuthenticated: (state) => state.user != null,
         IsAdmin: (state) => state.user?.IsAdmin || false,
+        DefaultPasswordInUse: (state) => state.defaultPasswordInUse || false,
         ReturnUrl: (state) => state.returnUrl || '/',
         IsWebAuthnEnabled: (state) => {
             if (state.webAuthnCredentials) {
@@ -55,12 +59,29 @@ export const authStore = defineStore('auth',{
                 })
         },
 
+        // EnsureSession returns a promise that resolves if session is already checked or starts loading it once.
+        async EnsureSession() {
+            if (this.sessionChecked) {
+                if (this.user) {
+                    return this.user.Identifier
+                }
+                return Promise.reject(new Error('session not authenticated'))
+            }
+            if (this.sessionPromise) {
+                return this.sessionPromise
+            }
+            this.sessionPromise = this.LoadSession().finally(() => {
+                this.sessionPromise = null
+            })
+            return this.sessionPromise
+        },
+
         // LoadSession returns promise that might have been rejected if the session was not authenticated.
         async LoadSession() {
             return apiWrapper.get(`/auth/session`)
                 .then(session => {
+                    this.sessionChecked = true
                     if (session.LoggedIn === true) {
-                        this.ResetReturnUrl()
                         this.setUserInfo(session)
                         return session.UserIdentifier
                     } else {
@@ -69,6 +90,7 @@ export const authStore = defineStore('auth',{
                     }
                 })
                 .catch(err => {
+                    this.sessionChecked = true
                     this.setUserInfo(null)
                     return Promise.reject(err)
                 })
@@ -94,7 +116,10 @@ export const authStore = defineStore('auth',{
         async Login(username, password) {
             return apiWrapper.post(`/auth/login`, { username, password })
                 .then(user =>  {
-                    this.ResetReturnUrl()
+                    if (!user || !user.Identifier) {
+                        this.setUserInfo(null)
+                        return Promise.reject(new Error("login failed"))
+                    }
                     this.setUserInfo(user)
                     return user.Identifier
                 })
@@ -104,9 +129,19 @@ export const authStore = defineStore('auth',{
                     return Promise.reject(new Error("login failed"))
                 })
         },
+        HandleUnauthorized() {
+            this.setUserInfo(null)
+            this.sessionChecked = true
+            const currentRoute = router.currentRoute.value
+            if (currentRoute && !publicPages.includes(currentRoute.path)) {
+                this.SetReturnUrl(currentRoute.fullPath)
+            }
+            router.push('/login')
+        },
         async Logout() {
             this.setUserInfo(null)
             this.ResetReturnUrl() // just to be sure^^
+            this.sessionChecked = true
 
             let logoutResponse = null
             try {
@@ -259,8 +294,11 @@ export const authStore = defineStore('auth',{
                         console.log("Finishing WebAuthn login ...")
                         return apiWrapper.post(`/auth/webauthn/login/finish`, asseResp)
                             .then(user =>  {
+                                if (!user || !user.Identifier) {
+                                    this.setUserInfo(null)
+                                    return Promise.reject(new Error("login failed"))
+                                }
                                 console.log("Passkey login finished successfully for user:", user.Identifier)
-                                this.ResetReturnUrl()
                                 this.setUserInfo(user)
                                 return user.Identifier
                             })
@@ -281,31 +319,55 @@ export const authStore = defineStore('auth',{
                     return Promise.reject(new Error("login failed"))
                 })
         },
+        SetDefaultPasswordInUse(inUse) {
+            this.defaultPasswordInUse = inUse;
+            if (this.user) {
+                this.user.DefaultPasswordInUse = inUse;
+                localStorage.setItem('user', JSON.stringify(this.user));
+                if (inUse) {
+                    websocketWrapper.disconnect();
+                } else {
+                    websocketWrapper.connect();
+                }
+            }
+        },
         // -- internal setters
         setUserInfo(userInfo) {
             // store user details and jwt in local storage to keep user logged in between page refreshes
-            if (userInfo) {
-                if ('UserIdentifier' in userInfo) { // session object
+            if (userInfo && (userInfo.Identifier || userInfo.UserIdentifier)) {
+                const defaultPw = !!userInfo['DefaultPasswordInUse'];
+                this.defaultPasswordInUse = defaultPw;
+                if ('UserIdentifier' in userInfo && userInfo.UserIdentifier) { // session object
                     this.user = {
                         Identifier: userInfo['UserIdentifier'],
-                        Firstname: userInfo['UserFirstname'],
-                        Lastname: userInfo['UserLastname'],
-                        Email: userInfo['UserEmail'],
-                        IsAdmin: userInfo['IsAdmin']
+                        Firstname: userInfo['UserFirstname'] || '',
+                        Lastname: userInfo['UserLastname'] || '',
+                        Email: userInfo['UserEmail'] || '',
+                        IsAdmin: userInfo['IsAdmin'] || false,
+                        DefaultPasswordInUse: defaultPw
                     }
-                } else { // user object
+                } else if ('Identifier' in userInfo && userInfo.Identifier) { // user object
                     this.user = {
                         Identifier: userInfo['Identifier'],
-                        Firstname: userInfo['Firstname'],
-                        Lastname: userInfo['Lastname'],
-                        Email: userInfo['Email'],
-                        IsAdmin: userInfo['IsAdmin']
+                        Firstname: userInfo['Firstname'] || '',
+                        Lastname: userInfo['Lastname'] || '',
+                        Email: userInfo['Email'] || '',
+                        IsAdmin: userInfo['IsAdmin'] || false,
+                        DefaultPasswordInUse: defaultPw
                     }
+                } else {
+                    this.user = null
+                    this.defaultPasswordInUse = false
                 }
+            } else {
+                this.user = null
+                this.defaultPasswordInUse = false
+            }
+
+            if (this.user) {
                 localStorage.setItem('user', JSON.stringify(this.user))
                 websocketWrapper.connect()
             } else {
-                this.user = null
                 localStorage.removeItem('user')
                 websocketWrapper.disconnect()
             }
