@@ -7,13 +7,14 @@ import (
 	"github.com/h44z/wg-portal/internal/domain"
 )
 
-const ExpiryDateTimeLayout = "\"2006-01-02\""
+// ExpiryDateTimeLayout is the (quoted) JSON layout of peer expiry dates: RFC3339, time-of-day is preserved.
+const ExpiryDateTimeLayout = "\"" + time.RFC3339 + "\""
 
 type ExpiryDate struct {
 	*time.Time
 }
 
-// UnmarshalJSON will unmarshal using 2006-01-02 layout
+// UnmarshalJSON will unmarshal using the RFC3339 layout
 func (d *ExpiryDate) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 || string(b) == "null" || string(b) == "\"\"" {
 		return nil
@@ -29,7 +30,7 @@ func (d *ExpiryDate) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON will marshal using 2006-01-02 layout
+// MarshalJSON will marshal using the RFC3339 layout
 func (d *ExpiryDate) MarshalJSON() ([]byte, error) {
 	if d == nil || d.Time == nil {
 		return []byte("null"), nil
@@ -47,6 +48,7 @@ type Peer struct {
 	InterfaceIdentifier string     `json:"InterfaceIdentifier"`                  // the interface id
 	Disabled            bool       `json:"Disabled"`                             // flag that specifies if the peer is enabled (up) or not (down)
 	DisabledReason      string     `json:"DisabledReason"`                       // the reason why the peer has been disabled
+	CreatedAt           string     `json:"CreatedAt"`                            // peer creation timestamp
 	ExpiresAt           ExpiryDate `json:"ExpiresAt"`                            // expiry dates for peers
 	Notes               string     `json:"Notes"`                                // a note field for peers
 	IsDynamic           bool       `json:"IsDynamic"`                            // specifies if the peer is dynamically created by mikrotik
@@ -89,6 +91,7 @@ func NewPeer(src *domain.Peer) *Peer {
 		InterfaceIdentifier: string(src.InterfaceIdentifier),
 		Disabled:            src.IsDisabled(),
 		DisabledReason:      src.DisabledReason,
+		CreatedAt:           src.CreatedAt.UTC().Format(time.RFC3339),
 		ExpiresAt:           ExpiryDate{src.ExpiresAt},
 		Notes:               src.Notes,
 		IsDynamic:           src.IsDynamic,

@@ -168,7 +168,9 @@
     "peer-not-connected": "Not Connected",
     "peer-handshake": "Last handshake:",
     "peer-dynamic": "Dynamic Peer",
-    "peer-dynamic-no-edit": "This peer is dynamically created and cannot be edited or deleted."
+    "peer-dynamic-no-edit": "This peer is dynamically created and cannot be edited or deleted.",
+    "button-hide-disabled": "Hide disabled peers",
+    "button-show-disabled": "Show disabled peers ({count})"
   },
   "users": {
     "headline": "User Administration",
@@ -207,7 +209,8 @@
       "name": "Name",
       "ip": "IP's",
       "stats": "Status",
-      "interface": "Server Interface"
+      "interface": "Server Interface",
+      "expires": "Expires"
     },
     "no-peer": {
       "headline": "No peers available",
@@ -216,7 +219,8 @@
     "peer-connected": "Connected",
     "button-add-peer": "Add Peer",
     "button-show-peer": "Show Peer",
-    "button-edit-peer": "Edit Peer"
+    "button-edit-peer": "Edit Peer",
+    "no-expiry": "No expiry"
   },
   "settings": {
     "headline": "Settings",
@@ -551,6 +555,8 @@
       "user": "Associated User",
       "notes": "Notes",
       "expiry-status": "Expires At",
+      "created-at": "Created At",
+      "no-expiry": "No expiry",
       "disabled-status": "Disabled At",
       "traffic": "Traffic",
       "connection-status": "Connection Stats",

@@ -91,19 +91,19 @@ func main() {
 	webAuthn, err := auth.NewWebAuthnAuthenticator(cfg, eventBus, userManager)
 	internal.AssertNoError(err)
 
-	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, database)
+	cfgFileManager, err := configfile.NewConfigFileManager(cfg, eventBus, database, database, cfgFileSystem)
+	internal.AssertNoError(err)
+
+	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)
+	internal.AssertNoError(err)
+
+	wireGuardManager, err := wireguard.NewWireGuardManager(cfg, eventBus, wireGuard, database, database, mailManager)
 	internal.AssertNoError(err)
 	wireGuardManager.StartBackgroundJobs(ctx)
 
 	statisticsCollector, err := wireguard.NewStatisticsCollector(cfg, eventBus, database, wireGuard, metricsServer)
 	internal.AssertNoError(err)
 	statisticsCollector.StartBackgroundJobs(ctx)
-
-	cfgFileManager, err := configfile.NewConfigFileManager(cfg, eventBus, database, database, cfgFileSystem)
-	internal.AssertNoError(err)
-
-	mailManager, err := mail.NewMailManager(cfg, mailer, cfgFileManager, database, database)
-	internal.AssertNoError(err)
 
 	routeManager, err := route.NewRouteManager(cfg, eventBus, database, wireGuard)
 	internal.AssertNoError(err)

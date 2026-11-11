@@ -127,7 +127,9 @@
     "peer-not-connected": "未连接",
     "peer-handshake": "最后一次握手: ",
     "peer-dynamic": "动态对等节点",
-    "peer-dynamic-no-edit": "此对等节点是动态创建的，无法编辑或删除。"
+    "peer-dynamic-no-edit": "此对等节点是动态创建的，无法编辑或删除。",
+    "button-hide-disabled": "隐藏已禁用的节点",
+    "button-show-disabled": "显示已禁用的节点 ({count})"
   },
   "users": {
     "headline": "用户管理",
@@ -158,7 +160,8 @@
       "name": "名称",
       "ip": "IP 地址",
       "stats": "状态",
-      "interface": "服务器接口"
+      "interface": "服务器接口",
+      "expires": "过期时间"
     },
     "no-peer": {
       "headline": "没有可用节点",
@@ -167,7 +170,8 @@
     "peer-connected": "已连接",
     "button-add-peer": "添加节点",
     "button-show-peer": "显示节点",
-    "button-edit-peer": "编辑节点"
+    "button-edit-peer": "编辑节点",
+    "no-expiry": "无过期时间"
   },
   "modals": {
     "user-view": {
@@ -381,7 +385,9 @@
       "connected-since": "首次成功连接",
       "endpoint": "节点地址",
       "button-download": "下载配置",
-      "button-email": "通过电子邮件发送配置"
+      "button-email": "通过电子邮件发送配置",
+      "created-at": "创建时间",
+      "no-expiry": "无过期时间"
     },
     "peer-edit": {
       "headline-edit-peer": "编辑节点: ",

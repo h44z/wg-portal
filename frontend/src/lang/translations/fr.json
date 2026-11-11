@@ -128,7 +128,9 @@
     "peer-not-connected": "Non connecté",
     "peer-handshake": "Dernière négociation :",
     "peer-dynamic": "Peer dynamique",
-    "peer-dynamic-no-edit": "Ce peer est créé dynamiquement et ne peut être ni modifié ni supprimé."
+    "peer-dynamic-no-edit": "Ce peer est créé dynamiquement et ne peut être ni modifié ni supprimé.",
+    "button-hide-disabled": "Masquer les pairs désactivés",
+    "button-show-disabled": "Afficher les pairs désactivés ({count})"
   },
   "users": {
     "headline": "Administration des utilisateurs",
@@ -159,7 +161,8 @@
       "name": "Nom",
       "ip": "IP",
       "stats": "Statut",
-      "interface": "Interface serveur"
+      "interface": "Interface serveur",
+      "expires": "Expire"
     },
     "no-peer": {
       "headline": "Aucun pair disponible",
@@ -168,7 +171,8 @@
     "peer-connected": "Connecté",
     "button-add-peer": "Ajouter un pair",
     "button-show-peer": "Afficher le pair",
-    "button-edit-peer": "Modifier le pair"
+    "button-edit-peer": "Modifier le pair",
+    "no-expiry": "Pas d'expiration"
   },
   "settings": {
     "headline": "Paramètres",
@@ -393,6 +397,8 @@
       "user": "Utilisateur associé",
       "notes": "Notes",
       "expiry-status": "Expire le",
+      "created-at": "Créé le",
+      "no-expiry": "Pas d'expiration",
       "disabled-status": "Désactivé le",
       "traffic": "Trafic",
       "connection-status": "Statistiques de connexion",

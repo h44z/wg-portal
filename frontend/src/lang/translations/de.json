@@ -168,7 +168,9 @@
     "peer-not-connected": "Nicht verbunden",
     "peer-handshake": "Letzter Handshake:",
     "peer-dynamic": "Dynamischer Peer",
-    "peer-dynamic-no-edit": "Dieser Peer wurde dynamisch erstellt und kann nicht bearbeitet oder gelöscht werden."
+    "peer-dynamic-no-edit": "Dieser Peer wurde dynamisch erstellt und kann nicht bearbeitet oder gelöscht werden.",
+    "button-hide-disabled": "Deaktivierte Peers ausblenden",
+    "button-show-disabled": "Deaktivierte Peers anzeigen ({count})"
   },
   "users": {
     "headline": "Benutzerverwaltung",
@@ -207,7 +209,8 @@
       "name": "Name",
       "ip": "IP's",
       "stats": "Status",
-      "interface": "Server-Schnittstelle"
+      "interface": "Server-Schnittstelle",
+      "expires": "Läuft ab"
     },
     "no-peer": {
       "headline": "Keine Peers verfügbar",
@@ -216,7 +219,8 @@
     "peer-connected": "Verbunden",
     "button-add-peer": "Peer hinzufügen",
     "button-show-peer": "Peer anzeigen",
-    "button-edit-peer": "Peer bearbeiten"
+    "button-edit-peer": "Peer bearbeiten",
+    "no-expiry": "Kein Ablaufdatum"
   },
   "settings": {
     "headline": "Einstellungen",
@@ -551,6 +555,8 @@
       "user": "Zugeordneter Benutzer",
       "notes": "Notizen",
       "expiry-status": "Läuft ab am",
+      "created-at": "Erstellt am",
+      "no-expiry": "Kein Ablaufdatum",
       "disabled-status": "Deaktiviert am",
       "traffic": "Datenverkehr",
       "connection-status": "Verbindungsstatistiken",

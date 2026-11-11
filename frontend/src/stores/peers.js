@@ -17,6 +17,7 @@ export const peerStore = defineStore('peers', {
     prepared: freshPeer(),
     configuration: "",
     filter: "",
+    showDisabled: localStorage.getItem('wgShowDisabledPeers') !== 'false', // shown by default
     pageSize: 10,
     pageOffset: 0,
     fetching: false,
@@ -34,13 +35,15 @@ export const peerStore = defineStore('peers', {
     FilteredCount: (state) => state.Filtered.length,
     All: (state) => state.peers,
     Filtered: (state) => {
+      const visible = state.showDisabled ? state.peers : state.peers.filter((p) => !p.Disabled)
       if (!state.filter) {
-        return state.peers
+        return visible
       }
-      return state.peers.filter((p) => {
+      return visible.filter((p) => {
         return p.DisplayName.includes(state.filter) || p.Identifier.includes(state.filter)
       })
     },
+    DisabledCount: (state) => state.peers.filter((p) => p.Disabled).length,
     Sorted: (state) => {
       return state.Filtered.slice().sort((a, b) => {
         let aValue = a[state.sortKey];
@@ -83,6 +86,15 @@ export const peerStore = defineStore('peers', {
 
   },
   actions: {
+    toggleShowDisabled() {
+      this.showDisabled = !this.showDisabled
+      localStorage.setItem('wgShowDisabledPeers', String(this.showDisabled))
+      if (!this.showDisabled) {
+        // hidden peers must not stay selected, otherwise bulk actions would affect invisible peers
+        this.peers.forEach((p) => { if (p.Disabled) p.IsSelected = false })
+      }
+      this.afterPageSizeChange()
+    },
     afterPageSizeChange() {
       // reset pageOffset to avoid problems with new page sizes
       this.pageOffset = 0

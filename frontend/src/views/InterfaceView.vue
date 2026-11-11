@@ -12,6 +12,7 @@ import {interfaceStore} from "@/stores/interfaces";
 import {notify} from "@kyvg/vue3-notification";
 import {settingsStore} from "@/stores/settings";
 import {humanFileSize} from '@/helpers/utils';
+import {formatDateTime} from '@/helpers/utils';
 import {useI18n} from "vue-i18n";
 
 const settings = settingsStore()
@@ -417,7 +418,15 @@ onMounted(async () => {
         <th scope="col">
           <input class="form-check-input" :title="$t('general.select-all')" type="checkbox" v-model="selectAll" @change="toggleSelectAll">
         </th><!-- select -->
-        <th scope="col"></th><!-- status -->
+        <th scope="col" class="text-center"><!-- status -->
+          <a v-if="peers.DisabledCount > 0" href="#" class="instant-tip instant-tip-below text-body" role="button"
+             :aria-pressed="!peers.showDisabled"
+             :aria-label="peers.showDisabled ? $t('interfaces.button-hide-disabled') : $t('interfaces.button-show-disabled', {count: peers.DisabledCount})"
+             :data-tip="peers.showDisabled ? $t('interfaces.button-hide-disabled') : $t('interfaces.button-show-disabled', {count: peers.DisabledCount})"
+             @click.prevent="peers.toggleShowDisabled()">
+            <i class="fa" :class="peers.showDisabled ? 'fa-eye' : 'fa-eye-slash'"></i>
+          </a>
+        </th>
         <th scope="col" @click="sortBy('DisplayName')">
           {{ $t("interfaces.table-heading.name") }}
           <i v-if="sortKey === 'DisplayName'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>
@@ -449,8 +458,8 @@ onMounted(async () => {
             <input class="form-check-input" type="checkbox" v-model="peer.IsSelected" :disabled="peer.IsDynamic" :title="peer.IsDynamic ? $t('interfaces.peer-dynamic-no-edit') : ''">
           </th>
           <td class="text-center">
-            <span v-if="peer.Disabled" class="text-danger" :title="$t('interfaces.peer-disabled') + ' ' + peer.DisabledReason"><i class="fa fa-circle-xmark"></i></span>
-            <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning" :title="$t('interfaces.peer-expiring') + ' ' +  peer.ExpiresAt"><i class="fas fa-hourglass-end expiring-peer"></i></span>
+            <span v-if="peer.Disabled" class="text-danger instant-tip" :data-tip="$t('interfaces.peer-disabled') + ' ' + peer.DisabledReason"><i class="fa fa-circle-xmark"></i></span>
+            <span v-if="!peer.Disabled && peer.ExpiresAt" class="text-warning instant-tip" :data-tip="$t('interfaces.peer-expiring') + ' ' + formatDateTime(peer.ExpiresAt)"><i class="fas fa-hourglass-end expiring-peer"></i></span>
           </td>
           <td>
             <span v-if="peer.DisplayName" :title="peer.Identifier">{{peer.DisplayName}}</span>

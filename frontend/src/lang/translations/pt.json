@@ -130,7 +130,9 @@
     "peer-not-connected": "Não Conectado",
     "peer-handshake": "Último handshake:",
     "peer-dynamic": "Peer Dinâmico",
-    "peer-dynamic-no-edit": "Este peer é criado dinamicamente e não pode ser editado ou excluído."
+    "peer-dynamic-no-edit": "Este peer é criado dinamicamente e não pode ser editado ou excluído.",
+    "button-hide-disabled": "Ocultar peers desativados",
+    "button-show-disabled": "Mostrar peers desativados ({count})"
   },
   "users": {
     "headline": "Administração de Utilizadores",
@@ -161,7 +163,8 @@
       "name": "Nome",
       "ip": "IPs",
       "stats": "Status",
-      "interface": "Interface do Servidor"
+      "interface": "Interface do Servidor",
+      "expires": "Expira"
     },
     "no-peer": {
       "headline": "Nenhum peer disponível",
@@ -170,7 +173,8 @@
     "peer-connected": "Conectado",
     "button-add-peer": "Adicionar Peer",
     "button-show-peer": "Mostrar Peer",
-    "button-edit-peer": "Editar Peer"
+    "button-edit-peer": "Editar Peer",
+    "no-expiry": "Sem expiração"
   },
   "settings": {
     "headline": "Definições",
@@ -431,6 +435,8 @@
       "user": "Utilizador Associado",
       "notes": "Notas",
       "expiry-status": "Expira em",
+      "created-at": "Criado em",
+      "no-expiry": "Sem expiração",
       "disabled-status": "Desativado em",
       "traffic": "Tráfego",
       "connection-status": "Estatísticas de Conexão",
