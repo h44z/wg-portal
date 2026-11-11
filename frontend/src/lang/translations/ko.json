@@ -129,7 +129,9 @@
     "peer-not-connected": "연결되지 않음",
     "peer-handshake": "마지막 핸드셰이크:",
     "peer-dynamic": "동적 피어",
-    "peer-dynamic-no-edit": "이 피어는 동적으로 생성되었으며 편집하거나 삭제할 수 없습니다."
+    "peer-dynamic-no-edit": "이 피어는 동적으로 생성되었으며 편집하거나 삭제할 수 없습니다.",
+    "button-hide-disabled": "비활성화된 피어 숨기기",
+    "button-show-disabled": "비활성화된 피어 표시 ({count})"
   },
   "users": {
     "headline": "사용자 관리",

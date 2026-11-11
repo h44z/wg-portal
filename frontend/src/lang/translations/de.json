@@ -168,7 +168,9 @@
     "peer-not-connected": "Nicht verbunden",
     "peer-handshake": "Letzter Handshake:",
     "peer-dynamic": "Dynamischer Peer",
-    "peer-dynamic-no-edit": "Dieser Peer wurde dynamisch erstellt und kann nicht bearbeitet oder gelöscht werden."
+    "peer-dynamic-no-edit": "Dieser Peer wurde dynamisch erstellt und kann nicht bearbeitet oder gelöscht werden.",
+    "button-hide-disabled": "Deaktivierte Peers ausblenden",
+    "button-show-disabled": "Deaktivierte Peers anzeigen ({count})"
   },
   "users": {
     "headline": "Benutzerverwaltung",

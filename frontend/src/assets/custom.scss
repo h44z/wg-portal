@@ -36,5 +36,17 @@ $web-font-path: false;
     white-space: nowrap;
     z-index: 1080;
     pointer-events: none;
+    // do not inherit table header styling (uppercase, letter spacing, bold)
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: normal;
+  }
+  // show the tooltip below the element, e.g. in table headers where the space above
+  // is clipped by the .table-responsive overflow container
+  &.instant-tip-below:hover::after {
+    bottom: auto;
+    top: 100%;
+    margin-bottom: 0;
+    margin-top: 4px;
   }
 }

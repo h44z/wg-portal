@@ -168,7 +168,9 @@
     "peer-not-connected": "Not Connected",
     "peer-handshake": "Last handshake:",
     "peer-dynamic": "Dynamic Peer",
-    "peer-dynamic-no-edit": "This peer is dynamically created and cannot be edited or deleted."
+    "peer-dynamic-no-edit": "This peer is dynamically created and cannot be edited or deleted.",
+    "button-hide-disabled": "Hide disabled peers",
+    "button-show-disabled": "Show disabled peers ({count})"
   },
   "users": {
     "headline": "User Administration",

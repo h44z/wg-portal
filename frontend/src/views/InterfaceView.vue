@@ -418,7 +418,15 @@ onMounted(async () => {
         <th scope="col">
           <input class="form-check-input" :title="$t('general.select-all')" type="checkbox" v-model="selectAll" @change="toggleSelectAll">
         </th><!-- select -->
-        <th scope="col"></th><!-- status -->
+        <th scope="col" class="text-center"><!-- status -->
+          <a v-if="peers.DisabledCount > 0" href="#" class="instant-tip instant-tip-below text-body" role="button"
+             :aria-pressed="!peers.showDisabled"
+             :aria-label="peers.showDisabled ? $t('interfaces.button-hide-disabled') : $t('interfaces.button-show-disabled', {count: peers.DisabledCount})"
+             :data-tip="peers.showDisabled ? $t('interfaces.button-hide-disabled') : $t('interfaces.button-show-disabled', {count: peers.DisabledCount})"
+             @click.prevent="peers.toggleShowDisabled()">
+            <i class="fa" :class="peers.showDisabled ? 'fa-eye' : 'fa-eye-slash'"></i>
+          </a>
+        </th>
         <th scope="col" @click="sortBy('DisplayName')">
           {{ $t("interfaces.table-heading.name") }}
           <i v-if="sortKey === 'DisplayName'" :class="sortOrder === 1 ? 'asc' : 'desc'"></i>

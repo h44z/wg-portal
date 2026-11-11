@@ -127,7 +127,9 @@
     "peer-not-connected": "Chưa kết nối",
     "peer-handshake": "Lần bắt tay cuối cùng:",
     "peer-dynamic": "Peer động",
-    "peer-dynamic-no-edit": "Peer này được tạo động và không thể chỉnh sửa hoặc xóa."
+    "peer-dynamic-no-edit": "Peer này được tạo động và không thể chỉnh sửa hoặc xóa.",
+    "button-hide-disabled": "Ẩn các peer bị vô hiệu hóa",
+    "button-show-disabled": "Hiện các peer bị vô hiệu hóa ({count})"
   },
   "users": {
     "headline": "Quản trị Người dùng",

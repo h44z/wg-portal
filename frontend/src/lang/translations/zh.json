@@ -127,7 +127,9 @@
     "peer-not-connected": "未连接",
     "peer-handshake": "最后一次握手: ",
     "peer-dynamic": "动态对等节点",
-    "peer-dynamic-no-edit": "此对等节点是动态创建的，无法编辑或删除。"
+    "peer-dynamic-no-edit": "此对等节点是动态创建的，无法编辑或删除。",
+    "button-hide-disabled": "隐藏已禁用的节点",
+    "button-show-disabled": "显示已禁用的节点 ({count})"
   },
   "users": {
     "headline": "用户管理",

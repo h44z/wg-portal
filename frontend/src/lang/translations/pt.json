@@ -130,7 +130,9 @@
     "peer-not-connected": "Não Conectado",
     "peer-handshake": "Último handshake:",
     "peer-dynamic": "Peer Dinâmico",
-    "peer-dynamic-no-edit": "Este peer é criado dinamicamente e não pode ser editado ou excluído."
+    "peer-dynamic-no-edit": "Este peer é criado dinamicamente e não pode ser editado ou excluído.",
+    "button-hide-disabled": "Ocultar peers desativados",
+    "button-show-disabled": "Mostrar peers desativados ({count})"
   },
   "users": {
     "headline": "Administração de Utilizadores",
