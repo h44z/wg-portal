@@ -109,6 +109,62 @@ auth:
         user_groups: "groups"
 ```
 
+#### Restricting Interfaces by User Group
+
+You can restrict which users are allowed to provision peers for specific WireGuard interfaces by setting the `interface_filter` property for OAuth2 or OIDC providers.
+This property is a map where each key corresponds to a WireGuard interface identifier, and the value is a regular expression.
+The regular expression is matched against every entry of the user's `user_groups` claim, the same way as `admin_group_regex`.
+A user will only be able to see and provision peers for an interface if at least one of their groups matches.
+
+To use this feature, ensure your group claim is mapped via `field_map.user_groups`.
+
+```yaml
+auth:
+  oidc:
+    - provider_name: "oidc1"
+      # ... other settings
+      field_map:
+        user_groups: "groups"
+      interface_filter:
+        wg0: "^vpn-users$"
+        wg1: "^(vpn-admins|network-team)$"
+```
+
+The filter is evaluated on every login through the provider, and the result is stored in the database together with the time of the login.
+This is the login-time counterpart of the LDAP `interface_filter`, which is evaluated during the LDAP synchronization.
+Consequently, a change of group membership in the identity provider takes effect on the user's next login through that provider.
+Access granted this way expires after `interface_filter_max_age` (default `24h`, the lifetime of a web session) unless the user logs in through the provider again.
+Logins through other methods, such as passkeys, an existing session or API tokens, cannot extend it.
+Set `interface_filter_max_age: 0s` to keep access until the next login through the provider.
+Even if a user bypasses the UI, the backend will enforce these restrictions at the service layer.
+
+```yaml
+auth:
+  oidc:
+    - provider_name: "oidc1"
+      # ... other settings
+      interface_filter:
+        wg0: "^vpn-users$"
+      interface_filter_max_age: 8h
+```
+
+Please note:
+
+- Interfaces without an `interface_filter` entry (in any OAuth2, OIDC or LDAP provider) remain available to all users.
+- If several providers filter the same interface, a user matching any of them is allowed.
+- Users that did not log in through a provider filtering an interface (e.g., local users) cannot provision peers for that interface.
+- The filter gates provisioning only. Losing access does not disable existing peers, the same as for LDAP: the user can no longer create, edit or delete peers on that interface, but existing peers stay active and their configuration can still be downloaded until an administrator removes or disables them.
+- Default peers are only created on a filtered interface if the user's access is already stored when the user is created, logs in without any peer, or the interface is created. Gaining access later does not create a default peer.
+- Administrators are not restricted by interface filters.
+- With the default `interface_filter_max_age`, users who only log in with passkeys lose the ability to create, edit or delete peers on a filtered interface after 24 hours, until they log in through the provider again.
+- If the provider authenticates a user but the login is rejected (e.g., by `allowed_domains` or `allowed_user_groups`), or the login fails after the result was stored, the access stored for that provider is revoked.
+- If the result cannot be stored, the login is rejected.
+- Tightening or removing a filter does not revoke access that was already stored; it takes effect on the next login through the provider or after `interface_filter_max_age`.
+- Stored access is bound to the `provider_name`: renaming a provider drops it, and reusing an old name brings back access stored under that name.
+- The `provider_name` of OIDC and OAuth providers must be unique (case-insensitive); duplicates are rejected at startup.
+- Access stored with a login time more than one minute in the future is ignored, so setting the clock back invalidates it until the next login.
+- Deleting a user removes all access stored for them. A login and the deletion of the same user are serialized within one WireGuard Portal instance only; with several instances sharing a database, a login racing the deletion may leave stored access behind until it expires.
+
 #### Limit Login to Existing Users
 
 You can limit the login to existing users only by setting the `registration_enabled` property to `false` for OAuth2 or OIDC providers.
@@ -209,6 +265,8 @@ auth:
 
 This feature works by materializing the list of authorized users for each interface during the periodic LDAP synchronization.
 Even if a user bypasses the UI, the backend will enforce these restrictions at the service layer.
+Default peers are only created on a filtered interface for users that are already on its list.
+An interface that is created, or a user that logs in, before the next synchronization lists them gets no default peer, and none is created later.
 
 
 ## User Synchronization

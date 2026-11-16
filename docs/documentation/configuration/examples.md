@@ -157,6 +157,9 @@ auth:
         user_groups: groups
       admin_mapping:
         admin_group_regex: ^the-admin-group$
+      # Restrict interface access based on the groups claim
+      interface_filter:
+        wg0: ^vpn-users$
       registration_enabled: true
       log_user_info: true
 ```
