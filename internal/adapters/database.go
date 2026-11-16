@@ -227,6 +227,12 @@ func (r *SqlRepo) migrate() error {
 	slog.Debug("running migration: user webauthn credentials", "result",
 		r.db.AutoMigrate(&domain.UserWebauthnCredential{}))
 	slog.Debug("running migration: interface", "result", r.db.AutoMigrate(&domain.Interface{}))
+	// OIDC/OAuth interface_filter depends on this table, so a failure must be visible.
+	if err := r.db.AutoMigrate(&domain.InterfaceAccessGrant{}); err != nil {
+		slog.Error("running migration: interface access grants", "error", err)
+	} else {
+		slog.Debug("running migration: interface access grants", "result", err)
+	}
 	slog.Debug("running migration: peer", "result", r.db.AutoMigrate(&domain.Peer{}))
 	slog.Debug("running migration: peer status", "result", r.db.AutoMigrate(&domain.PeerStatus{}))
 	slog.Debug("running migration: interface status", "result", r.db.AutoMigrate(&domain.InterfaceStatus{}))
@@ -536,6 +542,11 @@ func (r *SqlRepo) DeleteInterface(ctx context.Context, id domain.InterfaceIdenti
 			return err
 		}
 
+		err = tx.Where("interface_identifier = ?", id).Delete(&domain.InterfaceAccessGrant{}).Error
+		if err != nil {
+			return err
+		}
+
 		err = tx.Select(clause.Associations).Delete(&domain.Interface{Identifier: id}).Error
 		if err != nil {
 			return err
@@ -570,6 +581,48 @@ func (r *SqlRepo) GetInterfaceIps(ctx context.Context) (map[domain.InterfaceIden
 		result[ip.InterfaceId] = append(result[ip.InterfaceId], ip.Cidr)
 	}
 	return result, nil
+}
+
+// GetUserInterfaceAccessGrants returns all interface access grants of the given user.
+func (r *SqlRepo) GetUserInterfaceAccessGrants(
+	ctx context.Context,
+	userId domain.UserIdentifier,
+) ([]domain.InterfaceAccessGrant, error) {
+	var grants []domain.InterfaceAccessGrant
+
+	err := r.db.WithContext(ctx).Where("user_identifier = ?", userId).Find(&grants).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return grants, nil
+}
+
+// SaveInterfaceAccessGrant creates the given grant, or updates its evaluation time if it already exists.
+func (r *SqlRepo) SaveInterfaceAccessGrant(ctx context.Context, grant domain.InterfaceAccessGrant) error {
+	return r.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "interface_identifier"}, {Name: "provider_name"}, {Name: "user_identifier"},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{"evaluated_at"}),
+	}).Create(&grant).Error
+}
+
+// DeleteInterfaceAccessGrant deletes the grant of the given provider for the given interface and user.
+func (r *SqlRepo) DeleteInterfaceAccessGrant(
+	ctx context.Context,
+	ifaceId domain.InterfaceIdentifier,
+	providerName string,
+	userId domain.UserIdentifier,
+) error {
+	return r.db.WithContext(ctx).
+		Where("interface_identifier = ? AND provider_name = ? AND user_identifier = ?", ifaceId, providerName, userId).
+		Delete(&domain.InterfaceAccessGrant{}).Error
+}
+
+// DeleteUserInterfaceAccessGrants deletes all interface access grants of the given user.
+func (r *SqlRepo) DeleteUserInterfaceAccessGrants(ctx context.Context, userId domain.UserIdentifier) error {
+	return r.db.WithContext(ctx).Where("user_identifier = ?", userId).Delete(&domain.InterfaceAccessGrant{}).Error
 }
 
 // endregion interfaces

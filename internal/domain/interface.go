@@ -86,24 +86,82 @@ type Interface struct {
 	LdapAllowedUsers map[string][]UserIdentifier `gorm:"serializer:json"` // Materialised during LDAP sync, keyed by ProviderName
 }
 
-// IsUserAllowed returns true if the interface has no filter, or if the user is in the allowed list.
-func (i *Interface) IsUserAllowed(userId UserIdentifier, cfg *config.Config) bool {
+// InterfaceAccessGrant records that a login through an OAuth or OIDC provider matched the interface_filter of
+// that provider for the given interface.
+type InterfaceAccessGrant struct {
+	InterfaceIdentifier InterfaceIdentifier `gorm:"primaryKey;column:interface_identifier"`
+	ProviderName        string              `gorm:"primaryKey;column:provider_name"`
+	UserIdentifier      UserIdentifier      `gorm:"primaryKey;column:user_identifier;index"`
+	EvaluatedAt         time.Time           `gorm:"column:evaluated_at"` // time of the login that matched the filter
+}
+
+// IsUserAllowed returns true if the interface has no filter, or if one of the providers filtering it allows the
+// user. grants are the interface access grants of the user, see InterfaceAccessGrant.
+func (i *Interface) IsUserAllowed(userId UserIdentifier, cfg *config.Config, grants []InterfaceAccessGrant) bool {
+	return i.isUserAllowedAt(userId, cfg, grants, time.Now())
+}
+
+func (i *Interface) isUserAllowedAt(
+	userId UserIdentifier,
+	cfg *config.Config,
+	grants []InterfaceAccessGrant,
+	now time.Time,
+) bool {
+	id := string(i.Identifier)
 	isRestricted := false
+
+	// Only providers that currently filter this interface count, so stale lists and grants allow nothing.
 	for _, provider := range cfg.Auth.Ldap {
-		if _, exists := provider.InterfaceFilter[string(i.Identifier)]; exists {
-			isRestricted = true
-			break
+		if _, exists := provider.InterfaceFilter[id]; !exists {
+			continue
 		}
-	}
-
-	if !isRestricted {
-		return true // The interface is completely unrestricted by LDAP config
-	}
-
-	for _, allowedUsers := range i.LdapAllowedUsers {
-		if slices.Contains(allowedUsers, userId) {
+		isRestricted = true
+		if slices.Contains(i.LdapAllowedUsers[provider.ProviderName], userId) {
 			return true
 		}
+	}
+	for _, provider := range cfg.Auth.OpenIDConnect {
+		if _, exists := provider.InterfaceFilter[id]; !exists {
+			continue
+		}
+		isRestricted = true
+		if i.hasValidGrant(grants, provider.ProviderName, userId, provider.GetInterfaceFilterMaxAge(), now) {
+			return true
+		}
+	}
+	for _, provider := range cfg.Auth.OAuth {
+		if _, exists := provider.InterfaceFilter[id]; !exists {
+			continue
+		}
+		isRestricted = true
+		if i.hasValidGrant(grants, provider.ProviderName, userId, provider.GetInterfaceFilterMaxAge(), now) {
+			return true
+		}
+	}
+
+	return !isRestricted
+}
+
+// maxGrantClockSkew is how far in the future a grant's evaluation time may be before it is considered invalid.
+const maxGrantClockSkew = time.Minute
+
+// hasValidGrant reports whether the provider granted the user access to this interface on a login that is not
+// older than maxAge. A maxAge of 0 disables the expiry.
+func (i *Interface) hasValidGrant(
+	grants []InterfaceAccessGrant,
+	provider string,
+	userId UserIdentifier,
+	maxAge time.Duration,
+	now time.Time,
+) bool {
+	for _, grant := range grants {
+		if grant.InterfaceIdentifier != i.Identifier || grant.ProviderName != provider || grant.UserIdentifier != userId {
+			continue
+		}
+		if grant.EvaluatedAt.After(now.Add(maxGrantClockSkew)) {
+			return false
+		}
+		return maxAge == 0 || now.Sub(grant.EvaluatedAt) <= maxAge
 	}
 	return false
 }
@@ -152,6 +210,7 @@ func (i *Interface) AddressStr() string {
 
 func (i *Interface) CopyCalculatedAttributes(src *Interface) {
 	i.BaseModel = src.BaseModel
+	i.LdapAllowedUsers = src.LdapAllowedUsers
 }
 
 func (i *Interface) GetConfigFileName() string {

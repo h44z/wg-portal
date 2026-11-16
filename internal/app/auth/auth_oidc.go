@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"regexp"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -28,6 +29,7 @@ type OidcAuthenticator struct {
 	sensitiveInfoLogging bool
 	allowedDomains       []string
 	allowedUserGroups    []string
+	interfaceFilter      map[string]*regexp.Regexp
 	endSessionEndpoint   string
 	logoutIdpSession     bool
 	usePKCE              bool
@@ -68,6 +70,10 @@ func newOidcAuthenticator(
 	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
 	provider.allowedUserGroups = cfg.AllowedUserGroups
+	provider.interfaceFilter, err = config.CompileInterfaceFilter(cfg.InterfaceFilter)
+	if err != nil {
+		return nil, fmt.Errorf("invalid interface_filter of provider %s: %w", cfg.ProviderName, err)
+	}
 	provider.logoutIdpSession = cfg.LogoutIdpSession == nil || *cfg.LogoutIdpSession
 	provider.usePKCE = cfg.UsePKCE == nil || *cfg.UsePKCE
 	provider.pkceMethod = cfg.PKCEMethod
@@ -101,6 +107,10 @@ func (o OidcAuthenticator) GetAllowedDomains() []string {
 
 func (o OidcAuthenticator) GetAllowedUserGroups() []string {
 	return o.allowedUserGroups
+}
+
+func (o OidcAuthenticator) GetInterfaceFilter() map[string]*regexp.Regexp {
+	return o.interfaceFilter
 }
 
 func (o OidcAuthenticator) GetLogoutUrl(idTokenHint, postLogoutRedirectUri string) (string, bool) {

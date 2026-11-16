@@ -37,6 +37,7 @@ type InterfaceAndPeerDatabaseRepo interface {
 	GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (map[domain.Cidr][]domain.Cidr, error)
 	GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error)
 	GetAllUsers(ctx context.Context) ([]domain.User, error)
+	GetUserInterfaceAccessGrants(ctx context.Context, userId domain.UserIdentifier) ([]domain.InterfaceAccessGrant, error)
 }
 
 type WgQuickController interface {

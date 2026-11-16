@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/go-ldap/ldap/v3"
@@ -260,6 +261,15 @@ type OpenIDConnectProvider struct {
 	// If not empty, at least one group from the user's group claim must match.
 	AllowedUserGroups []string `yaml:"allowed_user_groups"`
 
+	// InterfaceFilter restricts self-provisioning on specific interfaces to members of matching groups.
+	// Map key is the interface identifier (e.g., "wg0"), value is a regular expression that is matched against
+	// the groups from the user's group claim. It is evaluated on every login through this provider.
+	InterfaceFilter map[string]string `yaml:"interface_filter"`
+
+	// InterfaceFilterMaxAge limits how long access granted by InterfaceFilter stays valid without a new login
+	// through this provider. If unset, DefaultInterfaceFilterMaxAge is used. A value of 0 disables the expiry.
+	InterfaceFilterMaxAge *time.Duration `yaml:"interface_filter_max_age"`
+
 	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`
 
@@ -322,6 +332,15 @@ type OAuthProvider struct {
 	// If not empty, at least one group from the user's group claim must match.
 	AllowedUserGroups []string `yaml:"allowed_user_groups"`
 
+	// InterfaceFilter restricts self-provisioning on specific interfaces to members of matching groups.
+	// Map key is the interface identifier (e.g., "wg0"), value is a regular expression that is matched against
+	// the groups from the user's group claim. It is evaluated on every login through this provider.
+	InterfaceFilter map[string]string `yaml:"interface_filter"`
+
+	// InterfaceFilterMaxAge limits how long access granted by InterfaceFilter stays valid without a new login
+	// through this provider. If unset, DefaultInterfaceFilterMaxAge is used. A value of 0 disables the expiry.
+	InterfaceFilterMaxAge *time.Duration `yaml:"interface_filter_max_age"`
+
 	// FieldMap is used to map the names of the user-info endpoint fields to wg-portal fields
 	FieldMap OauthFields `yaml:"field_map"`
 
@@ -346,6 +365,109 @@ type OAuthProvider struct {
 	// PKCEMethod controls which PKCE challenge method is used. Supported values are "S256" and "plain".
 	// If empty, "S256" is used.
 	PKCEMethod string `yaml:"pkce_method"`
+}
+
+// HasOauthInterfaceFilter reports whether any OIDC or OAuth provider restricts interfaces with an interface_filter.
+func (a *Auth) HasOauthInterfaceFilter() bool {
+	for _, provider := range a.OpenIDConnect {
+		if len(provider.InterfaceFilter) > 0 {
+			return true
+		}
+	}
+	for _, provider := range a.OAuth {
+		if len(provider.InterfaceFilter) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// validateOauthProviderNames ensures that OIDC and OAuth providers, which share one namespace for their
+// callback URLs and stored interface access, have unique names.
+func (a *Auth) validateOauthProviderNames() error {
+	names := make([]string, 0, len(a.OpenIDConnect)+len(a.OAuth))
+	for _, provider := range a.OpenIDConnect {
+		names = append(names, provider.ProviderName)
+	}
+	for _, provider := range a.OAuth {
+		names = append(names, provider.ProviderName)
+	}
+
+	seen := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		key := strings.ToLower(name)
+		if _, exists := seen[key]; exists {
+			return fmt.Errorf("oidc/oauth provider_name %q is not unique", name)
+		}
+		seen[key] = struct{}{}
+	}
+
+	return nil
+}
+
+// DefaultInterfaceFilterMaxAge is the default of interface_filter_max_age. It matches the web session lifetime.
+const DefaultInterfaceFilterMaxAge = 24 * time.Hour
+
+// GetInterfaceFilterMaxAge returns the configured interface_filter_max_age or its default.
+func (o *OpenIDConnectProvider) GetInterfaceFilterMaxAge() time.Duration {
+	return interfaceFilterMaxAge(o.InterfaceFilterMaxAge)
+}
+
+// GetInterfaceFilterMaxAge returns the configured interface_filter_max_age or its default.
+func (o *OAuthProvider) GetInterfaceFilterMaxAge() time.Duration {
+	return interfaceFilterMaxAge(o.InterfaceFilterMaxAge)
+}
+
+// Validate checks the interface_filter settings of the OIDC provider.
+func (o *OpenIDConnectProvider) Validate() error {
+	return validateInterfaceFilter(o.InterfaceFilter, o.InterfaceFilterMaxAge, o.FieldMap.UserGroups)
+}
+
+// Validate checks the interface_filter settings of the OAuth provider.
+func (o *OAuthProvider) Validate() error {
+	return validateInterfaceFilter(o.InterfaceFilter, o.InterfaceFilterMaxAge, o.FieldMap.UserGroups)
+}
+
+func interfaceFilterMaxAge(maxAge *time.Duration) time.Duration {
+	if maxAge == nil {
+		return DefaultInterfaceFilterMaxAge
+	}
+	return *maxAge
+}
+
+func validateInterfaceFilter(filter map[string]string, maxAge *time.Duration, userGroupsField string) error {
+	if maxAge != nil && *maxAge < 0 {
+		return fmt.Errorf("interface_filter_max_age must not be negative")
+	}
+	if len(filter) == 0 {
+		return nil
+	}
+	if userGroupsField == "" {
+		return fmt.Errorf("interface_filter requires field_map.user_groups")
+	}
+	_, err := CompileInterfaceFilter(filter)
+	return err
+}
+
+// CompileInterfaceFilter compiles the group regular expressions of an OAuth or OIDC interface_filter.
+// Expressions that match the empty string are rejected, because they match every group.
+func CompileInterfaceFilter(filter map[string]string) (map[string]*regexp.Regexp, error) {
+	compiled := make(map[string]*regexp.Regexp, len(filter))
+	for iface, expr := range filter {
+		if iface == "" {
+			return nil, fmt.Errorf("empty interface identifier")
+		}
+		re, err := regexp.Compile(expr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid group regex for interface %s: %w", iface, err)
+		}
+		if re.MatchString("") {
+			return nil, fmt.Errorf("group regex for interface %s matches every group", iface)
+		}
+		compiled[iface] = re
+	}
+
+	return compiled, nil
 }
 
 // WebauthnConfig contains the configuration for the WebAuthn authenticator.

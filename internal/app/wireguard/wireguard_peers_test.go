@@ -3,6 +3,7 @@ package wireguard
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -65,6 +66,10 @@ type mockDB struct {
 	iface      *domain.Interface
 	interfaces []domain.Interface
 	users      []domain.User
+	grants     []domain.InterfaceAccessGrant
+	grantsErr  error
+	grantLoads int
+	peers      map[domain.PeerIdentifier]domain.Peer
 }
 
 func (f *mockDB) GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error) {
@@ -137,6 +142,9 @@ func (f *mockDB) SavePeer(
 }
 func (f *mockDB) DeletePeer(ctx context.Context, id domain.PeerIdentifier) error { return nil }
 func (f *mockDB) GetPeer(ctx context.Context, id domain.PeerIdentifier) (*domain.Peer, error) {
+	if peer, ok := f.peers[id]; ok {
+		return &peer, nil
+	}
 	return nil, domain.ErrNotFound
 }
 func (f *mockDB) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr) (
@@ -158,6 +166,22 @@ func (f *mockDB) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain
 }
 func (f *mockDB) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	return f.users, nil
+}
+func (f *mockDB) GetUserInterfaceAccessGrants(
+	ctx context.Context,
+	userId domain.UserIdentifier,
+) ([]domain.InterfaceAccessGrant, error) {
+	f.grantLoads++
+	if f.grantsErr != nil {
+		return nil, f.grantsErr
+	}
+	var grants []domain.InterfaceAccessGrant
+	for _, grant := range f.grants {
+		if grant.UserIdentifier == userId {
+			grants = append(grants, grant)
+		}
+	}
+	return grants, nil
 }
 
 // --- Test ---
@@ -335,17 +359,29 @@ func TestDefaultPeers_RespectInterfaceFilter(t *testing.T) {
 	ldapCfg.Auth.Ldap = []config.LdapProvider{
 		{ProviderName: "ldap1", InterfaceFilter: map[string]string{"wg-data": "(memberOf=CN=VPN)"}},
 	}
+	oidcCfg := &config.Config{}
+	oidcCfg.Auth.OpenIDConnect = []config.OpenIDConnectProvider{
+		{ProviderName: "oidc1", InterfaceFilter: map[string]string{"wg-data": "^vpn-data$"}},
+	}
 
 	filters := []struct {
-		name  string
-		cfg   *config.Config
-		iface domain.Interface
+		name   string
+		cfg    *config.Config
+		iface  domain.Interface
+		grants []domain.InterfaceAccessGrant
 	}{
 		{
 			name: "ldap",
 			cfg:  ldapCfg,
 			iface: domain.Interface{LdapAllowedUsers: map[string][]domain.UserIdentifier{
 				"ldap1": {"member"},
+			}},
+		},
+		{
+			name: "oidc",
+			cfg:  oidcCfg,
+			grants: []domain.InterfaceAccessGrant{{
+				InterfaceIdentifier: "wg-data", ProviderName: "oidc1", UserIdentifier: "member", EvaluatedAt: time.Now(),
 			}},
 		},
 	}
@@ -355,12 +391,15 @@ func TestDefaultPeers_RespectInterfaceFilter(t *testing.T) {
 		{Identifier: "admin", IsAdmin: true},
 	}
 
-	newManager := func(cfg *config.Config, iface domain.Interface) (Manager, *mockDB) {
+	newManager := func(cfg *config.Config, iface domain.Interface, grants []domain.InterfaceAccessGrant) (
+		Manager,
+		*mockDB,
+	) {
 		cfg.Core.CreateDefaultPeerOnLogin = true
 		iface.Identifier = "wg-data"
 		iface.Type = domain.InterfaceTypeServer
 		iface.CreateDefaultPeer = true
-		db := &mockDB{iface: &iface, users: users}
+		db := &mockDB{iface: &iface, users: users, grants: grants}
 		return Manager{
 			cfg: cfg,
 			bus: &mockBus{},
@@ -384,7 +423,7 @@ func TestDefaultPeers_RespectInterfaceFilter(t *testing.T) {
 	for _, filter := range filters {
 		t.Run(filter.name+"/per user", func(t *testing.T) {
 			for _, user := range users {
-				m, db := newManager(filter.cfg, filter.iface)
+				m, db := newManager(filter.cfg, filter.iface, filter.grants)
 				require.NoError(t, m.CreateDefaultPeer(ctx, user.Identifier))
 				if user.Identifier == "outsider" {
 					assert.Empty(t, db.savedPeers, "a filtered-out user must not get a default peer")
@@ -394,7 +433,7 @@ func TestDefaultPeers_RespectInterfaceFilter(t *testing.T) {
 			}
 		})
 		t.Run(filter.name+"/per interface", func(t *testing.T) {
-			m, db := newManager(filter.cfg, filter.iface)
+			m, db := newManager(filter.cfg, filter.iface, filter.grants)
 			require.NoError(t, m.CreateDefaultPeers(ctx, "wg-data"))
 			assert.ElementsMatch(t, []domain.UserIdentifier{"member", "admin"}, peerOwners(db))
 		})

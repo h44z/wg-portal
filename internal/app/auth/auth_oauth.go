@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -30,6 +31,7 @@ type PlainOauthAuthenticator struct {
 	sensitiveInfoLogging bool
 	allowedDomains       []string
 	allowedUserGroups    []string
+	interfaceFilter      map[string]*regexp.Regexp
 	usePKCE              bool
 	pkceMethod           string
 }
@@ -39,6 +41,7 @@ func newPlainOauthAuthenticator(
 	callbackUrl string,
 	cfg *config.OAuthProvider,
 ) (*PlainOauthAuthenticator, error) {
+	var err error
 	var provider = &PlainOauthAuthenticator{}
 
 	provider.name = cfg.ProviderName
@@ -64,6 +67,10 @@ func newPlainOauthAuthenticator(
 	provider.sensitiveInfoLogging = cfg.LogSensitiveInfo
 	provider.allowedDomains = cfg.AllowedDomains
 	provider.allowedUserGroups = cfg.AllowedUserGroups
+	provider.interfaceFilter, err = config.CompileInterfaceFilter(cfg.InterfaceFilter)
+	if err != nil {
+		return nil, fmt.Errorf("invalid interface_filter of provider %s: %w", cfg.ProviderName, err)
+	}
 	provider.usePKCE = cfg.UsePKCE == nil || *cfg.UsePKCE
 	provider.pkceMethod = cfg.PKCEMethod
 	if provider.pkceMethod == "" {
@@ -87,6 +94,10 @@ func (p PlainOauthAuthenticator) GetAllowedDomains() []string {
 
 func (p PlainOauthAuthenticator) GetAllowedUserGroups() []string {
 	return p.allowedUserGroups
+}
+
+func (p PlainOauthAuthenticator) GetInterfaceFilter() map[string]*regexp.Regexp {
+	return p.interfaceFilter
 }
 
 func (p PlainOauthAuthenticator) GetLogoutUrl(_, _ string) (string, bool) {

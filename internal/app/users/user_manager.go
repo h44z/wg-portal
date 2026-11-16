@@ -44,6 +44,17 @@ type InterfaceDatabaseRepo interface {
 	GetInterface(ctx context.Context, id domain.InterfaceIdentifier) (*domain.Interface, error)
 	// SaveInterface saves the interface with the given identifier.
 	SaveInterface(ctx context.Context, id domain.InterfaceIdentifier, updateFunc func(i *domain.Interface) (*domain.Interface, error)) error
+	// SaveInterfaceAccessGrant creates the given grant, or updates its evaluation time if it already exists.
+	SaveInterfaceAccessGrant(ctx context.Context, grant domain.InterfaceAccessGrant) error
+	// DeleteInterfaceAccessGrant deletes the grant of the given provider for the given interface and user.
+	DeleteInterfaceAccessGrant(
+		ctx context.Context,
+		ifaceId domain.InterfaceIdentifier,
+		providerName string,
+		userId domain.UserIdentifier,
+	) error
+	// DeleteUserInterfaceAccessGrants deletes all interface access grants of the given user.
+	DeleteUserInterfaceAccessGrants(ctx context.Context, userId domain.UserIdentifier) error
 }
 
 type EventBus interface {
@@ -61,6 +72,8 @@ type Manager struct {
 	users      UserDatabaseRepo
 	peers      PeerDatabaseRepo
 	interfaces InterfaceDatabaseRepo
+
+	userLocks *keyedLocks
 }
 
 // NewUserManager creates a new user manager instance.
@@ -78,6 +91,8 @@ func NewUserManager(
 		users:      users,
 		peers:      peers,
 		interfaces: interfaces,
+
+		userLocks: &keyedLocks{},
 	}
 	return m, nil
 }
@@ -222,6 +237,13 @@ func (m Manager) DeleteUser(ctx context.Context, id domain.UserIdentifier) error
 
 	if err := m.validateDeletion(ctx, existingUser); err != nil {
 		return fmt.Errorf("deletion not allowed: %w", err)
+	}
+
+	// Locked and revoked by the stored identifier, which may differ in case from id.
+	defer m.userLocks.lock(existingUser.Identifier)()
+
+	if err := m.interfaces.DeleteUserInterfaceAccessGrants(ctx, existingUser.Identifier); err != nil {
+		return fmt.Errorf("failed to revoke interface access: %w", err)
 	}
 
 	err = m.users.DeleteUser(ctx, id)
