@@ -16,6 +16,7 @@ import (
 type WireGuardManager interface {
 	ImportNewInterfaces(ctx context.Context, filter ...domain.InterfaceIdentifier) (int, error)
 	RestoreInterfaceState(ctx context.Context, updateDbOnError bool, filter ...domain.InterfaceIdentifier) error
+	GetAllInterfacesAndPeers(ctx context.Context) ([]domain.Interface, [][]domain.Peer, error)
 }
 
 type UserManager interface {
@@ -69,7 +70,38 @@ func Initialize(
 		return fmt.Errorf("failed to restore interface state: %w", err)
 	}
 
+	a.warnUnknownFilterInterfaces(startupContext)
+
 	return nil
+}
+
+// warnUnknownFilterInterfaces logs OAuth and OIDC interface_filter entries that name no known interface.
+func (a *App) warnUnknownFilterInterfaces(ctx context.Context) {
+	filters := make(map[string]map[string]string)
+	for _, provider := range a.cfg.Auth.OpenIDConnect {
+		filters[provider.ProviderName] = provider.InterfaceFilter
+	}
+	for _, provider := range a.cfg.Auth.OAuth {
+		filters[provider.ProviderName] = provider.InterfaceFilter
+	}
+
+	interfaces, _, err := a.wg.GetAllInterfacesAndPeers(ctx)
+	if err != nil {
+		slog.Warn("failed to check interface_filter for unknown interfaces", "error", err)
+		return
+	}
+	known := make(map[string]struct{}, len(interfaces))
+	for _, iface := range interfaces {
+		known[string(iface.Identifier)] = struct{}{}
+	}
+
+	for providerName, filter := range filters {
+		for ifaceId := range filter {
+			if _, ok := known[ifaceId]; !ok {
+				slog.Warn("interface_filter names an unknown interface", "provider", providerName, "interface", ifaceId)
+			}
+		}
+	}
 }
 
 func (a *App) importNewInterfaces(ctx context.Context) error {

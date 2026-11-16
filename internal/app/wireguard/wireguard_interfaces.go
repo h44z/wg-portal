@@ -84,6 +84,11 @@ func (m Manager) GetUserInterfaces(ctx context.Context, userId domain.UserIdenti
 		return nil, fmt.Errorf("unable to load all interfaces: %w", err)
 	}
 
+	grants, err := m.getUserInterfaceAccessGrants(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
 	// strip sensitive data, users only need very limited information
 	userInterfaces := make([]domain.Interface, 0, len(interfaces))
 	for _, iface := range interfaces {
@@ -93,8 +98,8 @@ func (m Manager) GetUserInterfaces(ctx context.Context, userId domain.UserIdenti
 		if iface.Type != domain.InterfaceTypeServer {
 			continue // skip client interfaces
 		}
-		if !user.IsAdmin && !iface.IsUserAllowed(userId, m.cfg) {
-			continue // user not allowed due to LDAP group filter
+		if !user.IsAdmin && !iface.IsUserAllowed(userId, m.cfg, grants) {
+			continue // user not allowed due to an interface filter
 		}
 
 		userInterfaces = append(userInterfaces, iface.PublicInfo())

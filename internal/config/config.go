@@ -267,6 +267,20 @@ func GetConfig() (*Config, error) {
 			return nil, fmt.Errorf("sanitizing of ldap config for %s failed: %w", cfg.Auth.Ldap[i].ProviderName, err)
 		}
 	}
+	if err := cfg.Auth.validateOauthProviderNames(); err != nil {
+		return nil, err
+	}
+	for i := range cfg.Auth.OpenIDConnect {
+		if err := cfg.Auth.OpenIDConnect[i].Validate(); err != nil {
+			return nil, fmt.Errorf("validation of oidc config for %s failed: %w",
+				cfg.Auth.OpenIDConnect[i].ProviderName, err)
+		}
+	}
+	for i := range cfg.Auth.OAuth {
+		if err := cfg.Auth.OAuth[i].Validate(); err != nil {
+			return nil, fmt.Errorf("validation of oauth config for %s failed: %w", cfg.Auth.OAuth[i].ProviderName, err)
+		}
+	}
 
 	handleDeprecatedConfigValues(cfg)
 

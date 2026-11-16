@@ -676,11 +676,47 @@ func (m Manager) checkInterfaceAccess(ctx context.Context, id domain.InterfaceId
 		return fmt.Errorf("failed to get interface %s: %w", id, err)
 	}
 
-	if !iface.IsUserAllowed(user.Id, m.cfg) {
+	allowed, err := m.isUserAllowed(ctx, iface, user.Id)
+	if err != nil {
+		return err
+	}
+	if !allowed {
 		return fmt.Errorf("user %s is not allowed to access interface %s: %w", user.Id, id, domain.ErrNoPermission)
 	}
 
 	return nil
+}
+
+// isUserAllowed checks the interface filters of the interface for the given user.
+func (m Manager) isUserAllowed(
+	ctx context.Context,
+	iface *domain.Interface,
+	userId domain.UserIdentifier,
+) (bool, error) {
+	grants, err := m.getUserInterfaceAccessGrants(ctx, userId)
+	if err != nil {
+		return false, err
+	}
+
+	return iface.IsUserAllowed(userId, m.cfg, grants), nil
+}
+
+// getUserInterfaceAccessGrants loads the OAuth/OIDC interface access grants of the user. Without any OAuth/OIDC
+// interface_filter, no grant can count, so the database is not queried at all.
+func (m Manager) getUserInterfaceAccessGrants(
+	ctx context.Context,
+	userId domain.UserIdentifier,
+) ([]domain.InterfaceAccessGrant, error) {
+	if !m.cfg.Auth.HasOauthInterfaceFilter() {
+		return nil, nil
+	}
+
+	grants, err := m.db.GetUserInterfaceAccessGrants(ctx, userId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load interface access grants of user %s: %w", userId, err)
+	}
+
+	return grants, nil
 }
 
 func (m Manager) prepareDefaultPeer(ctx context.Context, iface *domain.Interface, user *domain.User) (
@@ -689,6 +725,15 @@ func (m Manager) prepareDefaultPeer(ctx context.Context, iface *domain.Interface
 ) {
 	if !iface.CreateDefaultPeers() || !user.CreateDefaultPeers() {
 		return nil, nil
+	}
+	if !user.IsAdmin {
+		allowed, err := m.isUserAllowed(ctx, iface, user.Identifier)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, nil // the user may not provision peers on this interface
+		}
 	}
 
 	userPeers, err := m.db.GetUserPeers(ctx, user.Identifier)

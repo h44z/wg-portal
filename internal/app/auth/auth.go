@@ -10,6 +10,8 @@ import (
 	"log/slog"
 	"net/url"
 	"path"
+	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -33,6 +35,13 @@ type UserManager interface {
 	UpdateUserInternal(ctx context.Context, user *domain.User) (*domain.User, error)
 	// IsDefaultPasswordInUse checks if the default admin password is still in use.
 	IsDefaultPasswordInUse(ctx context.Context) bool
+	// UpdateOauthInterfaceAccess updates the allowed-user lists that an OAuth or OIDC provider maintains on interfaces.
+	UpdateOauthInterfaceAccess(
+		ctx context.Context,
+		providerName string,
+		userId domain.UserIdentifier,
+		access map[domain.InterfaceIdentifier]bool,
+	) error
 }
 
 type EventBus interface {
@@ -75,6 +84,9 @@ type AuthenticatorOauth interface {
 	// GetAllowedUserGroups returns the list of whitelisted user groups.
 	// If non-empty, at least one user group must match.
 	GetAllowedUserGroups() []string
+	// GetInterfaceFilter returns the group regular expressions that restrict access to specific interfaces,
+	// keyed by interface identifier.
+	GetInterfaceFilter() map[string]*regexp.Regexp
 	// GetLogoutUrl returns an IdP logout URL if supported by the provider.
 	GetLogoutUrl(idTokenHint, postLogoutRedirectUri string) (string, bool)
 	// PKCEAuthCodeOptions returns PKCE options for the authorization request and the verifier for the token exchange.
@@ -582,16 +594,39 @@ func (a *Authenticator) OauthLoginStep2(
 		return nil, "", fmt.Errorf("unable to parse user information: %w", err)
 	}
 
+	ctx = domain.SetUserInfo(ctx,
+		domain.SystemAdminContextUserInfo()) // switch to admin user context to check if user exists
+
 	if !isDomainAllowed(userInfo.Email, oauthProvider.GetAllowedDomains()) {
+		a.revokeRejectedUserAccess(ctx, oauthProvider, userInfo.Identifier)
 		return nil, "", fmt.Errorf("user %s is not in allowed domains", userInfo.Email)
 	}
 
 	if !isAnyAllowedUserGroup(userInfo.UserGroups, oauthProvider.GetAllowedUserGroups()) {
+		a.revokeRejectedUserAccess(ctx, oauthProvider, userInfo.Identifier)
 		return nil, "", fmt.Errorf("user %s is not in allowed user groups", userInfo.Identifier)
 	}
 
-	ctx = domain.SetUserInfo(ctx,
-		domain.SystemAdminContextUserInfo()) // switch to admin user context to check if user exists
+	// Evaluated before processUserInfo, so default peers created for a new user already see the result.
+	accessUserId, err := a.updateInterfaceAccess(ctx, oauthProvider, userInfo.Identifier, userInfo.UserGroups)
+	if err != nil {
+		a.bus.Publish(app.TopicAuditLoginFailed, domain.AuditEventWrapper[audit.AuthEvent]{
+			Ctx:    ctx,
+			Source: "oauth " + providerId,
+			Event: audit.AuthEvent{
+				Username: string(userInfo.Identifier),
+				Error:    err.Error(),
+			},
+		})
+		return nil, "", fmt.Errorf("unable to update interface access: %w", err)
+	}
+	loginSucceeded := false
+	defer func() {
+		if !loginSucceeded {
+			a.revokeInterfaceAccess(ctx, oauthProvider, accessUserId)
+		}
+	}()
+
 	user, err := a.processUserInfo(ctx, userInfo, domain.UserSourceOauth, oauthProvider.GetName(),
 		oauthProvider.RegistrationEnabled())
 	if err != nil {
@@ -618,6 +653,7 @@ func (a *Authenticator) OauthLoginStep2(
 		return nil, "", errors.New("user is locked")
 	}
 
+	loginSucceeded = true
 	a.bus.Publish(app.TopicAuthLogin, user.Identifier)
 	a.bus.Publish(app.TopicAuditLoginSuccess, domain.AuditEventWrapper[audit.AuthEvent]{
 		Ctx:    ctx,
@@ -628,6 +664,103 @@ func (a *Authenticator) OauthLoginStep2(
 	})
 
 	return user, idTokenHint, nil
+}
+
+// updateInterfaceAccess evaluates the interface_filter of the provider against the groups of the user and
+// stores the result, granting access to matching interfaces and revoking it from all others.
+// It returns the identifier the result was stored for, or an empty identifier if nothing was stored.
+func (a *Authenticator) updateInterfaceAccess(
+	ctx context.Context,
+	provider AuthenticatorOauth,
+	userId domain.UserIdentifier,
+	userGroups []string,
+) (domain.UserIdentifier, error) {
+	filter := provider.GetInterfaceFilter()
+	if len(filter) == 0 {
+		return "", nil
+	}
+
+	revokeOnly := false
+	existingUser, err := a.users.GetUser(ctx, userId)
+	switch {
+	case errors.Is(err, domain.ErrNotFound) && !provider.RegistrationEnabled():
+		return "", nil // the login will be rejected, do not record anything for an unknown user
+	case errors.Is(err, domain.ErrNotFound):
+		// a new user, registered by this login
+	case err != nil:
+		return "", fmt.Errorf("failed to load user %s: %w", userId, err)
+	default:
+		userId = existingUser.Identifier // the stored identifier may differ in case from the claim
+		// The login of a locked or disabled user is rejected, so it may only revoke access.
+		revokeOnly = existingUser.IsLocked() || existingUser.IsDisabled()
+	}
+
+	access := make(map[domain.InterfaceIdentifier]bool, len(filter))
+	for iface, re := range filter {
+		access[domain.InterfaceIdentifier(iface)] = !revokeOnly && slices.ContainsFunc(userGroups, re.MatchString)
+	}
+
+	if err := a.users.UpdateOauthInterfaceAccess(ctx, provider.GetName(), userId, access); err != nil {
+		a.revokeInterfaceAccess(ctx, provider, userId)
+		return "", err
+	}
+
+	return userId, nil
+}
+
+// interfaceAccessRevokeTimeout bounds revoking interface access after a failed login.
+const interfaceAccessRevokeTimeout = 10 * time.Second
+
+// revokeInterfaceAccess removes the user from all allowed-user lists of the provider. It undoes
+// updateInterfaceAccess when the login fails afterwards, even if the context of the login has expired.
+func (a *Authenticator) revokeInterfaceAccess(
+	ctx context.Context,
+	provider AuthenticatorOauth,
+	userId domain.UserIdentifier,
+) {
+	if userId == "" {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), interfaceAccessRevokeTimeout)
+	defer cancel()
+
+	access := make(map[domain.InterfaceIdentifier]bool, len(provider.GetInterfaceFilter()))
+	for iface := range provider.GetInterfaceFilter() {
+		access[domain.InterfaceIdentifier(iface)] = false
+	}
+
+	if err := a.users.UpdateOauthInterfaceAccess(ctx, provider.GetName(), userId, access); err != nil {
+		slog.Error("failed to revoke interface access after failed login",
+			"user", userId, "provider", provider.GetName(), "error", err)
+	}
+}
+
+// revokeRejectedUserAccess revokes the access an existing user was granted by the provider, after the provider
+// authenticated the user but the login was rejected, e.g. because the user left all allowed groups.
+func (a *Authenticator) revokeRejectedUserAccess(
+	ctx context.Context,
+	provider AuthenticatorOauth,
+	userId domain.UserIdentifier,
+) {
+	if len(provider.GetInterfaceFilter()) == 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), interfaceAccessRevokeTimeout)
+	defer cancel()
+
+	existingUser, err := a.users.GetUser(ctx, userId)
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return // nothing was granted
+	case err != nil:
+		slog.Error("failed to revoke interface access after rejected login",
+			"user", userId, "provider", provider.GetName(), "error", err)
+		return
+	}
+
+	a.revokeInterfaceAccess(ctx, provider, existingUser.Identifier)
 }
 
 func (a *Authenticator) OauthProviderLogoutUrl(providerId, idTokenHint, postLogoutRedirectUri string) (string, bool) {

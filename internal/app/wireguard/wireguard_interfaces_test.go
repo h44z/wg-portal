@@ -3,8 +3,10 @@ package wireguard
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
@@ -147,6 +149,12 @@ func TestInterface_IsUserAllowed(t *testing.T) {
 						"wg0": "(memberOf=CN=VPNUsers,...)",
 					},
 				},
+				{
+					ProviderName: "ldap2",
+					InterfaceFilter: map[string]string{
+						"wg0": "(memberOf=CN=OtherVPNUsers,...)",
+					},
+				},
 			},
 		},
 	}
@@ -203,7 +211,7 @@ func TestInterface_IsUserAllowed(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expect, tt.iface.IsUserAllowed(tt.userId, cfg))
+			assert.Equal(t, tt.expect, tt.iface.IsUserAllowed(tt.userId, cfg, nil))
 		})
 	}
 }
@@ -251,4 +259,219 @@ func TestManager_GetUserInterfaces_Filtering(t *testing.T) {
 			assert.Equal(t, domain.InterfaceIdentifier("wg_public"), ifaces[0].Identifier)
 		}
 	})
+}
+
+func memberGrant() []domain.InterfaceAccessGrant {
+	return []domain.InterfaceAccessGrant{{
+		InterfaceIdentifier: "wg-data", ProviderName: "oidc1", UserIdentifier: "member", EvaluatedAt: time.Now(),
+	}}
+}
+
+func newOauthFilterConfig() *config.Config {
+	cfg := &config.Config{}
+	cfg.Core.SelfProvisioningAllowed = true
+	cfg.Core.EditableKeys = true
+	cfg.Auth.OpenIDConnect = []config.OpenIDConnectProvider{
+		{ProviderName: "oidc1", InterfaceFilter: map[string]string{"wg-data": "^vpn-data$"}},
+	}
+	return cfg
+}
+
+func TestManager_GetUserInterfaces_OauthFilter(t *testing.T) {
+	db := &mockDB{
+		interfaces: []domain.Interface{
+			{Identifier: "wg-world", Type: domain.InterfaceTypeServer},
+			{Identifier: "wg-data", Type: domain.InterfaceTypeServer},
+		},
+		users:  []domain.User{{Identifier: "admin", IsAdmin: true}},
+		grants: memberGrant(),
+	}
+	m := Manager{cfg: newOauthFilterConfig(), db: db}
+
+	identifiers := func(ifaces []domain.Interface) []domain.InterfaceIdentifier {
+		ids := make([]domain.InterfaceIdentifier, 0, len(ifaces))
+		for _, iface := range ifaces {
+			ids = append(ids, iface.Identifier)
+		}
+		return ids
+	}
+
+	ifaces, err := m.GetUserInterfaces(context.Background(), "member")
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []domain.InterfaceIdentifier{"wg-world", "wg-data"}, identifiers(ifaces))
+
+	ifaces, err = m.GetUserInterfaces(context.Background(), "outsider")
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []domain.InterfaceIdentifier{"wg-world"}, identifiers(ifaces))
+
+	ifaces, err = m.GetUserInterfaces(context.Background(), "admin")
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []domain.InterfaceIdentifier{"wg-world", "wg-data"}, identifiers(ifaces),
+		"admins are not restricted by interface filters")
+}
+
+func TestManager_CreatePeer_OauthFilter(t *testing.T) {
+	newManager := func() (Manager, *mockDB) {
+		db := &mockDB{
+			iface:  &domain.Interface{Identifier: "wg-data", Type: domain.InterfaceTypeServer},
+			grants: memberGrant(),
+		}
+		return Manager{
+			cfg: newOauthFilterConfig(),
+			bus: &mockBus{},
+			db:  db,
+			wg: &ControllerManager{
+				controllers: map[domain.InterfaceBackend]backendInstance{
+					config.LocalBackendName: {Implementation: &mockController{}},
+				},
+			},
+		}, db
+	}
+	newPeer := func(userId domain.UserIdentifier) *domain.Peer {
+		return &domain.Peer{
+			UserIdentifier:      userId,
+			InterfaceIdentifier: "wg-data",
+			Interface: domain.PeerInterfaceConfig{
+				KeyPair: domain.KeyPair{PublicKey: "PUBLIC_KEY_" + string(userId)},
+			},
+		}
+	}
+
+	tests := []struct {
+		name    string
+		user    domain.ContextUserInfo
+		allowed bool
+	}{
+		{name: "group member", user: domain.ContextUserInfo{Id: "member"}, allowed: true},
+		{name: "not a group member", user: domain.ContextUserInfo{Id: "outsider"}, allowed: false},
+		{name: "admin", user: domain.ContextUserInfo{Id: "admin", IsAdmin: true}, allowed: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, db := newManager()
+			ctx := domain.SetUserInfo(context.Background(), &tt.user)
+
+			_, err := m.CreatePeer(ctx, newPeer(tt.user.Id))
+			if tt.allowed {
+				assert.NoError(t, err)
+				assert.Len(t, db.savedPeers, 1)
+			} else {
+				assert.ErrorIs(t, err, domain.ErrNoPermission)
+				assert.Empty(t, db.savedPeers)
+			}
+		})
+	}
+}
+
+func TestManager_PrepareUpdateDeletePeer_OauthFilter(t *testing.T) {
+	newManager := func(owner domain.UserIdentifier) Manager {
+		peer := domain.Peer{
+			Identifier:          "peer-1",
+			UserIdentifier:      owner,
+			InterfaceIdentifier: "wg-data",
+			Interface:           domain.PeerInterfaceConfig{KeyPair: domain.KeyPair{PublicKey: "peer-1"}},
+		}
+		db := &mockDB{
+			iface:  &domain.Interface{Identifier: "wg-data", Type: domain.InterfaceTypeServer},
+			grants: memberGrant(),
+			peers:  map[domain.PeerIdentifier]domain.Peer{peer.Identifier: peer},
+		}
+		return Manager{
+			cfg: newOauthFilterConfig(),
+			bus: &mockBus{},
+			db:  db,
+			wg: &ControllerManager{
+				controllers: map[domain.InterfaceBackend]backendInstance{
+					config.LocalBackendName: {Implementation: &mockController{}},
+				},
+			},
+		}
+	}
+
+	for _, userId := range []domain.UserIdentifier{"member", "outsider"} {
+		t.Run(string(userId), func(t *testing.T) {
+			ctx := domain.SetUserInfo(context.Background(), &domain.ContextUserInfo{Id: userId})
+
+			_, updateErr := newManager(userId).UpdatePeer(ctx, &domain.Peer{
+				Identifier:  "peer-1",
+				DisplayName: "renamed",
+				Interface:   domain.PeerInterfaceConfig{KeyPair: domain.KeyPair{PublicKey: "peer-1"}},
+			})
+			deleteErr := newManager(userId).DeletePeer(ctx, "peer-1")
+			_, prepareErr := newManager(userId).PreparePeer(ctx, "wg-data")
+
+			if userId == "outsider" {
+				assert.ErrorIs(t, updateErr, domain.ErrNoPermission)
+				assert.ErrorIs(t, deleteErr, domain.ErrNoPermission)
+				assert.ErrorIs(t, prepareErr, domain.ErrNoPermission)
+			} else {
+				assert.NoError(t, updateErr)
+				assert.NoError(t, deleteErr)
+				assert.NoError(t, prepareErr)
+			}
+		})
+	}
+}
+
+func newGrantTestManager(cfg *config.Config, db *mockDB) Manager {
+	cfg.Core.CreateDefaultPeerOnLogin = true
+	return Manager{
+		cfg: cfg,
+		bus: &mockBus{},
+		db:  db,
+		wg: &ControllerManager{
+			controllers: map[domain.InterfaceBackend]backendInstance{
+				config.LocalBackendName: {Implementation: &mockController{}},
+			},
+		},
+	}
+}
+
+// Installations without an OAuth/OIDC interface_filter must not depend on the grants table.
+func TestManager_NoOauthFilterDoesNotLoadGrants(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.Core.SelfProvisioningAllowed = true
+	cfg.Auth.Ldap = []config.LdapProvider{
+		{ProviderName: "ldap1", InterfaceFilter: map[string]string{"wg-data": "(memberOf=CN=VPN)"}},
+	}
+	db := &mockDB{
+		iface: &domain.Interface{
+			Identifier:        "wg-data",
+			Type:              domain.InterfaceTypeServer,
+			CreateDefaultPeer: true,
+			LdapAllowedUsers:  map[string][]domain.UserIdentifier{"ldap1": {"member"}},
+		},
+		grantsErr: assert.AnError,
+	}
+	m := newGrantTestManager(cfg, db)
+	memberCtx := domain.SetUserInfo(context.Background(), &domain.ContextUserInfo{Id: "member"})
+	adminCtx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+
+	ifaces, err := m.GetUserInterfaces(context.Background(), "member")
+	require.NoError(t, err)
+	assert.Len(t, ifaces, 1)
+	_, err = m.PreparePeer(memberCtx, "wg-data")
+	require.NoError(t, err)
+	require.NoError(t, m.CreateDefaultPeer(adminCtx, "member"))
+
+	assert.Zero(t, db.grantLoads)
+}
+
+// If the grants cannot be loaded, access must be denied rather than granted.
+func TestManager_GrantLoadErrorFailsClosed(t *testing.T) {
+	db := &mockDB{
+		iface:     &domain.Interface{Identifier: "wg-data", Type: domain.InterfaceTypeServer, CreateDefaultPeer: true},
+		grants:    memberGrant(),
+		grantsErr: assert.AnError,
+	}
+	m := newGrantTestManager(newOauthFilterConfig(), db)
+	memberCtx := domain.SetUserInfo(context.Background(), &domain.ContextUserInfo{Id: "member"})
+	adminCtx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+
+	_, err := m.GetUserInterfaces(context.Background(), "member")
+	assert.ErrorIs(t, err, assert.AnError)
+	_, err = m.PreparePeer(memberCtx, "wg-data")
+	assert.ErrorIs(t, err, assert.AnError)
+	assert.ErrorIs(t, m.CreateDefaultPeer(adminCtx, "member"), assert.AnError)
+	assert.Empty(t, db.savedPeers)
 }

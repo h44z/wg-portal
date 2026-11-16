@@ -641,6 +641,21 @@ Below are the properties for each OIDC provider entry inside `auth.oidc`:
 - **Default:** *(empty)*
 - **Description:** A list of allowlisted user groups. If configured, at least one entry in the mapped `user_groups` claim must match one of these values.
 
+#### `interface_filter`
+- **Default:** *(empty)*
+- **Description:** A map of regular expressions to restrict access to specific WireGuard interfaces. The map keys are the interface identifiers (e.g., `wg0`), and the values are regular expressions that are matched against each entry of the mapped `user_groups` claim. Only users with at least one matching group will be allowed to see and provision peers for the respective interface.
+  The filter is evaluated on every login through this provider, so a change of group membership takes effect on the user's next login, and access ends at the latest after [`interface_filter_max_age`](#interface_filter_max_age). `field_map.user_groups` must be set, and expressions that match an empty string (e.g. `""` or `.*`) are rejected. Anchor the expressions (`^...$`) to avoid matching groups that only contain the given name.
+  For example:
+  ```yaml
+  interface_filter:
+    wg0: "^vpn-users$"
+    wg1: "^(vpn-admins|network-team)$"
+  ```
+
+#### `interface_filter_max_age`
+- **Default:** `24h`
+- **Description:** How long access granted by `interface_filter` stays valid without a new login through this provider. Once it has passed, the user is treated as not matching until they log in through this provider again; logins through other methods (e.g., passkeys) do not extend it. The default matches the lifetime of a web session. Set it to `0s` to disable the expiry, so access only changes on the next login through this provider.
+
 #### `field_map`
 - **Default:** *(empty)*
 - **Description:** Maps OIDC claims to WireGuard Portal user fields. 
@@ -736,6 +751,21 @@ Below are the properties for each OAuth provider entry inside `auth.oauth`:
 #### `allowed_user_groups`
 - **Default:** *(empty)*
 - **Description:** A list of allowlisted user groups. If configured, at least one entry in the mapped `user_groups` claim must match one of these values.
+
+#### `interface_filter`
+- **Default:** *(empty)*
+- **Description:** A map of regular expressions to restrict access to specific WireGuard interfaces. The map keys are the interface identifiers (e.g., `wg0`), and the values are regular expressions that are matched against each entry of the mapped `user_groups` claim. Only users with at least one matching group will be allowed to see and provision peers for the respective interface.
+  The filter is evaluated on every login through this provider, so a change of group membership takes effect on the user's next login, and access ends at the latest after [`interface_filter_max_age`](#interface_filter_max_age). `field_map.user_groups` must be set, and expressions that match an empty string (e.g. `""` or `.*`) are rejected. Anchor the expressions (`^...$`) to avoid matching groups that only contain the given name.
+  For example:
+  ```yaml
+  interface_filter:
+    wg0: "^vpn-users$"
+    wg1: "^(vpn-admins|network-team)$"
+  ```
+
+#### `interface_filter_max_age`
+- **Default:** `24h`
+- **Description:** How long access granted by `interface_filter` stays valid without a new login through this provider. Once it has passed, the user is treated as not matching until they log in through this provider again; logins through other methods (e.g., passkeys) do not extend it. The default matches the lifetime of a web session. Set it to `0s` to disable the expiry, so access only changes on the next login through this provider.
 
 #### `field_map`
 - **Default:** *(empty)*

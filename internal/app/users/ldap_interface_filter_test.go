@@ -123,3 +123,20 @@ func TestApplyInterfaceLdapFilterSkipsOnLookupError(t *testing.T) {
 
 	assert.Empty(t, repo.saved, "a lookup error must not result in a write")
 }
+
+func (f *fakeInterfaceRepo) SaveInterfaceAccessGrant(_ context.Context, _ domain.InterfaceAccessGrant) error {
+	return nil
+}
+
+func (f *fakeInterfaceRepo) DeleteInterfaceAccessGrant(
+	_ context.Context,
+	_ domain.InterfaceIdentifier,
+	_ string,
+	_ domain.UserIdentifier,
+) error {
+	return nil
+}
+
+func (f *fakeInterfaceRepo) DeleteUserInterfaceAccessGrants(_ context.Context, _ domain.UserIdentifier) error {
+	return nil
+}
