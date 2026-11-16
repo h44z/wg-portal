@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/h44z/wg-portal/internal/config"
 	"github.com/h44z/wg-portal/internal/domain"
 )
@@ -143,6 +146,11 @@ func (f *mockDB) GetUsedIpsPerSubnet(ctx context.Context, subnets []domain.Cidr)
 	return map[domain.Cidr][]domain.Cidr{}, nil
 }
 func (f *mockDB) GetUser(ctx context.Context, id domain.UserIdentifier) (*domain.User, error) {
+	for i := range f.users {
+		if f.users[i].Identifier == id {
+			return &f.users[i], nil
+		}
+	}
 	return &domain.User{
 		Identifier: id,
 		IsAdmin:    false,
@@ -319,5 +327,76 @@ func TestCreateDefaultPeer_RespectsInterfaceFlag(t *testing.T) {
 
 	if len(db.savedPeers) != 1 {
 		t.Fatalf("expected 1 peer to be created because interface flag is true, but got %d", len(db.savedPeers))
+	}
+}
+
+func TestDefaultPeers_RespectInterfaceFilter(t *testing.T) {
+	ldapCfg := &config.Config{}
+	ldapCfg.Auth.Ldap = []config.LdapProvider{
+		{ProviderName: "ldap1", InterfaceFilter: map[string]string{"wg-data": "(memberOf=CN=VPN)"}},
+	}
+
+	filters := []struct {
+		name  string
+		cfg   *config.Config
+		iface domain.Interface
+	}{
+		{
+			name: "ldap",
+			cfg:  ldapCfg,
+			iface: domain.Interface{LdapAllowedUsers: map[string][]domain.UserIdentifier{
+				"ldap1": {"member"},
+			}},
+		},
+	}
+	users := []domain.User{
+		{Identifier: "member"},
+		{Identifier: "outsider"},
+		{Identifier: "admin", IsAdmin: true},
+	}
+
+	newManager := func(cfg *config.Config, iface domain.Interface) (Manager, *mockDB) {
+		cfg.Core.CreateDefaultPeerOnLogin = true
+		iface.Identifier = "wg-data"
+		iface.Type = domain.InterfaceTypeServer
+		iface.CreateDefaultPeer = true
+		db := &mockDB{iface: &iface, users: users}
+		return Manager{
+			cfg: cfg,
+			bus: &mockBus{},
+			db:  db,
+			wg: &ControllerManager{
+				controllers: map[domain.InterfaceBackend]backendInstance{
+					config.LocalBackendName: {Implementation: &mockController{}},
+				},
+			},
+		}, db
+	}
+	peerOwners := func(db *mockDB) []domain.UserIdentifier {
+		var owners []domain.UserIdentifier
+		for _, peer := range db.savedPeers {
+			owners = append(owners, peer.UserIdentifier)
+		}
+		return owners
+	}
+	ctx := domain.SetUserInfo(context.Background(), domain.SystemAdminContextUserInfo())
+
+	for _, filter := range filters {
+		t.Run(filter.name+"/per user", func(t *testing.T) {
+			for _, user := range users {
+				m, db := newManager(filter.cfg, filter.iface)
+				require.NoError(t, m.CreateDefaultPeer(ctx, user.Identifier))
+				if user.Identifier == "outsider" {
+					assert.Empty(t, db.savedPeers, "a filtered-out user must not get a default peer")
+				} else {
+					assert.Equal(t, []domain.UserIdentifier{user.Identifier}, peerOwners(db))
+				}
+			}
+		})
+		t.Run(filter.name+"/per interface", func(t *testing.T) {
+			m, db := newManager(filter.cfg, filter.iface)
+			require.NoError(t, m.CreateDefaultPeers(ctx, "wg-data"))
+			assert.ElementsMatch(t, []domain.UserIdentifier{"member", "admin"}, peerOwners(db))
+		})
 	}
 }

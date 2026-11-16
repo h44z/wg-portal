@@ -690,6 +690,9 @@ func (m Manager) prepareDefaultPeer(ctx context.Context, iface *domain.Interface
 	if !iface.CreateDefaultPeers() || !user.CreateDefaultPeers() {
 		return nil, nil
 	}
+	if !user.IsAdmin && !iface.IsUserAllowed(user.Identifier, m.cfg) {
+		return nil, nil // the user may not provision peers on this interface
+	}
 
 	userPeers, err := m.db.GetUserPeers(ctx, user.Identifier)
 	if err != nil {

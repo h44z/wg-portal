@@ -69,12 +69,30 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 	}
 	defer internal.LdapDisconnect(conn)
 
-	rawUsers, err := internal.LdapFindAllUsers(conn, provider.BaseDN, provider.SyncFilter, &provider.FieldMap)
+	return m.syncLdapUsers(ctx, provider, func(filter string) ([]internal.RawLdapUser, error) {
+		return internal.LdapFindAllUsers(conn, provider.BaseDN, filter, &provider.FieldMap)
+	})
+}
+
+// syncLdapUsers synchronizes the users of the provider. findUsers searches the directory with the given filter.
+func (m Manager) syncLdapUsers(
+	ctx context.Context,
+	provider *config.LdapProvider,
+	findUsers func(filter string) ([]internal.RawLdapUser, error),
+) error {
+	rawUsers, err := findUsers(provider.SyncFilter)
 	if err != nil {
 		return err
 	}
 
 	slog.Debug("fetched raw ldap users", "count", len(rawUsers), "provider", provider.ProviderName)
+
+	// Update interface allowed users before the users: creating a user triggers the creation of default peers,
+	// which only considers interfaces the user is allowed to use.
+	err = m.updateInterfaceLdapFilters(ctx, provider, findUsers)
+	if err != nil {
+		return err
+	}
 
 	// Update existing LDAP users
 	err = m.updateLdapUsers(ctx, provider, rawUsers, &provider.FieldMap, provider.ParsedAdminGroupDN)
@@ -88,12 +106,6 @@ func (m Manager) synchronizeLdapUsers(ctx context.Context, provider *config.Ldap
 		if err != nil {
 			return err
 		}
-	}
-
-	// Update interface allowed users based on LDAP filters
-	err = m.updateInterfaceLdapFilters(ctx, conn, provider)
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -281,8 +293,8 @@ func (m Manager) disableMissingLdapUsers(
 
 func (m Manager) updateInterfaceLdapFilters(
 	ctx context.Context,
-	conn *ldap.Conn,
 	provider *config.LdapProvider,
+	findUsers func(filter string) ([]internal.RawLdapUser, error),
 ) error {
 	if len(provider.InterfaceFilter) == 0 {
 		return nil // nothing to do if no interfaces are configured for this provider
@@ -294,7 +306,7 @@ func (m Manager) updateInterfaceLdapFilters(
 		// Combined filter: user must match the provider's base SyncFilter AND the interface's LdapGroupFilter
 		combinedFilter := fmt.Sprintf("(&(%s)(%s))", provider.SyncFilter, groupFilter)
 
-		rawUsers, err := internal.LdapFindAllUsers(conn, provider.BaseDN, combinedFilter, &provider.FieldMap)
+		rawUsers, err := findUsers(combinedFilter)
 		if err != nil {
 			slog.Error("failed to find users for interface filter",
 				"interface", ifaceId,
