@@ -77,3 +77,49 @@ func TestOidcAuthenticatorPKCEDisabled(t *testing.T) {
 		t.Fatalf("expected no token options, got %d", len(tokenOptions))
 	}
 }
+
+func TestOidcAuthenticatorGetLogoutUrl(t *testing.T) {
+	provider := OidcAuthenticator{
+		name:               "test",
+		endSessionEndpoint: "https://idp.example.com/realms/test/protocol/openid-connect/logout",
+		logoutIdpSession:   true,
+	}
+
+	logoutUrl, ok := provider.GetLogoutUrl("the-token", "https://wg.example.com/app/#/login")
+	if !ok {
+		t.Fatal("expected a logout url")
+	}
+
+	parsed, err := url.Parse(logoutUrl)
+	if err != nil {
+		t.Fatalf("failed to parse logout url: %v", err)
+	}
+
+	query := parsed.Query()
+	if got := query.Get("id_token_hint"); got != "the-token" {
+		t.Fatalf("expected id_token_hint to be kept, got %q", got)
+	}
+	if got := query.Get("post_logout_redirect_uri"); got != "https://wg.example.com/app/" {
+		t.Fatalf("expected the fragment to be dropped, got %q", got)
+	}
+
+	// a redirect that has no fragment is passed on unchanged
+	logoutUrl, _ = provider.GetLogoutUrl("", "https://wg.example.com/app/login")
+	parsed, err = url.Parse(logoutUrl)
+	if err != nil {
+		t.Fatalf("failed to parse logout url: %v", err)
+	}
+	if got := parsed.Query().Get("post_logout_redirect_uri"); got != "https://wg.example.com/app/login" {
+		t.Fatalf("expected the redirect to be kept, got %q", got)
+	}
+
+	// without a redirect there is nothing to normalise
+	logoutUrl, _ = provider.GetLogoutUrl("the-token", "")
+	parsed, err = url.Parse(logoutUrl)
+	if err != nil {
+		t.Fatalf("failed to parse logout url: %v", err)
+	}
+	if got := parsed.Query().Get("post_logout_redirect_uri"); got != "" {
+		t.Fatalf("expected no post_logout_redirect_uri, got %q", got)
+	}
+}
