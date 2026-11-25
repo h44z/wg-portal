@@ -124,11 +124,26 @@ func (o OidcAuthenticator) GetLogoutUrl(idTokenHint, postLogoutRedirectUri strin
 		params.Set("id_token_hint", idTokenHint)
 	}
 	if postLogoutRedirectUri != "" {
-		params.Set("post_logout_redirect_uri", postLogoutRedirectUri)
+		// A post_logout_redirect_uri must not contain a fragment (OIDC RP-Initiated
+		// Logout 1.0, section 2), and providers such as Keycloak reject the logout
+		// request when it does. The frontend routes are hash routes, so drop the
+		// fragment instead of failing the whole logout.
+		params.Set("post_logout_redirect_uri", withoutFragment(postLogoutRedirectUri))
 	}
 	logoutUrl.RawQuery = params.Encode()
 
 	return logoutUrl.String(), true
+}
+
+// withoutFragment returns uri without its fragment, so it can be used as an OIDC
+// redirect URI. An unparsable uri is returned unchanged.
+func withoutFragment(uri string) string {
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		return uri
+	}
+	parsed.Fragment = ""
+	return parsed.String()
 }
 
 // PKCEAuthCodeOptions returns PKCE options for the authorization request and the verifier for the token exchange.
